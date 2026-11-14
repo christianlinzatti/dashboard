@@ -18,6 +18,7 @@ Weitere Ausbaustufen:
 - **Stufe 2:** Bühne mit Lichteffekten (Spots, Lichtkegel, Laser, Nebel, Bloom), beat-synchron.
 - **Stufe 3:** **Govee-Lichter** und **Alexa** einbinden.
 - **Stufe 4:** **Band-Fotos und Infotexte** (z. B. Wikipedia) anzeigen.
+- **Stufe 5:** **Persönliches & Konzerte**: zuletzt gespielte Songs (Last.fm), Anzeige, ob ich Song/Künstler mag, bevorstehende Konzerte aus mehreren Konzert-Providern; zusätzliche Quellen Genius, MusicBrainz, Flickr, TheAudioDB.
 
 **Festgelegt:** Raspberry Pi mit Chromium im Kiosk-Modus · Spotify-Developer-App und Premium vorhanden · kein Apple-Developer-Zugang · inoffizielle Lyrics-Quellen sind gewünscht · Oberfläche **ausschließlich auf Deutsch**.
 
@@ -107,6 +108,9 @@ Kernidee: **Es gibt genau einen Ort mit allen Informationen zum aktuellen Song �
 │ Mikrofon-Analyse (live)           │──────────► │ LightDirector   → Bühne (St. 2)  │
 │ BPM/Genre-Anreicherung            │   SONG-    │ Pi-Bridge       → Govee (St. 3)  │
 │ MusicBrainz / Wikipedia / Commons │  KONTEXT   │ Alexa-Skill     → Sprache (St. 3)│
+│ Flickr / TheAudioDB / Genius      │            │ InfoDirector    → Konzerte (St.5)│
+│ Last.fm / Spotify-Bibliothek      │            │ Verlauf & Likes → HUD    (St. 5) │
+│ Konzert-Provider                  │            │                                  │
 │ Cover-Farbanalyse                 │            │ InfoDirector    → Fotos/Texte (4)│
 │ Nutzer-Einstellungen (Offset …)   │            │ Debug-Panel, Playwright-Fixtures │
 └───────────────────────────────────┘            └──────────────────────────────────┘
@@ -144,6 +148,14 @@ type SongContext = {
   info?:   { artists: Record<string, { summary; wikiUrl; lang: "de" | "en"; facts: string[] }>;
              song?: { summary; wikiUrl }; photos: Array<Image & { credit; license; sourceUrl }> };
   cast:    Array<{ avatarId; artistId?; role: "lead" | "feature" | "backup"; position: number }>;
+
+  // Stufe 5 – persönlich & Konzerte
+  user?:    { trackSaved: boolean;                         // Song in „Lieblingssongs“ (Spotify)
+              lovedOnLastfm?: boolean;                     // Song auf Last.fm „geliebt“
+              artists: Record<string, { following: boolean; lastfmPlays?: number; firstScrobble?: string }>;
+              trackPlays?: number };                       // wie oft ich den Song gehört habe (Last.fm)
+  concerts?: Array<{ artistId; date; venue; city; country; distanceKm?; ticketUrl?;
+                     soldOut?: boolean; providers: string[] }>; // zusammengeführt aus mehreren Quellen
 
   playback: { isPlaying; positionMs; updatedAt; device?; volume?; offsetMs };
   live:     { bpm; beatPhase; bar; energy; bands: number[]; vocal: number; micActive: boolean };
@@ -223,7 +235,7 @@ type SongContext = {
 
 ## 5. Spotify-Integration
 
-- **OAuth Authorization Code + PKCE** über eigene Spotify-Developer-App. Scopes: `user-read-currently-playing`, `user-read-playback-state`, optional `user-modify-playback-state` (Steuerleiste).
+- **OAuth Authorization Code + PKCE** über eigene Spotify-Developer-App. Scopes: `user-read-currently-playing`, `user-read-playback-state`, `user-read-recently-played`, `user-library-read` (Song gespeichert?), `user-follow-read` (Künstler gefolgt?), optional `user-modify-playback-state` (Steuerleiste).
 - Redirect-URI: `https://<projekt>.vercel.app/api/auth/callback` und für lokal `http://127.0.0.1:3000/api/auth/callback` (Spotify akzeptiert kein `localhost` mehr).
 - **Refresh-Token** verschlüsselt (AES-GCM, Schlüssel als Vercel-Env-Var) in einem `httpOnly; Secure; SameSite=Lax`-Cookie → Dashboard bleibt dauerhaft eingeloggt, kein Token im JS.
 - **Polling:** `/api/now-playing` alle 3 s, bei Trackwechsel-Nähe (letzte 5 s) jede Sekunde; zusätzlich sofort bei Sichtbarkeitswechsel.
@@ -266,6 +278,7 @@ Alle Provider implementieren dasselbe Interface (`search(track) → LyricsDoc | 
 | 5 | **Spotify Color-Lyrics** (Ansatz von `simonroedig/SpotifyLyrics`) | meist Zeile, teils Silben | `sp_dc`-Cookie → Web-Player-Token | Laut Repo **nicht mehr funktionsfähig**, weil Spotify die Token-Ausgabe (TOTP-basiert) geändert hat. Wird mit aktualisierter Token-Logik umgesetzt, **bricht aber erwartbar immer wieder** → automatisch deaktiviert, wenn er wiederholt fehlschlägt |
 | 6 | **NetEase (YRC) / QQ Music (QRC)** | Wort | inoffiziell | stark bei asiatischem Repertoire, Wort-Sync |
 | 7 | **LRCLIB** | Zeile (teils Enhanced-LRC mit Wörtern) | frei, ohne Key | **zuverlässiger Fallback**, Open Source |
+| 7b | **Genius** | ohne Timing (`plain`) | offizielle API (Key) für Metadaten; der Liedtext selbst nur per Abruf der Songseite (inoffiziell) | dient als **Text-Referenz**: korrigiert Tippfehler/fehlende Zeilen anderer Provider, liefert Abschnitts-Marker (`[Refrain]`, `[Strophe 2: Kai Vento]` → Sänger-Zuordnung bei Feature-Songs) und **Annotations** als Trivia |
 | 8 | **Lokale Overrides** (`/data/lyrics/*.lrc|.ttml|.json`) | beliebig | Repo | eigene Korrekturen haben immer Vorrang |
 
 Parser: LRC, Enhanced-LRC (`<mm:ss.xx>` je Wort), TTML (Apple), Richsync-JSON, YRC/QRC → alle in `LyricsDoc`.
@@ -396,7 +409,7 @@ LRC/TTML/Richsync-Parser, Provider-Ranking, Silben-Verteilung, PlaybackClock-Int
 ## 10. Hosting (Vercel)
 
 - GitHub-Integration: `main` → Production, jeder Branch/PR → Preview.
-- Env-Vars: `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, `SESSION_SECRET`, `UPSTASH_REDIS_REST_URL/TOKEN`, Provider-Secrets (`SPOTIFY_SP_DC`, optional `MUSIXMATCH_API_KEY`), Feature-Flags je Provider (`LYRICS_PROVIDERS=musixmatch-desktop,lyricsplus,spotify-color,netease,qq,lrclib`) und eine Allowlist erlaubter Spotify-Konten (`ALLOWED_SPOTIFY_USERS`).
+- Env-Vars: `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, `SESSION_SECRET`, `UPSTASH_REDIS_REST_URL/TOKEN`, Provider-Secrets (`SPOTIFY_SP_DC`, optional `MUSIXMATCH_API_KEY`), Feature-Flags je Provider (`LYRICS_PROVIDERS=musixmatch-desktop,lyricsplus,spotify-color,netease,qq,lrclib`) eine Allowlist erlaubter Spotify-Konten (`ALLOWED_SPOTIFY_USERS`) sowie ab Stufe 5 `LASTFM_API_KEY`, `LASTFM_USER`, `GENIUS_ACCESS_TOKEN`, `FLICKR_API_KEY`, `THEAUDIODB_API_KEY`, `TICKETMASTER_API_KEY`, `BANDSINTOWN_APP_ID`, `SETLISTFM_API_KEY`, `HOME_LOCATION` (Ort für Konzert-Umkreis).
 - Manche inoffiziellen Quellen sperren Rechenzentrums-IPs wie die von Vercel. Dann laufen diese Anfragen über die Pi-Bridge (private Heim-IP); die Provider-Schnittstelle ist dafür schon ausgelegt.
 - Route Handlers im Node-Runtime (Crypto, Parser); Lyrics-Antworten mit `Cache-Control: s-maxage=86400`.
 - Security-Header (CSP, `Permissions-Policy: microphone=(self)`), keine Tokens im Client.
@@ -466,6 +479,57 @@ Funktionen: Grundfarbe aus dem Album-Cover, Puls auf Kick, Farbwechsel im Refrai
 
 ---
 
+## 11c. Ausbaustufe 5: Persönliches, Konzerte & weitere Quellen
+
+### Zuletzt gespielte Songs (Last.fm)
+
+- **Last.fm API** (`user.getRecentTracks`, API-Key + Benutzername, kein OAuth nötig für Lesezugriff); Fallback: Spotify „Recently Played“.
+- Anzeige: Leiste „Zuletzt gehört“ (Cover, Titel, „vor 12 Min.“) im Startbildschirm, wenn nichts läuft, und als einblendbare Seitenleiste per Wischgeste. Echtzeit-Scrobbles (gerade laufender Song) werden erkannt und nicht doppelt gezeigt.
+- Zusätzlich aus Last.fm: Hörstatistik („Du hast diesen Song 37-mal gehört“, „Künstler seit 2019 in deiner Bibliothek“), Tags, ähnliche Künstler.
+
+### Gefällt mir: Song und Künstler
+
+Ein dezentes Symbol-Cluster in der Kopfzeile, Daten im Song-Kontext unter `user`:
+
+| Symbol | Bedeutung | Quelle |
+|---|---|---|
+| ♥ gefüllt | Song in deinen Spotify-Lieblingssongs | Spotify Bibliothek (`user-library-read`) |
+| ♥ mit Last.fm-Punkt | Song auf Last.fm „geliebt“ | Last.fm `track.getInfo` (`userloved`) |
+| ★ Künstler | du folgst dem Künstler | Spotify (`user-follow-read`) |
+| Zahl | Wiedergaben des Songs / des Künstlers | Last.fm `userplaycount` |
+
+Bei Feature-Songs gilt der Stern pro Artist und erscheint am Namensschild des jeweiligen Avatars. Ein gelikter Künstler bekommt beim Songstart ein kurzes Highlight (Avatar winkt mit `Gesture_Wave`, Lichtakzent). Optional später per Touch: Song liken/entliken (`user-library-modify`).
+
+### Bevorstehende Konzerte
+
+**Provider** (parallel abgefragt, Ergebnisse zusammengeführt):
+
+| Provider | Zugang | Stärke |
+|---|---|---|
+| **Ticketmaster Discovery API** | kostenloser API-Key | große Abdeckung in DE/EU, Ticket-Links, Ausverkauft-Status |
+| **Bandsintown** | App-ID (Nutzung mit Quellenangabe) | sehr gute Abdeckung kleiner/mittlerer Acts, Tourdaten direkt von Künstlern |
+| **Songkick** | API nur noch für Partner | aufgenommen, sobald ein Key vorliegt |
+| **setlist.fm** | kostenloser API-Key | keine Zukunftstermine, aber „Was spielen sie gerade auf Tour?“ (letzte Setlists) |
+| **Eventim / Reservix** | keine offene API | ggf. später per Feed/inoffiziell, opt-in |
+
+- **Zusammenführung:** Termine werden über Künstler (MusicBrainz-ID), Datum und Ort/Venue (normalisiert) dedupliziert; jede Quelle bleibt als Herkunft sichtbar, Ticket-Link vom zuverlässigsten Anbieter.
+- **Relevanz:** Heimatort + Umkreis (z. B. 150 km) zuerst, danach restliches Deutschland/Europa. Konfigurierbar.
+- **Anzeige:** Karte „Live in deiner Nähe“ (Datum, Stadt, Location, Countdown „in 23 Tagen“, *ausverkauft*-Hinweis) in Instrumentalteilen, im Outro und im Infobereich. Ticket-Link als **QR-Code**, damit er aufs Handy wandert. Bei Feature-Songs pro Artist.
+- **Cache:** 12 h pro Künstler (Redis), Rate-Limits je Provider beachtet.
+
+### Weitere Quellen für Infos & Fotos
+
+| Quelle | Wofür |
+|---|---|
+| **MusicBrainz** | eindeutige Künstler-ID (Schlüssel für alle anderen Quellen), Mitglieder, Gründungsjahr, Herkunft, Diskografie |
+| **TheAudioDB** | Künstler-Fotos, Fanart, Banner, Logos, Biografie (auch deutsch) |
+| **Flickr API** | Konzertfotos; Suche nach Künstlername + Tags, **nur frei lizenzierte Fotos** (CC-Lizenzfilter) mit Urheberangabe |
+| **Wikimedia Commons / Wikipedia** | wie in Stufe 4 |
+| **Genius** | Song-Hintergründe (Annotations) als Trivia, Abschnitts-Marker für Lyrics |
+| **Last.fm** | Tags, ähnliche Künstler, Hörstatistik |
+
+Ein **Foto-Ranking** wählt pro Künstler die besten Bilder (Auflösung, Seitenverhältnis passend zum Display, Lizenz, Aktualität) und wechselt sie im Song ab; Logos von TheAudioDB können als Bühnenprojektion genutzt werden (Stufe 2).
+
 ## 12. Umsetzungsplan (Meilensteine)
 
 | # | Meilenstein | Ergebnis |
@@ -481,12 +545,18 @@ Funktionen: Grundfarbe aus dem Album-Cover, Puls auf Kick, Farbwechsel im Refrai
 | M9 | Stufe 3a | Pi-Bridge, Govee LAN/Segment-Steuerung |
 | M10 | Stufe 3b | Alexa-Skill, Echtzeit-Kanal, virtuelles Smart-Home-Gerät |
 | M11 | Stufe 4 | MusicBrainz/Wikipedia/Commons-Anbindung, Infokarten, Fotos auf der LED-Wand |
+| M12 | Stufe 5a | Last.fm (zuletzt gespielt, Hörstatistik), Likes/Follows im HUD |
+| M13 | Stufe 5b | Konzert-Provider (Ticketmaster, Bandsintown, setlist.fm), Zusammenführung, Konzertkarte mit QR-Code |
+| M14 | Stufe 5c | Flickr, TheAudioDB, Genius (Trivia, Text-Referenz), Foto-Ranking |
 
 ---
 
 ## 13. Offene Fragen
 
 1. **Rechner:** Raspberry Pi 5 (8 GB) oder N100-Mini-PC? Beides wird unterstützt; die Entscheidung hat nur Einfluss auf die Standard-Qualitätsstufe.
+
+3. **Last.fm:** Benutzername? (Scrobbelt Spotify bereits zu Last.fm?)
+4. **Konzerte:** Heimatort und gewünschter Umkreis?
 
 ### Geklärt
 - Raspberry Pi, Chromium im Kiosk-Modus · Spotify-Developer-App + Premium vorhanden · kein Apple-Developer-Zugang · inoffizielle Lyrics-Quellen erwünscht (Referenz: `simonroedig/SpotifyLyrics`) · Oberfläche nur Deutsch · Feature-Songs mit mehreren Tänzern, viel Abwechslung beim Tanzen · spätere Stufen: Govee, Alexa, Band-Fotos und Wikipedia-Texte · Mikrofon vorhanden · Referenzformat 1280×800 · Referenz-Screenshots im Repo · Govee-Geräte H6063, H610B, H61A2, H6051 alle per LAN ansteuerbar · zentraler Song-Kontext als Architektur-Kern.
