@@ -62,6 +62,8 @@ test.describe("Spotify-Anbindung", () => {
   });
 
   test("laufender Song wird angezeigt, Steuerleiste per Berührung", async ({ page }) => {
+    // Live-Betrieb rendert dauerhaft – mit niedriger Qualität bleibt der CI-Runner bedienbar
+    await page.addInitScript(() => localStorage.setItem("ss_settings", JSON.stringify({ quality: "niedrig", strobe: true })));
     let calls = 0;
     await page.route("**/api/now-playing", (route) => {
       calls++;
@@ -79,11 +81,11 @@ test.describe("Spotify-Anbindung", () => {
     await expect(page.getByTestId("progress")).toContainText("0:46");
 
     // Steuerleiste erscheint nach Berührung; Offset lässt sich ändern
-    await tapControl(page, page.getByRole("button", { name: "Lyrics später" }));
+    await tapControl(page, page.locator('[aria-label="Lyrics später"]'));
     await expect(page.getByTestId("offset")).toHaveText("Lyrics +0,1 s");
 
     // 403 von Spotify wird verständlich angezeigt
-    await tapControl(page, page.getByRole("button", { name: "Pause" }));
+    await tapControl(page, page.locator('[aria-label="Pause"]'));
     await expect(page.getByRole("status")).toHaveText("Spotify erlaubt diese Steuerung für die App nicht.");
     expect(calls).toBeGreaterThan(0);
   });
