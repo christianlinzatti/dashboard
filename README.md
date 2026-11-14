@@ -5,10 +5,11 @@ zeigt den aktuellen Spotify-Song, Lyrics möglichst Wort für Wort und tanzende 
 
 Konzept und Ausbaustufen: [`docs/KONZEPT.md`](docs/KONZEPT.md)
 
-**Stand: Meilenstein 2** – Spotify-Anmeldung (PKCE, dauerhaft per verschlüsseltem Cookie), aktueller Song mit
-ms-genau interpolierter Songzeit, Cover-Farben, Steuerleiste (Play/Pause/Skip, Lyrics-Offset).
-Davor (M1): Projektgerüst, zentraler Song-Kontext, Demo-Modus, 3D-Bühne, Karaoke-Lyrics, CI/E2E/Security.
-Lyrics-Provider folgen in Meilenstein 3.
+**Stand: Meilenstein 3** – Lyrics: Provider-Kette (LRCLIB + eigene Korrekturen in `data/lyrics/`),
+LRC/Enhanced-LRC-Parser, Wort-Schätzung bei Zeilen-Sync, automatische Strophen-/Refrain-Erkennung, Cache
+(Upstash Redis oder Speicher), täglicher Live-Check der Provider.
+Davor: M2 Spotify-Anmeldung, aktueller Song, Cover-Farben, Steuerleiste · M1 Projektgerüst, Song-Kontext,
+Demo-Modus, 3D-Bühne, CI/E2E/Security. Weitere (inoffizielle) Wort-für-Wort-Provider folgen in Meilenstein 6.
 
 ## Schnellstart
 
@@ -40,6 +41,7 @@ Die Demo-Songs haben frei erfundene Texte.
 | `npm test` | Unit-Tests (Vitest) |
 | `npm run e2e` | Playwright-Tests inkl. Screenshot-Vergleich (vorher `npm run build`) |
 | `npm run e2e:update` | Referenz-Screenshots neu erzeugen |
+| `npm run test:live` | echte Lyrics-Provider prüfen (Netzwerk) |
 
 ## Architektur in Kürze
 
@@ -48,6 +50,8 @@ Die Demo-Songs haben frei erfundene Texte.
   lesen nur daraus. Schema (zod), Store (Zustand), Ereignisse, Ableitungen, Demo-Fixtures.
 - **Avatare** (`lib/avatars/`): Katalog aus `avatars/manifest.json`, Casting (ein Avatar pro Artist,
   genre-passend, deterministisch). Geladen werden nur die Avatare der aktuellen Besetzung.
+- **Lyrics** (`lib/lyrics/`): Provider-Interface, parallele Abfrage mit Timeout und Circuit-Breaker,
+  Ranking (eigene > Wort-Sync > Zeilen-Sync > Text), Parser, Abschnitts-Erkennung, Cache. Route `/api/lyrics`.
 - **Oberfläche** (`components/`): HUD, Lyrics (Karaoke-Fill), 3D-Bühne (React Three Fiber), Debug-Panel.
 
 ## Qualitätssicherung (GitHub Actions)
@@ -59,6 +63,7 @@ Die Demo-Songs haben frei erfundene Texte.
 | `update-screenshots.yml` | manuell: Referenz-Screenshots im Container neu erzeugen und auf den Branch committen |
 | `codeql.yml` | CodeQL-Sicherheitsanalyse |
 | `security.yml` | `npm audit`, Gitleaks-Secret-Scan, Dependency Review |
+| `provider-check.yml` | täglich: echte Lyrics-Provider prüfen, bei Ausfall Issue anlegen |
 | `dependabot.yml` | wöchentliche Updates für npm und Actions |
 
 Alle Actions sind auf Commit-SHAs gepinnt. Die `@playwright/test`-Version muss zum Container-Image

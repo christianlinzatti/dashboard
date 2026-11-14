@@ -547,6 +547,8 @@ Ein **Foto-Ranking** wählt pro Künstler die besten Bilder (Auflösung, Seitenv
 
 ## 12. Umsetzungsplan (Meilensteine)
 
+Erledigt: **M1** (Projektgerüst, Song-Kontext), **M2** (Spotify), **M3** (Lyrics-Grundlage mit LRCLIB).
+
 | # | Meilenstein | Ergebnis |
 |---|---|---|
 | M1 | Projekt-Setup | Next.js + TS + Tailwind, Lint/Format, CI-Workflow, Vercel verbunden, Avatar-Optimierung, **Song-Kontext-Schema + Store + Demo-Fixtures** |

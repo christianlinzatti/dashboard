@@ -67,7 +67,6 @@ test.describe("Spotify-Anbindung", () => {
     await expect(page.getByTestId("now-playing")).toContainText("Testlied (feat. Gast)");
     await expect(page.getByTestId("now-playing")).toContainText("Hauptkünstler feat. Gast");
     await expect(page.getByTestId("progress")).toContainText("0:46");
-    await expect(page.getByTestId("lyrics-none")).toHaveCount(0); // Lyrics folgen in Meilenstein 3
 
     // Steuerleiste erscheint nach Berührung; Offset lässt sich ändern
     await page.mouse.click(640, 300);

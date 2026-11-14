@@ -11,6 +11,7 @@ import { LyricsLayer } from "./lyrics/LyricsLayer";
 import { DebugPanel } from "./debug/DebugPanel";
 import { Controls } from "./hud/Controls";
 import { useSpotifySync } from "./spotify/useSpotifySync";
+import { useLyricsLoader } from "./lyrics/useLyricsLoader";
 
 const Stage = dynamic(() => import("./stage/Stage").then((m) => m.Stage), { ssr: false });
 
@@ -21,6 +22,7 @@ export function Dashboard({ demo, t, debug, loginError }: Props) {
   const unknownDemo = demo !== undefined && !fixtures[demo];
   // Ohne Demo: Live-Betrieb mit Spotify
   const status = useSpotifySync(demo === undefined);
+  useLyricsLoader(demo === undefined);
 
   // Demo-Modus: Song-Kontext aus Fixture laden; mit ?t=<ms> eingefroren (Screenshots).
   useEffect(() => {

@@ -63,7 +63,7 @@ export function songFromTrack(track: SpotifyTrack, opts: { genres?: Record<strin
     cast: buildCast({ trackKey, genres, artists }),
     status: {
       spotify: { state: "ok", provider: "spotify", updatedAt: Date.now() },
-      lyrics: { state: "idle", detail: "folgt in Meilenstein 3" },
+      lyrics: { state: "idle" },
       palette: { state: "loading" },
       music: { state: genres.length ? "ok" : "missing", provider: "spotify" },
       info: { state: "idle" },

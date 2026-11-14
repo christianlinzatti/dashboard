@@ -1,0 +1,48 @@
+name: Provider-Check
+
+# Prüft täglich die echten Lyrics-Provider. Fällt einer aus (z. B. geänderte inoffizielle Schnittstelle),
+# wird ein Issue angelegt bzw. ergänzt.
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Lyrics-Provider live prüfen
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Provider testen
+        id: test
+        run: npm run test:live 2>&1 | tee provider-check.log
+        continue-on-error: true
+      - name: Issue bei Ausfall
+        if: steps.test.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          title="Lyrics-Provider ausgefallen"
+          body="Der tägliche Provider-Check ist fehlgeschlagen: $RUN_URL"
+          existing=$(gh issue list --state open --search "in:title \"$title\"" --json number --jq '.[0].number')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "$body"
+          else
+            gh issue create --title "$title" --body "$body"
+          fi
+          exit 1

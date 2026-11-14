@@ -20,6 +20,8 @@ const csp = [
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // Eigene Lyrics-Korrekturen mit in die Serverless-Funktion packen
+  outputFileTracingIncludes: { "/api/lyrics": ["./data/lyrics/**/*"] },
   images: { remotePatterns: [{ protocol: "https", hostname: "i.scdn.co" }] },
   async headers() {
     return [

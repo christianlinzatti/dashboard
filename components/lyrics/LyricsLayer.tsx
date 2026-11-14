@@ -111,7 +111,11 @@ function NoLyrics({ song }: { song: SongStatic | null }) {
   return (
     <section className="pointer-events-none absolute inset-x-0 bottom-[12vmin] text-center" data-testid="lyrics-none">
       <p className="text-[clamp(16px,3.4vmin,36px)] font-semibold text-white/50">
-        {state === "loading" ? "Lyrics werden gesucht …" : "Instrumental – keine Lyrics gefunden"}
+        {state === "loading"
+          ? "Lyrics werden gesucht …"
+          : state === "error"
+            ? "Lyrics-Dienst gerade nicht erreichbar"
+            : "Instrumental – keine Lyrics gefunden"}
       </p>
     </section>
   );
