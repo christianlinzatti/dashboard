@@ -49,11 +49,4 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           REF: ${{ github.ref_name }}
-        run: |
-          node -e '
-            fetch(`https://api.github.com/repos/${process.env.REPO}/actions/workflows/e2e.yml/dispatches`, {
-              method: "POST",
-              headers: { Authorization: `Bearer ${process.env.GITHUB_TOKEN}`, Accept: "application/vnd.github+json" },
-              body: JSON.stringify({ ref: process.env.REF }),
-            }).then((r) => { console.log("E2E gestartet:", r.status); if (r.status !== 204) process.exit(1); });
-          ' 
+        run: node scripts/ci/dispatch-e2e.mjs
