@@ -5,21 +5,27 @@ import type { Photo } from "@/lib/song-context/schema";
 type Http = (url: string, signal?: AbortSignal) => Promise<Response>;
 
 /**
- * Flickr-Lizenzen (flickr.photos.licenses.getInfo). Nur freie Lizenzen ohne „ND“:
- * Fotos werden auf der LED-Wand eingefärbt, das wäre eine Bearbeitung.
+ * Flickr-Lizenzen (flickr.photos.licenses.getInfo) – nur zur Anzeige der Lizenz, kein Filter:
+ * Es werden alle Fotos verwendet, immer mit Fotograf, Lizenz und Link zur Quelle.
  */
 export const FLICKR_LICENSES: Record<string, string> = {
+  "0": "Alle Rechte vorbehalten",
   "1": "CC BY-NC-SA 2.0",
   "2": "CC BY-NC 2.0",
+  "3": "CC BY-NC-ND 2.0",
   "4": "CC BY 2.0",
   "5": "CC BY-SA 2.0",
+  "6": "CC BY-ND 2.0",
   "7": "Keine bekannten Urheberrechtsbeschränkungen",
+  "8": "Werk der US-Regierung",
   "9": "CC0 1.0",
   "10": "Public Domain Mark",
   "11": "CC BY 4.0",
   "12": "CC BY-SA 4.0",
+  "13": "CC BY-ND 4.0",
   "14": "CC BY-NC 4.0",
   "15": "CC BY-NC-SA 4.0",
+  "16": "CC BY-NC-ND 4.0",
 };
 
 const num = z.union([z.number(), z.string()]).transform(Number);
@@ -45,7 +51,7 @@ const schema = z.discriminatedUnion("stat", [
   z.object({ stat: z.literal("fail"), code: z.number(), message: z.string() }),
 ]);
 
-/** Freie Konzertfotos eines Artists; Titel oder Tags müssen den Namen enthalten. */
+/** Konzertfotos eines Artists (alle Lizenzen); Titel oder Tags müssen den Namen enthalten. */
 export async function flickrPhotos(
   name: string,
   apiKey: string,
@@ -57,7 +63,6 @@ export async function flickrPhotos(
     method: "flickr.photos.search",
     api_key: apiKey,
     text: `"${name}" live`,
-    license: Object.keys(FLICKR_LICENSES).join(","),
     sort: "relevance",
     content_type: "1",
     media: "photos",
@@ -74,7 +79,7 @@ export async function flickrPhotos(
   const n = normalizeLine(name);
   const compact = n.replace(/\s+/g, "");
   return body.photos.photo
-    .filter((p) => FLICKR_LICENSES[p.license] && p.url_l && (p.width_l ?? 0) >= 800)
+    .filter((p) => p.url_l && (p.width_l ?? 0) >= 800)
     .filter((p) => normalizeLine(p.title).includes(n) || p.tags.split(" ").includes(compact))
     .slice(0, max)
     .map((p) => ({
@@ -84,7 +89,7 @@ export async function flickrPhotos(
       kind: "photo" as const,
       source: "flickr" as const,
       credit: p.ownername || p.owner,
-      license: FLICKR_LICENSES[p.license]!,
+      license: FLICKR_LICENSES[p.license] ?? "Lizenz unbekannt",
       sourceUrl: `https://www.flickr.com/photos/${p.owner}/${p.id}`,
     }));
 }

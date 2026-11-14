@@ -8,7 +8,8 @@ Konzept und Ausbaustufen: [`docs/KONZEPT.md`](docs/KONZEPT.md) · Architektur-Be
 **Stand: Stufe 5c** – Mehr Bilder und Trivia:
 - **TheAudioDB** (ohne eigenen Key nutzbar): Bühnenbilder im 16:9-Format für die LED-Wand, Band-Logos auf der
   Infokarte, deutsche Biografie als Ersatz, wenn es keinen Wikipedia-Artikel gibt, sowie Stil, Mitgliederzahl und Herkunft.
-- **Flickr** (`FLICKR_API_KEY`): Konzertfotos, nur mit freier Lizenz ohne „ND“, mit Fotograf und Lizenz.
+- **Flickr** (`FLICKR_API_KEY`): Konzertfotos aller Lizenzen, immer mit Fotograf und Lizenz (auch „Alle Rechte
+  vorbehalten“). Das passt für ein privates Dashboard, für eine öffentliche Seite bitte wieder auf freie Lizenzen beschränken.
 - **Genius** (`GENIUS_ACCESS_TOKEN`): Song-Trivia im Fakten-Ticker (Produzenten, Songwriter, Samples).
   Songtexte liefert die Genius-API nicht.
 - **Fotoauswahl:** Die Wand bekommt Querformat und Bühnenbilder und wechselt das Foto mit jedem Abschnitt. Die Karte

@@ -59,7 +59,7 @@ describe("Flickr (Format laut API-Doku)", () => {
     width_l: 1024,
     ...p,
   });
-  it("nur freie Lizenzen ohne ND, groß genug, Name in Titel oder Tags", async () => {
+  it("alle Lizenzen (mit Angabe), groß genug, Name in Titel oder Tags", async () => {
     const http = vi.fn<Get>(async () =>
       ok({
         photos: {
@@ -69,8 +69,9 @@ describe("Flickr (Format laut API-Doku)", () => {
           total: 5,
           photo: [
             photo({}),
-            photo({ id: "2", license: "3" }), // CC BY-NC-ND → nicht erlaubt
+            photo({ id: "2", license: "3" }), // CC BY-NC-ND
             photo({ id: "3", license: "0" }), // alle Rechte vorbehalten
+            photo({ id: "7", license: "99" }), // unbekannte Lizenz-Nummer
             photo({ id: "4", width_l: "500" }), // zu klein
             photo({ id: "5", title: "Konzertabend", tags: "coldplay" }), // Tag passt
             photo({ id: "6", title: "Sonnenuntergang", tags: "sunset" }), // passt nicht
@@ -81,13 +82,13 @@ describe("Flickr (Format laut API-Doku)", () => {
     );
     const out = await flickrPhotos("Coldplay", "KEY", http);
     const url = new URL(http.mock.calls[0]![0]);
-    expect(url.searchParams.get("license")).toBe(Object.keys(FLICKR_LICENSES).join(","));
-    expect(url.searchParams.get("license")).not.toMatch(/\b(3|6|13|16)\b/);
-    expect(out.map((p) => p.sourceUrl)).toEqual([
-      "https://www.flickr.com/photos/12@N00/1",
-      "https://www.flickr.com/photos/12@N00/5",
-    ]);
-    expect(out[0]).toMatchObject({ width: 1024, height: 683, license: "CC BY 2.0", credit: "Fotografin A", source: "flickr" });
+    expect(url.searchParams.has("license")).toBe(false); // kein Lizenzfilter
+    expect(out.map((p) => p.sourceUrl.split("/").at(-1))).toEqual(["1", "2", "3", "7"]); // höchstens 4 Fotos
+    expect(out.map((p) => p.license)).toEqual(["CC BY 2.0", "CC BY-NC-ND 2.0", FLICKR_LICENSES["0"], "Lizenz unbekannt"]);
+    expect(out[0]).toMatchObject({ width: 1024, height: 683, credit: "Fotografin A", source: "flickr" });
+    // zu klein (4) und ohne Namensbezug (6) fallen weg
+    const all = await flickrPhotos("Coldplay", "KEY", http, undefined, 10);
+    expect(all.map((p) => p.sourceUrl.split("/").at(-1))).toEqual(["1", "2", "3", "7", "5"]);
   });
   it("Fehlermeldung von Flickr → Ausnahme", async () => {
     await expect(

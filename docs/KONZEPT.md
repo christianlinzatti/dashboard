@@ -549,13 +549,13 @@ GET https://public-api.eventim.com/websearch/search/api/exploration/v1/products
 |---|---|
 | **MusicBrainz** | eindeutige Künstler-ID (Schlüssel für alle anderen Quellen), Mitglieder, Gründungsjahr, Herkunft, Diskografie |
 | **TheAudioDB** | Künstler-Fotos, Fanart, Banner, Logos, Biografie (auch deutsch) |
-| **Flickr API** | Konzertfotos; Suche nach Künstlername + Tags, **nur frei lizenzierte Fotos** (CC-Lizenzfilter) mit Urheberangabe |
+| **Flickr API** | Konzertfotos; Suche nach Künstlername + Tags, alle Lizenzen (privates Dashboard), immer mit Urheber- und Lizenzangabe |
 | **Wikimedia Commons / Wikipedia** | wie in Stufe 4 |
 | **Genius** | Song-Hintergründe (Annotations) als Trivia, Abschnitts-Marker für Lyrics |
 | **Last.fm** | Tags, ähnliche Künstler, Hörstatistik |
 
 **Umsetzungsstand (Stufe 5c):** TheAudioDB (öffentlicher Test-Key `123`, echtes Format in `tests/fixtures/theaudiodb/`,
-Abfrage über die MusicBrainz-ID), Flickr (nur CC/PD ohne ND, Name muss in Titel oder Tags stehen) und Genius
+Abfrage über die MusicBrainz-ID), Flickr (alle Lizenzen mit Angabe, Name muss in Titel oder Tags stehen) und Genius
 (nur Metadaten; die API liefert keine Songtexte) sind angebunden. Fällt eine optionale Quelle aus, werden die
 Band-Infos nur 3 Tage statt 30 Tage gecacht.
 
