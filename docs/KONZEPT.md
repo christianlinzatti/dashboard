@@ -45,12 +45,24 @@ Da das Skelett einheitlich ist, kann jeder Clip grundsätzlich auf jeden Avatar 
 
 ## 3. Zielgerät & UX-Rahmen
 
-**Gerät:** Raspberry Pi mit 10-Zoll-Display, Chromium im Kiosk-Modus. Die Auflösung steht noch nicht fest, deshalb wird das Layout **auflösungsunabhängig** gebaut (Schriftgrößen in `vmin`/`clamp()`, 3D-Kamera passt sich dem Seitenverhältnis an). Getestet werden die typischen 10-Zoll-Panels **1024×600**, **1280×800** und **1920×1200**.
+**Gerät:** Raspberry Pi (noch nicht gekauft) mit 10-Zoll-Display, Chromium im Kiosk-Modus.
+
+**Hardware-Empfehlung:**
+
+| Komponente | Empfehlung | Begründung |
+|---|---|---|
+| Rechner | **Raspberry Pi 5, 8 GB** + aktiver Kühler + offizielles 27-W-Netzteil | schnellste Pi-GPU (VideoCore VII, WebGL2); ein Pi 4 wäre für mehrere 3D-Tänzer zu knapp |
+| Speicher | NVMe-SSD über M.2-HAT (alternativ gute A2-microSD) | schnellerer Start, Chromium-Cache, langlebiger als SD |
+| Display | 10,1" IPS, **1280×800**, HDMI + USB-Touch | bei 10" der beste Kompromiss aus Schärfe und GPU-Last; 1920×1200 würde den Pi bei 3D deutlich ausbremsen |
+| Mikrofon | USB-Mikrofon (Kugel- oder Nierencharakteristik), Richtung Lautsprecher | vorhanden |
+| Alternative | **Mini-PC mit Intel N100/N150** (ähnlicher Preis inkl. Netzteil) | deutlich mehr Grafikleistung: 5 Tänzer + volle Bühnen-Effekte (Stufe 2) ohne Abstriche. Empfehlenswert, wenn die Bühne später ein Schwerpunkt wird |
+
+Damit wird **1280×800 das Referenzformat** (Standard-Viewport für Screenshots). Das Layout bleibt trotzdem auflösungsunabhängig, falls doch ein anderes Panel kommt; deshalb wird das Layout **auflösungsunabhängig** gebaut (Schriftgrößen in `vmin`/`clamp()`, 3D-Kamera passt sich dem Seitenverhältnis an). Getestet werden die typischen 10-Zoll-Panels **1024×600**, **1280×800** und **1920×1200**.
 
 **Raspberry-Pi-spezifisch:**
 - Die GPU ist schwach. Standard sind **2–3 Avatare**, keine Echtzeit-Schatten (gebackener Bodenschatten), DPR 1,0, Ziel 60 fps auf Pi 5 und ≥ 30 fps auf Pi 4. Mehr Tänzer nur bei Feature-Songs mit vereinfachtem Shading (siehe 8.1).
 - Chromium-Flags: `--kiosk --ignore-gpu-blocklist --enable-gpu-rasterization --autoplay-policy=no-user-gesture-required`, Autostart über systemd/labwc, Watchdog lädt die Seite bei Absturz neu.
-- Mikrofon: Der Pi hat keins eingebaut → **USB-Mikrofon** nötig.
+- Mikrofon: USB-Mikrofon ist vorhanden.
 - Ein kleiner **lokaler Dienst auf dem Pi („Pi-Bridge“)** wird ab Stufe 3 gebraucht, weil der Browser keine Geräte im Heimnetz ansteuern kann (Govee per LAN/UDP).
 
 **Sprache:** Alle Texte der Oberfläche sind deutsch. Zahlen- und Zeitformat `de-DE`, keine Sprachumschaltung.
@@ -308,7 +320,8 @@ Härtung: Actions auf **Commit-SHAs gepinnt**, `permissions: contents: read` als
 - Chromium (headless, WebGL über SwiftShader/ANGLE) – identisch zum Kiosk-Browser.
 - **Deterministischer Demo-Modus** `/?demo=<fixture>&t=<ms>&seed=1`: feste Songzeit, eingefrorene Animationen, Fake-Audio-Werte → reproduzierbare Screenshots.
 - Szenarien: kein Song / Login nötig, Song mit Wort-Sync, Song nur Zeilen-Sync, keine Lyrics, Instrumental-Pause, Refrain-Modus, Duett, Mikro verweigert, Touch-Steuerleiste.
-- Screenshots werden unter **`/playwright/screenshots/<viewport>/<szenario>.png`** abgelegt; Referenzbilder für `toHaveScreenshot` liegen versioniert im Repo, aktuelle Läufe zusätzlich als CI-Artefakt (Diff-Bilder bei Abweichung).
+- **Referenz-Screenshots liegen versioniert im Repo** unter **`/playwright/screenshots/<viewport>/<szenario>.png`** und dienen als Basis für `toHaveScreenshot` (Visual-Regression). Jeder CI-Lauf vergleicht dagegen; Abweichungen schlagen fehl und werden mit Diff-Bildern als Artefakt angehängt.
+- Referenzbilder werden **im CI-Container erzeugt** (gleiches Linux-Image und gleiche Schriften wie beim Vergleich), damit es keine Pixel-Unterschiede zwischen Rechnern gibt. Aktualisieren über einen manuell startbaren Workflow „Screenshots aktualisieren“, der die neuen Bilder als Commit auf den Branch schreibt; die Änderungen sind dann im PR als Bild-Diff sichtbar.
 - Optional: E2E-Smoke gegen jede **Vercel-Preview-URL** (Deployment-Status-Event).
 
 ### 9.3 Unit-Tests (Beispiele)
@@ -354,6 +367,13 @@ Kleiner Node-Dienst auf dem Raspberry Pi (systemd), erreichbar nur lokal (`ws://
 | **Govee LAN API** (UDP, lokal, über die Pi-Bridge) | ~20–50 ms | **bevorzugt**: Farbe/Helligkeit auf den Beat, Szenenwechsel pro Takt; LAN-Steuerung muss in der Govee-App je Gerät aktiviert sein |
 | **Govee Segment-/Razer-Streaming-Protokoll** (inoffiziell, lokal) | sehr gering | für LED-Strips mit Segmenten: Lauflichter, Spektrum-Anzeige |
 | **Govee Cloud API** (Developer-Key) | 0,5–2 s, Rate-Limit | nur für langsame Dinge: Szene „Party“ an/aus, Grundfarbe pro Song |
+
+**Vorhandene Geräte:** H6063, H610B, H61A2, H6051. Ob jedes davon die Govee-LAN-API unterstützt, steht in keiner öffentlich auffindbaren, aktuellen Liste. Govees offizielle Liste ist nicht vollständig gepflegt, und manche Geräte bekommen die Option erst mit einem Firmware-Update. Vorgehen:
+1. In der Govee-Home-App bei jedem Gerät Firmware aktualisieren und **„LAN-Steuerung“** einschalten (fehlt der Schalter, gibt es keinen LAN-Support).
+2. Die Pi-Bridge sucht die Geräte per Multicast-Discovery und zeigt für jedes an, welcher Weg funktioniert.
+3. Geräte ohne LAN-Support laufen über die Cloud-API (nur langsame Farb-/Szenenwechsel pro Abschnitt, kein Beat-Puls) oder optional über **Bluetooth LE** vom Pi aus (geringe Latenz, Reichweite ~10 m).
+
+Rollen-Vorschlag (wird beim Einrichten festgelegt): LED-Strip(s) hinter dem Display → Beat-Puls und Lauflicht (Segmente, falls RGBIC); Wand-/Panel-Leuchten → Akzente im Refrain und bei Drops; Tischlampe → ruhige Grundfarbe aus dem Cover.
 
 Funktionen: Grundfarbe aus dem Album-Cover, Puls auf Kick, Farbwechsel im Refrain, Strobe-Akzent bei Drops (mit Helligkeits-/Frequenzgrenze, Fotosensitivitäts-Schutz), Rückfall auf ruhiges Licht, wenn nichts läuft. Geräte werden in den Einstellungen gruppiert (z. B. „Hinter dem Display“, „Decke“).
 
@@ -404,11 +424,8 @@ Funktionen: Grundfarbe aus dem Album-Cover, Puls auf Kick, Farbwechsel im Refrai
 
 ## 13. Offene Fragen
 
-1. **Display-Auflösung** – sobald bekannt, wird das passende Profil zum Standard-Screenshot-Viewport (das Layout funktioniert vorher schon auflösungsunabhängig).
-2. **Raspberry-Pi-Modell** (Pi 4 oder Pi 5, RAM)? Davon hängt die Zahl der Tänzer ab.
-3. **USB-Mikrofon** vorhanden, und steht das Dashboard nahe am Lautsprecher?
-4. **Govee-Geräte:** welche Modelle (LAN-fähig? Strips mit Segmenten?) – erst für Stufe 3 nötig.
-5. **Screenshots:** Referenz-Screenshots im Repo versionieren (empfohlen) oder nur als CI-Artefakte?
+1. **Rechner:** Raspberry Pi 5 (8 GB) oder N100-Mini-PC? Beides wird unterstützt; die Entscheidung hat nur Einfluss auf die Standard-Qualitätsstufe.
+2. **Govee:** LAN-Schalter in der Govee-App für H6063, H610B, H61A2 und H6051 prüfen (erst für Stufe 3 nötig).
 
 ### Geklärt
-- Raspberry Pi, Chromium im Kiosk-Modus · Spotify-Developer-App + Premium vorhanden · kein Apple-Developer-Zugang · inoffizielle Lyrics-Quellen erwünscht (Referenz: `simonroedig/SpotifyLyrics`) · Oberfläche nur Deutsch · Feature-Songs mit mehreren Tänzern, viel Abwechslung beim Tanzen · spätere Stufen: Govee, Alexa, Band-Fotos und Wikipedia-Texte.
+- Raspberry Pi, Chromium im Kiosk-Modus · Spotify-Developer-App + Premium vorhanden · kein Apple-Developer-Zugang · inoffizielle Lyrics-Quellen erwünscht (Referenz: `simonroedig/SpotifyLyrics`) · Oberfläche nur Deutsch · Feature-Songs mit mehreren Tänzern, viel Abwechslung beim Tanzen · spätere Stufen: Govee, Alexa, Band-Fotos und Wikipedia-Texte · Mikrofon vorhanden · Referenzformat 1280×800 · Referenz-Screenshots im Repo · Govee-Geräte: H6063, H610B, H61A2, H6051.
