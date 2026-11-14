@@ -53,7 +53,7 @@ reproduzierbar (gleiche Songzeit → gleiche Pose, gleiches Licht) und die Logik
 | 6 | Server-Schicht kaum getestet (0–34 %) | mittel | **behoben:** Tests für Token-Erneuerung, Routen-Rahmen, Lyrics-Service, Einstellungen |
 | 7 | `Stage.tsx` bündelte Szene, Regie, Avatare, Bereitschafts-Signal | Wartbarkeit | **behoben:** aufgeteilt in `Stage`, `Director`, `Avatar`, `ReadySignal`, `types` |
 | 8 | Keine einheitliche Formatierung | Wartbarkeit | **behoben:** Prettier + Prüfung in der CI |
-| 9 | Song-Kontext wird im Browser zusammengesetzt; der im Konzept geplante serverseitige Aggregator (`/api/song-context`, SSE, Schnappschuss) fehlt | mittel – Alexa/Pi-Bridge brauchen einen serverseitigen Stand | **offen**, gehört zu Stufe 3 (siehe 4.) |
+| 9 | Song-Kontext wird im Browser zusammengesetzt; ein serverseitiger Stand fehlte | mittel – Alexa braucht einen serverseitigen Stand | **behoben (Stufe 3):** Schnappschuss über `/api/song-context`, Befehle in der Antwort. Die Zusammensetzung bleibt bewusst im Browser (beat-genaue Daten entstehen dort) |
 | 10 | Circuit-Breaker und Speicher-Cache leben pro Serverless-Instanz | niedrig | **offen:** mit Upstash ist der Lyrics-Cache geteilt; der Breaker dient nur dem Schutz vor Dauerfehlern |
 | 11 | Konto-Allowlist ist optional | niedrig (Spotify-Entwicklungsmodus begrenzt ohnehin die Nutzer) | **offen:** `ALLOWED_SPOTIFY_USERS` in Production setzen (README) |
 | 12 | Leistung auf echter Pi-Hardware nicht gemessen | mittel | **offen:** erst mit Gerät messbar; „Auto“ regelt herunter |
@@ -83,7 +83,7 @@ Workflow „Screenshots aktualisieren“ erzeugen.
 
 ## 4. Empfehlungen für die nächsten Stufen
 
-1. **Serverseitiger Song-Kontext-Schnappschuss (vor Stufe 3):** `/api/song-context` speichert pro Nutzer den
+1. ~~**Serverseitiger Song-Kontext-Schnappschuss (vor Stufe 3):**~~ umgesetzt – `/api/song-context` speichert pro Nutzer den
    kompakten Stand (Track, Artists, Abschnitt, Palette, Lichtsignal) in Upstash. Alexa („Welcher Song läuft?“)
    und die Pi-Bridge lesen daraus. Der Browser bleibt Quelle für beat-genaue Daten (WebSocket zur Pi-Bridge).
 2. **Upstash in Production aktivieren:** geteilter Lyrics-Cache über alle Serverless-Instanzen, Grundlage für 1.

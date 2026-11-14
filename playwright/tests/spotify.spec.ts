@@ -47,9 +47,11 @@ test.describe("Spotify-Anbindung", () => {
     expect(res.headers()["location"]).toContain("fehler=ungueltig");
   });
 
-  test("API ohne Anmeldung liefert 401", async ({ request }) => {
+  test("API ohne Anmeldung liefert 401, Alexa ohne Konfiguration 503", async ({ request }) => {
     expect((await request.get("/api/now-playing")).status()).toBe(401);
     expect((await request.post("/api/player/next")).status()).toBe(401);
+    expect((await request.post("/api/song-context", { data: {} })).status()).toBe(401);
+    expect((await request.post("/api/alexa", { data: {} })).status()).toBe(503);
   });
 
   test("laufender Song wird angezeigt, Steuerleiste per Berührung", async ({ page }) => {
@@ -74,6 +76,12 @@ test.describe("Spotify-Anbindung", () => {
     // Steuerleiste erscheint nach Berührung; Offset lässt sich ändern
     await tapControl(page, page.locator('[aria-label="Lyrics später"]'));
     await expect(page.getByTestId("offset")).toHaveText("Lyrics +0,1 s");
+
+    // Lampen-Schalter (Pi-Bridge ist im Test nicht vorhanden → Hinweis)
+    await expect(page.getByTestId("lamps-toggle")).toContainText("Lampen an");
+    await expect(page.getByTestId("lamps-toggle")).toContainText("keine Bridge");
+    await tapControl(page, page.getByTestId("lamps-toggle"));
+    await expect(page.getByTestId("lamps-toggle")).toContainText("Lampen aus");
 
     // 403 von Spotify wird verständlich angezeigt
     await tapControl(page, page.locator('[aria-label="Pause"]'));

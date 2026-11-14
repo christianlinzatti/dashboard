@@ -1,0 +1,63 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "sonic stage",
+      "intents": [
+        { "name": "AMAZON.CancelIntent", "samples": [] },
+        { "name": "AMAZON.HelpIntent", "samples": [] },
+        { "name": "AMAZON.StopIntent", "samples": [] },
+        { "name": "AMAZON.NavigateHomeIntent", "samples": [] },
+        { "name": "AMAZON.FallbackIntent", "samples": [] },
+        {
+          "name": "WelcherSongIntent",
+          "slots": [],
+          "samples": [
+            "welcher Song läuft",
+            "welcher Song läuft gerade",
+            "was läuft gerade",
+            "wie heißt der Song",
+            "was ist das für ein Lied"
+          ]
+        },
+        {
+          "name": "WerSingtIntent",
+          "slots": [],
+          "samples": ["wer singt gerade", "wer singt", "wer ist das", "von wem ist das"]
+        },
+        {
+          "name": "LampenIntent",
+          "slots": [{ "name": "zustand", "type": "ZUSTAND" }],
+          "samples": ["Lampen {zustand}", "Lichter {zustand}", "mach die Lampen {zustand}", "schalte die Lichter {zustand}"]
+        },
+        {
+          "name": "StroboIntent",
+          "slots": [{ "name": "zustand", "type": "ZUSTAND" }],
+          "samples": ["Stroboskop {zustand}", "Strobo {zustand}", "schalte das Stroboskop {zustand}"]
+        },
+        {
+          "name": "QualitaetIntent",
+          "slots": [{ "name": "stufe", "type": "STUFE" }],
+          "samples": ["Qualität {stufe}", "Bühnenqualität {stufe}", "stell die Qualität auf {stufe}"]
+        }
+      ],
+      "types": [
+        {
+          "name": "ZUSTAND",
+          "values": [
+            { "id": "an", "name": { "value": "an", "synonyms": ["ein", "einschalten", "anschalten"] } },
+            { "id": "aus", "name": { "value": "aus", "synonyms": ["ausschalten", "abschalten"] } }
+          ]
+        },
+        {
+          "name": "STUFE",
+          "values": [
+            { "id": "niedrig", "name": { "value": "niedrig", "synonyms": ["gering", "sparsam"] } },
+            { "id": "mittel", "name": { "value": "mittel", "synonyms": ["normal"] } },
+            { "id": "hoch", "name": { "value": "hoch", "synonyms": ["maximal", "beste"] } },
+            { "id": "automatisch", "name": { "value": "automatisch", "synonyms": ["auto"] } }
+          ]
+        }
+      ]
+    }
+  }
+}

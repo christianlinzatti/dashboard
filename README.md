@@ -5,7 +5,15 @@ zeigt den aktuellen Spotify-Song, Lyrics möglichst Wort für Wort und tanzende 
 
 Konzept und Ausbaustufen: [`docs/KONZEPT.md`](docs/KONZEPT.md) · Architektur-Bewertung: [`docs/ARCHITEKTUR.md`](docs/ARCHITEKTUR.md)
 
-**Stand: Meilenstein 8** – Bühne & Licht (Ausbaustufe 2): Podest, Traverse, LED-Rückwand (Farbverlauf,
+**Stand: Stufe 3** – Govee & Alexa:
+- **Pi-Bridge** (`bridge/`, Anleitung in `bridge/README.md`): steuert die Govee-Lampen per LAN-API im Takt
+  des LightDirectors (Rollen puls/akzent/grund), WebSocket nur lokal und nur für das eigene Dashboard.
+- **Alexa-Skill** (`alexa/README.md`): „Welcher Song läuft?“, „Wer singt?“, Lampen/Strobo/Qualität per Sprache;
+  jede Anfrage wird nach Amazons Vorgaben geprüft.
+- **Serverseitiger Song-Kontext:** Das Dashboard meldet seinen Stand an `/api/song-context` und holt dabei
+  Befehle ab (z. B. von Alexa).
+
+M8 – Bühne & Licht (Ausbaustufe 2): Podest, Traverse, LED-Rückwand (Farbverlauf,
 Equalizer aus den Mikro-Frequenzbändern, Gegenlicht), Moving Heads mit Lichtkegeln, Laser-Fächer, Bodennebel,
 Bloom und Strobe bei Drops. Der **LightDirector** (`lib/stage/lights.ts`) wählt die Szene je Abschnitt,
 bewegt die Scheinwerfer im Beat-Raster und wechselt Farben auf Taktanfang; er liefert auch ein
