@@ -1,4 +1,14 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
+
+/**
+ * Steuerleiste einblenden und sofort bedienen. Die Leiste blendet sich nach 6 s aus –
+ * auf langsamen CI-Runnern (Software-Rendering) kann das zwischen zwei Testschritten passieren.
+ */
+async function tapControl(page: Page, control: Locator) {
+  await page.mouse.click(640, 300);
+  await expect(page.getByTestId("controls")).toHaveCSS("opacity", "1");
+  await control.dispatchEvent("click");
+}
 
 const track = {
   id: "e2e-track",
@@ -69,13 +79,11 @@ test.describe("Spotify-Anbindung", () => {
     await expect(page.getByTestId("progress")).toContainText("0:46");
 
     // Steuerleiste erscheint nach Berührung; Offset lässt sich ändern
-    await page.mouse.click(640, 300);
-    await expect(page.getByTestId("controls")).toHaveCSS("opacity", "1");
-    await page.getByRole("button", { name: "Lyrics später" }).click();
+    await tapControl(page, page.getByRole("button", { name: "Lyrics später" }));
     await expect(page.getByTestId("offset")).toHaveText("Lyrics +0,1 s");
 
     // 403 von Spotify wird verständlich angezeigt
-    await page.getByRole("button", { name: "Pause" }).click();
+    await tapControl(page, page.getByRole("button", { name: "Pause" }));
     await expect(page.getByRole("status")).toHaveText("Spotify erlaubt diese Steuerung für die App nicht.");
     expect(calls).toBeGreaterThan(0);
   });

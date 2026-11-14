@@ -25,7 +25,7 @@ test("Mikrofon lässt sich einschalten und liefert Messwerte", async ({ page }) 
   // Ausschalten über die Steuerleiste
   await page.mouse.click(640, 300);
   await expect(page.getByTestId("mic-toggle")).toHaveText("Mikro aus");
-  await page.getByTestId("mic-toggle").click();
+  await page.getByTestId("mic-toggle").dispatchEvent("click");
   await expect(indicator).toHaveCount(0);
   expect(errors).toEqual([]);
 });

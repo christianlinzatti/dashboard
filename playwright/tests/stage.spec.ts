@@ -21,12 +21,17 @@ test.describe("Bühne & Licht", () => {
   test("Qualität und Strobe lassen sich umschalten und bleiben gespeichert", async ({ page }) => {
     await page.goto("/?demo=neonlicht");
     await expect(page.getByTestId("now-playing")).toBeVisible();
+    const tap = async (id: string) => {
+      await page.mouse.click(640, 300);
+      await expect(page.getByTestId("controls")).toHaveCSS("opacity", "1");
+      await page.getByTestId(id).dispatchEvent("click");
+    };
     await page.mouse.click(640, 300);
     await expect(page.getByTestId("quality-toggle")).toHaveText("Qualität: Auto");
-    await page.getByTestId("quality-toggle").click();
+    await tap("quality-toggle");
     await expect(page.getByTestId("quality-toggle")).toHaveText("Qualität: Niedrig");
     await expect(page.locator("[data-quality=niedrig]")).toBeVisible();
-    await page.getByTestId("strobe-toggle").click();
+    await tap("strobe-toggle");
     await expect(page.getByTestId("strobe-toggle")).toHaveText("Strobo aus");
 
     await page.reload();
