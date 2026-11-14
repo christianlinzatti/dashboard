@@ -1,0 +1,97 @@
+import { expect, test, type Page } from "@playwright/test";
+
+/** Wartet, bis 3D-Szene und Schriften fertig sind. */
+async function ready(page: Page, withStage = true) {
+  if (withStage) await page.locator("body[data-stage-ready=true]").waitFor({ timeout: 60_000 });
+  await page.evaluate(() => document.fonts.ready);
+}
+
+function collectErrors(page: Page) {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
+  return errors;
+}
+
+test.describe("Dashboard", () => {
+  test("Startbildschirm ohne Song", async ({ page }) => {
+    const errors = collectErrors(page);
+    await page.goto("/");
+    await expect(page.getByTestId("idle")).toContainText("Kein Song aktiv");
+    await ready(page, false);
+    await expect(page).toHaveScreenshot("leerlauf.png");
+    expect(errors).toEqual([]);
+  });
+
+  test("unbekannte Demo zeigt Hinweis", async ({ page }) => {
+    await page.goto("/?demo=gibtsnicht");
+    await expect(page.getByTestId("idle")).toContainText("„gibtsnicht“ gibt es nicht");
+  });
+
+  test("Feature-Song im Refrain mit Wort-Sync", async ({ page }) => {
+    const errors = collectErrors(page);
+    await page.goto("/?demo=neonlicht&t=46000");
+    await ready(page);
+    await expect(page.getByTestId("now-playing")).toContainText("Neonlicht");
+    await expect(page.getByTestId("now-playing")).toContainText("Mira Sol feat. Kai Vento");
+    await expect(page.getByTestId("lyrics-quality")).toHaveText("Wort-Sync");
+    await expect(page.getByTestId("section")).toHaveText("Refrain");
+    await expect(page.getByTestId("lyrics-current")).toHaveText("bis der Morgen uns zerbricht");
+    await expect(page).toHaveScreenshot("feature-song-refrain.png");
+    expect(errors).toEqual([]);
+  });
+
+  test("Feature-Song: zweiter Sänger in seiner Farbe", async ({ page }) => {
+    await page.goto("/?demo=neonlicht&t=68500");
+    await ready(page);
+    await expect(page.getByTestId("section")).toHaveText("Strophe");
+    await expect(page.getByTestId("lyrics-current")).toHaveText("wir drehen auf, wir geben Gas");
+    await expect(page).toHaveScreenshot("feature-song-zweiter-saenger.png");
+  });
+
+  test("Instrumental-Pause zwischen Zeilen", async ({ page }) => {
+    await page.goto("/?demo=neonlicht&t=36800");
+    await ready(page);
+    await expect(page.getByTestId("lyrics-gap")).toBeVisible();
+    await expect(page).toHaveScreenshot("pause-zwischen-zeilen.png");
+  });
+
+  test("Zeilen-Sync", async ({ page }) => {
+    await page.goto("/?demo=abendrot&t=50000");
+    await ready(page);
+    await expect(page.getByTestId("lyrics-quality")).toHaveText("Zeilen-Sync");
+    await expect(page.getByTestId("lyrics-current")).toHaveText("über's Wasser, Schritt für Schritt");
+    await expect(page).toHaveScreenshot("zeilen-sync.png");
+  });
+
+  test("Song ohne Lyrics", async ({ page }) => {
+    await page.goto("/?demo=instrumental&t=30000");
+    await ready(page);
+    await expect(page.getByTestId("lyrics-none")).toContainText("keine Lyrics");
+    await expect(page.getByTestId("lyrics-quality")).toHaveText("Keine Lyrics");
+    await expect(page).toHaveScreenshot("ohne-lyrics.png");
+  });
+
+  test("Debug-Panel zeigt den Song-Kontext", async ({ page }) => {
+    await page.goto("/?demo=neonlicht&t=46000&debug=1");
+    await ready(page);
+    const panel = page.getByTestId("debug-panel");
+    await expect(panel).toContainText("Song-Kontext");
+    await expect(panel).toContainText('"isChorus": true');
+    await expect(panel).toContainText('"activeSingerId": "demo-mira"');
+  });
+
+  test("laufende Wiedergabe bewegt den Fortschritt", async ({ page }) => {
+    await page.goto("/?demo=neonlicht");
+    await expect(page.getByTestId("progress")).toContainText("0:0");
+    await expect(page.getByTestId("progress")).toContainText("0:02", { timeout: 5_000 });
+  });
+
+  test("Sicherheits-Header sind gesetzt", async ({ request }) => {
+    const res = await request.get("/");
+    const h = res.headers();
+    expect(h["content-security-policy"]).toContain("default-src 'self'");
+    expect(h["permissions-policy"]).toContain("microphone=(self)");
+    expect(h["x-frame-options"]).toBe("DENY");
+  });
+});

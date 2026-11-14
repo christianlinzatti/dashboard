@@ -1,0 +1,42 @@
+import { defineConfig, devices } from "@playwright/test";
+
+const port = Number(process.env.PORT ?? 3100);
+const baseURL = process.env.E2E_BASE_URL ?? `http://127.0.0.1:${port}`;
+
+// Referenz-Screenshots liegen versioniert unter playwright/screenshots/<viewport>/<szenario>.png
+export default defineConfig({
+  testDir: "./playwright/tests",
+  snapshotPathTemplate: "playwright/screenshots/{projectName}/{arg}{ext}",
+  outputDir: "test-results",
+  fullyParallel: true,
+  forbidOnly: !!process.env.CI,
+  retries: process.env.CI ? 1 : 0,
+  reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : "list",
+  expect: {
+    toHaveScreenshot: { maxDiffPixelRatio: 0.02, animations: "disabled", caret: "hide" },
+  },
+  use: {
+    baseURL,
+    trace: "off",
+    locale: "de-DE",
+    timezoneId: "Europe/Berlin",
+    colorScheme: "dark",
+    launchOptions: {
+      // WebGL im Headless-Chromium per Software-Rendering (deterministisch)
+      args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"],
+    },
+  },
+  projects: [
+    { name: "1280x800", use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1 } },
+    { name: "1024x600", use: { ...devices["Desktop Chrome"], viewport: { width: 1024, height: 600 }, deviceScaleFactor: 1 } },
+    { name: "1920x1200", use: { ...devices["Desktop Chrome"], viewport: { width: 1920, height: 1200 }, deviceScaleFactor: 1 } },
+  ],
+  webServer: process.env.E2E_BASE_URL
+    ? undefined
+    : {
+        command: `npx next start -p ${port}`,
+        url: baseURL,
+        reuseExistingServer: !process.env.CI,
+        timeout: 120_000,
+      },
+});

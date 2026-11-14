@@ -1,0 +1,44 @@
+name: Screenshots aktualisieren
+
+# Manuell starten (Actions → „Screenshots aktualisieren“ → Branch wählen).
+# Erzeugt die Referenz-Screenshots im CI-Container neu und committet sie auf den Branch.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  update:
+    name: Referenz-Screenshots neu erzeugen
+    if: github.ref != 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Screenshots erzeugen
+        run: npx playwright test --trace off --update-snapshots
+        env:
+          CI: "true"
+      - name: Committen, falls sich etwas geändert hat
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add playwright/screenshots
+          if git diff --cached --quiet; then
+            echo "Keine Änderungen an den Screenshots."
+          else
+            git commit -m "test: Referenz-Screenshots aktualisiert"
+            git push
+          fi

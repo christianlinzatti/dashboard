@@ -1,0 +1,47 @@
+@import "tailwindcss";
+@import "@fontsource-variable/inter";
+
+@theme {
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+}
+
+:root {
+  /* werden pro Song aus der Cover-Palette überschrieben */
+  --c-dominant: #7b2cff;
+  --c-accent: #ff4fd8;
+  --c-dark: #0b0712;
+  --c-light: #f3e8ff;
+  --c-singer: var(--c-accent);
+}
+
+html,
+body {
+  height: 100%;
+  background: #05030a;
+  color: #fff;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  cursor: none;
+}
+
+/* Karaoke-Füllung: --p (0..1) wird pro Frame direkt gesetzt, ohne React-Rerender */
+.word-fill {
+  background-image: linear-gradient(
+    90deg,
+    var(--c-singer) calc(var(--p, 0) * 100%),
+    rgb(255 255 255 / 0.35) calc(var(--p, 0) * 100%)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.lyric-glow {
+  text-shadow: 0 0 0.35em color-mix(in srgb, var(--c-singer) 55%, transparent);
+}
+
+@keyframes dot {
+  0%, 100% { opacity: 0.25; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1); }
+}

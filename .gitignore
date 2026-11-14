@@ -1,0 +1,15 @@
+node_modules/
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+.vercel
+.env*
+!.env.example
+# generiert aus /avatars (scripts/optimize-avatars.mjs)
+public/avatars/
+# Playwright
+test-results/
+playwright-report/
+blob-report/
+coverage/

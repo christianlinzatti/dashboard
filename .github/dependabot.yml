@@ -1,0 +1,21 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      react-three:
+        patterns: ["three", "@types/three", "@react-three/*"]
+      next-react:
+        patterns: ["next", "react", "react-dom", "@types/react*", "eslint-config-next"]
+    ignore:
+      # Version muss zum Container-Image in e2e.yml passen – gemeinsam von Hand aktualisieren
+      - dependency-name: "@playwright/test"
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
