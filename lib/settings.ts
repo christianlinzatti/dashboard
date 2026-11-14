@@ -8,10 +8,12 @@ export type Settings = {
   quality: Quality | "auto";
   /** Stroboskop-Blitze bei Drops (Fotosensitivität) */
   strobe: boolean;
+  /** Externe Lampen (Govee über die Pi-Bridge) ansteuern */
+  lamps: boolean;
 };
 
 const KEY = "ss_settings";
-const defaults: Settings = { quality: "auto", strobe: true };
+const defaults: Settings = { quality: "auto", strobe: true, lamps: true };
 
 function load(): Settings {
   try {
@@ -22,6 +24,7 @@ function load(): Settings {
           ? (raw.quality as Settings["quality"])
           : defaults.quality,
       strobe: typeof raw.strobe === "boolean" ? raw.strobe : defaults.strobe,
+      lamps: typeof raw.lamps === "boolean" ? raw.lamps : defaults.lamps,
     };
   } catch {
     return defaults;
@@ -33,8 +36,8 @@ export const settings = createStore<Settings & { set(p: Partial<Settings>): void
   set(p) {
     set(p);
     try {
-      const { quality, strobe } = get();
-      localStorage.setItem(KEY, JSON.stringify({ quality, strobe }));
+      const { quality, strobe, lamps } = get();
+      localStorage.setItem(KEY, JSON.stringify({ quality, strobe, lamps }));
     } catch {
       /* privater Modus */
     }

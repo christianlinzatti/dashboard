@@ -5,6 +5,7 @@ import { songContext, useSongContext } from "@/lib/song-context/store";
 import { POLL_NOW_EVENT } from "../spotify/useSpotifySync";
 import type { MicState } from "@/lib/song-context/schema";
 import { useSettings } from "@/lib/settings";
+import { useBridgeState } from "../bridge/useBridge";
 import type { Quality } from "@/lib/stage/quality";
 
 const QUALITY_CYCLE: Array<Quality | "auto"> = ["auto", "niedrig", "mittel", "hoch"];
@@ -42,6 +43,8 @@ export function Controls({ live, mic }: { live: boolean; mic?: { state: MicState
   const hideTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const quality = useSettings((s) => s.quality);
   const strobe = useSettings((s) => s.strobe);
+  const lamps = useSettings((s) => s.lamps);
+  const bridge = useBridgeState((s) => s.state);
   const setSettings = useSettings((s) => s.set);
 
   useEffect(() => {
@@ -148,6 +151,18 @@ export function Controls({ live, mic }: { live: boolean; mic?: { state: MicState
         >
           Strobo {strobe ? "an" : "aus"}
         </button>
+        {live && (
+          <button
+            className={btn}
+            data-testid="lamps-toggle"
+            aria-pressed={lamps}
+            title={bridge === "verbunden" ? "Pi-Bridge verbunden" : "Pi-Bridge nicht erreichbar"}
+            onClick={() => setSettings({ lamps: !lamps })}
+          >
+            Lampen {lamps ? "an" : "aus"}
+            {bridge !== "verbunden" && <span className="ml-2 text-[0.75em] text-white/50">(keine Bridge)</span>}
+          </button>
+        )}
         {mic && (
           <button className={btn} onClick={mic.toggle} data-testid="mic-toggle" aria-pressed={mic.state === "aktiv"}>
             {micLabel[mic.state]}

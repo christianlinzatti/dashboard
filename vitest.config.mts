@@ -13,9 +13,9 @@ export default defineConfig({
     environment: "node",
     coverage: {
       provider: "v8",
-      include: ["lib/**"],
+      include: ["lib/**/*.ts", "bridge/**/*.ts"],
       // nur im Browser lauffähig (Web Audio) bzw. reine Testdaten
-      exclude: ["lib/audio/mic.ts", "lib/song-context/fixtures/**"],
+      exclude: ["lib/audio/mic.ts", "lib/song-context/fixtures/**", "bridge/main.ts"],
       reporter: ["text-summary", "json-summary", "html"],
       // CI schlägt fehl, wenn die Abdeckung der Fachlogik sinkt
       thresholds: { statements: 88, branches: 78, functions: 85, lines: 90 },

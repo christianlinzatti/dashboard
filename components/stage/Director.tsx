@@ -9,6 +9,7 @@ import { settings } from "@/lib/settings";
 import type { SongStatic } from "@/lib/song-context/schema";
 import { songContext } from "@/lib/song-context/store";
 import { lightsAt, type LightFrame } from "@/lib/stage/lights";
+import { lightBus } from "@/lib/stage/light-bus";
 import type { Frame } from "./types";
 
 /** Berechnet pro Frame Songzeit, Positionen, Fokus (Sänger) und Kamera. Läuft vor den Avataren. */
@@ -67,6 +68,7 @@ export function Director({ song, choreo, frameRef, lightsRef, heads, strobeRef }
       strobeAllowed: settings.getState().strobe,
     });
     lightsRef.current = lf;
+    lightBus.publish(lf);
     if (strobeRef.current) strobeRef.current.style.opacity = String(lf.strobe * 0.55);
 
     const cam = cameraAt(choreo, t);

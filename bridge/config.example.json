@@ -1,0 +1,10 @@
+{
+  "allowedOrigins": ["https://dein-projekt.vercel.app"],
+  "port": 8787,
+  "lamps": [
+    { "name": "LED-Strip", "sku": "H61A2", "role": "puls" },
+    { "name": "Strip 2", "sku": "H610B", "role": "puls" },
+    { "name": "Wandleuchte", "sku": "H6063", "role": "akzent" },
+    { "name": "Tischlampe", "sku": "H6051", "role": "grund" }
+  ]
+}

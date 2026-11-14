@@ -1,0 +1,22 @@
+# systemd-Dienst für die Pi-Bridge
+#   sudo cp bridge/sonic-bridge.service /etc/systemd/system/
+#   sudo systemctl enable --now sonic-bridge
+[Unit]
+Description=Sonic Stage Pi-Bridge (Govee-Lampen)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=pi
+WorkingDirectory=/home/pi/dashboard
+ExecStart=/usr/bin/node bridge/main.ts bridge/config.json
+Restart=always
+RestartSec=5
+# Härtung: nur das Nötigste
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

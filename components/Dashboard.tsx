@@ -12,6 +12,8 @@ import { DebugPanel } from "./debug/DebugPanel";
 import { Controls } from "./hud/Controls";
 import { useSpotifySync } from "./spotify/useSpotifySync";
 import { settings } from "@/lib/settings";
+import { useSnapshotReporter } from "./live/useSnapshotReporter";
+import { useBridge } from "./bridge/useBridge";
 import { useLyricsLoader } from "./lyrics/useLyricsLoader";
 import { useMicAnalysis } from "./audio/useMicAnalysis";
 import type { LyricsMode } from "@/lib/lyrics/director";
@@ -35,6 +37,10 @@ export function Dashboard({ demo, t, debug, loginError, mic, lyricsMode, quality
   // Ohne Demo: Live-Betrieb mit Spotify
   const status = useSpotifySync(demo === undefined);
   useLyricsLoader(demo === undefined);
+  // Stand an den Server melden (Alexa, Pi-Bridge) und Befehle abholen
+  useSnapshotReporter(demo === undefined);
+  // Lichtszene an die Pi-Bridge (Govee-Lampen); in Demos aus
+  useBridge(demo === undefined);
   // Mikrofon: im Live-Betrieb; in Demos nur mit ?mic=1 (Screenshots bleiben reproduzierbar)
   const micCtl = useMicAnalysis(demo === undefined || !!mic);
 

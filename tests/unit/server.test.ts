@@ -184,7 +184,7 @@ describe("Geräte-Einstellungen", () => {
     });
     const { settings } = await import("@/lib/settings");
     settings.getState().set({ quality: "hoch", strobe: false });
-    expect(JSON.parse(store.get("ss_settings")!)).toEqual({ quality: "hoch", strobe: false });
+    expect(JSON.parse(store.get("ss_settings")!)).toEqual({ quality: "hoch", strobe: false, lamps: true });
     store.set("ss_settings", JSON.stringify({ quality: "ultra", strobe: "ja" }));
     settings.getState().hydrate();
     expect(settings.getState()).toMatchObject({ quality: "auto", strobe: true });
