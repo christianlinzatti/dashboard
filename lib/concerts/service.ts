@@ -5,12 +5,14 @@ import { normalizeLine } from "@/lib/lyrics/text";
 import type { Concert } from "@/lib/song-context/schema";
 import { home } from "./geo";
 import { mergeEvents } from "./merge";
-import { bandsintown, lastSetlist, ticketmaster, type LastSetlist } from "./providers";
+import { bandsintown, lastSetlist, oeticket, ticketmaster, type LastSetlist } from "./providers";
 import type { ConcertProvider, RawEvent } from "./types";
 
 /** Aktive Konzert-Provider (nur die mit Zugangsdaten). */
 export function concertProviders(env: Record<string, string | undefined> = process.env): ConcertProvider[] {
   return [
+    // oeticket braucht keinen Key; mit OETICKET=0 abschaltbar
+    ...(env.OETICKET !== "0" ? [oeticket()] : []),
     ...(env.TICKETMASTER_API_KEY ? [ticketmaster(env.TICKETMASTER_API_KEY)] : []),
     ...(env.BANDSINTOWN_APP_ID ? [bandsintown(env.BANDSINTOWN_APP_ID)] : []),
   ];
@@ -33,13 +35,17 @@ export function createConcertService(deps: {
       const key = `concerts:v1:${normalizeLine(a.name)}`;
       let lists = await deps.cache.get<Array<{ provider: { id: string; ticketPriority: number }; events: RawEvent[] }>>(key);
       if (!lists) {
-        const results = await Promise.allSettled(deps.providers.map((p) => p.events(a.name, signal)));
+        // je Quelle höchstens 8 s, damit eine hängende Schnittstelle die Karte nicht blockiert
+        const timeout = AbortSignal.timeout(8000);
+        const sig = signal ? AbortSignal.any([signal, timeout]) : timeout;
+        const results = await Promise.allSettled(deps.providers.map((p) => p.events(a.name, sig)));
         lists = deps.providers.flatMap((p, i) => {
           const r = results[i]!;
           return r.status === "fulfilled" ? [{ provider: { id: p.id, ticketPriority: p.ticketPriority }, events: r.value }] : [];
         });
-        // nur cachen, wenn alle Quellen geantwortet haben
-        if (results.every((r) => r.status === "fulfilled")) await deps.cache.set(key, lists, CACHE_TTL.concerts);
+        // vollständig: 12 h; fehlt eine Quelle (z. B. Bot-Sperre), nur kurz – dann neuer Versuch
+        const complete = results.every((r) => r.status === "fulfilled");
+        await deps.cache.set(key, lists, complete ? CACHE_TTL.concerts : CACHE_TTL.concertsPartial);
       }
       all.push(...mergeEvents(a, lists, { today, home: home() }));
 

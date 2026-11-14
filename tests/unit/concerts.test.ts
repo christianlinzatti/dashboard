@@ -1,7 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import { distanceKm, home } from "@/lib/concerts/geo";
 import { mergeEvents } from "@/lib/concerts/merge";
-import { bandsintown, lastSetlist, ticketmaster } from "@/lib/concerts/providers";
+import { bandsintown, isOeticketMatch, lastSetlist, oeticket, ticketmaster } from "@/lib/concerts/providers";
+import oeRoy from "../fixtures/oeticket/roy-bianco.json";
+import oeColdplay from "../fixtures/oeticket/coldplay.json";
+import oeFallback from "../fixtures/oeticket/fallback-paul-van-dyk.json";
 import { concertProviders, createConcertService } from "@/lib/concerts/service";
 import {
   concertCardAt,
@@ -14,6 +17,7 @@ import {
 } from "@/lib/concerts/display";
 import { cardShownAt, infoCardAt } from "@/lib/info/display";
 import { memoryCache } from "@/lib/lyrics/cache";
+import { CACHE_TTL } from "@/lib/cache-policy";
 import { fixtures } from "@/lib/song-context/fixtures";
 import type { Derived } from "@/lib/song-context/schema";
 import type { RawEvent } from "@/lib/concerts/types";
@@ -181,6 +185,58 @@ describe("Bandsintown", () => {
   });
 });
 
+describe("oeticket (echte Antworten der Eventim-Such-API)", () => {
+  it("eigene Konzerte und Festival-Lineup, Ortszeit, Koordinaten, Ticket-Link", async () => {
+    const http = vi.fn<Http>(async () => ok(oeRoy));
+    const out = await oeticket(http).events("Roy Bianco & Die Abbrunzati Boys");
+    const url = new URL(http.mock.calls[0]![0]);
+    expect(url.searchParams.get("webId")).toBe("web__oeticket-at");
+    expect(url.searchParams.get("search_term")).toBe("Roy Bianco & Die Abbrunzati Boys");
+    expect(out.map((e) => e.city)).toEqual(["Saalbach", "Wien", "Salzburg", "Düsseldorf"]);
+    expect(out[1]).toMatchObject({
+      date: "2027-09-30",
+      time: "19:00",
+      venue: "Wiener Stadthalle - Halle D",
+      lat: 48.2024112,
+      ticketUrl: expect.stringContaining("oeticket.com/event/"),
+      cancelled: false,
+    });
+    expect(http).toHaveBeenCalledTimes(1); // nur eine Seite vorhanden
+  });
+  it("Tribute-Show mit Künstlernamen im Titel zählt nicht", async () => {
+    expect(await oeticket(async () => ok(oeColdplay)).events("Coldplay")).toEqual([]);
+  });
+  it("unscharfe Ersatzsuche liefert keine Termine und keine weiteren Seiten", async () => {
+    const http = vi.fn<Http>(async () => ok(oeFallback));
+    expect(await oeticket(http).events("Paul van Dyk")).toEqual([]);
+    expect(oeFallback.totalPages).toBeGreaterThan(1);
+    expect(http).toHaveBeenCalledTimes(1);
+  });
+  it("Titel-Regel ohne Attraktion; Absage erkannt; Fehler", async () => {
+    expect(isOeticketMatch({ name: "KMFDM - Europe 2026", attractions: [] }, "KMFDM")).toBe(true);
+    expect(isOeticketMatch({ name: "Severina @ Pula", attractions: [] }, "Severina")).toBe(true);
+    expect(isOeticketMatch({ name: "KMFDMX", attractions: [] }, "KMFDM")).toBe(false);
+    const cancelled = {
+      totalPages: 1,
+      products: [
+        {
+          name: "KMFDM - Europe 2026",
+          status: "Cancelled",
+          typeAttributes: { liveEntertainment: { startDate: "2026-12-08T20:00:00+01:00", location: { city: "Leipzig" } } },
+        },
+      ],
+    };
+    expect((await oeticket(async () => ok(cancelled)).events("KMFDM"))[0]!.cancelled).toBe(true);
+    await expect(oeticket(async () => new Response("Access Denied", { status: 403 })).events("X")).rejects.toThrow("403");
+  });
+  it("blättert bis zur letzten Seite (höchstens 2)", async () => {
+    const page = { totalPages: 5, products: [] };
+    const http = vi.fn<Http>(async () => ok(page));
+    await oeticket(http).events("X");
+    expect(http).toHaveBeenCalledTimes(2);
+  });
+});
+
 describe("setlist.fm", () => {
   it("letzte Setlist mit Songs, Datum umgestellt, x-api-key gesetzt", async () => {
     const http = vi.fn<Http>(async () =>
@@ -211,16 +267,19 @@ describe("setlist.fm", () => {
 
 describe("Konzert-Dienst", () => {
   it("Provider nur mit Zugangsdaten", () => {
-    expect(concertProviders({}).map((p) => p.id)).toEqual([]);
+    expect(concertProviders({}).map((p) => p.id)).toEqual(["oeticket"]);
+    expect(concertProviders({ OETICKET: "0" }).map((p) => p.id)).toEqual([]);
     expect(concertProviders({ TICKETMASTER_API_KEY: "k", BANDSINTOWN_APP_ID: "a" }).map((p) => p.id)).toEqual([
+      "oeticket",
       "ticketmaster",
       "bandsintown",
     ]);
   });
-  it("cacht nur vollständige Antworten; Setlist mit Cache", async () => {
+  it("Teilergebnisse nur kurz, vollständige lange gecacht; Setlist mit Cache", async () => {
     const good = { id: "g", ticketPriority: 1, events: vi.fn(async () => [ev({ provider: "g" })]) };
     const bad = { id: "b", ticketPriority: 2, events: vi.fn(async (): Promise<RawEvent[]> => Promise.reject(new Error("x"))) };
     const cache = memoryCache();
+    const setSpy = vi.spyOn(cache, "set");
     const setlistFetch = vi.fn(async () =>
       ok({ setlist: [{ eventDate: "01-10-2026", artist: { name: "A" }, sets: { set: [{ song: [{ name: "S" }] }] } }] }),
     );
@@ -229,13 +288,17 @@ describe("Konzert-Dienst", () => {
     expect(r1.concerts).toHaveLength(1);
     expect(r1.setlists.a1?.songs).toEqual(["S"]);
     await svc([{ id: "a1", name: "A" }]);
-    expect(good.events).toHaveBeenCalledTimes(2); // teilweiser Ausfall → nicht gecacht
+    expect(good.events).toHaveBeenCalledTimes(1); // Teilergebnis aus dem Cache
+    expect(setSpy).toHaveBeenCalledWith("concerts:v1:a", expect.anything(), CACHE_TTL.concertsPartial);
     expect(setlistFetch).toHaveBeenCalledTimes(1);
 
-    const svc2 = createConcertService({ providers: [good], cache: memoryCache(), today: () => "2026-11-14" });
+    const cache2 = memoryCache();
+    const setSpy2 = vi.spyOn(cache2, "set");
+    const svc2 = createConcertService({ providers: [good], cache: cache2, today: () => "2026-11-14" });
     await svc2([{ id: "a1", name: "A" }]);
     await svc2([{ id: "a1", name: "A" }]);
-    expect(good.events).toHaveBeenCalledTimes(3);
+    expect(good.events).toHaveBeenCalledTimes(2);
+    expect(setSpy2).toHaveBeenCalledWith("concerts:v1:a", expect.anything(), CACHE_TTL.concerts);
   });
   it("Setlist-Fehler wird ignoriert", async () => {
     const svc = createConcertService({

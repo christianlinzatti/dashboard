@@ -8,8 +8,10 @@ Konzept und Ausbaustufen: [`docs/KONZEPT.md`](docs/KONZEPT.md) · Architektur-Be
 **Stand: Stufe 5b** – Konzerte: In den letzten 15 Sekunden eines Songs zeigt eine **Konzertkarte** die nächsten
 Termine der Artists. Termine im Umkreis von Wien (`CONCERT_RADIUS_KM`, Standard 200 km) stehen zuerst. Die Karte
 zeigt Countdown („in 21 Tagen“), **ausverkauft** und einen **QR-Code zum Ticket**. Dazu kommt „Zuletzt live …
-– dieser Song war dabei“ aus setlist.fm. Quellen sind Ticketmaster (`TICKETMASTER_API_KEY`) und Bandsintown
-(`BANDSINTOWN_APP_ID`). Doppelte Termine werden zusammengeführt, die Daten 12 Stunden gecacht. setlist.fm braucht
+– dieser Song war dabei“ aus setlist.fm. Quellen sind **oeticket** (inoffizielle Eventim-Suche, ohne Key; `OETICKET=0`
+schaltet ab), Ticketmaster (`TICKETMASTER_API_KEY`) und Bandsintown (`BANDSINTOWN_APP_ID`). Ticket-Links kommen
+bevorzugt von oeticket. Gezählt wird ein Termin nur, wenn der Künstler wirklich auftritt; Tribute-Shows und
+unscharfe Suchtreffer fallen weg. Doppelte Termine werden zusammengeführt, die Daten 12 Stunden gecacht. setlist.fm braucht
 `SETLISTFM_API_KEY`. Ohne Schlüssel bleibt die Karte einfach weg.
 
 Stufe 5a – Persönliches: **zuletzt gehört** (Last.fm, sonst Spotify) auf dem Startbildschirm,
@@ -146,7 +148,7 @@ Arbeitsspeicher einzelner, kurzlebiger Server-Instanzen. Deshalb **Upstash Redis
 |---|---|
 | Lyrics (gefunden / nicht gefunden) | 180 Tage / 3 Tage |
 | Band-Infos und Fotos (gefunden / nicht gefunden) | 30 Tage / 3 Tage |
-| Konzerttermine / letzte Setlist | 12 Stunden / 3 Tage |
+| Konzerttermine (alle Quellen / eine Quelle ausgefallen) / letzte Setlist | 12 Stunden / 30 Minuten / 3 Tage |
 | Dashboard-Stand für Alexa (persönlich) | 2 Stunden |
 | Befehle (z. B. von Alexa) | 5 Minuten |
 

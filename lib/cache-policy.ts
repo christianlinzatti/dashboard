@@ -15,6 +15,8 @@ export const CACHE_TTL = {
   infoMissing: 3 * DAY,
   /** Konzerttermine: neue Termine/Ausverkauft-Status ändern sich laufend */
   concerts: 12 * 3600,
+  /** Teilergebnis (eine Konzert-Quelle ausgefallen/gesperrt): bald neu versuchen, aber nicht bei jedem Song */
+  concertsPartial: 30 * 60,
   /** letzte Setlist einer Tour */
   setlist: 3 * DAY,
   /** Hörstand für Alexa – persönliche Daten, bewusst kurz */

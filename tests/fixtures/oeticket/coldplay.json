@@ -1,0 +1,151 @@
+{
+  "page": 1,
+  "products": [
+    {
+      "categories": [
+        {
+          "name": "Konzerte"
+        },
+        {
+          "name": "Rock & Pop",
+          "parentCategory": {
+            "name": "Konzerte"
+          }
+        }
+      ],
+      "currency": "EUR",
+      "hasRecommendation": false,
+      "imageUrl": "https://www.oeticket.com/obj/media/AT-eventim/teaser/222x222/2026/Coldplay_Musik_bei_Kerzenschein_2026_222.jpg",
+      "inStock": true,
+      "link": "https://www.oeticket.com/event/coldplay-musik-bei-kerzenschein-kultur-kongress-zentrum-eisenstadt-21983571/",
+      "name": "Coldplay Musik bei Kerzenschein",
+      "price": 39.9,
+      "productGroupId": "4141963",
+      "productId": "21983571",
+      "promoter": {
+        "id": "1482094",
+        "name": "80:AZ Event Production"
+      },
+      "status": "Available",
+      "tags": ["TICKETDIRECT", "WILL_CALL"],
+      "type": "LiveEntertainment",
+      "typeAttributes": {
+        "liveEntertainment": {
+          "location": {
+            "city": "Eisenstadt",
+            "geoLocation": {
+              "latitude": 47.84730484321319,
+              "longitude": 16.527487851760117
+            },
+            "name": "Kultur Kongress Zentrum Eisenstadt",
+            "postalCode": "7000"
+          },
+          "startDate": "2026-11-15T19:00:00+01:00"
+        }
+      },
+      "url": {
+        "domain": "https://www.oeticket.com",
+        "path": "/event/coldplay-musik-bei-kerzenschein-kultur-kongress-zentrum-eisenstadt-21983571/"
+      }
+    },
+    {
+      "categories": [
+        {
+          "name": "Konzerte"
+        },
+        {
+          "name": "Rock & Pop",
+          "parentCategory": {
+            "name": "Konzerte"
+          }
+        }
+      ],
+      "currency": "EUR",
+      "hasRecommendation": false,
+      "imageUrl": "https://www.oeticket.com/obj/media/AT-eventim/teaser/222x222/2026/Coldplay_Musik_bei_Kerzenschein_2026_222.jpg",
+      "inStock": true,
+      "link": "https://www.oeticket.com/event/coldplay-musik-bei-kerzenschein-innsbruck-vz-novum-21983546/",
+      "name": "Coldplay Musik bei Kerzenschein",
+      "price": 39.9,
+      "productGroupId": "4141963",
+      "productId": "21983546",
+      "promoter": {
+        "id": "1482094",
+        "name": "80:AZ Event Production"
+      },
+      "status": "Available",
+      "tags": ["TICKETDIRECT", "WILL_CALL", "RESALE"],
+      "type": "LiveEntertainment",
+      "typeAttributes": {
+        "liveEntertainment": {
+          "location": {
+            "city": "Innsbruck",
+            "geoLocation": {
+              "latitude": 47.266666679501704,
+              "longitude": 11.40000001562149
+            },
+            "name": "Innsbruck VZ Novum",
+            "postalCode": "6020"
+          },
+          "startDate": "2026-11-19T19:00:00+01:00"
+        }
+      },
+      "url": {
+        "domain": "https://www.oeticket.com",
+        "path": "/event/coldplay-musik-bei-kerzenschein-innsbruck-vz-novum-21983546/"
+      }
+    },
+    {
+      "categories": [
+        {
+          "name": "Konzerte"
+        },
+        {
+          "name": "Rock & Pop",
+          "parentCategory": {
+            "name": "Konzerte"
+          }
+        }
+      ],
+      "currency": "EUR",
+      "hasRecommendation": false,
+      "imageUrl": "https://www.oeticket.com/obj/media/AT-eventim/teaser/222x222/2026/Coldplay_Musik_bei_Kerzenschein_2026_222.jpg",
+      "inStock": true,
+      "link": "https://www.oeticket.com/event/coldplay-musik-bei-kerzenschein-sparkassensaal-wiener-neustadt-21983347/",
+      "name": "Coldplay Musik bei Kerzenschein",
+      "price": 39.9,
+      "productGroupId": "4141963",
+      "productId": "21983347",
+      "promoter": {
+        "id": "1482094",
+        "name": "80:AZ Event Production"
+      },
+      "status": "Available",
+      "tags": ["TICKETDIRECT", "WILL_CALL"],
+      "type": "LiveEntertainment",
+      "typeAttributes": {
+        "liveEntertainment": {
+          "location": {
+            "city": "Wiener Neustadt",
+            "geoLocation": {
+              "latitude": 47.8166669725141,
+              "longitude": 16.249999974269695
+            },
+            "name": "Sparkassensaal Wiener Neustadt",
+            "postalCode": "2700",
+            "state": "Wien"
+          },
+          "startDate": "2026-12-16T19:00:00+01:00"
+        }
+      },
+      "url": {
+        "domain": "https://www.oeticket.com",
+        "path": "/event/coldplay-musik-bei-kerzenschein-sparkassensaal-wiener-neustadt-21983347/"
+      }
+    }
+  ],
+  "results": 3,
+  "searchTerm": "Coldplay",
+  "totalPages": 1,
+  "totalResults": 3
+}

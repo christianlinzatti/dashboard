@@ -1,0 +1,371 @@
+{
+  "fallbackSearch": "phonetic",
+  "page": 1,
+  "products": [
+    {
+      "attractions": [
+        {
+          "name": "Theater Heuschreck"
+        }
+      ],
+      "categories": [
+        {
+          "name": "Freizeit"
+        },
+        {
+          "name": "Kinder",
+          "parentCategory": {
+            "name": "Freizeit"
+          }
+        },
+        {
+          "name": "Musical & Show"
+        },
+        {
+          "name": "Musical",
+          "parentCategory": {
+            "name": "Musical & Show"
+          }
+        }
+      ],
+      "currency": "EUR",
+      "description": "Musical für die ganze Familie - ein fantastisches Heuschreck-Umweltabenteuer für kleine & große Menschen",
+      "hasRecommendation": false,
+      "imageUrl": "https://www.oeticket.com/obj/media/AT-eventim/teaser/222x222/2026/Ein_ganz_besonderer_Tag_tickets_2026_m.jpg",
+      "inStock": true,
+      "link": "https://www.oeticket.com/event/ein-ganz-besonderer-tag-nachricht-vom-baum-theater-heuschreck-lorely-saal-21873187/",
+      "name": "Ein ganz besonderer Tag - Nachricht vom Baum",
+      "price": 30.4,
+      "productGroupId": "1857585",
+      "productId": "21873187",
+      "promoter": {
+        "id": "356541",
+        "name": "82:Theater Heuschreck"
+      },
+      "rating": {
+        "average": 5.0,
+        "count": 3
+      },
+      "status": "Available",
+      "tags": ["TICKETDIRECT", "WILL_CALL"],
+      "type": "LiveEntertainment",
+      "typeAttributes": {
+        "liveEntertainment": {
+          "location": {
+            "city": "Wien",
+            "geoLocation": {
+              "latitude": 48.30499998992391,
+              "longitude": 16.327000001540444
+            },
+            "name": "Lorely-Saal",
+            "postalCode": "1140"
+          },
+          "startDate": "2026-11-15T14:00:00+01:00"
+        }
+      },
+      "url": {
+        "domain": "https://www.oeticket.com",
+        "path": "/event/ein-ganz-besonderer-tag-nachricht-vom-baum-theater-heuschreck-lorely-saal-21873187/"
+      }
+    },
+    {
+      "attractions": [
+        {
+          "name": "Alte Bekannte"
+        }
+      ],
+      "categories": [
+        {
+          "name": "Konzerte"
+        },
+        {
+          "name": "Volksmusik & Schlager",
+          "parentCategory": {
+            "name": "Konzerte"
+          }
+        }
+      ],
+      "currency": "EUR",
+      "description": "ALTE BEKANNTE präsentieren eine Weihnachtsedition, die traditionelle Lieder und eigene weihnachtliche Songs in einem besinnlichen und fröhlichen Rahmen bietet.",
+      "hasRecommendation": false,
+      "imageUrl": "https://www.oeticket.com/obj/media/AT-eventim/teaser/222x222/2024/Alte_Bekannte_neues_programm_tickets_2024_c_MM_Konzerte_m.jpg",
+      "inStock": true,
+      "link": "https://www.oeticket.com/event/alte-bekannte-mehr-2025-2026-weihnachtsedition-ballhaus-zum-fidelen-anreischken-21142030/",
+      "name": "Alte Bekannte Mehr! - Live - Weihnachtsedition",
+      "price": 36.75,
+      "productGroupId": "3482508",
+      "productId": "21142030",
+      "promoter": {
+        "id": "356953",
+        "name": "MM Konzerte GmbH"
+      },
+      "rating": {
+        "average": 5.0,
+        "count": 1
+      },
+      "status": "Available",
+      "tags": ["TICKETDIRECT", "FANTICKET", "HIDDEN_FOR_RESALE"],
+      "type": "LiveEntertainment",
+      "typeAttributes": {
+        "liveEntertainment": {
+          "location": {
+            "city": "Duderstadt",
+            "name": "Ballhaus Zum fidelen Anreischken",
+            "postalCode": "37115"
+          },
+          "startDate": "2026-11-28T20:00:00+01:00"
+        }
+      },
+      "url": {
+        "domain": "https://www.oeticket.com",
+        "path": "/event/alte-bekannte-mehr-2025-2026-weihnachtsedition-ballhaus-zum-fidelen-anreischken-21142030/"
+      }
+    },
+    {
+      "attractions": [
+        {
+          "name": "Paul Pizzera, Gabi Hiller & Philipp Hansa"
+        }
+      ],
+      "categories": [
+        {
+          "name": "Kabarett & Comedy"
+        },
+        {
+          "name": "Kabarett",
+          "parentCategory": {
+            "name": "Kabarett & Comedy"
+          }
+        },
+        {
+          "name": "Musical & Show"
+        },
+        {
+          "name": "Podcasts",
+          "parentCategory": {
+            "name": "Musical & Show"
+          }
+        }
+      ],
+      "description": "\"Hawi D´Ehre\" ist der Podcast für Jedermann und jede Frau, der oder die gerne über das Leben nachdenkt und -hört.",
+      "hasRecommendation": false,
+      "imageUrl": "https://www.oeticket.com/obj/media/AT-eventim/teaser/222x222/2022/hawe-dehre-c-moritz-schell-tickets-2022-m.jpg",
+      "inStock": false,
+      "link": "https://www.oeticket.com/event/hawi-dehre-live-paul-pizzera-gabi-hiller-philipp-hansa-musiktheater-am-volksgarten-21603867/",
+      "name": "Hawi D’Ehre - Live! - Weihnachtsspecial!",
+      "productGroupId": "3220298",
+      "productId": "21603867",
+      "promoter": {
+        "id": "1433933",
+        "name": "OÖ. Theater und Orchester GmbH"
+      },
+      "rating": {
+        "average": 4.5640997886657715,
+        "count": 39
+      },
+      "status": "Available",
+      "type": "LiveEntertainment",
+      "typeAttributes": {
+        "liveEntertainment": {
+          "location": {
+            "city": "Linz",
+            "geoLocation": {
+              "latitude": 48.294822033407506,
+              "longitude": 14.2931039
+            },
+            "name": "Musiktheater am Volksgarten",
+            "postalCode": "4020"
+          },
+          "startDate": "2026-12-12T20:00:00+01:00"
+        }
+      },
+      "url": {
+        "domain": "https://www.oeticket.com",
+        "path": "/event/hawi-dehre-live-paul-pizzera-gabi-hiller-philipp-hansa-musiktheater-am-volksgarten-21603867/"
+      }
+    },
+    {
+      "attractions": [
+        {
+          "name": "Paula Lambert"
+        }
+      ],
+      "categories": [
+        {
+          "name": "Kultur"
+        },
+        {
+          "name": "Literatur",
+          "parentCategory": {
+            "name": "Kultur"
+          }
+        }
+      ],
+      "currency": "EUR",
+      "description": "Paula Lambert. Live. Direkt. Ohne Filter. Komm klar - oder komm vorbei.",
+      "hasRecommendation": false,
+      "imageUrl": "https://www.oeticket.com/obj/media/AT-eventim/teaser/222x222/2026/Paula-Lambert-2026-tickets-m.jpg",
+      "inStock": true,
+      "link": "https://www.oeticket.com/event/paula-lambert-capitol-mannheim-21372077/",
+      "name": "Paula Lambert - Finde dich gut, sonst findet dich keiner (Jetzt erst recht!)",
+      "price": 46.35,
+      "productGroupId": "4035092",
+      "productId": "21372077",
+      "promoter": {
+        "id": "356963",
+        "name": "Konzertbüro Schoneberg GmbH"
+      },
+      "rating": {
+        "average": 0.0,
+        "count": 0
+      },
+      "status": "Available",
+      "tags": ["TICKETDIRECT", "HIDDEN_FOR_RESALE"],
+      "type": "LiveEntertainment",
+      "typeAttributes": {
+        "liveEntertainment": {
+          "location": {
+            "city": "Mannheim",
+            "geoLocation": {
+              "latitude": 49.48829998769804,
+              "longitude": 8.464719985136648
+            },
+            "name": "Capitol Mannheim",
+            "postalCode": "68169"
+          },
+          "startDate": "2026-12-14T20:00:00+01:00"
+        }
+      },
+      "url": {
+        "domain": "https://www.oeticket.com",
+        "path": "/event/paula-lambert-capitol-mannheim-21372077/"
+      }
+    },
+    {
+      "attractions": [
+        {
+          "name": "Theater Heuschreck"
+        }
+      ],
+      "categories": [
+        {
+          "name": "Freizeit"
+        },
+        {
+          "name": "Kinder",
+          "parentCategory": {
+            "name": "Freizeit"
+          }
+        },
+        {
+          "name": "Musical & Show"
+        },
+        {
+          "name": "Musical",
+          "parentCategory": {
+            "name": "Musical & Show"
+          }
+        }
+      ],
+      "currency": "EUR",
+      "description": "Musical für die ganze Familie - ein fantastisches Heuschreck-Umweltabenteuer für kleine & große Menschen",
+      "hasRecommendation": false,
+      "imageUrl": "https://www.oeticket.com/obj/media/AT-eventim/teaser/222x222/2026/Ein_ganz_besonderer_Tag_tickets_2026_m.jpg",
+      "inStock": true,
+      "link": "https://www.oeticket.com/event/ein-ganz-besonderer-tag-nachricht-vom-baum-theater-heuschreck-kulturhaus-knittelfeld-21299578/",
+      "name": "Ein ganz besonderer Tag - Nachricht vom Baum",
+      "price": 16.5,
+      "productGroupId": "1857585",
+      "productId": "21299578",
+      "promoter": {
+        "id": "397914",
+        "name": "80:Stadtgemeinde Knittelfeld"
+      },
+      "rating": {
+        "average": 5.0,
+        "count": 3
+      },
+      "status": "Available",
+      "tags": ["TICKETDIRECT", "WILL_CALL"],
+      "type": "LiveEntertainment",
+      "typeAttributes": {
+        "liveEntertainment": {
+          "location": {
+            "city": "Knittelfeld",
+            "geoLocation": {
+              "latitude": 47.2151246,
+              "longitude": 14.8217168
+            },
+            "name": "Kulturhaus Knittelfeld",
+            "postalCode": "8720",
+            "state": "Stmk"
+          },
+          "startDate": "2026-12-24T10:00:00+01:00"
+        }
+      },
+      "url": {
+        "domain": "https://www.oeticket.com",
+        "path": "/event/ein-ganz-besonderer-tag-nachricht-vom-baum-theater-heuschreck-kulturhaus-knittelfeld-21299578/"
+      }
+    },
+    {
+      "attractions": [
+        {
+          "name": "Alte Bekannte"
+        }
+      ],
+      "categories": [
+        {
+          "name": "Konzerte"
+        },
+        {
+          "name": "Rock & Pop",
+          "parentCategory": {
+            "name": "Konzerte"
+          }
+        }
+      ],
+      "currency": "EUR",
+      "hasRecommendation": false,
+      "inStock": true,
+      "link": "https://www.oeticket.com/event/alte-bekannte-das-beste-von-frueher-bis-heute-stadthalle-baunatalkassel-22097018/",
+      "name": "Alte Bekannte - Das Beste! Von Früher bis Heute",
+      "price": 46.05,
+      "productGroupId": "3961664",
+      "productId": "22097018",
+      "promoter": {
+        "id": "356953",
+        "name": "MM Konzerte GmbH"
+      },
+      "rating": {
+        "average": 5.0,
+        "count": 1
+      },
+      "status": "Available",
+      "tags": ["TICKETDIRECT", "FANTICKET", "HIDDEN_FOR_RESALE"],
+      "type": "LiveEntertainment",
+      "typeAttributes": {
+        "liveEntertainment": {
+          "location": {
+            "city": "Baunatal/Kassel",
+            "geoLocation": {
+              "latitude": 51.250000020220035,
+              "longitude": 9.416669995773036
+            },
+            "name": "Stadthalle Baunatal/Kassel",
+            "postalCode": "34225"
+          },
+          "startDate": "2027-02-21T18:00:00+01:00"
+        }
+      },
+      "url": {
+        "domain": "https://www.oeticket.com",
+        "path": "/event/alte-bekannte-das-beste-von-frueher-bis-heute-stadthalle-baunatalkassel-22097018/"
+      }
+    }
+  ],
+  "results": 22,
+  "searchTerm": "Paul van Dyk",
+  "totalPages": 2,
+  "totalResults": 22
+}

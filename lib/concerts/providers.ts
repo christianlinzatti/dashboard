@@ -185,3 +185,91 @@ export async function lastSetlist(
     songs: (sl.sets?.set ?? []).flatMap((s) => s.song.map((x) => x.name)).filter(Boolean),
   };
 }
+
+// --- oeticket (Eventim Österreich, inoffizielle Such-API ohne Key) ---
+const oeSchema = z.object({
+  fallbackSearch: z.string().optional(), // gesetzt = keine exakten Treffer, Ergebnisse sind unscharf
+  totalPages: z.number().default(1),
+  products: z
+    .array(
+      z.object({
+        name: z.string(),
+        link: z.string().optional(),
+        status: z.string().optional(),
+        attractions: z.array(z.object({ name: z.string() })).default([]),
+        typeAttributes: z.object({
+          liveEntertainment: z
+            .object({
+              startDate: z.string(),
+              location: z
+                .object({
+                  city: z.string().optional(),
+                  name: z.string().optional(),
+                  geoLocation: z.object({ latitude: z.number(), longitude: z.number() }).optional(),
+                })
+                .optional(),
+            })
+            .optional(),
+        }),
+      }),
+    )
+    .default([]),
+});
+
+/**
+ * Tritt der Künstler wirklich auf? Attraktion stimmt überein (auch im Festival-Lineup) oder der Titel
+ * beginnt mit dem Namen plus Trennzeichen („KMFDM - Europe 2026“) – nicht „Coldplay Musik bei Kerzenschein“.
+ */
+export function isOeticketMatch(p: { name: string; attractions: Array<{ name: string }> }, artist: string): boolean {
+  if (p.attractions.some((a) => same(a.name, artist))) return true;
+  if (p.attractions.length) return false;
+  const lower = p.name.toLowerCase();
+  const a = artist.toLowerCase();
+  return lower.startsWith(a) && /^\s*($|[-–—@:|(,])/.test(p.name.slice(a.length));
+}
+
+export function oeticket(http: Http = fetch, maxPages = 2): ConcertProvider {
+  return {
+    id: "oeticket",
+    ticketPriority: 1, // Ticket-Link direkt beim österreichischen Anbieter
+    async events(artist, signal) {
+      const out: RawEvent[] = [];
+      for (let page = 1; page <= maxPages; page++) {
+        const q = new URLSearchParams({
+          webId: "web__oeticket-at",
+          language: "de",
+          retail_partner: "EOE",
+          page: String(page),
+          top: "50",
+          sort: "DateAsc",
+          search_term: artist,
+        });
+        const res = await http(`https://public-api.eventim.com/websearch/search/api/exploration/v1/products?${q}`, {
+          signal,
+          headers: { Accept: "application/json" },
+        });
+        if (!res.ok) throw new Error(`oeticket ${res.status}`);
+        const body = oeSchema.parse(await res.json());
+        for (const p of body.products) {
+          const le = p.typeAttributes.liveEntertainment;
+          if (!le?.location?.city || !isOeticketMatch(p, artist)) continue;
+          out.push({
+            provider: "oeticket",
+            artistName: artist,
+            date: le.startDate.slice(0, 10), // Ortszeit (mit Zeitzonen-Offset geliefert)
+            time: le.startDate.slice(11, 16) || undefined,
+            venue: le.location.name ?? "",
+            city: le.location.city,
+            lat: le.location.geoLocation?.latitude,
+            lon: le.location.geoLocation?.longitude,
+            ticketUrl: p.link,
+            cancelled: p.status?.toLowerCase() === "cancelled",
+          });
+        }
+        // unscharfe Ersatzsuche: weitere Seiten bringen nichts
+        if (body.fallbackSearch || page >= body.totalPages) break;
+      }
+      return out;
+    },
+  };
+}

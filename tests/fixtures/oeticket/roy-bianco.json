@@ -1,0 +1,257 @@
+{
+  "page": 1,
+  "products": [
+    {
+      "attractions": [
+        {
+          "name": "Bergfestival"
+        },
+        {
+          "name": "Dicht & Ergreifend"
+        },
+        {
+          "name": "Zebrahead"
+        },
+        {
+          "name": "LaBrassBanda"
+        },
+        {
+          "name": "Royal Republic"
+        },
+        {
+          "name": "Roy Bianco & Die Abbrunzati Boys"
+        },
+        {
+          "name": "Hecht"
+        },
+        {
+          "name": "Texta"
+        }
+      ],
+      "categories": [
+        {
+          "name": "Konzerte"
+        },
+        {
+          "name": "Festival",
+          "parentCategory": {
+            "name": "Konzerte"
+          }
+        }
+      ],
+      "currency": "EUR",
+      "description": "Vom 03.-06. Dezember erwarten euch beim BERGFESTival großartige Bands wie Roy Bianco & die Abbrunzati Boys, Royal Republic, LaBrassBanda und Dicht & Ergreifend vor einer einzigartigen Bergkulisse.",
+      "hasRecommendation": false,
+      "imageUrl": "https://www.oeticket.com/obj/media/AT-eventim/teaser/222x222/2026/Bergfestival-Saalbach-2026-222.jpg",
+      "inStock": true,
+      "link": "https://www.oeticket.com/event/bergfestival-2026-saalbach-22327698/",
+      "name": "BERGFESTival 2026",
+      "price": 91.0,
+      "productGroupId": "4271947",
+      "productId": "22327698",
+      "promoter": {
+        "id": "1506309",
+        "name": "Piefke & Friends GmbH"
+      },
+      "rating": {
+        "average": 0.0,
+        "count": 0
+      },
+      "status": "Available",
+      "tags": ["TICKETDIRECT", "MOBILE_TICKET"],
+      "type": "LiveEntertainment",
+      "typeAttributes": {
+        "liveEntertainment": {
+          "endDate": "2026-12-06T05:00:59+01:00",
+          "location": {
+            "city": "Saalbach",
+            "name": "Saalbach",
+            "postalCode": "5753"
+          },
+          "startDate": "2026-12-03T21:00:00+01:00"
+        }
+      },
+      "url": {
+        "domain": "https://www.oeticket.com",
+        "path": "/event/bergfestival-2026-saalbach-22327698/"
+      }
+    },
+    {
+      "attractions": [
+        {
+          "name": "Roy Bianco & Die Abbrunzati Boys"
+        }
+      ],
+      "categories": [
+        {
+          "name": "Konzerte"
+        },
+        {
+          "name": "Rock & Pop",
+          "parentCategory": {
+            "name": "Konzerte"
+          }
+        }
+      ],
+      "currency": "EUR",
+      "description": "Roy Bianco & Die Abbrunzati Boys kommen zurück, mit einer ausgedehnten Gastspielreise durch die Metropolen des Italo-Schlagers.",
+      "hasRecommendation": false,
+      "imageUrl": "https://www.oeticket.com/obj/media/AT-eventim/teaser/222x222/2026/RoyBianco-DieAbbrunzatiBoys-c-CanWagener-2027-222.jpg",
+      "inStock": true,
+      "link": "https://www.oeticket.com/event/roy-bianco-die-abbrunzati-boys-wiener-stadthalle-halle-d-22266701/",
+      "name": "Roy Bianco & Die Abbrunzati Boys",
+      "price": 72.9,
+      "productGroupId": "4254436",
+      "productId": "22266701",
+      "promoter": {
+        "id": "485961",
+        "name": "80:Spoon Agency GmbH"
+      },
+      "rating": {
+        "average": 4.888899803161621,
+        "count": 9
+      },
+      "status": "Available",
+      "tags": ["TICKETDIRECT", "FANTICKET", "WILL_CALL", "RESALE"],
+      "type": "LiveEntertainment",
+      "typeAttributes": {
+        "liveEntertainment": {
+          "location": {
+            "city": "Wien",
+            "geoLocation": {
+              "latitude": 48.2024112,
+              "longitude": 16.3311657
+            },
+            "name": "Wiener Stadthalle - Halle D",
+            "postalCode": "1150",
+            "state": "Wien"
+          },
+          "startDate": "2027-09-30T19:00:00+02:00"
+        }
+      },
+      "url": {
+        "domain": "https://www.oeticket.com",
+        "path": "/event/roy-bianco-die-abbrunzati-boys-wiener-stadthalle-halle-d-22266701/"
+      }
+    },
+    {
+      "attractions": [
+        {
+          "name": "Roy Bianco & Die Abbrunzati Boys"
+        }
+      ],
+      "categories": [
+        {
+          "name": "Konzerte"
+        },
+        {
+          "name": "Rock & Pop",
+          "parentCategory": {
+            "name": "Konzerte"
+          }
+        }
+      ],
+      "currency": "EUR",
+      "description": "Roy Bianco & Die Abbrunzati Boys kommen zurück, mit einer ausgedehnten Gastspielreise durch die Metropolen des Italo-Schlagers.",
+      "hasRecommendation": false,
+      "imageUrl": "https://www.oeticket.com/obj/media/AT-eventim/teaser/222x222/2026/RoyBianco-DieAbbrunzatiBoys-c-CanWagener-2027-222.jpg",
+      "inStock": true,
+      "link": "https://www.oeticket.com/event/roy-bianco-die-abbrunzati-boys-salzburgarena-22233858/",
+      "name": "Roy Bianco & Die Abbrunzati Boys",
+      "price": 72.9,
+      "productGroupId": "4254436",
+      "productId": "22233858",
+      "promoter": {
+        "id": "485961",
+        "name": "80:Spoon Agency GmbH"
+      },
+      "rating": {
+        "average": 4.888899803161621,
+        "count": 9
+      },
+      "status": "Available",
+      "tags": ["TICKETDIRECT", "FANTICKET", "WILL_CALL"],
+      "type": "LiveEntertainment",
+      "typeAttributes": {
+        "liveEntertainment": {
+          "location": {
+            "city": "Salzburg",
+            "geoLocation": {
+              "latitude": 47.8252574,
+              "longitude": 13.0278798
+            },
+            "name": "Salzburgarena",
+            "postalCode": "5020",
+            "state": "Sbg"
+          },
+          "startDate": "2027-10-01T19:00:00+02:00"
+        }
+      },
+      "url": {
+        "domain": "https://www.oeticket.com",
+        "path": "/event/roy-bianco-die-abbrunzati-boys-salzburgarena-22233858/"
+      }
+    },
+    {
+      "attractions": [
+        {
+          "name": "Roy Bianco & Die Abbrunzati Boys"
+        }
+      ],
+      "categories": [
+        {
+          "name": "Konzerte"
+        },
+        {
+          "name": "Rock & Pop",
+          "parentCategory": {
+            "name": "Konzerte"
+          }
+        }
+      ],
+      "currency": "EUR",
+      "description": "Roy Bianco & Die Abbrunzati Boys kommen zurück, mit einer ausgedehnten Gastspielreise durch die Metropolen des Italo-Schlagers.",
+      "hasRecommendation": false,
+      "imageUrl": "https://www.oeticket.com/obj/media/AT-eventim/teaser/222x222/2026/RoyBianco-DieAbbrunzatiBoys-c-CanWagener-2027-222.jpg",
+      "inStock": true,
+      "link": "https://www.oeticket.com/event/roy-bianco-die-abbrunzati-boys-psd-bank-dome-22284954/",
+      "name": "Roy Bianco & Die Abbrunzati Boys - Tour 2027",
+      "price": 77.4,
+      "productGroupId": "4254436",
+      "productId": "22284954",
+      "promoter": {
+        "id": "356963",
+        "name": "Konzertbüro Schoneberg GmbH"
+      },
+      "rating": {
+        "average": 4.888899803161621,
+        "count": 9
+      },
+      "status": "Available",
+      "tags": ["TICKETDIRECT", "FANTICKET", "HIDDEN_FOR_RESALE"],
+      "type": "LiveEntertainment",
+      "typeAttributes": {
+        "liveEntertainment": {
+          "location": {
+            "city": "Düsseldorf",
+            "geoLocation": {
+              "latitude": 51.21669999964593,
+              "longitude": 6.766670005963077
+            },
+            "name": "PSD BANK DOME",
+            "postalCode": "40472"
+          },
+          "startDate": "2027-10-12T19:00:00+02:00"
+        }
+      },
+      "url": {
+        "domain": "https://www.oeticket.com",
+        "path": "/event/roy-bianco-die-abbrunzati-boys-psd-bank-dome-22284954/"
+      }
+    }
+  ],
+  "results": 4,
+  "searchTerm": "Roy Bianco",
+  "totalPages": 1,
+  "totalResults": 4
+}
