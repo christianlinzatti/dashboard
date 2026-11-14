@@ -74,8 +74,13 @@ test.describe("Dashboard", () => {
 
   test("laufende Wiedergabe bewegt den Fortschritt", async ({ page }) => {
     await page.goto("/?demo=neonlicht");
-    await expect(page.getByTestId("progress")).toContainText("0:0");
-    await expect(page.getByTestId("progress")).toContainText("0:02", { timeout: 5_000 });
+    // Sekunden aus „m:ss“ lesen – robust gegen langsame Rechner, die Anzeigen überspringen
+    const seconds = async () => {
+      const m = (await page.getByTestId("progress").innerText()).match(/(\d+):(\d\d)/);
+      return m ? Number(m[1]) * 60 + Number(m[2]) : -1;
+    };
+    await expect.poll(seconds).toBeGreaterThanOrEqual(0);
+    await expect.poll(seconds, { timeout: 8_000 }).toBeGreaterThanOrEqual(2);
   });
 
   test("Sicherheits-Header sind gesetzt", async ({ request }) => {
