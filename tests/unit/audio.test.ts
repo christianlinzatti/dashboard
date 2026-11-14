@@ -9,7 +9,7 @@ const FR = 100;
 /** Synthetische Onset-Hüllkurve: Kicks im Tempo, leichte Offbeats, Rauschen, Timing-Jitter. */
 function clicks(bpm: number, seconds: number, opts: { phaseSec?: number; jitter?: number; noise?: number; seed?: number } = {}) {
   let s = opts.seed ?? 7;
-  const rand = () => ((s = (s * 16807) % 2147483647) / 2147483647);
+  const rand = () => (s = (s * 16807) % 2147483647) / 2147483647;
   const env = new Float32Array(Math.round(seconds * FR));
   const period = 60 / bpm;
   for (let t = opts.phaseSec ?? 0; t < seconds; t += period) {
@@ -45,7 +45,7 @@ describe("Tempo-Schätzung", () => {
 
   it("Rauschen ohne Puls hat geringe Sicherheit, Stille gar kein Ergebnis", () => {
     let s = 3;
-    const noise = Float32Array.from({ length: 800 }, () => ((s = (s * 16807) % 2147483647) / 2147483647));
+    const noise = Float32Array.from({ length: 800 }, () => (s = (s * 16807) % 2147483647) / 2147483647);
     expect(estimateTempo(noise, FR)!.confidence).toBeLessThan(0.2);
     expect(estimateTempo(new Float32Array(800), FR)).toBeNull();
     expect(estimateTempo(new Float32Array(100), FR)).toBeNull();

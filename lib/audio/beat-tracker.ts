@@ -85,7 +85,7 @@ export class BeatTracker {
   }
 
   state(t: number): BeatState {
-    const phase = this.started ? (((t - (this.nextBeat - this.period)) / this.period) % 1 + 1) % 1 : 0;
+    const phase = this.started ? ((((t - (this.nextBeat - this.period)) / this.period) % 1) + 1) % 1 : 0;
     return { bpm: 60 / this.period, confidence: this.conf, phase, beatCount: this.beats, lastBeat: this.last };
   }
 

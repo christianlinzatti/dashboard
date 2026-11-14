@@ -12,13 +12,15 @@ describe("Cover-Palette", () => {
   });
 
   it("dominant = häufigste Farbe, accent = kräftiger anderer Ton, dark/light passend", () => {
-    const p = paletteFromPixels(pixels([
-      [30, 60, 160, 300], // viel Blau
-      [250, 200, 20, 40], // etwas Gelb
-      [128, 128, 128, 50], // Grau
-    ]));
-    const dom = rgbToHsl(...(hex(p.dominant)));
-    const acc = rgbToHsl(...(hex(p.accent)));
+    const p = paletteFromPixels(
+      pixels([
+        [30, 60, 160, 300], // viel Blau
+        [250, 200, 20, 40], // etwas Gelb
+        [128, 128, 128, 50], // Grau
+      ]),
+    );
+    const dom = rgbToHsl(...hex(p.dominant));
+    const acc = rgbToHsl(...hex(p.accent));
     expect(dom.h).toBeGreaterThan(200);
     expect(dom.h).toBeLessThan(240);
     expect(acc.h).toBeGreaterThan(30);

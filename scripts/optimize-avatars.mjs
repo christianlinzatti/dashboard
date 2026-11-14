@@ -51,7 +51,9 @@ for (const entry of manifest) {
     triangles: entry.triangles,
     clips: entry.clips.map((c) => ({ name: c.name, seconds: c.seconds })),
   });
-  console.log(`${fresh ? "✓ aktuell " : "✓ optimiert"} ${entry.file}  ${(buf.length / 1e6).toFixed(1)} MB → ${(size / 1e6).toFixed(2)} MB`);
+  console.log(
+    `${fresh ? "✓ aktuell " : "✓ optimiert"} ${entry.file}  ${(buf.length / 1e6).toFixed(1)} MB → ${(size / 1e6).toFixed(2)} MB`,
+  );
 }
 await writeFile(path.join(outDir, "manifest.json"), JSON.stringify(out, null, 2));
 console.log(`Gesamt: ${(total / 1e6).toFixed(1)} MB`);

@@ -51,7 +51,11 @@ export function LyricsLayer({ forceMode }: { forceMode?: LyricsMode }) {
         <Duet song={song} lines={lines} lineIdx={lineIdx} current={current} wordIdx={wordIdx} gap={gap} />
       ) : (
         <>
-          {mode === "karaoke" || mode === "schreibmaschine" ? <Context text={prev?.text} dim /> : <Context text={undefined} dim />}
+          {mode === "karaoke" || mode === "schreibmaschine" ? (
+            <Context text={prev?.text} dim />
+          ) : (
+            <Context text={undefined} dim />
+          )}
           {!current ? (
             gap
           ) : mode === "wortpop" ? (
@@ -77,7 +81,9 @@ function singerColor(song: SongStatic, line: LyricLine) {
 
 function Context({ text, dim }: { text?: string; dim?: boolean }) {
   return (
-    <p className={`min-h-[1.3em] text-[clamp(16px,3.6vmin,40px)] font-semibold ${dim ? "text-white/35" : "text-white/55"}`}>{text ?? ""}</p>
+    <p className={`min-h-[1.3em] text-[clamp(16px,3.6vmin,40px)] font-semibold ${dim ? "text-white/35" : "text-white/55"}`}>
+      {text ?? ""}
+    </p>
   );
 }
 
@@ -133,11 +139,23 @@ function Karaoke({ line, wordIdx, color }: ModeProps) {
 function WordPop({ line, wordIdx, color }: ModeProps) {
   const words = line.words ?? [{ text: line.text, startMs: line.startMs, endMs: line.endMs }];
   const w = words[Math.max(wordIdx, 0)];
-  const sung = words.slice(0, Math.max(wordIdx, 0)).map((x) => x.text).join(" ");
+  const sung = words
+    .slice(0, Math.max(wordIdx, 0))
+    .map((x) => x.text)
+    .join(" ");
   return (
-    <div className="flex flex-col items-center" style={{ "--c-singer": color } as CSSProperties} data-testid="lyrics-current" aria-label={line.text}>
+    <div
+      className="flex flex-col items-center"
+      style={{ "--c-singer": color } as CSSProperties}
+      data-testid="lyrics-current"
+      aria-label={line.text}
+    >
       <p className="min-h-[1.2em] text-[clamp(14px,3vmin,32px)] font-semibold text-white/50">{sung}</p>
-      <p key={wordIdx} className="word-pop lyric-glow text-[clamp(44px,13vmin,170px)] font-black leading-none" style={{ color: "var(--c-singer)" }}>
+      <p
+        key={wordIdx}
+        className="word-pop lyric-glow text-[clamp(44px,13vmin,170px)] font-black leading-none"
+        style={{ color: "var(--c-singer)" }}
+      >
         {w?.text}
       </p>
     </div>
@@ -162,7 +180,10 @@ function Stack({ line, wordIdx, color }: ModeProps) {
             key={i}
             className={`stack-word lyric-glow font-black ${w.bg ? "italic" : ""}`}
             data-state={state}
-            style={{ fontSize: `clamp(20px, ${size}vmin, ${size * 13}px)`, color: state === "next" ? "rgb(255 255 255 / 0.12)" : "var(--c-singer)" }}
+            style={{
+              fontSize: `clamp(20px, ${size}vmin, ${size * 13}px)`,
+              color: state === "next" ? "rgb(255 255 255 / 0.12)" : "var(--c-singer)",
+            }}
           >
             {w.text}
           </span>
@@ -222,8 +243,14 @@ function Duet({
         const active = current?.agent === agent;
         const line = active ? current : lastOf(agent);
         return (
-          <div key={agent} className={`flex flex-col gap-[1vmin] ${side === 0 ? "items-start text-left" : "items-end text-right"}`}>
-            <span className="rounded-full px-3 py-0.5 text-[clamp(11px,1.9vmin,20px)] font-bold text-black" style={{ background: artist?.color, opacity: active ? 1 : 0.4 }}>
+          <div
+            key={agent}
+            className={`flex flex-col gap-[1vmin] ${side === 0 ? "items-start text-left" : "items-end text-right"}`}
+          >
+            <span
+              className="rounded-full px-3 py-0.5 text-[clamp(11px,1.9vmin,20px)] font-bold text-black"
+              style={{ background: artist?.color, opacity: active ? 1 : 0.4 }}
+            >
               {artist?.name}
             </span>
             {active && current ? (

@@ -1,5 +1,8 @@
 import { avatarById, timeScaleFor } from "@/lib/avatars/catalog";
 import type { CastMember, Section, SectionKind, SongStatic } from "@/lib/song-context/schema";
+import { contiguous } from "@/lib/song-context/sections";
+
+export { contiguous };
 import { ENERGY_CLIPS, IDLE_CLIP, WAVE_CLIP, genreBias, type Energy } from "./clips";
 import { slots, type Formation, type Vec2 } from "./formations";
 import { rng } from "./rng";
@@ -85,22 +88,6 @@ export function fallbackSections(durationMs: number, barMs: number): Section[] {
   return out;
 }
 
-/** Abschnitte lückenlos und überlappungsfrei machen (Lücken gehören zum vorherigen Abschnitt). */
-export function contiguous(sections: Section[], durationMs: number): Section[] {
-  const out: Section[] = [];
-  for (const s of [...sections].sort((a, b) => a.startMs - b.startMs)) {
-    const prev = out.at(-1);
-    const start = Math.max(s.startMs, prev?.endMs ?? 0);
-    if (!prev && start > 0) out.push({ kind: "intro", startMs: 0, endMs: start });
-    else if (prev && prev.endMs < start) prev.endMs = start;
-    const end = Math.min(s.endMs, durationMs);
-    if (end > start) out.push({ kind: s.kind, startMs: start, endMs: end });
-  }
-  if (!out.length) return [{ kind: "verse", startMs: 0, endMs: durationMs }];
-  out.at(-1)!.endMs = durationMs;
-  return out;
-}
-
 function energyFor(kind: SectionKind, song: SongStatic): Energy {
   let e = BASE_ENERGY[kind] as number;
   if (song.music.mood === "energetisch" && kind !== "intro" && kind !== "outro") e++;
@@ -136,7 +123,10 @@ export function planChoreography(song: SongStatic, bpm: number): Choreography {
   for (const sec of sections) {
     let t = sec.startMs;
     while (t < sec.endMs - 1) {
-      const bars = r.weighted([[8, 2], [16, 1]] as const);
+      const bars = r.weighted([
+        [8, 2],
+        [16, 1],
+      ] as const);
       let end = Math.min(t + bars * barMs, sec.endMs);
       if (sec.endMs - end < 4 * barMs) end = sec.endMs; // kurze Reste anhängen
       const energy = energyFor(sec.kind, song);
@@ -163,7 +153,8 @@ export function planChoreography(song: SongStatic, bpm: number): Choreography {
         const used = new Set<string>();
         order.forEach((id, i) => {
           // Lead bekommt beim Songstart ein Winken
-          if (i === 0 && phrases.length === 0 && sec.kind === "intro" && available[id]!.has(WAVE_CLIP)) return (moves[id] = WAVE_CLIP);
+          if (i === 0 && phrases.length === 0 && sec.kind === "intro" && available[id]!.has(WAVE_CLIP))
+            return (moves[id] = WAVE_CLIP);
           // Nebenfiguren möglichst andere Variante als die anderen
           const opts = pool(id, [...recent[id]!, ...used]);
           const clip = opts.length ? r.weighted(opts) : IDLE_CLIP;

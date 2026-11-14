@@ -1,17 +1,5 @@
-import { expect, test, type Page } from "@playwright/test";
-
-/** Wartet, bis 3D-Szene und Schriften fertig sind. */
-async function ready(page: Page, withStage = true) {
-  if (withStage) await page.locator("body[data-stage-ready=true]").waitFor({ timeout: 60_000 });
-  await page.evaluate(() => document.fonts.ready);
-}
-
-function collectErrors(page: Page) {
-  const errors: string[] = [];
-  page.on("pageerror", (e) => errors.push(e.message));
-  page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
-  return errors;
-}
+import { expect, test } from "@playwright/test";
+import { collectErrors, ready } from "./helpers";
 
 test.describe("Dashboard", () => {
   test("unbekannte Demo zeigt Hinweis", async ({ page }) => {

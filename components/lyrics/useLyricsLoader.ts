@@ -21,26 +21,54 @@ export function lyricsUrl(song: SongStatic) {
   return `/api/lyrics?${p}`;
 }
 
-/** Lädt bei jedem Songwechsel die Lyrics und reichert den Song-Kontext an. */
+/** Abstände der Neuversuche nach vorübergehenden Fehlern (Netz weg, alle Provider im Timeout). */
+export const RETRY_DELAYS_MS = [10_000, 30_000, 90_000];
+
+/** true, wenn das Ergebnis nur wegen vorübergehender Fehler leer ist (dann später erneut versuchen). */
+export function isTransientMiss(body: Pick<LyricsResponse, "lyrics" | "attempts" | "instrumental">) {
+  return !body.lyrics && !body.instrumental && body.attempts.some((a) => a.outcome === "error" || a.outcome === "timeout");
+}
+
+/** Lädt bei jedem Songwechsel die Lyrics und reichert den Song-Kontext an (mit Neuversuchen). */
 export function useLyricsLoader(enabled: boolean) {
   useEffect(() => {
     if (!enabled) return;
     let ctrl: AbortController | undefined;
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
 
-    const load = async (song: SongStatic) => {
+    const retryLater = (song: SongStatic, attempt: number, detail: string) => {
+      const delay = RETRY_DELAYS_MS[attempt];
+      songContext.getState().mergeSong({
+        status: {
+          lyrics: {
+            state: delay ? "error" : "missing",
+            detail: delay ? `${detail} – neuer Versuch in ${delay / 1000} s` : detail,
+          },
+        },
+      });
+      if (delay) retryTimer = setTimeout(() => void load(song, attempt + 1), delay);
+    };
+
+    const load = async (song: SongStatic, attempt = 0) => {
+      clearTimeout(retryTimer);
+      if (songContext.getState().song?.trackKey !== song.trackKey) return;
       ctrl?.abort();
       ctrl = new AbortController();
       const { mergeSong } = songContext.getState();
-      mergeSong({ status: { lyrics: { state: "loading" } } });
+      if (attempt === 0) mergeSong({ status: { lyrics: { state: "loading" } } });
       try {
         const res = await fetch(lyricsUrl(song), { signal: ctrl.signal });
         if (!res.ok) throw new Error(String(res.status));
         const body = (await res.json()) as LyricsResponse;
         if (songContext.getState().song?.trackKey !== song.trackKey) return;
         const tried = body.attempts.map((a) => `${a.provider}: ${a.outcome}`).join(", ");
+        if (isTransientMiss(body)) return retryLater(song, attempt, `Lyrics-Quellen nicht erreichbar (${tried})`);
         mergeSong(
           body.lyrics
-            ? { lyrics: body.lyrics, status: { lyrics: { state: "ok", provider: body.lyrics.provider, detail: tried, updatedAt: Date.now() } } }
+            ? {
+                lyrics: body.lyrics,
+                status: { lyrics: { state: "ok", provider: body.lyrics.provider, detail: tried, updatedAt: Date.now() } },
+              }
             : {
                 status: {
                   lyrics: { state: "missing", detail: body.instrumental ? "Instrumental" : `Keine Lyrics gefunden (${tried})` },
@@ -49,9 +77,7 @@ export function useLyricsLoader(enabled: boolean) {
         );
       } catch (e) {
         if ((e as Error).name === "AbortError") return;
-        if (songContext.getState().song?.trackKey === song.trackKey) {
-          mergeSong({ status: { lyrics: { state: "error", detail: "Lyrics-Dienst nicht erreichbar" } } });
-        }
+        if (songContext.getState().song?.trackKey === song.trackKey) retryLater(song, attempt, "Lyrics-Dienst nicht erreichbar");
       }
     };
 
@@ -65,6 +91,7 @@ export function useLyricsLoader(enabled: boolean) {
     );
     return () => {
       unsub();
+      clearTimeout(retryTimer);
       ctrl?.abort();
     };
   }, [enabled]);

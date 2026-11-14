@@ -11,7 +11,11 @@ export type TempoEstimate = {
   framesSinceBeat: number;
 };
 
-export function estimateTempo(env: ArrayLike<number>, frameRate: number, range: [number, number] = [70, 180]): TempoEstimate | null {
+export function estimateTempo(
+  env: ArrayLike<number>,
+  frameRate: number,
+  range: [number, number] = [70, 180],
+): TempoEstimate | null {
   const n = env.length;
   if (n < frameRate * 3) return null;
 

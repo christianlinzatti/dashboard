@@ -11,6 +11,7 @@ import { LyricsLayer } from "./lyrics/LyricsLayer";
 import { DebugPanel } from "./debug/DebugPanel";
 import { Controls } from "./hud/Controls";
 import { useSpotifySync } from "./spotify/useSpotifySync";
+import { settings } from "@/lib/settings";
 import { useLyricsLoader } from "./lyrics/useLyricsLoader";
 import { useMicAnalysis } from "./audio/useMicAnalysis";
 import type { LyricsMode } from "@/lib/lyrics/director";
@@ -18,7 +19,15 @@ import type { Quality } from "@/lib/stage/quality";
 
 const Stage = dynamic(() => import("./stage/Stage").then((m) => m.Stage), { ssr: false });
 
-type Props = { demo?: string; t?: number; debug: boolean; loginError?: string; mic?: boolean; lyricsMode?: LyricsMode; quality?: Quality };
+type Props = {
+  demo?: string;
+  t?: number;
+  debug: boolean;
+  loginError?: string;
+  mic?: boolean;
+  lyricsMode?: LyricsMode;
+  quality?: Quality;
+};
 
 export function Dashboard({ demo, t, debug, loginError, mic, lyricsMode, quality }: Props) {
   const song = useSongContext((s) => s.song);
@@ -28,6 +37,9 @@ export function Dashboard({ demo, t, debug, loginError, mic, lyricsMode, quality
   useLyricsLoader(demo === undefined);
   // Mikrofon: im Live-Betrieb; in Demos nur mit ?mic=1 (Screenshots bleiben reproduzierbar)
   const micCtl = useMicAnalysis(demo === undefined || !!mic);
+
+  // Geräte-Einstellungen (Qualität, Strobe) einmalig aus dem Browser laden
+  useEffect(() => settings.getState().hydrate(), []);
 
   // Demo-Modus: Song-Kontext aus Fixture laden; mit ?t=<ms> eingefroren (Screenshots).
   useEffect(() => {
@@ -55,9 +67,9 @@ export function Dashboard({ demo, t, debug, loginError, mic, lyricsMode, quality
   }, []);
 
   const p = song?.album.palette;
-  const vars = (p
-    ? { "--c-dominant": p.dominant, "--c-accent": p.accent, "--c-dark": p.dark, "--c-light": p.light }
-    : {}) as CSSProperties;
+  const vars = (
+    p ? { "--c-dominant": p.dominant, "--c-accent": p.accent, "--c-dark": p.dark, "--c-light": p.light } : {}
+  ) as CSSProperties;
 
   return (
     <main className="relative h-dvh w-dvw overflow-hidden bg-[var(--c-dark)]" style={vars} data-testid="dashboard">
@@ -75,7 +87,11 @@ export function Dashboard({ demo, t, debug, loginError, mic, lyricsMode, quality
           <Controls live={demo === undefined} mic={demo === undefined || mic ? micCtl : undefined} />
         </>
       ) : (
-        <IdleScreen status={unknownDemo ? { kind: "idle" } : status} unknownDemo={unknownDemo ? demo : undefined} loginError={loginError} />
+        <IdleScreen
+          status={unknownDemo ? { kind: "idle" } : status}
+          unknownDemo={unknownDemo ? demo : undefined}
+          loginError={loginError}
+        />
       )}
       {debug && <DebugPanel />}
     </main>

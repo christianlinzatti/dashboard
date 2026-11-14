@@ -28,7 +28,11 @@ export function totp(key: Buffer, unixSeconds: number, step = 30, digits = 6): s
   return String(bin % 10 ** digits).padStart(digits, "0");
 }
 
-const tokenSchema = z.object({ accessToken: z.string(), accessTokenExpirationTimestampMs: z.number(), isAnonymous: z.boolean().optional() });
+const tokenSchema = z.object({
+  accessToken: z.string(),
+  accessTokenExpirationTimestampMs: z.number(),
+  isAnonymous: z.boolean().optional(),
+});
 const lyricsSchema = z.object({
   lyrics: z.object({
     syncType: z.string(),
@@ -53,7 +57,13 @@ export function spotifyColor(
     const st = await fetchImpl("https://open.spotify.com/api/server-time", { headers: { "User-Agent": UA }, signal });
     const serverTime = z.object({ serverTime: z.number() }).parse(await st.json()).serverTime;
     const code = totp(totpKey(cfg.totpSecret!), serverTime);
-    const qs = new URLSearchParams({ reason: "init", productType: "web-player", totp: code, totpServer: code, totpVer: cfg.totpVersion ?? "1" });
+    const qs = new URLSearchParams({
+      reason: "init",
+      productType: "web-player",
+      totp: code,
+      totpServer: code,
+      totpVer: cfg.totpVersion ?? "1",
+    });
     const res = await fetchImpl(`https://open.spotify.com/api/token?${qs}`, {
       headers: { Cookie: `sp_dc=${cfg.spDc}`, "User-Agent": UA },
       signal,

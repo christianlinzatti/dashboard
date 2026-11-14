@@ -30,7 +30,10 @@ function texts(status: SpotifyStatus, unknownDemo?: string): { title: string; te
     default:
       return {
         title: "Kein Song aktiv",
-        text: status.kind === "idle" && status.user ? `Hallo ${status.user}, starte einen Song auf Spotify.` : "Starte einen Song auf Spotify.",
+        text:
+          status.kind === "idle" && status.user
+            ? `Hallo ${status.user}, starte einen Song auf Spotify.`
+            : "Starte einen Song auf Spotify.",
       };
   }
 }
@@ -38,7 +41,11 @@ function texts(status: SpotifyStatus, unknownDemo?: string): { title: string; te
 export function IdleScreen({ status, unknownDemo, loginError }: Props) {
   const { title, text } = texts(status, unknownDemo);
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-[3vmin] px-6 text-center" data-testid="idle" data-status={status.kind}>
+    <div
+      className="flex h-full flex-col items-center justify-center gap-[3vmin] px-6 text-center"
+      data-testid="idle"
+      data-status={status.kind}
+    >
       <div className="size-[14vmin] animate-pulse rounded-full bg-gradient-to-br from-fuchsia-500 to-cyan-400 opacity-80 blur-[1px]" />
       <h1 className="text-[clamp(24px,6vmin,64px)] font-bold">{title}</h1>
       {text && <p className="max-w-[60ch] text-[clamp(14px,2.6vmin,28px)] text-white/70">{text}</p>}

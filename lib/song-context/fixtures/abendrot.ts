@@ -7,7 +7,15 @@ export const abendrot: SongStatic = {
   trackKey: "demo-abendrot",
   track: { spotifyId: "demo-abendrot", title: "Abendrot am Hafen", durationMs: 180_000, explicit: false, isFeature: false },
   artists: [
-    { spotifyId: "demo-lena", name: "Lena Brandt", role: "main", genres: ["jazz", "soul"], images: [], avatarId: "velvet-jazz", color: "#ffb347" },
+    {
+      spotifyId: "demo-lena",
+      name: "Lena Brandt",
+      role: "main",
+      genres: ["jazz", "soul"],
+      images: [],
+      avatarId: "velvet-jazz",
+      color: "#ffb347",
+    },
   ],
   album: {
     name: "Leise Wellen",

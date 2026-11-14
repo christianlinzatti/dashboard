@@ -8,9 +8,7 @@ export class TempoLock {
   private stableFor = 0;
   locked: number | null = null;
 
-  constructor(
-    private opts = { minConfidence: 0.3, lockAfterS: 4, relockAfterS: 8, tolerance: 0.02, relockDeviation: 0.06 },
-  ) {}
+  constructor(private opts = { minConfidence: 0.3, lockAfterS: 4, relockAfterS: 8, tolerance: 0.02, relockDeviation: 0.06 }) {}
 
   /** Gibt das neu eingerastete Tempo zurück (sonst null). */
   push(bpm: number, confidence: number, dt: number): number | null {

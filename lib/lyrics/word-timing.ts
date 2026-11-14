@@ -22,6 +22,9 @@ export function estimateWords(line: Pick<LyricLine, "startMs" | "endMs" | "text"
 
 /** Typische Singdauer einer Zeile, falls das Format kein Zeilenende kennt (LRC). */
 export function typicalLineDurationMs(text: string): number {
-  const syl = text.split(/\s+/).filter(Boolean).reduce((n, w) => n + syllables(w), 0);
+  const syl = text
+    .split(/\s+/)
+    .filter(Boolean)
+    .reduce((n, w) => n + syllables(w), 0);
   return 600 + syl * 280;
 }

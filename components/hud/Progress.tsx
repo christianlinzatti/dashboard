@@ -22,9 +22,15 @@ export function Progress() {
     <footer className="absolute inset-x-0 bottom-0 flex items-center gap-[2vmin] px-[3vmin] pb-[2.2vmin]" data-testid="progress">
       <span className="w-[7ch] text-[clamp(11px,1.9vmin,20px)] tabular-nums text-white/70">{formatTime(seconds * 1000)}</span>
       <div className="h-[0.8vmin] min-h-1 flex-1 overflow-hidden rounded-full bg-white/15">
-        <div ref={bar} className="h-full origin-left rounded-full" style={{ background: "var(--c-accent)", transform: "scaleX(0)" }} />
+        <div
+          ref={bar}
+          className="h-full origin-left rounded-full"
+          style={{ background: "var(--c-accent)", transform: "scaleX(0)" }}
+        />
       </div>
-      <span className="w-[7ch] text-right text-[clamp(11px,1.9vmin,20px)] tabular-nums text-white/70">{formatTime(duration)}</span>
+      <span className="w-[7ch] text-right text-[clamp(11px,1.9vmin,20px)] tabular-nums text-white/70">
+        {formatTime(duration)}
+      </span>
     </footer>
   );
 }

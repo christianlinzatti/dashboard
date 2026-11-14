@@ -119,7 +119,13 @@ export function useMicAnalysis(enabled: boolean) {
     } catch (e) {
       unsub();
       const name = (e as Error).name;
-      setMic(name === "NotAllowedError" || name === "SecurityError" ? "verweigert" : name === "NotFoundError" ? "nicht-verfuegbar" : "fehler");
+      setMic(
+        name === "NotAllowedError" || name === "SecurityError"
+          ? "verweigert"
+          : name === "NotFoundError"
+            ? "nicht-verfuegbar"
+            : "fehler",
+      );
     } finally {
       starting.current = false;
     }

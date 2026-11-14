@@ -12,14 +12,31 @@ export const TRUSS_Y = 4.3;
 export const TRUSS_Z = -2.6;
 
 /** Podest, Boden, Traverse und LED-Rückwand. */
-export function StageSet({ preset, dark, lightsRef }: { preset: QualityPreset; dark: string; lightsRef: React.RefObject<LightFrame | null> }) {
+export function StageSet({
+  preset,
+  dark,
+  lightsRef,
+}: {
+  preset: QualityPreset;
+  dark: string;
+  lightsRef: React.RefObject<LightFrame | null>;
+}) {
   return (
     <group>
       {/* Boden */}
       <mesh rotation-x={-Math.PI / 2} position-y={-0.26}>
         <planeGeometry args={[40, 40]} />
         {preset.reflector ? (
-          <MeshReflectorMaterial color={dark} resolution={512} mixBlur={1} mixStrength={2.5} blur={[300, 80]} roughness={0.8} metalness={0.4} mirror={0} />
+          <MeshReflectorMaterial
+            color={dark}
+            resolution={512}
+            mixBlur={1}
+            mixStrength={2.5}
+            blur={[300, 80]}
+            roughness={0.8}
+            metalness={0.4}
+            mirror={0}
+          />
         ) : (
           <meshStandardMaterial color={dark} roughness={0.6} metalness={0.2} />
         )}
@@ -138,7 +155,7 @@ export function Fog({ lightsRef, color }: { lightsRef: React.RefObject<LightFram
     c.width = c.height = 128;
     const g = c.getContext("2d")!;
     let s = 1;
-    const rnd = () => ((s = (s * 16807) % 2147483647) / 2147483647);
+    const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
     for (let i = 0; i < 40; i++) {
       const x = rnd() * 128;
       const y = 40 + rnd() * 50;
@@ -166,7 +183,16 @@ export function Fog({ lightsRef, color }: { lightsRef: React.RefObject<LightFram
       {[0, 1, 2].map((i) => (
         <mesh key={i} ref={(m) => void (layers.current[i] = m)} position={[0, 0.15 + i * 0.08, -0.5 - i * 1.4]}>
           <planeGeometry args={[14, 1.2]} />
-          <meshBasicMaterial map={tex} color={color} transparent opacity={0.2} depthWrite={false} blending={AdditiveBlending} side={DoubleSide} toneMapped={false} />
+          <meshBasicMaterial
+            map={tex}
+            color={color}
+            transparent
+            opacity={0.2}
+            depthWrite={false}
+            blending={AdditiveBlending}
+            side={DoubleSide}
+            toneMapped={false}
+          />
         </mesh>
       ))}
     </group>

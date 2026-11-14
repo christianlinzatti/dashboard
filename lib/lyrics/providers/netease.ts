@@ -12,7 +12,14 @@ const searchSchema = z.object({
   result: z
     .object({
       songs: z
-        .array(z.object({ id: z.number(), name: z.string(), duration: z.number().optional(), artists: z.array(z.object({ name: z.string() })) }))
+        .array(
+          z.object({
+            id: z.number(),
+            name: z.string(),
+            duration: z.number().optional(),
+            artists: z.array(z.object({ name: z.string() })),
+          }),
+        )
         .optional(),
     })
     .optional(),
@@ -61,7 +68,9 @@ export function netease(fetchImpl: typeof fetch = fetch): LyricsProvider {
       const s = new URLSearchParams({ s: `${cleanTitle(q.title)} ${q.artists[0] ?? ""}`, type: "1", limit: "8" });
       const found = searchSchema.safeParse(await get(`${BASE}/search/get?${s}`, signal));
       const songs = found.success ? (found.data.result?.songs ?? []) : [];
-      const hit = songs.find((x) => isSameTrack(q, { title: x.name, artists: x.artists.map((a) => a.name), durationMs: x.duration }));
+      const hit = songs.find((x) =>
+        isSameTrack(q, { title: x.name, artists: x.artists.map((a) => a.name), durationMs: x.duration }),
+      );
       if (!hit) return null;
 
       const ly = lyricSchema.safeParse(await get(`${BASE}/song/lyric/v1?id=${hit.id}&lv=1&yv=1&tv=-1&kv=1`, signal));

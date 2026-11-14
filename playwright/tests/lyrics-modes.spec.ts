@@ -1,9 +1,5 @@
-import { expect, test, type Page } from "@playwright/test";
-
-async function ready(page: Page) {
-  await page.locator("body[data-stage-ready=true]").waitFor({ timeout: 60_000 });
-  await page.evaluate(() => document.fonts.ready);
-}
+import { expect, test } from "@playwright/test";
+import { ready } from "./helpers";
 
 test.describe("LyricsDirector wählt passend zum Abschnitt", () => {
   for (const [t, section, modes] of [

@@ -8,7 +8,11 @@ const SYNC_SCORE = { word: 3, line: 2, plain: 1 } as const;
 /** Erlaubte Abweichung der Songdauer (andere Version/Edit → falsche Timings) */
 const DURATION_TOLERANCE_MS = 3500;
 
-export type Attempt = { provider: string; outcome: "ok" | "empty" | "instrumental" | "mismatch" | "error" | "timeout" | "skipped"; ms: number };
+export type Attempt = {
+  provider: string;
+  outcome: "ok" | "empty" | "instrumental" | "mismatch" | "error" | "timeout" | "skipped";
+  ms: number;
+};
 
 export type ChainResult = { lyrics: Lyrics | null; instrumental: boolean; attempts: Attempt[] };
 

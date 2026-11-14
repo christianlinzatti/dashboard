@@ -54,7 +54,8 @@ export function detectSections(lines: LyricLine[], durationMs: number): Section[
     if (prevSec && prevSec.kind === kind && kind !== "chorus" && prevSec.endMs === start) prevSec.endMs = sectionEnd;
     else sections.push({ kind, startMs: start, endMs: sectionEnd });
 
-    if (nextStart !== undefined && gap >= INSTRUMENTAL_GAP_MS) sections.push({ kind: "instrumental", startMs: end, endMs: nextStart });
+    if (nextStart !== undefined && gap >= INSTRUMENTAL_GAP_MS)
+      sections.push({ kind: "instrumental", startMs: end, endMs: nextStart });
   });
 
   const lastEnd = lines.at(-1)!.endMs;

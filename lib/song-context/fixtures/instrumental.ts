@@ -6,7 +6,15 @@ export const instrumental: SongStatic = {
   trackKey: "demo-pulsar",
   track: { spotifyId: "demo-pulsar", title: "Pulsar", durationMs: 240_000, explicit: false, isFeature: false },
   artists: [
-    { spotifyId: "demo-volt", name: "VOLTKRAFT", role: "main", genres: ["techno"], images: [], avatarId: "neon-pulse", color: "#39ff88" },
+    {
+      spotifyId: "demo-volt",
+      name: "VOLTKRAFT",
+      role: "main",
+      genres: ["techno"],
+      images: [],
+      avatarId: "neon-pulse",
+      color: "#39ff88",
+    },
   ],
   album: {
     name: "Frequenzen",

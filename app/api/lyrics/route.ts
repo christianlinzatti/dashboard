@@ -13,7 +13,11 @@ const query = z.object({
   title: z.string().min(1).max(300),
   artists: z.string().min(1).max(500),
   album: z.string().max(300).optional(),
-  durationMs: z.coerce.number().int().positive().max(3 * 3600_000),
+  durationMs: z.coerce
+    .number()
+    .int()
+    .positive()
+    .max(3 * 3600_000),
 });
 
 /** Lyrics für den aktuellen Song (nur für angemeldete Nutzer – Texte nicht öffentlich ausliefern). */

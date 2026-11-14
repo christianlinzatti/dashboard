@@ -125,7 +125,12 @@ export function cameraAt(c: Choreography, t: number): Cam {
   const b = CAMERA[p.camera];
   const w = easeInOut((t - p.startMs) / Math.min(c.barMs * 1.5, 3000));
   const sway = Math.sin(t / 4000) * 0.25;
-  const mix = (x: readonly number[], y: readonly number[]) => x.map((v, k) => v + (y[k]! - v) * w) as unknown as [number, number, number];
+  type V3 = readonly [number, number, number];
+  const mix = (x: V3, y: V3): [number, number, number] => [
+    x[0] + (y[0] - x[0]) * w,
+    x[1] + (y[1] - x[1]) * w,
+    x[2] + (y[2] - x[2]) * w,
+  ];
   const pos = mix(a.pos, b.pos);
   return { pos: [pos[0] + sway, pos[1], pos[2]], target: mix(a.target, b.target) };
 }

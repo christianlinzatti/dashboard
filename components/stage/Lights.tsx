@@ -2,7 +2,17 @@
 
 import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
-import { AdditiveBlending, Color, DoubleSide, Object3D, type Group, type Mesh, type MeshBasicMaterial, type ShaderMaterial, type SpotLight } from "three";
+import {
+  AdditiveBlending,
+  Color,
+  DoubleSide,
+  Object3D,
+  type Group,
+  type Mesh,
+  type MeshBasicMaterial,
+  type ShaderMaterial,
+  type SpotLight,
+} from "three";
 import type { LightFrame } from "@/lib/stage/lights";
 import { TRUSS_Y, TRUSS_Z } from "./StageSet";
 
@@ -32,18 +42,45 @@ const beamShader = {
 };
 
 /** Moving Heads an der Traverse: Schwenk/Neigung/Farbe/Helligkeit aus dem LightDirector. */
-export function MovingHeads({ count, realLights, lightsRef }: { count: number; realLights: number; lightsRef: React.RefObject<LightFrame | null> }) {
-  const xs = useMemo(() => Array.from({ length: count }, (_, i) => (i - (count - 1) / 2) * (9 / Math.max(count - 1, 1))), [count]);
+export function MovingHeads({
+  count,
+  realLights,
+  lightsRef,
+}: {
+  count: number;
+  realLights: number;
+  lightsRef: React.RefObject<LightFrame | null>;
+}) {
+  const xs = useMemo(
+    () => Array.from({ length: count }, (_, i) => (i - (count - 1) / 2) * (9 / Math.max(count - 1, 1))),
+    [count],
+  );
   return (
     <group position={[0, TRUSS_Y - 0.2, TRUSS_Z + 0.25]}>
       {xs.map((x, i) => (
-        <Head key={i} index={i} x={x} real={i >= (count - realLights) / 2 && i < (count + realLights) / 2} lightsRef={lightsRef} />
+        <Head
+          key={i}
+          index={i}
+          x={x}
+          real={i >= (count - realLights) / 2 && i < (count + realLights) / 2}
+          lightsRef={lightsRef}
+        />
       ))}
     </group>
   );
 }
 
-function Head({ index, x, real, lightsRef }: { index: number; x: number; real: boolean; lightsRef: React.RefObject<LightFrame | null> }) {
+function Head({
+  index,
+  x,
+  real,
+  lightsRef,
+}: {
+  index: number;
+  x: number;
+  real: boolean;
+  lightsRef: React.RefObject<LightFrame | null>;
+}) {
   const yoke = useRef<Group>(null);
   const beam = useRef<Mesh>(null);
   const light = useRef<SpotLight>(null);
@@ -85,7 +122,15 @@ function Head({ index, x, real, lightsRef }: { index: number; x: number; real: b
         <mesh ref={beam} position-y={-0.3 - BEAM_LENGTH / 2}>
           {/* Spitze oben (uv.y = 1 an der Basis des Zylinders → hell an der Lampe) */}
           <cylinderGeometry args={[0.06, 0.9, BEAM_LENGTH, 24, 1, true]} />
-          <shaderMaterial ref={mat} args={[{ ...beamShader, uniforms }]} transparent depthWrite={false} blending={AdditiveBlending} side={DoubleSide} toneMapped={false} />
+          <shaderMaterial
+            ref={mat}
+            args={[{ ...beamShader, uniforms }]}
+            transparent
+            depthWrite={false}
+            blending={AdditiveBlending}
+            side={DoubleSide}
+            toneMapped={false}
+          />
         </mesh>
       </group>
       {real && (

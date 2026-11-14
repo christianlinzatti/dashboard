@@ -8,7 +8,8 @@ export async function GET() {
   return withSpotify(async (call, session) => {
     const res = await call("/me/player/currently-playing?additional_types=track");
     if (res.status === 204) return json({ state: "idle", user: session.name } satisfies NowPlaying & { user: string });
-    if (res.status === 429) return json({ error: "Spotify-Limit erreicht", retryAfter: Number(res.headers.get("retry-after") ?? 5) }, 429);
+    if (res.status === 429)
+      return json({ error: "Spotify-Limit erreicht", retryAfter: Number(res.headers.get("retry-after") ?? 5) }, 429);
     if (!res.ok) return json({ error: `Spotify antwortet mit ${res.status}` }, 502);
 
     const parsed = currentlyPlayingSchema.safeParse(await res.json());

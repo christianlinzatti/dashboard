@@ -1,13 +1,10 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
+import { debugContext } from "./helpers";
 
 test.use({ permissions: ["microphone"] });
 
-/** Liest den Song-Kontext aus dem Debug-Panel. */
-async function context(page: import("@playwright/test").Page) {
-  return JSON.parse(await page.getByTestId("debug-panel").locator("pre").innerText()) as {
-    live: { micActive: boolean; micState: string; energy: number; bands: number[] };
-  };
-}
+type Ctx = { live: { micActive: boolean; micState: string; energy: number; bands: number[] } };
+const context = (page: Page) => debugContext<Ctx>(page);
 
 test("Mikrofon lässt sich einschalten und liefert Messwerte", async ({ page }) => {
   const errors: string[] = [];

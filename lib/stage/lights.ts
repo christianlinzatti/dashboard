@@ -46,7 +46,10 @@ const SCENE_OF: Record<SectionKind, LightScene> = {
 };
 
 /** Bewegungsprofil je Szene: aktive Köpfe (Anteil), Schwenk-Amplitude, Periode in Schlägen, Helligkeit. */
-const PROFILE: Record<LightScene, { share: number; amp: number; period: number; base: number; lasers: boolean; fog: number; wall: 0 | 1 | 2 }> = {
+const PROFILE: Record<
+  LightScene,
+  { share: number; amp: number; period: number; base: number; lasers: boolean; fog: number; wall: 0 | 1 | 2 }
+> = {
   intro: { share: 0.25, amp: 0.15, period: 32, base: 0.45, lasers: false, fog: 0.9, wall: 0 },
   strophe: { share: 0.5, amp: 0.35, period: 16, base: 0.55, lasers: false, fog: 0.5, wall: 0 },
   refrain: { share: 1, amp: 0.7, period: 4, base: 0.85, lasers: true, fog: 0.6, wall: 1 },
@@ -115,6 +118,11 @@ export function lightsAt(song: SongStatic, c: Choreography, heads: number, input
     strobe,
     wall: { colorA: pal.dominant, colorB: barColor, level: Math.min(1, energy * 0.8 + pulse * 0.3), mode: prof.wall },
     fog: prof.fog,
-    signal: { base: pal.dominant, accent: barColor, brightness: prof.base * (0.6 + energy * 0.4), pulse: scene === "intro" || scene === "outro" ? pulse * 0.2 : pulse },
+    signal: {
+      base: pal.dominant,
+      accent: barColor,
+      brightness: prof.base * (0.6 + energy * 0.4),
+      pulse: scene === "intro" || scene === "outro" ? pulse * 0.2 : pulse,
+    },
   };
 }

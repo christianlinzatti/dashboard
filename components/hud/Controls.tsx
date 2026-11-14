@@ -92,7 +92,10 @@ export function Controls({ live, mic }: { live: boolean; mic?: { state: MicState
   return (
     <>
       {message && (
-        <div className="absolute left-1/2 top-[16vmin] z-40 -translate-x-1/2 rounded-full bg-black/80 px-5 py-2 text-[clamp(13px,2.2vmin,22px)]" role="status">
+        <div
+          className="absolute left-1/2 top-[16vmin] z-40 -translate-x-1/2 rounded-full bg-black/80 px-5 py-2 text-[clamp(13px,2.2vmin,22px)]"
+          role="status"
+        >
           {message}
         </div>
       )}
@@ -103,20 +106,32 @@ export function Controls({ live, mic }: { live: boolean; mic?: { state: MicState
       >
         {live && (
           <>
-            <button className={btn} onClick={() => player("previous")} aria-label="Vorheriger Song">⏮</button>
-            <button className={btn} onClick={() => player(isPlaying ? "pause" : "play")} aria-label={isPlaying ? "Pause" : "Abspielen"}>
+            <button className={btn} onClick={() => player("previous")} aria-label="Vorheriger Song">
+              ⏮
+            </button>
+            <button
+              className={btn}
+              onClick={() => player(isPlaying ? "pause" : "play")}
+              aria-label={isPlaying ? "Pause" : "Abspielen"}
+            >
               {isPlaying ? "⏸" : "▶"}
             </button>
-            <button className={btn} onClick={() => player("next")} aria-label="Nächster Song">⏭</button>
+            <button className={btn} onClick={() => player("next")} aria-label="Nächster Song">
+              ⏭
+            </button>
           </>
         )}
         <div className="flex items-center gap-2 rounded-full bg-black/40 p-1 backdrop-blur">
-          <button className={btn} onClick={() => changeOffset(-100)} aria-label="Lyrics früher">−</button>
+          <button className={btn} onClick={() => changeOffset(-100)} aria-label="Lyrics früher">
+            −
+          </button>
           <span className="min-w-[9ch] text-center text-[clamp(12px,2vmin,20px)] tabular-nums" data-testid="offset">
             Lyrics {offset >= 0 ? "+" : "−"}
             {(Math.abs(offset) / 1000).toFixed(1).replace(".", ",")} s
           </span>
-          <button className={btn} onClick={() => changeOffset(100)} aria-label="Lyrics später">+</button>
+          <button className={btn} onClick={() => changeOffset(100)} aria-label="Lyrics später">
+            +
+          </button>
         </div>
         <button
           className={btn}
@@ -125,7 +140,12 @@ export function Controls({ live, mic }: { live: boolean; mic?: { state: MicState
         >
           Qualität: {qualityLabel[quality]}
         </button>
-        <button className={btn} data-testid="strobe-toggle" aria-pressed={strobe} onClick={() => setSettings({ strobe: !strobe })}>
+        <button
+          className={btn}
+          data-testid="strobe-toggle"
+          aria-pressed={strobe}
+          onClick={() => setSettings({ strobe: !strobe })}
+        >
           Strobo {strobe ? "an" : "aus"}
         </button>
         {mic && (

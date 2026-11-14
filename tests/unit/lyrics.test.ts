@@ -14,7 +14,14 @@ import { localOverrides } from "@/lib/lyrics/providers/local";
 import { memoryCache, upstashCache } from "@/lib/lyrics/cache";
 import type { LyricsProvider, ProviderResult, TrackQuery } from "@/lib/lyrics/types";
 
-const q: TrackQuery = { trackKey: "t1", spotifyId: "abc123", title: "Lied", artists: ["Band"], album: "Album", durationMs: 180_000 };
+const q: TrackQuery = {
+  trackKey: "t1",
+  spotifyId: "abc123",
+  title: "Lied",
+  artists: ["Band"],
+  album: "Album",
+  durationMs: 180_000,
+};
 
 describe("Text-Hilfen", () => {
   it("Silben, Normalisierung, Titelbereinigung", () => {
@@ -30,7 +37,14 @@ describe("Text-Hilfen", () => {
 describe("LRC-Parser", () => {
   it("liest Zeilen, Offsets, Leerzeilen und Mehrfach-Zeitstempel", () => {
     const { lines, hasWords } = parseLrc(
-      ["[ar: Band]", "[offset:+500]", "[00:10.50]Erste Zeile", "[00:14.00]", "[00:20.00][01:20.00]Refrain hier", "[00:24.30]Zweite"].join("\n"),
+      [
+        "[ar: Band]",
+        "[offset:+500]",
+        "[00:10.50]Erste Zeile",
+        "[00:14.00]",
+        "[00:20.00][01:20.00]Refrain hier",
+        "[00:24.30]Zweite",
+      ].join("\n"),
       180_000,
     );
     expect(hasWords).toBe(false);
@@ -45,7 +59,9 @@ describe("LRC-Parser", () => {
   });
 
   it("liest Enhanced-LRC mit Wort-Timings", () => {
-    const { lines, hasWords } = parseLrc("[00:12.00]<00:12.00>Die <00:12.40>Straßen <00:13.10>glühen <00:14.00>\n[00:16.00]weiter");
+    const { lines, hasWords } = parseLrc(
+      "[00:12.00]<00:12.00>Die <00:12.40>Straßen <00:13.10>glühen <00:14.00>\n[00:16.00]weiter",
+    );
     expect(hasWords).toBe(true);
     expect(lines[0]!.text).toBe("Die Straßen glühen");
     expect(lines[0]!.words).toEqual([
@@ -96,7 +112,18 @@ describe("Abschnitts-Erkennung", () => {
 
   it("erkennt Intro, Strophen, Refrains, Instrumental, Bridge und Outro", () => {
     const kinds = detectSections(lines, 150_000).map((s) => s.kind);
-    expect(kinds).toEqual(["intro", "verse", "chorus", "verse", "chorus", "instrumental", "bridge", "instrumental", "chorus", "outro"]);
+    expect(kinds).toEqual([
+      "intro",
+      "verse",
+      "chorus",
+      "verse",
+      "chorus",
+      "instrumental",
+      "bridge",
+      "instrumental",
+      "chorus",
+      "outro",
+    ]);
   });
 
   it("Abschnitte sind lückenlos sortiert", () => {
@@ -105,7 +132,13 @@ describe("Abschnitts-Erkennung", () => {
   });
 });
 
-function provider(id: string, priority: number, result: ProviderResult | null | Error, delay = 0, authoritative = false): LyricsProvider {
+function provider(
+  id: string,
+  priority: number,
+  result: ProviderResult | null | Error,
+  delay = 0,
+  authoritative = false,
+): LyricsProvider {
   return {
     id,
     priority,
@@ -133,7 +166,9 @@ describe("Provider-Kette", () => {
   });
 
   it("Zeilen-Sync wird zu geschätztem Wort-Sync mit Abschnitten", async () => {
-    const r = await findLyrics(q, [provider("zeile", 1, { provider: "zeile", sync: "line", lines: [line("Hallo schöne Welt")] })]);
+    const r = await findLyrics(q, [
+      provider("zeile", 1, { provider: "zeile", sync: "line", lines: [line("Hallo schöne Welt")] }),
+    ]);
     expect(r.lyrics?.quality).toBe("word-estimated");
     expect(r.lyrics?.lines[0]!.words).toHaveLength(3);
     expect(() => lyricsSchema.parse(r.lyrics)).not.toThrow();
@@ -152,7 +187,11 @@ describe("Provider-Kette", () => {
     const ok = provider("ok", 5, { provider: "ok", sync: "line", lines: [line("a")] });
     const r = await findLyrics(q, [slow, broken, ok], { timeoutMs: 50, breaker });
     expect(r.lyrics?.provider).toBe("ok");
-    expect(Object.fromEntries(r.attempts.map((a) => [a.provider, a.outcome]))).toEqual({ langsam: "timeout", kaputt: "error", ok: "ok" });
+    expect(Object.fromEntries(r.attempts.map((a) => [a.provider, a.outcome]))).toEqual({
+      langsam: "timeout",
+      kaputt: "error",
+      ok: "ok",
+    });
 
     await findLyrics(q, [broken], { breaker });
     const third = await findLyrics(q, [broken], { breaker });
@@ -176,13 +215,17 @@ describe("Provider-Kette", () => {
 });
 
 describe("LRCLIB", () => {
-  const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
+  const json = (body: unknown, status = 200) =>
+    new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 
   it("nutzt /get mit Dauer und neutralem User-Agent", async () => {
     const fetchMock = vi.fn<typeof fetch>(async () =>
       json({ id: 1, trackName: "Lied", artistName: "Band", duration: 180, syncedLyrics: "[00:01.00]Hallo\n[00:05.00]Welt" }),
     );
-    const r = await lrclib(fetchMock as unknown as typeof fetch).search({ ...q, title: "Lied - Remastered" }, new AbortController().signal);
+    const r = await lrclib(fetchMock as unknown as typeof fetch).search(
+      { ...q, title: "Lied - Remastered" },
+      new AbortController().signal,
+    );
     const url = new URL(String(fetchMock.mock.calls[0]![0]));
     expect(url.pathname).toBe("/api/get");
     expect(url.searchParams.get("track_name")).toBe("Lied");
@@ -225,7 +268,13 @@ describe("Eigene Lyrics-Dateien", () => {
 
     await writeFile(
       path.join(dir, "duett1.json"),
-      JSON.stringify({ provider: "lokal", quality: "word", sections: [], singers: { v1: "a" }, lines: [{ startMs: 0, endMs: 1000, text: "x", agent: "v1" }] }),
+      JSON.stringify({
+        provider: "lokal",
+        quality: "word",
+        sections: [],
+        singers: { v1: "a" },
+        lines: [{ startMs: 0, endMs: 1000, text: "x", agent: "v1" }],
+      }),
     );
     expect(await p.search({ ...q, spotifyId: "duett1" }, new AbortController().signal)).toMatchObject({ singers: { v1: "a" } });
   });

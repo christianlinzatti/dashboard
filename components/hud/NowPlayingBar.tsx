@@ -13,10 +13,7 @@ export function NowPlayingBar() {
   if (!song) return null;
 
   return (
-    <header
-      className="absolute inset-x-0 top-0 flex items-center gap-[2vmin] px-[3vmin] pt-[2.5vmin]"
-      data-testid="now-playing"
-    >
+    <header className="absolute inset-x-0 top-0 flex items-center gap-[2vmin] px-[3vmin] pt-[2.5vmin]" data-testid="now-playing">
       <Image
         src={song.album.coverUrl}
         alt={`Cover: ${song.album.name}`}
@@ -31,7 +28,10 @@ export function NowPlayingBar() {
         <p className="truncate text-[clamp(14px,2.8vmin,30px)] text-white/70">{artistLine(song)}</p>
       </div>
       <div className="flex shrink-0 flex-col items-end gap-[0.8vmin] text-[clamp(11px,1.9vmin,20px)] font-medium">
-        <span className="flex items-center gap-[0.8vmin] rounded-full bg-white/10 px-[1.4vmin] py-[0.4vmin] backdrop-blur" data-testid="bpm">
+        <span
+          className="flex items-center gap-[0.8vmin] rounded-full bg-white/10 px-[1.4vmin] py-[0.4vmin] backdrop-blur"
+          data-testid="bpm"
+        >
           {micActive && <MicDot />}
           {micActive && !locked ? "~" : ""}
           {bpm} BPM
@@ -55,5 +55,12 @@ export function NowPlayingBar() {
 
 /** Roter Punkt: Mikrofon ist aktiv (Audio wird nur lokal ausgewertet). */
 function MicDot() {
-  return <span className="size-[1.1vmin] min-h-2 min-w-2 rounded-full bg-red-500" aria-label="Mikrofon aktiv" title="Mikrofon aktiv" data-testid="mic-indicator" />;
+  return (
+    <span
+      className="size-[1.1vmin] min-h-2 min-w-2 rounded-full bg-red-500"
+      aria-label="Mikrofon aktiv"
+      title="Mikrofon aktiv"
+      data-testid="mic-indicator"
+    />
+  );
 }

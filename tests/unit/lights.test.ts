@@ -44,7 +44,10 @@ describe("LightDirector", () => {
     expect(onBeat.scene).toBe("drop");
     expect(onBeat.strobe).toBeGreaterThan(0.8);
     expect(at(drop + plan.beatMs * 4.5, { dropMs: drop, anchorMs: drop, micActive: true, energy: 0.9 }).strobe).toBe(0);
-    expect(at(drop + plan.beatMs * 4 + 10, { dropMs: drop, anchorMs: drop, micActive: true, energy: 0.9, strobeAllowed: false }).strobe).toBe(0);
+    expect(
+      at(drop + plan.beatMs * 4 + 10, { dropMs: drop, anchorMs: drop, micActive: true, energy: 0.9, strobeAllowed: false })
+        .strobe,
+    ).toBe(0);
     // nach zwei Takten vorbei
     expect(at(drop + plan.barMs * 2 + 50, { dropMs: drop, anchorMs: drop }).scene).not.toBe("drop");
   });

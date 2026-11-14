@@ -15,13 +15,18 @@ const lyrics = {
   quality: "word-estimated",
   sections: [{ kind: "verse", startMs: 0, endMs: 200_000 }],
   lines: [
-    { startMs: 0, endMs: 60_000, text: "Eine sehr lange erste Zeile", words: [
-      { startMs: 0, endMs: 10_000, text: "Eine" },
-      { startMs: 10_000, endMs: 20_000, text: "sehr" },
-      { startMs: 20_000, endMs: 30_000, text: "lange" },
-      { startMs: 30_000, endMs: 40_000, text: "erste" },
-      { startMs: 40_000, endMs: 60_000, text: "Zeile" },
-    ] },
+    {
+      startMs: 0,
+      endMs: 60_000,
+      text: "Eine sehr lange erste Zeile",
+      words: [
+        { startMs: 0, endMs: 10_000, text: "Eine" },
+        { startMs: 10_000, endMs: 20_000, text: "sehr" },
+        { startMs: 20_000, endMs: 30_000, text: "lange" },
+        { startMs: 30_000, endMs: 40_000, text: "erste" },
+        { startMs: 40_000, endMs: 60_000, text: "Zeile" },
+      ],
+    },
     { startMs: 61_000, endMs: 70_000, text: "Danach die zweite" },
   ],
 };
@@ -36,7 +41,9 @@ test("Lyrics werden beim Songwechsel geladen und angezeigt", async ({ page }) =>
   let requested: URL | undefined;
   await page.route("**/api/lyrics?*", (route) => {
     requested = new URL(route.request().url());
-    return route.fulfill({ json: { lyrics, instrumental: false, cached: false, attempts: [{ provider: "lrclib", outcome: "ok", ms: 120 }] } });
+    return route.fulfill({
+      json: { lyrics, instrumental: false, cached: false, attempts: [{ provider: "lrclib", outcome: "ok", ms: 120 }] },
+    });
   });
   await page.goto("/");
   await expect(page.getByTestId("lyrics-current")).toHaveText("Eine sehr lange erste Zeile");
@@ -48,7 +55,9 @@ test("Lyrics werden beim Songwechsel geladen und angezeigt", async ({ page }) =>
 
 test("keine Lyrics gefunden", async ({ page }) => {
   await page.route("**/api/lyrics?*", (route) =>
-    route.fulfill({ json: { lyrics: null, instrumental: false, cached: false, attempts: [{ provider: "lrclib", outcome: "empty", ms: 80 }] } }),
+    route.fulfill({
+      json: { lyrics: null, instrumental: false, cached: false, attempts: [{ provider: "lrclib", outcome: "empty", ms: 80 }] },
+    }),
   );
   await page.goto("/");
   await expect(page.getByTestId("lyrics-none")).toHaveText("Instrumental – keine Lyrics gefunden");

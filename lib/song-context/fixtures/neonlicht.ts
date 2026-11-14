@@ -5,10 +5,33 @@ import { line, section } from "./helpers";
 export const neonlicht: SongStatic = {
   schemaVersion: 1,
   trackKey: "demo-neonlicht",
-  track: { spotifyId: "demo-neonlicht", title: "Neonlicht", durationMs: 200_000, explicit: false, releaseDate: "2026-05-01", isFeature: true },
+  track: {
+    spotifyId: "demo-neonlicht",
+    title: "Neonlicht",
+    durationMs: 200_000,
+    explicit: false,
+    releaseDate: "2026-05-01",
+    isFeature: true,
+  },
   artists: [
-    { spotifyId: "demo-mira", name: "Mira Sol", role: "main", genres: ["dance pop"], images: [], avatarId: "aurora-synth", color: "#ff4fd8" },
-    { spotifyId: "demo-kai", name: "Kai Vento", role: "feature", genres: ["german hip hop"], images: [], avatarId: "atlas-prism", color: "#3ee6ff" },
+    {
+      spotifyId: "demo-mira",
+      name: "Mira Sol",
+      role: "main",
+      genres: ["dance pop"],
+      images: [],
+      avatarId: "aurora-synth",
+      color: "#ff4fd8",
+    },
+    {
+      spotifyId: "demo-kai",
+      name: "Kai Vento",
+      role: "feature",
+      genres: ["german hip hop"],
+      images: [],
+      avatarId: "atlas-prism",
+      color: "#3ee6ff",
+    },
   ],
   album: {
     name: "Stadt aus Glas",

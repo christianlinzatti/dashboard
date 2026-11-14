@@ -1,14 +1,5 @@
-import { expect, test, type Locator, type Page } from "@playwright/test";
-
-/**
- * Steuerleiste einblenden und sofort bedienen. Die Leiste blendet sich nach 6 s aus –
- * auf langsamen CI-Runnern (Software-Rendering) kann das zwischen zwei Testschritten passieren.
- */
-async function tapControl(page: Page, control: Locator) {
-  await page.mouse.click(640, 300);
-  await expect(page.getByTestId("controls")).toHaveCSS("opacity", "1");
-  await control.dispatchEvent("click");
-}
+import { expect, test } from "@playwright/test";
+import { tapControl } from "./helpers";
 
 const track = {
   id: "e2e-track",
@@ -97,7 +88,12 @@ test.describe("Spotify-Anbindung", () => {
         json:
           state === "idle"
             ? { state: "idle", user: "Test" }
-            : { state: "playing", progressMs: 1000, fetchedAt: 0, track: state === "a" ? track : { ...track, id: "b", name: "Zweites Lied" } },
+            : {
+                state: "playing",
+                progressMs: 1000,
+                fetchedAt: 0,
+                track: state === "a" ? track : { ...track, id: "b", name: "Zweites Lied" },
+              },
       }),
     );
     await page.goto("/");

@@ -17,7 +17,10 @@ function load(): Settings {
   try {
     const raw = JSON.parse(localStorage.getItem(KEY) ?? "{}") as Partial<Settings>;
     return {
-      quality: raw.quality === "auto" || qualities.includes(raw.quality as Quality) ? (raw.quality as Settings["quality"]) : defaults.quality,
+      quality:
+        raw.quality === "auto" || qualities.includes(raw.quality as Quality)
+          ? (raw.quality as Settings["quality"])
+          : defaults.quality,
       strobe: typeof raw.strobe === "boolean" ? raw.strobe : defaults.strobe,
     };
   } catch {

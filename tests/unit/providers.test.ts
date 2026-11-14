@@ -6,13 +6,21 @@ import { spotifyColor, totp, totpKey } from "@/lib/lyrics/providers/spotify-colo
 import { activeProviders } from "@/lib/lyrics/service";
 import type { TrackQuery } from "@/lib/lyrics/types";
 
-const q: TrackQuery = { trackKey: "t", spotifyId: "4uLU6hMCjMI75M1A2tKUQC", title: "Leuchtfeuer", artists: ["Die Testband"], durationMs: 200_000 };
+const q: TrackQuery = {
+  trackKey: "t",
+  spotifyId: "4uLU6hMCjMI75M1A2tKUQC",
+  title: "Leuchtfeuer",
+  artists: ["Die Testband"],
+  durationMs: 200_000,
+};
 const signal = () => new AbortController().signal;
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
 
 describe("Treffer-Prüfung", () => {
   it("akzeptiert denselben Song, auch mit Zusätzen", () => {
-    expect(isSameTrack(q, { title: "Leuchtfeuer (feat. Gast) - Remastered", artists: ["Die Testband", "Gast"], durationMs: 201_000 })).toBe(true);
+    expect(
+      isSameTrack(q, { title: "Leuchtfeuer (feat. Gast) - Remastered", artists: ["Die Testband", "Gast"], durationMs: 201_000 }),
+    ).toBe(true);
     expect(overlap("Die Testband", "Testband")).toBe(1);
   });
   it.each([
@@ -68,7 +76,9 @@ describe("NetEase", () => {
   });
 
   it("ohne passenden Treffer: null", async () => {
-    const fetchMock = vi.fn<typeof fetch>(async () => json({ result: { songs: [{ id: 9, name: "Anderes Lied", artists: [{ name: "X" }] }] } }));
+    const fetchMock = vi.fn<typeof fetch>(async () =>
+      json({ result: { songs: [{ id: 9, name: "Anderes Lied", artists: [{ name: "X" }] }] } }),
+    );
     expect(await netease(fetchMock).search(q, signal())).toBeNull();
   });
 });
@@ -104,11 +114,16 @@ describe("Musixmatch Desktop", () => {
   });
 
   it("verwirft Lockvogel-Treffer (anderer Song)", async () => {
-    expect(await musixmatchDesktop(mock({ track_name: "NOKIA", artist_name: "Drake", track_length: 241 })).search(q, signal())).toBeNull();
+    expect(
+      await musixmatchDesktop(mock({ track_name: "NOKIA", artist_name: "Drake", track_length: 241 })).search(q, signal()),
+    ).toBeNull();
   });
 
   it("meldet Instrumentals", async () => {
-    const r = await musixmatchDesktop(mock({ track_name: "Leuchtfeuer", artist_name: "Die Testband", instrumental: 1 })).search(q, signal());
+    const r = await musixmatchDesktop(mock({ track_name: "Leuchtfeuer", artist_name: "Die Testband", instrumental: 1 })).search(
+      q,
+      signal(),
+    );
     expect(r?.instrumental).toBe(true);
   });
 });
@@ -163,7 +178,8 @@ describe("Spotify Color-Lyrics", () => {
       const auth = (init?.headers as Record<string, string> | undefined)?.Authorization ?? "";
       calls.push(u.includes("color-lyrics") ? `lyrics:${auth}` : u.includes("server-time") ? "time" : "token");
       if (u.endsWith("/server-time")) return json({ serverTime: 1_700_000_000 });
-      if (u.includes("/api/token")) return json({ accessToken: "webplayer", accessTokenExpirationTimestampMs: Date.now() + 3_600_000 });
+      if (u.includes("/api/token"))
+        return json({ accessToken: "webplayer", accessTokenExpirationTimestampMs: Date.now() + 3_600_000 });
       if (auth === "Bearer app") return json({}, 403);
       return json({ lyrics: { syncType: "LINE_SYNCED", lines: [{ startTimeMs: "1000", words: "Eins" }] } });
     });
@@ -176,14 +192,18 @@ describe("Spotify Color-Lyrics", () => {
   });
 
   it("Anmelde-Token reicht, wenn Spotify es akzeptiert", async () => {
-    const f = vi.fn<typeof fetch>(async () => json({ lyrics: { syncType: "LINE_SYNCED", lines: [{ startTimeMs: "1000", words: "Eins" }] } }));
+    const f = vi.fn<typeof fetch>(async () =>
+      json({ lyrics: { syncType: "LINE_SYNCED", lines: [{ startTimeMs: "1000", words: "Eins" }] } }),
+    );
     expect((await spotifyColor({}, f).search({ ...q, userAccessToken: "app" }, signal()))?.lines).toHaveLength(1);
     expect(f).toHaveBeenCalledTimes(1);
   });
 
   it("anonymes Token (sp_dc ungültig) ist ein Fehler", async () => {
     const f = vi.fn<typeof fetch>(async (url) =>
-      String(url).endsWith("/server-time") ? json({ serverTime: 1 }) : json({ accessToken: "x", accessTokenExpirationTimestampMs: 0, isAnonymous: true }),
+      String(url).endsWith("/server-time")
+        ? json({ serverTime: 1 })
+        : json({ accessToken: "x", accessTokenExpirationTimestampMs: 0, isAnonymous: true }),
     );
     await expect(spotifyColor({ spDc: "x", totpSecret: "k", totpVersion: "1" }, f).search(q, signal())).rejects.toThrow(/sp_dc/);
   });

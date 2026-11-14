@@ -1,0 +1,11 @@
+.next/
+node_modules/
+public/
+avatars/
+data/
+playwright/screenshots/
+playwright-report/
+test-results/
+coverage/
+package-lock.json
+*.md

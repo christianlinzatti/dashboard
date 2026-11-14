@@ -50,11 +50,20 @@ describe("Casting", () => {
   });
 
   it("füllt mit Background-Tänzern auf und hält die Obergrenze ein", () => {
-    const solo = buildCast({ trackKey: "t2", genres: ["techno"], size: 3, artists: [{ spotifyId: "a", avatarId: "neon-pulse", role: "main" }] });
+    const solo = buildCast({
+      trackKey: "t2",
+      genres: ["techno"],
+      size: 3,
+      artists: [{ spotifyId: "a", avatarId: "neon-pulse", role: "main" }],
+    });
     expect(solo).toHaveLength(3);
     expect(solo.slice(1).every((c) => c.role === "backup")).toBe(true);
 
-    const many = Array.from({ length: 8 }, (_, i) => ({ spotifyId: `a${i}`, avatarId: avatars[i]!.id, role: "feature" as const }));
+    const many = Array.from({ length: 8 }, (_, i) => ({
+      spotifyId: `a${i}`,
+      avatarId: avatars[i]!.id,
+      role: "feature" as const,
+    }));
     expect(buildCast({ trackKey: "t3", genres: [], artists: many, maxSize: 5 })).toHaveLength(5);
   });
 

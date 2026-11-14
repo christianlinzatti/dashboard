@@ -1,4 +1,4 @@
-import { contiguous } from "@/lib/dance/plan";
+import { contiguous } from "@/lib/song-context/sections";
 import { rng } from "@/lib/dance/rng";
 import { lastStartedIndex } from "@/lib/song-context/derive";
 import type { LyricLine, SectionKind, SongStatic } from "@/lib/song-context/schema";
@@ -28,7 +28,10 @@ export function planLyricsModes(song: SongStatic): LyricsMode[] {
   const singers = new Set(lines.map((l) => (l.agent ? lyrics.singers?.[l.agent] : undefined)).filter(Boolean));
   const duet = song.track.isFeature && singers.size >= 2;
   const r = rng(`lyrics:${song.trackKey}`);
-  const sections = contiguous(lyrics.sections.length ? lyrics.sections : [{ kind: "verse", startMs: 0, endMs: song.track.durationMs }], song.track.durationMs);
+  const sections = contiguous(
+    lyrics.sections.length ? lyrics.sections : [{ kind: "verse", startMs: 0, endMs: song.track.durationMs }],
+    song.track.durationMs,
+  );
 
   const sectionMode: LyricsMode[] = [];
   let lastChorus: LyricsMode | undefined;
@@ -44,7 +47,8 @@ export function planLyricsModes(song: SongStatic): LyricsMode[] {
       lastChorus = mode;
     } else if (fast) mode = "wortpop";
     else if (kind === "verse") mode = duet ? "duett" : "karaoke";
-    else if (kind === "bridge" || kind === "intro" || kind === "prechorus") mode = prev === "schreibmaschine" ? "karaoke" : "schreibmaschine";
+    else if (kind === "bridge" || kind === "intro" || kind === "prechorus")
+      mode = prev === "schreibmaschine" ? "karaoke" : "schreibmaschine";
     else mode = "karaoke";
     sectionMode.push(mode);
   });

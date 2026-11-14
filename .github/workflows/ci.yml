@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   check:
-    name: Lint, Typen, Unit-Tests, Build
+    name: Format, Lint, Typen, Unit-Tests, Build
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -26,11 +26,34 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      - name: Formatierung (Prettier)
+        run: npm run format:check
       - name: ESLint
         run: npm run lint
       - name: TypeScript
         run: npm run typecheck
-      - name: Unit-Tests (Vitest)
-        run: npm test
+      - name: Unit-Tests mit Abdeckung (Schwellwerte in vitest.config.mts)
+        run: npx vitest run --coverage
+      - name: Abdeckung in die Zusammenfassung
+        if: ${{ !cancelled() }}
+        run: |
+          node -e '
+            const s = require("./coverage/coverage-summary.json").total;
+            const row = (k, n) => `| ${n} | ${s[k].pct} % | ${s[k].covered}/${s[k].total} |`;
+            console.log(["### Testabdeckung (lib/)", "| | Anteil | abgedeckt |", "|---|---|---|",
+              row("statements","Anweisungen"), row("branches","Verzweigungen"), row("functions","Funktionen"), row("lines","Zeilen")].join("\n"));
+          ' >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: ${{ !cancelled() }}
+        with:
+          name: coverage
+          path: coverage/
+          retention-days: 14
+      - name: Next.js-Build-Cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .next/cache
+          key: next-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ hashFiles('app/**', 'components/**', 'lib/**') }}
+          restore-keys: next-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
       - name: Build (inkl. Avatar-Optimierung)
         run: npm run build

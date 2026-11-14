@@ -48,15 +48,37 @@ export async function exchangeCode(code: string, verifier: string, redirectUri: 
   return tokenRequest({ grant_type: "authorization_code", code, redirect_uri: redirectUri, code_verifier: verifier });
 }
 
-export async function refreshSession(s: Session): Promise<Session> {
+async function doRefresh(s: Session): Promise<Session> {
   const t = await tokenRequest({ grant_type: "refresh_token", refresh_token: s.refreshToken });
   return {
     ...s,
     accessToken: t.access_token,
     expiresAt: Date.now() + t.expires_in * 1000,
-    refreshToken: t.refresh_token ?? s.refreshToken, // Spotify rotiert Refresh-Tokens teilweise
+    refreshToken: t.refresh_token ?? s.refreshToken, // bei PKCE rotiert Spotify Refresh-Tokens
     scope: t.scope || s.scope,
   };
+}
+
+/**
+ * Single-Flight je Refresh-Token: Gleichzeitige Anfragen (z. B. now-playing + Player-Steuerung)
+ * erneuern nur einmal. Da Spotify das Refresh-Token dabei austauschen kann, würde ein zweiter
+ * Refresh mit dem alten Token sonst fehlschlagen. Das Ergebnis bleibt kurz abrufbar, damit auch
+ * Anfragen mit noch altem Cookie die neuen Tokens bekommen.
+ */
+const refreshes = new Map<string, { promise: Promise<Session>; until: number }>();
+const REUSE_MS = 60_000;
+
+export function refreshSession(s: Session, refresh: (s: Session) => Promise<Session> = doRefresh): Promise<Session> {
+  const now = Date.now();
+  for (const [k, v] of refreshes) if (v.until < now) refreshes.delete(k);
+  const hit = refreshes.get(s.refreshToken);
+  if (hit) return hit.promise;
+  const promise = refresh(s).catch((e) => {
+    refreshes.delete(s.refreshToken);
+    throw e;
+  });
+  refreshes.set(s.refreshToken, { promise, until: now + REUSE_MS });
+  return promise;
 }
 
 export class SpotifyError extends Error {
@@ -72,18 +94,25 @@ export class SpotifyError extends Error {
  * Aufruf der Spotify-Web-API; erneuert das Access-Token bei Bedarf.
  * Gibt die (ggf. aktualisierte) Session zurück, damit der Aufrufer das Cookie neu schreiben kann.
  */
-export async function spotifyFetch(session: Session, path: string, init: RequestInit = {}) {
+export async function spotifyFetch(
+  session: Session,
+  path: string,
+  init: RequestInit = {},
+  deps: { fetch?: typeof fetch; refresh?: (s: Session) => Promise<Session> } = {},
+) {
+  const doFetch = deps.fetch ?? fetch;
+  const renew = (x: Session) => refreshSession(x, deps.refresh);
   let s = session;
   let refreshed = false;
   if (Date.now() > s.expiresAt - 60_000) {
-    s = await refreshSession(s);
+    s = await renew(s);
     refreshed = true;
   }
   const call = (token: string) =>
-    fetch(`${API}${path}`, { ...init, headers: { ...init.headers, Authorization: `Bearer ${token}` }, cache: "no-store" });
+    doFetch(`${API}${path}`, { ...init, headers: { ...init.headers, Authorization: `Bearer ${token}` }, cache: "no-store" });
   let res = await call(s.accessToken);
   if (res.status === 401 && !refreshed) {
-    s = await refreshSession(s);
+    s = await renew(s);
     refreshed = true;
     res = await call(s.accessToken);
   }

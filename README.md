@@ -3,7 +3,7 @@
 Lyric-Dashboard für ein 10-Zoll-Display (Raspberry Pi, Chromium im Kiosk-Modus):
 zeigt den aktuellen Spotify-Song, Lyrics möglichst Wort für Wort und tanzende 3D-Avatare.
 
-Konzept und Ausbaustufen: [`docs/KONZEPT.md`](docs/KONZEPT.md)
+Konzept und Ausbaustufen: [`docs/KONZEPT.md`](docs/KONZEPT.md) · Architektur-Bewertung: [`docs/ARCHITEKTUR.md`](docs/ARCHITEKTUR.md)
 
 **Stand: Meilenstein 8** – Bühne & Licht (Ausbaustufe 2): Podest, Traverse, LED-Rückwand (Farbverlauf,
 Equalizer aus den Mikro-Frequenzbändern, Gegenlicht), Moving Heads mit Lichtkegeln, Laser-Fächer, Bodennebel,
@@ -66,7 +66,8 @@ Die Demo-Songs haben frei erfundene Texte.
 | `npm run dev` | Entwicklungsserver |
 | `npm run build` | Produktiv-Build; komprimiert vorher die Avatare (`/avatars` → `/public/avatars`) |
 | `npm run lint` / `npm run typecheck` | ESLint / TypeScript |
-| `npm test` | Unit-Tests (Vitest) |
+| `npm test` | Unit-Tests (Vitest); mit `npx vitest run --coverage` inkl. Abdeckung und Mindestwerten |
+| `npm run format` / `npm run format:check` | Prettier formatieren / prüfen |
 | `npm run e2e` | Playwright-Tests inkl. Screenshot-Vergleich (vorher `npm run build`) |
 | `npm run e2e:update` | Referenz-Screenshots neu erzeugen |
 | `npm run test:live` | echte Lyrics-Provider prüfen (Netzwerk) |
@@ -90,9 +91,10 @@ Die Demo-Songs haben frei erfundene Texte.
 
 | Workflow | Inhalt |
 |---|---|
-| `ci.yml` | Lint, Typecheck, Unit-Tests, Build |
-| `e2e.yml` | Playwright in Chromium (1280×800, 1024×600, 1920×1200) im offiziellen Playwright-Container, Screenshot-Vergleich gegen `playwright/screenshots/`, Bericht als Artefakt |
-| `update-screenshots.yml` | manuell: Referenz-Screenshots im Container neu erzeugen und auf den Branch committen |
+| `ci.yml` | Prettier, Lint, Typecheck, Unit-Tests mit Mindest-Abdeckung, Build (mit Cache) |
+| `e2e.yml` | Playwright in Chromium, je Auflösung ein paralleler Job (1280×800, 1024×600, 1920×1200) im offiziellen Playwright-Container, Screenshot-Vergleich gegen `playwright/screenshots/`, Bericht als Artefakt |
+| `update-screenshots.yml` | manuell: Referenz-Screenshots im Container neu erzeugen, auf den Branch committen und danach E2E starten |
+| `workflows-lint.yml` | `actionlint` prüft die Workflows bei Änderungen |
 | `codeql.yml` | CodeQL-Sicherheitsanalyse |
 | `security.yml` | `npm audit`, Gitleaks-Secret-Scan, Dependency Review |
 | `provider-check.yml` | täglich: echte Lyrics-Provider prüfen, bei Ausfall Issue anlegen |
