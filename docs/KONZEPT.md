@@ -96,26 +96,88 @@ Leitlinien:
 
 ## 4. Architektur
 
+Kernidee: **Es gibt genau einen Ort mit allen Informationen zum aktuellen Song – den Song-Kontext.** Alle Datenquellen schreiben hinein, alle Anzeige- und Steuerungsmodule lesen nur daraus. Kein Modul holt sich selbst Daten aus Spotify, Lyrics-Providern oder Wikipedia.
+
 ```
-┌─────────────────────────── Browser (Dashboard) ───────────────────────────┐
-│                                                                           │
-│  NowPlaying-Sync ──► PlaybackClock (interpolierte Songzeit, ms-genau)     │
-│        │                     │                                            │
-│        │                     ├──► LyricsEngine ──► LyricsRenderer (DOM)   │
-│        │                     │                                            │
-│  Mikrofon ──► AudioAnalyzer (AudioWorklet/FFT)                            │
-│                  │  beat, bpm, energy, bands, vocalActivity               │
-│                  ▼                                                        │
-│            MusicState (Zustand-Store) ──► DanceDirector ──► R3F-Szene     │
-│                                              (Clip-Wahl, Tempo, Crossfade)│
-└───────────────────────────────▲───────────────────────────────────────────┘
-                                │ fetch (JSON)
-┌───────────────────────────────┴──── Vercel (Next.js Route Handlers) ──────┐
-│ /api/auth/*        Spotify OAuth (PKCE), Refresh-Token im verschl. Cookie │
-│ /api/now-playing   Proxy auf Spotify „currently-playing“                  │
-│ /api/lyrics        Provider-Kette, Normalisierung, Cache (Redis/Upstash)  │
-│ /api/track-meta    BPM/Genre-Anreicherung (optional, externe Quellen)     │
-└───────────────────────────────────────────────────────────────────────────┘
+            QUELLEN (schreiben)                         VERBRAUCHER (lesen)
+┌───────────────────────────────────┐            ┌──────────────────────────────────┐
+│ Spotify (Track, Artists, Album,   │            │ HUD (Titel, Cover, Fortschritt)  │
+│   Wiedergabe)                     │            │ LyricsDirector  → Lyrics-Modi    │
+│ Lyrics-Provider-Kette             │            │ DanceDirector   → Avatare/Tanz   │
+│ Mikrofon-Analyse (live)           │──────────► │ LightDirector   → Bühne (St. 2)  │
+│ BPM/Genre-Anreicherung            │   SONG-    │ Pi-Bridge       → Govee (St. 3)  │
+│ MusicBrainz / Wikipedia / Commons │  KONTEXT   │ Alexa-Skill     → Sprache (St. 3)│
+│ Cover-Farbanalyse                 │            │ InfoDirector    → Fotos/Texte (4)│
+│ Nutzer-Einstellungen (Offset …)   │            │ Debug-Panel, Playwright-Fixtures │
+└───────────────────────────────────┘            └──────────────────────────────────┘
+```
+
+### 4.1 Song-Kontext
+
+Der Song-Kontext ist ein **typisiertes, versioniertes Objekt** (zod-Schema in `lib/song-context/schema.ts`), das aus drei Schichten besteht:
+
+| Schicht | Inhalt | Wo erzeugt | Änderungsrate |
+|---|---|---|---|
+| **Stammdaten** (`static`) | Track, Artists, Album, Lyrics, Abschnitte, Genres, BPM-Startwert, Farben, Infotexte, Fotos | Server: `/api/song-context`, pro Track einmal aggregiert, in Redis gecacht | einmal pro Song (wird schrittweise angereichert) |
+| **Wiedergabe** (`playback`) | spielt/pausiert, Songzeit, Gerät, Lautstärke, Offset | Client: Spotify-Polling + PlaybackClock | alle 1–3 s, Uhr ms-genau interpoliert |
+| **Live-Analyse & Ableitungen** (`live`, `derived`) | Beat-Phase, BPM, Energie, Frequenzbänder, Stimmaktivität; aktuelle Zeile/Wort, aktueller Abschnitt, aktiver Sänger, Refrain ja/nein, Drop | Client: Mikrofon + Auswertung von Lyrics und Songzeit | pro Frame |
+
+```ts
+type SongContext = {
+  schemaVersion: 1;
+  trackKey: string;                       // Spotify-ID (+ ISRC zur Zuordnung externer Quellen)
+  status: Record<SourceName, SourceStatus>; // pro Quelle: loading | ok | missing | error, Provider, Zeitpunkt
+
+  track:   { spotifyId; isrc?; title; durationMs; explicit; releaseDate; popularity?; isFeature: boolean };
+  artists: Array<{ spotifyId; name; role: "main" | "feature"; mbid?; genres: string[];
+                   images: Image[]; avatarId: string; color: string }>;
+  album:   { name; coverUrl; palette: { dominant; accent; dark; light } };
+
+  lyrics?: LyricsDoc & {
+    quality: "word" | "word-estimated" | "line" | "plain";
+    sections: Array<{ kind: "intro" | "verse" | "prechorus" | "chorus" | "bridge" | "instrumental" | "outro";
+                      startMs; endMs; lineIdx: [number, number] }>;
+    singers?: Record<string /* agent */, string /* artist spotifyId */>;
+  };
+
+  music:   { bpmHint?: number; genres: string[]; mood?: "ruhig" | "mittel" | "energetisch" };
+  info?:   { artists: Record<string, { summary; wikiUrl; lang: "de" | "en"; facts: string[] }>;
+             song?: { summary; wikiUrl }; photos: Array<Image & { credit; license; sourceUrl }> };
+  cast:    Array<{ avatarId; artistId?; role: "lead" | "feature" | "backup"; position: number }>;
+
+  playback: { isPlaying; positionMs; updatedAt; device?; volume?; offsetMs };
+  live:     { bpm; beatPhase; bar; energy; bands: number[]; vocal: number; micActive: boolean };
+  derived:  { lineIdx; wordIdx; section; isChorus; activeSingerId?; dropAt?; secondsToNextLyric };
+};
+```
+
+**Regeln:**
+1. **Eine Quelle der Wahrheit:** Der Kontext liegt im Client in einem Zustand-Store (`useSongContext`) mit getrennten Bereichen. React-Komponenten abonnieren nur die Felder, die sie brauchen (Selektoren). Frame-schnelle Werte (`live`, `derived`) werden über `subscribe` bzw. Refs gelesen, damit kein React-Rerender pro Frame passiert.
+2. **Schrittweise Anreicherung:** Bei einem Songwechsel kommen sofort die Spotify-Daten (Titel, Cover, Artists, Besetzung), danach Lyrics, später Infos und Fotos. `/api/song-context` streamt diese Teile per Server-Sent Events; jeder Teil hat seinen Status, damit die Oberfläche weiß, was noch lädt oder fehlt.
+3. **Cache pro Track:** Die Stammdaten werden in Redis unter `ctx:v1:<spotifyId>` gespeichert (Lyrics 30 Tage, Infos 7 Tage). Beim nächsten Abspielen ist der Kontext sofort vollständig da.
+4. **Ereignisse:** Der Store löst typisierte Ereignisse aus: `trackChanged`, `lyricsReady`, `sectionChanged`, `chorusStart`, `beat`, `bar`, `drop`, `singerChanged`, `paused`. Die Directors reagieren darauf, statt selbst Bedingungen nachzubauen.
+5. **Herkunft nachvollziehbar:** Zu jeder Information ist gespeichert, woher sie stammt (z. B. „Lyrics: Musixmatch, Wort-Sync“, „Foto: Commons, CC BY-SA 4.0, Fotograf X“). Das Debug-Panel zeigt den gesamten Kontext als Baum.
+6. **Auch außerhalb des Browsers verfügbar:** Der Server speichert pro Nutzer einen kompakten Schnappschuss (`now:<user>`: Track, Artists, Abschnitt, Farben, Stimmung). Den nutzen der Alexa-Skill („Welcher Song läuft?“, „Wer ist die Band?“) und die Pi-Bridge (Grundfarben für Govee). Beat-genaue Daten gehen direkt vom Browser per WebSocket an die Pi-Bridge.
+7. **Tests & Screenshots:** Ein kompletter Song-Kontext lässt sich als JSON-Fixture laden (`/?demo=<fixture>&t=<ms>`). Damit sind Playwright-Screenshots und Unit-Tests ohne Spotify oder Internet reproduzierbar.
+
+### 4.2 Datenfluss
+
+```
+┌──────────────────────────── Browser (Dashboard) ─────────────────────────────┐
+│ Spotify-Polling ─► PlaybackClock ─┐                                          │
+│ /api/song-context (SSE) ──────────┼─► SONG-KONTEXT (Zustand) ─► Directors    │
+│ Mikrofon ─► AudioWorklet ─────────┘        │  Ereignisse          ─► Szene,  │
+│                                            │                         Lyrics, │
+│                                            └─► WebSocket ─► Pi-Bridge  HUD   │
+└───────────────────────────────▲──────────────────────────────────────────────┘
+                                │ HTTPS / SSE
+┌───────────────────────────────┴──────── Vercel (Next.js Route Handlers) ─────┐
+│ /api/auth/*          Spotify OAuth (PKCE), Refresh-Token im verschl. Cookie  │
+│ /api/now-playing     Spotify „currently-playing“ (nur Wiedergabe-Status)     │
+│ /api/song-context    Aggregator: Spotify-Metadaten + Lyrics-Kette + Farben   │
+│                      + BPM/Genre + MusicBrainz/Wikipedia/Commons → Redis     │
+│ /api/alexa           Alexa-Skill-Endpunkt (liest Schnappschuss)  [Stufe 3]   │
+└──────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Tech-Stack
@@ -139,12 +201,13 @@ Leitlinien:
   /(dashboard)/page.tsx          Hauptansicht
   /api/auth/login|callback|logout/route.ts
   /api/now-playing/route.ts
-  /api/lyrics/route.ts
+  /api/song-context/route.ts     Aggregator (SSE)
 /components
   /stage       Scene.tsx, Avatar.tsx, DanceDirector.ts, (Stufe 2: Lights.tsx)
   /lyrics      LyricsLayer.tsx, modes/*.tsx
   /hud         NowPlayingBar.tsx, Controls.tsx, Progress.tsx
 /lib
+  /song-context schema.ts, store.ts, events.ts, aggregator/*.ts, derive.ts, fixtures/
   /spotify     client.ts, auth.ts, clock.ts
   /lyrics      types.ts, providers/*.ts, chain.ts, parse-lrc.ts, parse-ttml.ts, word-timing.ts
   /audio       analyzer.ts, beat-worklet.ts, bpm.ts
@@ -366,12 +429,11 @@ Kleiner Node-Dienst auf dem Raspberry Pi (systemd), erreichbar nur lokal (`ws://
 |---|---|---|
 | **Govee LAN API** (UDP, lokal, über die Pi-Bridge) | ~20–50 ms | **bevorzugt**: Farbe/Helligkeit auf den Beat, Szenenwechsel pro Takt; LAN-Steuerung muss in der Govee-App je Gerät aktiviert sein |
 | **Govee Segment-/Razer-Streaming-Protokoll** (inoffiziell, lokal) | sehr gering | für LED-Strips mit Segmenten: Lauflichter, Spektrum-Anzeige |
-| **Govee Cloud API** (Developer-Key) | 0,5–2 s, Rate-Limit | nur für langsame Dinge: Szene „Party“ an/aus, Grundfarbe pro Song |
+| **Govee Cloud API** (Developer-Key) | 0,5–2 s, Rate-Limit | nur Reserve, falls ein Gerät im LAN nicht erreichbar ist |
 
-**Vorhandene Geräte:** H6063, H610B, H61A2, H6051. Ob jedes davon die Govee-LAN-API unterstützt, steht in keiner öffentlich auffindbaren, aktuellen Liste. Govees offizielle Liste ist nicht vollständig gepflegt, und manche Geräte bekommen die Option erst mit einem Firmware-Update. Vorgehen:
-1. In der Govee-Home-App bei jedem Gerät Firmware aktualisieren und **„LAN-Steuerung“** einschalten (fehlt der Schalter, gibt es keinen LAN-Support).
-2. Die Pi-Bridge sucht die Geräte per Multicast-Discovery und zeigt für jedes an, welcher Weg funktioniert.
-3. Geräte ohne LAN-Support laufen über die Cloud-API (nur langsame Farb-/Szenenwechsel pro Abschnitt, kein Beat-Puls) oder optional über **Bluetooth LE** vom Pi aus (geringe Latenz, Reichweite ~10 m).
+**Vorhandene Geräte:** H6063, H610B, H61A2 und H6051 – **alle per LAN ansteuerbar** (bestätigt). Damit läuft die komplette Lichtsteuerung lokal über die Pi-Bridge, mit Beat-Puls auf allen vier Geräten. Die Bridge findet die Geräte per Multicast-Discovery (UDP 4001/4002); einmal zugeordnete Geräte werden mit ihrer IP gespeichert. Ob ein Gerät zusätzlich Segment-Streaming beherrscht (für Lauflichter), prüft die Bridge beim Einrichten; sonst wird es mit Farbe und Helligkeit gesteuert.
+
+Die Lichter lesen ihre Daten aus dem Song-Kontext: Grundfarben aus `album.palette`, Akzente aus den Ereignissen `beat`, `chorusStart` und `drop`, Ruhe bei `paused`.
 
 Rollen-Vorschlag (wird beim Einrichten festgelegt): LED-Strip(s) hinter dem Display → Beat-Puls und Lauflicht (Segmente, falls RGBIC); Wand-/Panel-Leuchten → Akzente im Refrain und bei Drops; Tischlampe → ruhige Grundfarbe aus dem Cover.
 
@@ -408,7 +470,7 @@ Funktionen: Grundfarbe aus dem Album-Cover, Puls auf Kick, Farbwechsel im Refrai
 
 | # | Meilenstein | Ergebnis |
 |---|---|---|
-| M1 | Projekt-Setup | Next.js + TS + Tailwind, Lint/Format, CI-Workflow, Vercel verbunden, Avatar-Optimierung |
+| M1 | Projekt-Setup | Next.js + TS + Tailwind, Lint/Format, CI-Workflow, Vercel verbunden, Avatar-Optimierung, **Song-Kontext-Schema + Store + Demo-Fixtures** |
 | M2 | Spotify | Login (PKCE), Now-Playing-Anzeige, PlaybackClock, Steuerleiste |
 | M3 | Lyrics | Datenmodell, Parser, LRCLIB + lokale Overrides, Karaoke-Fill-Modus, Offset-Regler |
 | M4 | 3D-Szene | R3F-Szene, 3 Avatare, Clip-Katalog, Tanz auf festem Tempo |
@@ -425,7 +487,6 @@ Funktionen: Grundfarbe aus dem Album-Cover, Puls auf Kick, Farbwechsel im Refrai
 ## 13. Offene Fragen
 
 1. **Rechner:** Raspberry Pi 5 (8 GB) oder N100-Mini-PC? Beides wird unterstützt; die Entscheidung hat nur Einfluss auf die Standard-Qualitätsstufe.
-2. **Govee:** LAN-Schalter in der Govee-App für H6063, H610B, H61A2 und H6051 prüfen (erst für Stufe 3 nötig).
 
 ### Geklärt
-- Raspberry Pi, Chromium im Kiosk-Modus · Spotify-Developer-App + Premium vorhanden · kein Apple-Developer-Zugang · inoffizielle Lyrics-Quellen erwünscht (Referenz: `simonroedig/SpotifyLyrics`) · Oberfläche nur Deutsch · Feature-Songs mit mehreren Tänzern, viel Abwechslung beim Tanzen · spätere Stufen: Govee, Alexa, Band-Fotos und Wikipedia-Texte · Mikrofon vorhanden · Referenzformat 1280×800 · Referenz-Screenshots im Repo · Govee-Geräte: H6063, H610B, H61A2, H6051.
+- Raspberry Pi, Chromium im Kiosk-Modus · Spotify-Developer-App + Premium vorhanden · kein Apple-Developer-Zugang · inoffizielle Lyrics-Quellen erwünscht (Referenz: `simonroedig/SpotifyLyrics`) · Oberfläche nur Deutsch · Feature-Songs mit mehreren Tänzern, viel Abwechslung beim Tanzen · spätere Stufen: Govee, Alexa, Band-Fotos und Wikipedia-Texte · Mikrofon vorhanden · Referenzformat 1280×800 · Referenz-Screenshots im Repo · Govee-Geräte H6063, H610B, H61A2, H6051 alle per LAN ansteuerbar · zentraler Song-Kontext als Architektur-Kern.
