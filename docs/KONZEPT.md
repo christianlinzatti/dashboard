@@ -554,6 +554,11 @@ GET https://public-api.eventim.com/websearch/search/api/exploration/v1/products
 | **Genius** | Song-Hintergründe (Annotations) als Trivia, Abschnitts-Marker für Lyrics |
 | **Last.fm** | Tags, ähnliche Künstler, Hörstatistik |
 
+**Umsetzungsstand (Stufe 5c):** TheAudioDB (öffentlicher Test-Key `123`, echtes Format in `tests/fixtures/theaudiodb/`,
+Abfrage über die MusicBrainz-ID), Flickr (nur CC/PD ohne ND, Name muss in Titel oder Tags stehen) und Genius
+(nur Metadaten; die API liefert keine Songtexte) sind angebunden. Fällt eine optionale Quelle aus, werden die
+Band-Infos nur 3 Tage statt 30 Tage gecacht.
+
 Ein **Foto-Ranking** wählt pro Künstler die besten Bilder (Auflösung, Seitenverhältnis passend zum Display, Lizenz, Aktualität) und wechselt sie im Song ab; Logos von TheAudioDB können als Bühnenprojektion genutzt werden (Stufe 2).
 
 ## 12. Umsetzungsplan (Meilensteine)

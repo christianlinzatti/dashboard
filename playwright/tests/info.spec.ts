@@ -23,7 +23,8 @@ test.describe("Band-Infos", () => {
     await page.goto("/?demo=neonlicht&t=25000&lyrics=karaoke");
     await ready(page);
     await expect(page.getByTestId("info-card")).toHaveCount(0);
-    await expect(page.getByTestId("fact-ticker")).toHaveText(/^(Mira Sol|Kai Vento) · /);
+    // erste Einblendung in einer Strophe: Song-Trivia (Genius)
+    await expect(page.getByTestId("fact-ticker")).toHaveText("Neonlicht · Produziert von Lumen Labs");
   });
 
   test("Live: Infos werden nach Songwechsel geladen", async ({ page }) => {
@@ -56,6 +57,8 @@ test.describe("Band-Infos", () => {
                 wikiUrl: "https://de.wikipedia.org/wiki/Test",
                 lang: "de",
                 facts: ["Gegründet 1999"],
+                textSource: "theaudiodb",
+                logo: "https://r2.theaudiodb.com/images/media/artist/logo/test.png",
               },
             },
             photos: [],
@@ -66,6 +69,12 @@ test.describe("Band-Infos", () => {
     await page.goto("/");
     await expect(page.getByTestId("info-card")).toContainText("Gegründet 1999");
     expect(requested?.searchParams.get("names")).toBe("Testband");
+    expect(requested?.searchParams.get("title")).toBe("Testlied");
+    // Text von TheAudioDB richtig ausgewiesen, Logo über den eigenen Bildoptimierer (kein CORS)
+    await expect(page.getByTestId("info-card")).toContainText("Text: TheAudioDB");
+    const logo = page.getByTestId("artist-logo");
+    await expect(logo).toHaveAttribute("alt", "Testband");
+    await expect(logo).toHaveAttribute("src", /^\/_next\/image\?url=https%3A%2F%2Fr2\.theaudiodb\.com/);
   });
 
   test("Info-API nur mit Anmeldung", async ({ request }) => {

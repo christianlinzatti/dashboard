@@ -22,7 +22,16 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   // Eigene Lyrics-Korrekturen mit in die Serverless-Funktion packen
   outputFileTracingIncludes: { "/api/lyrics": ["./data/lyrics/**/*"] },
-  images: { remotePatterns: [{ protocol: "https", hostname: "i.scdn.co" }] },
+  // Bildoptimierer: Spotify-Cover sowie Fotos von TheAudioDB/Flickr (über eigene Domain → kein CORS-Problem für WebGL)
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "i.scdn.co" },
+      { protocol: "https", hostname: "r2.theaudiodb.com", pathname: "/images/**" },
+      { protocol: "https", hostname: "www.theaudiodb.com", pathname: "/images/**" },
+      { protocol: "https", hostname: "live.staticflickr.com" },
+    ],
+    minimumCacheTTL: 2592000, // 30 Tage, wie die Band-Infos
+  },
   async headers() {
     return [
       {

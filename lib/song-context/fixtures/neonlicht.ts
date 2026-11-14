@@ -101,6 +101,8 @@ export const neonlicht: SongStatic = {
         facts: ["Geboren 1993"],
       },
     },
+    // erfundene Song-Trivia (wie von Genius)
+    song: { trivia: ["Produziert von Lumen Labs"] },
     photos: [
       {
         artistId: "demo-mira",

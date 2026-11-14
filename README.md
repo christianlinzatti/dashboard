@@ -5,7 +5,17 @@ zeigt den aktuellen Spotify-Song, Lyrics möglichst Wort für Wort und tanzende 
 
 Konzept und Ausbaustufen: [`docs/KONZEPT.md`](docs/KONZEPT.md) · Architektur-Bewertung: [`docs/ARCHITEKTUR.md`](docs/ARCHITEKTUR.md)
 
-**Stand: Stufe 5b** – Konzerte: In den letzten 15 Sekunden eines Songs zeigt eine **Konzertkarte** die nächsten
+**Stand: Stufe 5c** – Mehr Bilder und Trivia:
+- **TheAudioDB** (ohne eigenen Key nutzbar): Bühnenbilder im 16:9-Format für die LED-Wand, Band-Logos auf der
+  Infokarte, deutsche Biografie als Ersatz, wenn es keinen Wikipedia-Artikel gibt, sowie Stil, Mitgliederzahl und Herkunft.
+- **Flickr** (`FLICKR_API_KEY`): Konzertfotos, nur mit freier Lizenz ohne „ND“, mit Fotograf und Lizenz.
+- **Genius** (`GENIUS_ACCESS_TOKEN`): Song-Trivia im Fakten-Ticker (Produzenten, Songwriter, Samples).
+  Songtexte liefert die Genius-API nicht.
+- **Fotoauswahl:** Die Wand bekommt Querformat und Bühnenbilder und wechselt das Foto mit jedem Abschnitt. Die Karte
+  bekommt Porträts. Bilder von TheAudioDB und Flickr laufen über den Next.js-Bildoptimierer (eigene Domain, kleiner
+  für den Pi).
+
+Stufe 5b – Konzerte: In den letzten 15 Sekunden eines Songs zeigt eine **Konzertkarte** die nächsten
 Termine der Artists. Termine im Umkreis von Wien (`CONCERT_RADIUS_KM`, Standard 200 km) stehen zuerst. Die Karte
 zeigt Countdown („in 21 Tagen“), **ausverkauft** und einen **QR-Code zum Ticket**. Dazu kommt „Zuletzt live …
 – dieser Song war dabei“ aus setlist.fm. Quellen sind **oeticket** (inoffizielle Eventim-Suche, ohne Key; `OETICKET=0`

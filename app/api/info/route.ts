@@ -9,7 +9,11 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 const SEP = "\u001f";
-const query = z.object({ ids: z.string().min(1).max(1000), names: z.string().min(1).max(1500) });
+const query = z.object({
+  ids: z.string().min(1).max(1000),
+  names: z.string().min(1).max(1500),
+  title: z.string().max(300).optional(),
+});
 
 /** Band-Infos und Fotos für die Artists des aktuellen Songs (nur angemeldet). */
 export async function GET(req: NextRequest) {
@@ -19,5 +23,12 @@ export async function GET(req: NextRequest) {
   const ids = q.data.ids.split(SEP);
   const names = q.data.names.split(SEP);
   if (ids.length !== names.length) return json({ error: "Ungültige Anfrage." }, 400);
-  return json(await infoFor(ids.map((id, i) => ({ id, name: names[i]! }))));
+  const song = q.data.title ? { title: q.data.title } : undefined;
+  return json(
+    await infoFor(
+      ids.map((id, i) => ({ id, name: names[i]! })),
+      undefined,
+      song,
+    ),
+  );
 }

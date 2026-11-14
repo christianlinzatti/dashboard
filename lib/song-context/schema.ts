@@ -96,6 +96,10 @@ export const photoSchema = imageSchema.extend({
   credit: z.string(),
   license: z.string(),
   sourceUrl: z.string(),
+  /** Herkunft (für Ranking und Quellenangabe) */
+  source: z.enum(["commons", "theaudiodb", "flickr", "demo"]).optional(),
+  /** photo = Foto, fanart = Bühnenbild 16:9 ohne Text, thumb = Porträt/quadratisch */
+  kind: z.enum(["photo", "fanart", "thumb"]).optional(),
 });
 
 export type Photo = z.infer<typeof photoSchema>;
@@ -109,9 +113,14 @@ export const infoSchema = z.object({
       wikiUrl: z.string(),
       lang: z.enum(["de", "en"]),
       facts: z.array(z.string()),
+      /** Herkunft des Textes (Standard: Wikipedia) */
+      textSource: z.enum(["wikipedia", "theaudiodb"]).optional(),
+      /** Schriftzug (transparentes PNG, TheAudioDB) */
+      logo: z.string().optional(),
     }),
   ),
-  song: z.object({ summary: z.string(), wikiUrl: z.string() }).optional(),
+  /** Song-Trivia (Genius): Produzenten, Songwriter, Samples */
+  song: z.object({ trivia: z.array(z.string()), url: z.string().optional() }).optional(),
   photos: z.array(photoSchema),
 });
 

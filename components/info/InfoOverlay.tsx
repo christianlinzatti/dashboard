@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { factAt, infoCardAt } from "@/lib/info/display";
+import { displayUrl } from "@/lib/info/photos";
 import { useSongContext } from "@/lib/song-context/store";
 
 /** Infokarte (Intro, Instrumental, Pausen) und Fakten-Ticker (Strophen). */
@@ -35,7 +36,7 @@ export function InfoOverlay() {
             <div className="relative w-[36%] shrink-0 overflow-hidden">
               {/* eslint-disable-next-line @next/next/no-img-element -- externe, lizenzierte Fotos ohne Bildoptimierung */}
               <img
-                src={card.photo.url}
+                src={displayUrl(card.photo.url, 640)}
                 alt={`Foto: ${card.name}`}
                 className="ken-burns absolute inset-0 size-full object-cover"
                 crossOrigin="anonymous"
@@ -50,7 +51,19 @@ export function InfoOverlay() {
           )}
           <div className="flex min-w-0 flex-col gap-[0.8vmin] p-[2vmin]">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-[clamp(16px,3.2vmin,36px)] font-extrabold leading-tight">{card.name}</h2>
+              {card.logo ? (
+                <h2 className="leading-none">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- Schriftzug (TheAudioDB) */}
+                  <img
+                    src={displayUrl(card.logo, 640)}
+                    alt={card.name}
+                    className="h-[clamp(20px,4.5vmin,48px)] w-auto max-w-[45vmin] object-contain"
+                    data-testid="artist-logo"
+                  />
+                </h2>
+              ) : (
+                <h2 className="text-[clamp(16px,3.2vmin,36px)] font-extrabold leading-tight">{card.name}</h2>
+              )}
               {card.facts.map((f) => (
                 <span
                   key={f}
@@ -66,7 +79,9 @@ export function InfoOverlay() {
             )}
             {card.summary && (
               <p className="text-[clamp(8px,1.3vmin,12px)] text-white/50">
-                Text: Wikipedia{card.lang === "en" ? " (englisch)" : ""} · CC BY-SA
+                {card.textSource === "theaudiodb"
+                  ? "Text: TheAudioDB"
+                  : `Text: Wikipedia${card.lang === "en" ? " (englisch)" : ""} · CC BY-SA`}
               </p>
             )}
           </div>

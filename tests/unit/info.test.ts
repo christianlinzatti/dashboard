@@ -160,7 +160,14 @@ describe("Wikimedia", () => {
 describe("Info-Service", () => {
   it("setzt alles zusammen; MusicBrainz-Bild hat Vorrang vor Wikidata", async () => {
     const info = await lookupArtist("Helene Fischer", fakeHttp().http);
-    expect(info).toMatchObject({ name: "Helene Fischer", lang: "de", facts: ["Geboren 1984"], photo: { credit: "Fred Kuhles" } });
+    expect(info).toMatchObject({
+      name: "Helene Fischer",
+      lang: "de",
+      textSource: "wikipedia",
+      facts: ["Geboren 1984"],
+      photos: [{ credit: "Fred Kuhles", source: "commons", kind: "photo" }],
+    });
+    expect(info).not.toHaveProperty("partial"); // TheAudioDB kennt sie nicht (404) – kein Ausfall
   });
 
   it("Fakten für Bands", () => {

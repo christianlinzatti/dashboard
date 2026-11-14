@@ -1,5 +1,6 @@
 import { concertCardAt } from "@/lib/concerts/display";
 import type { Derived, Info, Photo, SongStatic } from "@/lib/song-context/schema";
+import { rankPhotos } from "./photos";
 
 export const CARD_ROTATE_MS = 12_000;
 export const FACT_PERIOD_MS = 24_000;
@@ -12,6 +13,8 @@ type ArtistEntry = {
   facts: string[];
   wikiUrl: string;
   lang: "de" | "en";
+  textSource: "wikipedia" | "theaudiodb";
+  logo?: string;
   photo?: Photo;
 };
 
@@ -30,7 +33,12 @@ export function infoEntries(song: SongStatic): ArtistEntry[] {
         facts: i.facts,
         wikiUrl: i.wikiUrl,
         lang: i.lang,
-        photo: info.photos.find((p) => p.artistId === a.spotifyId),
+        textSource: i.textSource ?? "wikipedia",
+        ...(i.logo ? { logo: i.logo } : {}),
+        photo: rankPhotos(
+          info.photos.filter((p) => p.artistId === a.spotifyId),
+          "card",
+        )[0],
       },
     ];
   });
@@ -51,18 +59,45 @@ export function infoCardAt(song: SongStatic, d: Derived, t: number): ArtistEntry
   return entries[Math.floor(t / CARD_ROTATE_MS) % entries.length]!;
 }
 
-/** Fakten-Ticker in Strophen: alle 24 s für 7 s ein Kurzfakt (z. B. „Queen · Gegründet 1970“). */
+/**
+ * Fakten-Ticker in Strophen: alle 24 s für 7 s ein Kurzfakt (z. B. „Queen · Gegründet 1970“),
+ * Song-Trivia von Genius zuerst („Neonlicht · Produziert von …“).
+ */
 export function factAt(song: SongStatic, d: Derived, t: number): string | null {
   if (d.section !== "verse") return null;
-  const facts = infoEntries(song).flatMap((e) => e.facts.map((f) => `${e.name} · ${f}`));
+  const facts = [
+    ...(song.info?.song?.trivia ?? []).map((f) => `${song.track.title} · ${f}`),
+    ...infoEntries(song).flatMap((e) => e.facts.map((f) => `${e.name} · ${f}`)),
+  ];
   if (!facts.length || t % FACT_PERIOD_MS >= FACT_VISIBLE_MS) return null;
-  return facts[Math.floor(t / FACT_PERIOD_MS) % facts.length]!;
+  // laufende Nummer nur über Einblendungen, die in Strophen fallen – so kommt jeder Fakt an die Reihe
+  const k = Math.floor(t / FACT_PERIOD_MS);
+  const sections = song.lyrics?.sections ?? [];
+  const inVerse = (ms: number) => sections.some((x) => x.kind === "verse" && x.startMs <= ms && ms < x.endMs);
+  let ordinal = 0;
+  for (let i = 0; i < k; i++) if (inVerse(i * FACT_PERIOD_MS)) ordinal++;
+  return facts[ordinal % facts.length]!;
 }
 
-/** Foto für die LED-Wand: das des Leads (sonst das erste vorhandene). */
-export function wallPhoto(song: SongStatic): Photo | null {
+/** Fotos für die LED-Wand: die des Leads (sonst alle), bestes Querformat zuerst. */
+export function wallPhotos(song: SongStatic): Photo[] {
   const photos = song.info?.photos ?? [];
-  return photos.find((p) => p.artistId === song.artists[0]?.spotifyId) ?? photos[0] ?? null;
+  const lead = photos.filter((p) => p.artistId === song.artists[0]?.spotifyId);
+  return rankPhotos(lead.length ? lead : photos, "wall");
+}
+
+/** Foto für die LED-Wand zum Zeitpunkt t: wechselt mit jedem Abschnitt (höchstens 4 Fotos im Wechsel). */
+export function wallPhotoAt(song: SongStatic, t = 0): Photo | null {
+  const list = wallPhotos(song).slice(0, 4);
+  if (!list.length) return null;
+  const sections = song.lyrics?.sections ?? [];
+  const idx = sections.length ? Math.max(0, sections.filter((s) => s.startMs <= t).length - 1) : Math.floor(t / 60_000);
+  return list[idx % list.length]!;
+}
+
+/** Bisherige Schnittstelle: erstes Wandfoto. */
+export function wallPhoto(song: SongStatic): Photo | null {
+  return wallPhotoAt(song, 0);
 }
 
 /** Belegt gerade eine Karte (Info oder Konzerte) den unteren Bereich? */

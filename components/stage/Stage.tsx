@@ -16,7 +16,8 @@ import { Director } from "./Director";
 import { Lasers, MovingHeads } from "./Lights";
 import { ReadySignal } from "./ReadySignal";
 import { PhotoWall } from "./PhotoWall";
-import { wallPhoto } from "@/lib/info/display";
+import { wallPhotoAt } from "@/lib/info/display";
+import { displayUrl } from "@/lib/info/photos";
 import { Fog, StageSet } from "./StageSet";
 import { initialFrame, type Frame } from "./types";
 
@@ -80,6 +81,8 @@ function Scene({ forceQuality, onContextLost }: { forceQuality?: Quality; onCont
   const strobe = useRef<HTMLDivElement>(null);
 
   // Qualität: fest (Einstellung/URL) oder automatisch nach Bildrate; Demos fest „mittel“ (reproduzierbar)
+  // Wandfoto wechselt mit jedem Abschnitt (Selektor liefert nur die URL → kein Rerender pro Frame)
+  const photoUrl = useSongContext((s) => (s.song ? (wallPhotoAt(s.song, s.positionMs)?.url ?? null) : null));
   const chosen = useSettings((s) => s.quality);
   const [autoQuality, setAutoQuality] = useState<Quality>("mittel");
   const quality: Quality = forceQuality ?? (frozen ? "mittel" : chosen === "auto" ? autoQuality : chosen);
@@ -88,7 +91,6 @@ function Scene({ forceQuality, onContextLost }: { forceQuality?: Quality; onCont
   useEffect(() => () => document.body.removeAttribute("data-stage-ready"), []);
 
   if (!song || !choreo) return null;
-  const photo = wallPhoto(song);
 
   return (
     <div className="absolute inset-0" data-quality={quality}>
@@ -127,11 +129,11 @@ function Scene({ forceQuality, onContextLost }: { forceQuality?: Quality; onCont
         {preset.fog && <Fog lightsRef={lights} color={song.album.palette.accent} />}
         <Director song={song} choreo={choreo} frameRef={frame} lightsRef={lights} heads={preset.heads} strobeRef={strobe} />
         <Suspense fallback={null}>
-          {photo && (
-            <ErrorBoundary fallback={null} label="Wandfoto">
+          {photoUrl && (
+            <ErrorBoundary key={photoUrl} fallback={null} label="Wandfoto">
               <PhotoWall
-                key={photo.url}
-                url={photo.url}
+                key={photoUrl}
+                url={displayUrl(photoUrl)}
                 dark={song.album.palette.dark}
                 accent={song.album.palette.accent}
                 lightsRef={lights}

@@ -11,6 +11,7 @@ export function infoUrl(song: SongStatic) {
   const p = new URLSearchParams({
     ids: song.artists.map((a) => a.spotifyId).join(SEP),
     names: song.artists.map((a) => a.name).join(SEP),
+    title: song.track.title,
   });
   return `/api/info?${p}`;
 }
@@ -34,7 +35,7 @@ export function useInfoLoader(enabled: boolean) {
         const { info, complete } = (await res.json()) as { info: Info; complete: boolean };
         if (songContext.getState().song?.trackKey !== song.trackKey) return;
         const found = Object.keys(info.artists).length > 0;
-        mergeSong({ ...(found ? { info } : {}), status: { info: { state: found ? "ok" : "missing", provider: "wikipedia" } } });
+        mergeSong({ ...(found ? { info } : {}), status: { info: { state: found ? "ok" : "missing", provider: "musicbrainz" } } });
         if (!complete && attempt === 0) retry = setTimeout(() => void load(song, 1), RETRY_MS);
       } catch (e) {
         if ((e as Error).name === "AbortError") return;
