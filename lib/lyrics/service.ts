@@ -17,17 +17,16 @@ const TTL_MISSING = 24 * 3600;
 
 /**
  * Externe Provider, steuerbar über LYRICS_PROVIDERS (kommagetrennt).
- * Standard: alle ohne Zugangsdaten nutzbaren; Spotify Color-Lyrics nur mit SPOTIFY_SP_DC + TOTP-Secret.
+ * Standard: alle. Spotify Color-Lyrics nutzt das Anmelde-Token und ggf. SPOTIFY_SP_DC + TOTP-Secret.
  */
 export function activeProviders(env: Record<string, string | undefined> = process.env): LyricsProvider[] {
   const all: Record<string, () => LyricsProvider | null> = {
     lrclib: () => lrclib(),
     netease: () => netease(),
     "musixmatch-desktop": () => musixmatchDesktop(),
+    // versucht zuerst das Anmelde-Token, sp_dc nur wenn konfiguriert
     "spotify-color": () =>
-      env.SPOTIFY_SP_DC && env.SPOTIFY_TOTP_SECRET
-        ? spotifyColor({ spDc: env.SPOTIFY_SP_DC, totpSecret: env.SPOTIFY_TOTP_SECRET, totpVersion: env.SPOTIFY_TOTP_VERSION ?? "1" })
-        : null,
+      spotifyColor({ spDc: env.SPOTIFY_SP_DC, totpSecret: env.SPOTIFY_TOTP_SECRET, totpVersion: env.SPOTIFY_TOTP_VERSION }),
   };
   const wanted = (env.LYRICS_PROVIDERS ?? "musixmatch-desktop,spotify-color,netease,lrclib").split(",").map((x) => x.trim());
   return wanted.flatMap((id) => {

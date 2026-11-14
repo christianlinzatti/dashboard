@@ -156,6 +156,31 @@ describe("Spotify Color-Lyrics", () => {
     ]);
   });
 
+  it("nutzt zuerst das Anmelde-Token, bei 403 sp_dc; ohne sp_dc kein Ergebnis", async () => {
+    const calls: string[] = [];
+    const f = vi.fn<typeof fetch>(async (url, init) => {
+      const u = String(url);
+      const auth = (init?.headers as Record<string, string> | undefined)?.Authorization ?? "";
+      calls.push(u.includes("color-lyrics") ? `lyrics:${auth}` : u.includes("server-time") ? "time" : "token");
+      if (u.endsWith("/server-time")) return json({ serverTime: 1_700_000_000 });
+      if (u.includes("/api/token")) return json({ accessToken: "webplayer", accessTokenExpirationTimestampMs: Date.now() + 3_600_000 });
+      if (auth === "Bearer app") return json({}, 403);
+      return json({ lyrics: { syncType: "LINE_SYNCED", lines: [{ startTimeMs: "1000", words: "Eins" }] } });
+    });
+    const r = await spotifyColor({ spDc: "x", totpSecret: "k" }, f).search({ ...q, userAccessToken: "app" }, signal());
+    expect(r?.lines).toHaveLength(1);
+    expect(calls).toEqual(["lyrics:Bearer app", "time", "token", "lyrics:Bearer webplayer"]);
+
+    const ohne = await spotifyColor({}, f).search({ ...q, userAccessToken: "app" }, signal());
+    expect(ohne).toBeNull();
+  });
+
+  it("Anmelde-Token reicht, wenn Spotify es akzeptiert", async () => {
+    const f = vi.fn<typeof fetch>(async () => json({ lyrics: { syncType: "LINE_SYNCED", lines: [{ startTimeMs: "1000", words: "Eins" }] } }));
+    expect((await spotifyColor({}, f).search({ ...q, userAccessToken: "app" }, signal()))?.lines).toHaveLength(1);
+    expect(f).toHaveBeenCalledTimes(1);
+  });
+
   it("anonymes Token (sp_dc ungültig) ist ein Fehler", async () => {
     const f = vi.fn<typeof fetch>(async (url) =>
       String(url).endsWith("/server-time") ? json({ serverTime: 1 }) : json({ accessToken: "x", accessTokenExpirationTimestampMs: 0, isAnonymous: true }),
@@ -165,9 +190,8 @@ describe("Spotify Color-Lyrics", () => {
 });
 
 describe("Provider-Auswahl", () => {
-  it("Standard: alle ohne Zugangsdaten; Spotify nur mit sp_dc + Secret", () => {
-    expect(activeProviders({}).map((p) => p.id)).toEqual(["musixmatch-desktop", "netease", "lrclib"]);
-    expect(activeProviders({ SPOTIFY_SP_DC: "a", SPOTIFY_TOTP_SECRET: "b" }).map((p) => p.id)).toContain("spotify-color");
+  it("Standard: alle Provider, unbekannte werden ignoriert", () => {
+    expect(activeProviders({}).map((p) => p.id)).toEqual(["musixmatch-desktop", "spotify-color", "netease", "lrclib"]);
     expect(activeProviders({ LYRICS_PROVIDERS: "lrclib, unbekannt" }).map((p) => p.id)).toEqual(["lrclib"]);
   });
 });

@@ -38,8 +38,12 @@ const lyricsSchema = z.object({
 
 const UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0 Safari/537.36";
 
+/**
+ * Reihenfolge: 1. Token der Dashboard-Anmeldung (falls Spotify es für Lyrics akzeptiert),
+ * 2. Web-Player-Token über sp_dc (falls konfiguriert). Ohne beides: kein Ergebnis.
+ */
 export function spotifyColor(
-  cfg: { spDc: string; totpSecret: string; totpVersion: string },
+  cfg: { spDc?: string; totpSecret?: string; totpVersion?: string },
   fetchImpl: typeof fetch = fetch,
 ): LyricsProvider {
   let cached: { token: string; until: number } | null = null;
@@ -48,8 +52,8 @@ export function spotifyColor(
     if (cached && cached.until > Date.now() + 30_000) return cached.token;
     const st = await fetchImpl("https://open.spotify.com/api/server-time", { headers: { "User-Agent": UA }, signal });
     const serverTime = z.object({ serverTime: z.number() }).parse(await st.json()).serverTime;
-    const code = totp(totpKey(cfg.totpSecret), serverTime);
-    const qs = new URLSearchParams({ reason: "init", productType: "web-player", totp: code, totpServer: code, totpVer: cfg.totpVersion });
+    const code = totp(totpKey(cfg.totpSecret!), serverTime);
+    const qs = new URLSearchParams({ reason: "init", productType: "web-player", totp: code, totpServer: code, totpVer: cfg.totpVersion ?? "1" });
     const res = await fetchImpl(`https://open.spotify.com/api/token?${qs}`, {
       headers: { Cookie: `sp_dc=${cfg.spDc}`, "User-Agent": UA },
       signal,
@@ -66,11 +70,21 @@ export function spotifyColor(
     priority: 25,
     async search(q, signal) {
       if (!q.spotifyId || q.spotifyId.startsWith("local:")) return null;
-      const token = await accessToken(signal);
-      const res = await fetchImpl(
-        `https://spclient.wg.spotify.com/color-lyrics/v2/track/${encodeURIComponent(q.spotifyId)}?format=json&vocalRemoval=false&market=from_token`,
-        { headers: { Authorization: `Bearer ${token}`, "app-platform": "WebPlayer", "User-Agent": UA }, signal },
-      );
+      const lyricsFor = (token: string) =>
+        fetchImpl(
+          `https://spclient.wg.spotify.com/color-lyrics/v2/track/${encodeURIComponent(q.spotifyId!)}?format=json&vocalRemoval=false&market=from_token`,
+          { headers: { Authorization: `Bearer ${token}`, "app-platform": "WebPlayer", "User-Agent": UA }, signal },
+        );
+
+      let res: Response | null = null;
+      if (q.userAccessToken) {
+        res = await lyricsFor(q.userAccessToken);
+        if (res.status === 401 || res.status === 403) res = null; // Spotify akzeptiert App-Tokens nicht → sp_dc
+      }
+      if (!res) {
+        if (!cfg.spDc || !cfg.totpSecret) return null;
+        res = await lyricsFor(await accessToken(signal));
+      }
       if (res.status === 404) return null;
       if (!res.ok) throw new Error(`Spotify-Lyrics ${res.status}`);
       const body = lyricsSchema.parse(await res.json());

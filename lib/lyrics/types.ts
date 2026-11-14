@@ -9,6 +9,8 @@ export type TrackQuery = {
   artists: string[];
   album?: string;
   durationMs: number;
+  /** Spotify-Token der Dashboard-Anmeldung (nur serverseitig, für Spotify Color-Lyrics) */
+  userAccessToken?: string;
 };
 
 /** Rohes Ergebnis eines Providers, vor Normalisierung und Ranking. */
