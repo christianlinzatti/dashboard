@@ -5,7 +5,12 @@ zeigt den aktuellen Spotify-Song, Lyrics möglichst Wort für Wort und tanzende 
 
 Konzept und Ausbaustufen: [`docs/KONZEPT.md`](docs/KONZEPT.md)
 
-**Stand: Meilenstein 4** – Tanz-Regie: Choreografie-Plan pro Song (Phrasen von 8/16 Takten, Energie je
+**Stand: Meilenstein 5** – Mikrofon-Analyse (nur lokal im Browser): Tempo per Autokorrelation mit
+Einrasten pro Song, Beat-Tracking mit Phasenregelung, Tanz am gemessenen Beat-Raster, Energie (automatische
+Pegelanpassung), Frequenzbänder, Stimmaktivität für die LED-Gesichter, Drop-Erkennung (zwei Takte
+Höhepunkt-Tanz), Licht pulsiert im Takt. Mikro-Schalter in der Steuerleiste, roter Punkt = Mikro aktiv.
+
+M4 – Tanz-Regie: Choreografie-Plan pro Song (Phrasen von 8/16 Takten, Energie je
 Abschnitt, Refrains synchron, Strophen mit Varianten und Kanon, Wiederholungssperre, Genre-Vorlieben),
 Formationen, Kamerafahrten, aktiver Sänger tritt ins Spotlight, Namensschilder bei Feature-Songs.
 
@@ -32,6 +37,7 @@ Dann im Browser öffnen:
 | `/?demo=instrumental` | Song ohne Lyrics |
 | `…&t=46000` | Songzeit einfrieren (ms) – für reproduzierbare Screenshots |
 | `…&debug=1` | Debug-Panel mit dem kompletten Song-Kontext |
+| `…&mic=1` | Mikrofon-Analyse auch in der Demo (sonst nur im Live-Betrieb) |
 
 Die Demo-Songs haben frei erfundene Texte.
 
@@ -56,6 +62,8 @@ Die Demo-Songs haben frei erfundene Texte.
   genre-passend, deterministisch). Geladen werden nur die Avatare der aktuellen Besetzung.
 - **Tanz** (`lib/dance/`): `planChoreography()` plant den ganzen Song deterministisch (Seed = Track),
   `layersAt()/positionsAt()/cameraAt()` werten den Plan zur Songzeit aus – gleiche Songzeit, gleiche Pose.
+- **Audio** (`lib/audio/`): Spektrum-Features, Tempo-Schätzung, Beat-Tracker, Energie/Drops, Tempo-Einrasten
+  (alles reine Funktionen, mit synthetischen Signalen getestet); `mic.ts` verbindet Web Audio damit.
 - **Lyrics** (`lib/lyrics/`): Provider-Interface, parallele Abfrage mit Timeout und Circuit-Breaker,
   Ranking (eigene > Wort-Sync > Zeilen-Sync > Text), Parser, Abschnitts-Erkennung, Cache. Route `/api/lyrics`.
 - **Oberfläche** (`components/`): HUD, Lyrics (Karaoke-Fill), 3D-Bühne (React Three Fiber), Debug-Panel.
@@ -96,3 +104,18 @@ in `e2e.yml` passen und wird deshalb gemeinsam von Hand aktualisiert.
 
 Hinweis: Seit Februar 2026 schränkt Spotify Apps im Entwicklungsmodus ein. Pflicht für das Dashboard ist nur
 „aktuell gespielter Song“. Lehnt Spotify die Player-Steuerung ab (403), zeigt die Steuerleiste das an – alles andere läuft weiter.
+
+## Raspberry Pi (Kiosk)
+
+Chromium im Kiosk-Modus, z. B. per Autostart (labwc/Wayfire) oder systemd-User-Service:
+
+```bash
+chromium --kiosk --noerrdialogs --disable-infobars \
+  --ignore-gpu-blocklist --enable-gpu-rasterization \
+  --autoplay-policy=no-user-gesture-required \
+  https://<dein-projekt>.vercel.app
+```
+
+- **Mikrofon:** USB-Mikrofon anschließen, beim ersten Start die Freigabe erlauben (wird für die Domain
+  gespeichert). Danach startet die Analyse automatisch. Audio wird nur lokal im Browser ausgewertet.
+- `--autoplay-policy=no-user-gesture-required` sorgt dafür, dass die Audio-Analyse ohne Antippen startet.

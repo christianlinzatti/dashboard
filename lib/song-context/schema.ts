@@ -144,15 +144,32 @@ export type Playback = {
   volume?: number;
 };
 
+/** Zustand der Mikrofon-Analyse. */
+export type MicState = "aus" | "startet" | "aktiv" | "verweigert" | "nicht-verfuegbar" | "fehler";
+
 /** Live-Analyse aus dem Mikrofon (pro Frame). */
 export type Live = {
+  /** Tempo für die Tanz-Planung (Startwert, nach Einrasten gemessen) */
   bpm: number;
+  /** true, sobald das Tempo per Mikrofon stabil gemessen wurde */
+  tempoLocked: boolean;
+  /** aktuell gemessenes (noch ungefiltertes) Tempo */
+  bpmMeasured: number;
+  bpmConfidence: number;
+  /** 0..1 innerhalb des aktuellen Schlags */
   beatPhase: number;
-  bar: number;
+  beatCount: number;
+  /** Songzeit (ms) eines Schlags – Raster für die Tanz-Synchronisation */
+  gridAnchorMs: number | null;
+  /** Songzeit (ms) des letzten erkannten Drops */
+  lastDropMs: number | null;
   energy: number;
+  /** Sub-Bass, Bass, Low-Mid, Mid, High, Air – jeweils 0..1 relativ */
   bands: number[];
+  /** Stimm-Aktivität 0..1 */
   vocal: number;
   micActive: boolean;
+  micState: MicState;
 };
 
 /** Aus Stammdaten + Songzeit abgeleitete Werte. */

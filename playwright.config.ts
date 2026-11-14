@@ -23,7 +23,15 @@ export default defineConfig({
     colorScheme: "dark",
     launchOptions: {
       // WebGL im Headless-Chromium per Software-Rendering (deterministisch)
-      args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"],
+      args: [
+        "--use-angle=swiftshader",
+        "--enable-unsafe-swiftshader",
+        "--ignore-gpu-blocklist",
+        // Fake-Mikrofon (Testton) ohne Berechtigungsdialog
+        "--use-fake-device-for-media-stream",
+        "--use-fake-ui-for-media-stream",
+        "--autoplay-policy=no-user-gesture-required",
+      ],
     },
   },
   projects: [

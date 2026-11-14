@@ -12,6 +12,7 @@ export default async function Page({ searchParams }: { searchParams: Search }) {
       t={t !== undefined && /^\d+$/.test(t) ? Number(t) : undefined}
       debug={one(sp.debug) === "1"}
       loginError={one(sp.fehler)}
+      mic={one(sp.mic) === "1"}
     />
   );
 }

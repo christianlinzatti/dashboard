@@ -31,7 +31,21 @@ export type SongContextActions = {
 export type SongContextStore = ReturnType<typeof createSongContextStore>;
 
 const initialPlayback: Playback = { isPlaying: false, positionMs: 0, updatedAt: 0, offsetMs: 0 };
-const initialLive: Live = { bpm: 120, beatPhase: 0, bar: 0, energy: 0, bands: [], vocal: 0, micActive: false };
+export const initialLive: Live = {
+  bpm: 120,
+  tempoLocked: false,
+  bpmMeasured: 0,
+  bpmConfidence: 0,
+  beatPhase: 0,
+  beatCount: 0,
+  gridAnchorMs: null,
+  lastDropMs: null,
+  energy: 0,
+  bands: [],
+  vocal: 0,
+  micActive: false,
+  micState: "aus",
+};
 
 export function createSongContextStore() {
   const events = createEmitter<SongEvents>();

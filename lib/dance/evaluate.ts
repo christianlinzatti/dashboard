@@ -9,24 +9,54 @@ export function phraseIndexAt(c: Choreography, t: number) {
   return Math.max(lastStartedIndex(c.phrases, t), 0);
 }
 
-function clipTime(c: Choreography, m: { clipStartMs: number; offsetBeats: number }, t: number) {
-  // Clips sind auf 120 BPM gebaut: 1 Schlag = 0,5 s Clip-Zeit
-  return Math.max(0, ((t - m.clipStartMs) / 1000) * c.timeScale + m.offsetBeats * 0.5);
+function clipTime(c: Choreography, m: { clipStartMs: number; offsetBeats: number }, t: number, anchorMs: number | null) {
+  // Clips sind auf 120 BPM gebaut: 1 Schlag = 0,5 s Clip-Zeit.
+  // Mit Mikrofon: am gemessenen Beat-Raster ausgerichtet (Clips loopen über ganze Schläge).
+  const base = anchorMs ?? m.clipStartMs;
+  const v = ((t - base) / 1000) * c.timeScale + m.offsetBeats * 0.5;
+  return anchorMs === null ? Math.max(0, v) : ((v % 96) + 96) % 96;
 }
 
-/** Animations-Ebenen eines Tänzers zur Songzeit t (inkl. Überblendung über einen Schlag). */
-export function layersAt(c: Choreography, avatarId: string, t: number): Layer[] {
+/** Clips für Drop-Momente (der erste, den der Avatar hat, wird genommen) */
+const DROP_CLIPS = ["Dance_FestivalBounce", "Dance_PowerHit", "Dance_Shuffle", "Dance_Techno"];
+
+export type LiveSync = { anchorMs?: number | null; dropMs?: number | null; clipsOf?: (avatarId: string) => ReadonlySet<string> };
+
+/**
+ * Animations-Ebenen eines Tänzers zur Songzeit t: Überblendung über einen Schlag beim Phrasenwechsel,
+ * bei einem Drop für zwei Takte ein Höhepunkt-Clip (alle gemeinsam).
+ */
+export function layersAt(c: Choreography, avatarId: string, t: number, live: LiveSync = {}): Layer[] {
+  const anchor = live.anchorMs ?? null;
   const i = phraseIndexAt(c, t);
   const p = c.phrases[i];
   const m = p?.moves[avatarId];
   if (!p || !m) return [];
   const prev = c.phrases[i - 1]?.moves[avatarId];
   const w = Math.min(Math.max((t - p.startMs) / c.beatMs, 0), 1);
-  if (!prev || prev.clip === m.clip || w >= 1) return [{ clip: m.clip, time: clipTime(c, m, t), weight: 1 }];
-  return [
-    { clip: prev.clip, time: clipTime(c, prev, t), weight: 1 - w },
-    { clip: m.clip, time: clipTime(c, m, t), weight: w },
-  ];
+  let layers: Layer[] =
+    !prev || prev.clip === m.clip || w >= 1
+      ? [{ clip: m.clip, time: clipTime(c, m, t, anchor), weight: 1 }]
+      : [
+          { clip: prev.clip, time: clipTime(c, prev, t, anchor), weight: 1 - w },
+          { clip: m.clip, time: clipTime(c, m, t, anchor), weight: w },
+        ];
+
+  const drop = live.dropMs;
+  if (drop != null && t >= drop && t < drop + 2 * c.barMs + c.beatMs) {
+    const clips = live.clipsOf?.(avatarId);
+    const peak = DROP_CLIPS.find((x) => !clips || clips.has(x));
+    if (peak && peak !== m.clip) {
+      const wIn = Math.min((t - drop) / c.beatMs, 1);
+      const wOut = Math.min((drop + 2 * c.barMs + c.beatMs - t) / c.beatMs, 1);
+      const pw = Math.max(0, Math.min(wIn, wOut));
+      layers = [
+        ...layers.map((l) => ({ ...l, weight: l.weight * (1 - pw) })),
+        { clip: peak, time: clipTime(c, { clipStartMs: drop, offsetBeats: 0 }, t, anchor), weight: pw },
+      ];
+    }
+  }
+  return layers;
 }
 
 /** Zeitstrahl, wer gerade singt (aufeinanderfolgende Zeilen desselben Sängers zusammengefasst). */

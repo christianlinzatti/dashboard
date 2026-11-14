@@ -10,6 +10,9 @@ export type SongEvents = {
   singerChanged: { artistId: string | undefined };
   paused: Record<string, never>;
   resumed: Record<string, never>;
+  beat: { count: number };
+  tempoLocked: { bpm: number };
+  drop: { songMs: number };
 };
 
 type Handler<T> = (payload: T) => void;

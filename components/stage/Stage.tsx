@@ -3,7 +3,7 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Html, useGLTF } from "@react-three/drei";
 import { Suspense, useEffect, useMemo, useRef } from "react";
-import { AnimationMixer, Box3, Object3D, Vector3, type AnimationAction, type Group, type SpotLight } from "three";
+import { AnimationMixer, Box3, Object3D, Vector3, type AnimationAction, type Group, type PointLight, type SpotLight } from "three";
 import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js";
 import { avatarById } from "@/lib/avatars/catalog";
 import { IDLE_CLIP } from "@/lib/dance/clips";
@@ -16,7 +16,19 @@ import type { CastMember, SongStatic } from "@/lib/song-context/schema";
 const TARGET_HEIGHT = 1.8;
 
 /** Pro Frame berechnete Bühnenwerte, geteilt zwischen Director und Avataren (ohne React-State). */
-type Frame = { t: number; playing: boolean; positions: Record<string, Vec2>; focus?: string };
+type Frame = {
+  t: number;
+  playing: boolean;
+  positions: Record<string, Vec2>;
+  focus?: string;
+  anchorMs: number | null;
+  dropMs: number | null;
+  /** Licht-/LED-Puls 0..1 (fällt nach jedem Schlag ab) */
+  pulse: number;
+  vocal: number;
+  energy: number;
+  micActive: boolean;
+};
 
 /**
  * 3D-Bühne. Lädt nur die Avatare der aktuellen Besetzung.
@@ -27,7 +39,6 @@ export function Stage() {
   const bpm = useSongContext((s) => Math.round(s.live.bpm));
   const frozen = useSongContext((s) => s.frozen);
   const dark = song?.album.palette.dark ?? "#0b0712";
-  const accent = song?.album.palette.accent ?? "#ff4fd8";
 
   // Neu planen nur, wenn sich Song, Abschnitte oder Tempo ändern
   const sectionsKey = song?.lyrics?.sections.map((s) => `${s.kind}${s.startMs}`).join() ?? "";
@@ -36,7 +47,7 @@ export function Stage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst nur bei inhaltlichen Änderungen
     [song?.trackKey, sectionsKey, bpm, song?.cast],
   );
-  const frame = useRef<Frame>({ t: 0, playing: false, positions: {} });
+  const frame = useRef<Frame>({ t: 0, playing: false, positions: {}, anchorMs: null, dropMs: null, pulse: 0, vocal: 0, energy: 0, micActive: false });
 
   if (!song || !choreo) return null;
 
@@ -52,7 +63,6 @@ export function Stage() {
       <fog attach="fog" args={[dark, 7, 16]} />
       <hemisphereLight args={["#ffffff", dark, 1.1]} />
       <directionalLight position={[3, 5, 4]} intensity={1.8} />
-      <pointLight position={[0, 3, -2]} color={accent} intensity={25} distance={10} />
       <mesh rotation-x={-Math.PI / 2}>
         <circleGeometry args={[6, 64]} />
         <meshStandardMaterial color={dark} roughness={0.4} metalness={0.3} />
@@ -72,6 +82,7 @@ export function Stage() {
 function Director({ song, choreo, frameRef }: { song: SongStatic; choreo: Choreography; frameRef: React.RefObject<Frame> }) {
   const camera = useThree((s) => s.camera);
   const spot = useRef<SpotLight>(null);
+  const back = useRef<PointLight>(null);
   const target = useMemo(() => new Object3D(), []);
   const timeline = useMemo(() => focusTimeline(song), [song]);
   const avatarOf = useMemo(() => {
@@ -82,11 +93,26 @@ function Director({ song, choreo, frameRef }: { song: SongStatic; choreo: Choreo
     song.artists.find((a) => a.spotifyId === artistId)?.color ?? song.album.palette.accent;
 
   useFrame(() => {
-    const { positionMs, playback, frozen, derived } = songContext.getState();
+    const { positionMs, playback, frozen, derived, live } = songContext.getState();
     const t = positionMs;
     const positions = positionsAt(choreo, t, { timeline, avatarOf });
     const focus = avatarOf(derived.activeSingerId) ?? choreo.order[0];
-    frameRef.current = { t, playing: frozen || playback.isPlaying, positions, focus };
+    const mic = live.micActive;
+    // Puls: kurz nach jedem Schlag hell, dann abklingend; ohne Mikro ruhig
+    const pulse = mic ? Math.pow(1 - live.beatPhase, 3) : 0;
+    frameRef.current = {
+      t,
+      playing: frozen || playback.isPlaying,
+      positions,
+      focus,
+      anchorMs: mic ? live.gridAnchorMs : null,
+      dropMs: mic ? live.lastDropMs : null,
+      pulse,
+      vocal: mic ? live.vocal : 0,
+      energy: mic ? live.energy : 0.5,
+      micActive: mic,
+    };
+    if (back.current) back.current.intensity = 18 + frameRef.current.energy * 14 + pulse * 30;
 
     const cam = cameraAt(choreo, t);
     camera.position.set(...cam.pos);
@@ -98,6 +124,7 @@ function Director({ song, choreo, frameRef }: { song: SongStatic; choreo: Choreo
       target.position.set(p[0], 0.9, p[1]);
       spot.current.position.set(p[0] * 0.6, 5.5, p[1] + 2.5);
       spot.current.color.set(singerColor(derived.activeSingerId));
+      spot.current.intensity = 45 + frameRef.current.energy * 30 + pulse * 25;
     }
   }, -1);
 
@@ -105,6 +132,7 @@ function Director({ song, choreo, frameRef }: { song: SongStatic; choreo: Choreo
     <>
       <primitive object={target} />
       <spotLight ref={spot} target={target} angle={0.32} penumbra={0.6} intensity={60} distance={12} />
+      <pointLight ref={back} position={[0, 3, -2]} color={song.album.palette.accent} intensity={25} distance={10} />
     </>
   );
 }
@@ -138,7 +166,7 @@ function AvatarModel({ url, member, song, choreo, frameRef }: AvatarProps & { ur
   const { scene, animations } = useGLTF(url);
   const group = useRef<Group>(null);
 
-  const { root, mixer } = useMemo(() => {
+  const { root, mixer, leds } = useMemo(() => {
     const model = cloneSkinned(scene) as Group;
     model.updateMatrixWorld(true); // Bone-Matrizen aktualisieren, sonst ist die Skinned-Bounding-Box falsch
     const box = new Box3().setFromObject(model, true);
@@ -146,8 +174,14 @@ function AvatarModel({ url, member, song, choreo, frameRef }: AvatarProps & { ur
     const scale = TARGET_HEIGHT / Math.max(size.y, 0.001);
     model.scale.setScalar(scale);
     model.position.y = -box.min.y * scale;
-    return { root: model, mixer: new AnimationMixer(model) };
+    // LED-Gesicht: Balken (Stimme) und Augen (Beat)
+    const leds = {
+      bars: [0, 1, 2, 3, 4].map((i) => model.getObjectByName(`FaceLedBar${i}`)).filter((b): b is Object3D => !!b),
+      eyes: ["FaceLedEyeLeft", "FaceLedEyeRight"].map((n) => model.getObjectByName(n)).filter((b): b is Object3D => !!b),
+    };
+    return { root: model, mixer: new AnimationMixer(model), leds };
   }, [scene]);
+  const clipSet = useMemo(() => new Set(animations.map((a) => a.name)), [animations]);
 
   const actions = useRef(new Map<string, AnimationAction>());
   useEffect(() => {
@@ -174,7 +208,7 @@ function AvatarModel({ url, member, song, choreo, frameRef }: AvatarProps & { ur
   useFrame(() => {
     const f = frameRef.current;
     const layers: Layer[] = f.playing
-      ? layersAt(choreo, member.avatarId, f.t)
+      ? layersAt(choreo, member.avatarId, f.t, { anchorMs: f.anchorMs, dropMs: f.dropMs, clipsOf: () => clipSet })
       : [{ clip: IDLE_CLIP, time: performance.now() / 1000, weight: 1 }];
     for (const a of actions.current.values()) a.setEffectiveWeight(0);
     for (const l of layers) {
@@ -186,6 +220,13 @@ function AvatarModel({ url, member, song, choreo, frameRef }: AvatarProps & { ur
       a.time = l.time % d;
     }
     mixer.update(0);
+
+    // LED-Gesicht nach der Animation überschreiben (nur mit Mikrofon, sonst Originalpose)
+    if (f.micActive) {
+      const singing = !f.focus || f.focus === member.avatarId ? f.vocal : f.vocal * 0.3;
+      leds.bars.forEach((b, i) => b.scale.setScalar(0.35 + singing * (0.9 + 0.5 * Math.sin(f.t / 90 + i * 1.7))));
+      leds.eyes.forEach((e) => e.scale.setScalar(1 + f.pulse * 0.35));
+    }
 
     const p = f.positions[member.avatarId];
     if (group.current && p) group.current.position.set(p[0], 0, p[1]);

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { songContext, useSongContext } from "@/lib/song-context/store";
 import { POLL_NOW_EVENT } from "../spotify/useSpotifySync";
+import type { MicState } from "@/lib/song-context/schema";
 
 const OFFSET_KEY = "ss_lyrics_offset";
 const HIDE_AFTER_MS = 6000;
@@ -19,7 +20,16 @@ function storedOffset(): number {
  * Steuerleiste: erscheint nach Berührung, blendet nach 6 s wieder aus.
  * Play/Pause/Skip über Spotify, Lyrics-Offset (pro Gerät gespeichert), Abmelden.
  */
-export function Controls({ live }: { live: boolean }) {
+const micLabel: Record<MicState, string> = {
+  aus: "Mikro an",
+  startet: "Mikro startet …",
+  aktiv: "Mikro aus",
+  verweigert: "Mikro gesperrt",
+  "nicht-verfuegbar": "Kein Mikro",
+  fehler: "Mikro-Fehler",
+};
+
+export function Controls({ live, mic }: { live: boolean; mic?: { state: MicState; toggle: () => void } }) {
   const [visible, setVisible] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const isPlaying = useSongContext((s) => s.playback.isPlaying);
@@ -100,6 +110,11 @@ export function Controls({ live }: { live: boolean }) {
           </span>
           <button className={btn} onClick={() => changeOffset(100)} aria-label="Lyrics später">+</button>
         </div>
+        {mic && (
+          <button className={btn} onClick={mic.toggle} data-testid="mic-toggle" aria-pressed={mic.state === "aktiv"}>
+            {micLabel[mic.state]}
+          </button>
+        )}
         {live && (
           <button className={btn} onClick={logout}>
             Abmelden

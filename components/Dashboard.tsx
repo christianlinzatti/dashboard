@@ -12,17 +12,20 @@ import { DebugPanel } from "./debug/DebugPanel";
 import { Controls } from "./hud/Controls";
 import { useSpotifySync } from "./spotify/useSpotifySync";
 import { useLyricsLoader } from "./lyrics/useLyricsLoader";
+import { useMicAnalysis } from "./audio/useMicAnalysis";
 
 const Stage = dynamic(() => import("./stage/Stage").then((m) => m.Stage), { ssr: false });
 
-type Props = { demo?: string; t?: number; debug: boolean; loginError?: string };
+type Props = { demo?: string; t?: number; debug: boolean; loginError?: string; mic?: boolean };
 
-export function Dashboard({ demo, t, debug, loginError }: Props) {
+export function Dashboard({ demo, t, debug, loginError, mic }: Props) {
   const song = useSongContext((s) => s.song);
   const unknownDemo = demo !== undefined && !fixtures[demo];
   // Ohne Demo: Live-Betrieb mit Spotify
   const status = useSpotifySync(demo === undefined);
   useLyricsLoader(demo === undefined);
+  // Mikrofon: im Live-Betrieb; in Demos nur mit ?mic=1 (Screenshots bleiben reproduzierbar)
+  const micCtl = useMicAnalysis(demo === undefined || !!mic);
 
   // Demo-Modus: Song-Kontext aus Fixture laden; mit ?t=<ms> eingefroren (Screenshots).
   useEffect(() => {
@@ -67,7 +70,7 @@ export function Dashboard({ demo, t, debug, loginError }: Props) {
           <NowPlayingBar />
           <LyricsLayer />
           <Progress />
-          <Controls live={demo === undefined} />
+          <Controls live={demo === undefined} mic={demo === undefined || mic ? micCtl : undefined} />
         </>
       ) : (
         <IdleScreen status={unknownDemo ? { kind: "idle" } : status} unknownDemo={unknownDemo ? demo : undefined} loginError={loginError} />
