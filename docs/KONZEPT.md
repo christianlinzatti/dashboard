@@ -409,7 +409,7 @@ LRC/TTML/Richsync-Parser, Provider-Ranking, Silben-Verteilung, PlaybackClock-Int
 ## 10. Hosting (Vercel)
 
 - GitHub-Integration: `main` → Production, jeder Branch/PR → Preview.
-- Env-Vars: `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, `SESSION_SECRET`, `UPSTASH_REDIS_REST_URL/TOKEN`, Provider-Secrets (`SPOTIFY_SP_DC`, optional `MUSIXMATCH_API_KEY`), Feature-Flags je Provider (`LYRICS_PROVIDERS=musixmatch-desktop,lyricsplus,spotify-color,netease,qq,lrclib`) eine Allowlist erlaubter Spotify-Konten (`ALLOWED_SPOTIFY_USERS`) sowie ab Stufe 5 `LASTFM_API_KEY`, `LASTFM_USER`, `GENIUS_ACCESS_TOKEN`, `FLICKR_API_KEY`, `THEAUDIODB_API_KEY`, `TICKETMASTER_API_KEY`, `BANDSINTOWN_APP_ID`, `SETLISTFM_API_KEY`, `HOME_LOCATION` (Ort für Konzert-Umkreis).
+- Env-Vars: `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, `SESSION_SECRET`, `UPSTASH_REDIS_REST_URL/TOKEN`, Provider-Secrets (`SPOTIFY_SP_DC`, optional `MUSIXMATCH_API_KEY`), Feature-Flags je Provider (`LYRICS_PROVIDERS=musixmatch-desktop,lyricsplus,spotify-color,netease,qq,lrclib`) eine Allowlist erlaubter Spotify-Konten (`ALLOWED_SPOTIFY_USERS`) sowie ab Stufe 5 `LASTFM_API_KEY`, `LASTFM_USER`, `GENIUS_ACCESS_TOKEN`, `FLICKR_API_KEY`, `THEAUDIODB_API_KEY`, `TICKETMASTER_API_KEY`, `BANDSINTOWN_APP_ID`, `SETLISTFM_API_KEY`, `HOME_LOCATION=Wien`, `CONCERT_RADIUS_KM=200` (Konzert-Umkreis). oeticket braucht keinen Key.
 - Manche inoffiziellen Quellen sperren Rechenzentrums-IPs wie die von Vercel. Dann laufen diese Anfragen über die Pi-Bridge (private Heim-IP); die Provider-Schnittstelle ist dafür schon ausgelegt.
 - Route Handlers im Node-Runtime (Crypto, Parser); Lyrics-Antworten mit `Cache-Control: s-maxage=86400`.
 - Security-Header (CSP, `Permissions-Policy: microphone=(self)`), keine Tokens im Client.
@@ -483,7 +483,7 @@ Funktionen: Grundfarbe aus dem Album-Cover, Puls auf Kick, Farbwechsel im Refrai
 
 ### Zuletzt gespielte Songs (Last.fm)
 
-- **Last.fm API** (`user.getRecentTracks`, API-Key + Benutzername, kein OAuth nötig für Lesezugriff); Fallback: Spotify „Recently Played“.
+- **Last.fm API** (`user.getRecentTracks`, API-Key + Benutzername, kein OAuth nötig für Lesezugriff); Fallback: Spotify „Recently Played“. Das Last.fm-Profil ist vorhanden; der Benutzername wird als Env-Var `LASTFM_USER` gesetzt (nicht im Code).
 - Anzeige: Leiste „Zuletzt gehört“ (Cover, Titel, „vor 12 Min.“) im Startbildschirm, wenn nichts läuft, und als einblendbare Seitenleiste per Wischgeste. Echtzeit-Scrobbles (gerade laufender Song) werden erkannt und nicht doppelt gezeigt.
 - Zusätzlich aus Last.fm: Hörstatistik („Du hast diesen Song 37-mal gehört“, „Künstler seit 2019 in deiner Bibliothek“), Tags, ähnliche Künstler.
 
@@ -510,10 +510,25 @@ Bei Feature-Songs gilt der Stern pro Artist und erscheint am Namensschild des je
 | **Bandsintown** | App-ID (Nutzung mit Quellenangabe) | sehr gute Abdeckung kleiner/mittlerer Acts, Tourdaten direkt von Künstlern |
 | **Songkick** | API nur noch für Partner | aufgenommen, sobald ein Key vorliegt |
 | **setlist.fm** | kostenloser API-Key | keine Zukunftstermine, aber „Was spielen sie gerade auf Tour?“ (letzte Setlists) |
-| **Eventim / Reservix** | keine offene API | ggf. später per Feed/inoffiziell, opt-in |
+| **oeticket (Eventim Österreich)** | inoffizielle Eventim-Such-API, kein Key | **wichtigste Quelle für Österreich**; liefert Termine, Locations, Preise und Ticket-Links direkt von oeticket |
+| **Eventim / Reservix (DE)** | gleiche API mit anderem `webId`/Partner | optional für Konzerte in Deutschland |
+
+**oeticket-Anbindung (inoffiziell):**
+
+```
+GET https://public-api.eventim.com/websearch/search/api/exploration/v1/products
+    ?webId=web__oeticket-at&language=de&retail_partner=EOE
+    &page=1&top=50&sort=DateAsc
+    &search_term=<Künstlername>        # z. B. Paul+van+Dyk
+    [&city_names=<Stadt>]              # z. B. Linz – optional, mehrfach für mehrere Städte
+```
+
+- Abfrage pro Künstler mit `search_term`; Treffer werden gegen den Künstlernamen geprüft (Volltextsuche liefert auch Tribute-Bands, Partyreihen „… Night“ usw.), Paginierung über `page`, bis keine Treffer mehr kommen oder 3 Seiten erreicht sind.
+- Antwort wird per zod validiert; ändert sich das Format, schlägt der tägliche Provider-Check (GitHub Action) an und der Provider pausiert automatisch, die anderen Quellen laufen weiter.
+- Läuft serverseitig (Vercel) mit 12-h-Cache und höchstens einer Anfrage pro Künstler und Tag, um die inoffizielle Schnittstelle zu schonen; bei Sperre der Vercel-IP über die Pi-Bridge.
 
 - **Zusammenführung:** Termine werden über Künstler (MusicBrainz-ID), Datum und Ort/Venue (normalisiert) dedupliziert; jede Quelle bleibt als Herkunft sichtbar, Ticket-Link vom zuverlässigsten Anbieter.
-- **Relevanz:** Heimatort + Umkreis (z. B. 150 km) zuerst, danach restliches Deutschland/Europa. Konfigurierbar.
+- **Relevanz:** Heimatort **Wien**, Standard-Umkreis **200 km** (umfasst u. a. Wien, Bratislava, Brünn, Graz, Linz, St. Pölten). Termine im Umkreis zuerst, danach restliches Österreich, dann Europa. Umkreis in den Einstellungen änderbar. Die Entfernung wird aus den Koordinaten der Location berechnet (falls die Quelle keine liefert: Geocoding der Stadt, gecacht).
 - **Anzeige:** Karte „Live in deiner Nähe“ (Datum, Stadt, Location, Countdown „in 23 Tagen“, *ausverkauft*-Hinweis) in Instrumentalteilen, im Outro und im Infobereich. Ticket-Link als **QR-Code**, damit er aufs Handy wandert. Bei Feature-Songs pro Artist.
 - **Cache:** 12 h pro Künstler (Redis), Rate-Limits je Provider beachtet.
 
@@ -555,8 +570,7 @@ Ein **Foto-Ranking** wählt pro Künstler die besten Bilder (Auflösung, Seitenv
 
 1. **Rechner:** Raspberry Pi 5 (8 GB) oder N100-Mini-PC? Beides wird unterstützt; die Entscheidung hat nur Einfluss auf die Standard-Qualitätsstufe.
 
-3. **Last.fm:** Benutzername? (Scrobbelt Spotify bereits zu Last.fm?)
-4. **Konzerte:** Heimatort und gewünschter Umkreis?
+3. **Last.fm:** Scrobbelt Spotify bereits zu Last.fm? (Sonst fehlen dort die aktuellen Songs; Fallback ist Spotify „Recently Played“.)
 
 ### Geklärt
-- Raspberry Pi, Chromium im Kiosk-Modus · Spotify-Developer-App + Premium vorhanden · kein Apple-Developer-Zugang · inoffizielle Lyrics-Quellen erwünscht (Referenz: `simonroedig/SpotifyLyrics`) · Oberfläche nur Deutsch · Feature-Songs mit mehreren Tänzern, viel Abwechslung beim Tanzen · spätere Stufen: Govee, Alexa, Band-Fotos und Wikipedia-Texte · Mikrofon vorhanden · Referenzformat 1280×800 · Referenz-Screenshots im Repo · Govee-Geräte H6063, H610B, H61A2, H6051 alle per LAN ansteuerbar · zentraler Song-Kontext als Architektur-Kern.
+- Raspberry Pi, Chromium im Kiosk-Modus · Spotify-Developer-App + Premium vorhanden · kein Apple-Developer-Zugang · inoffizielle Lyrics-Quellen erwünscht (Referenz: `simonroedig/SpotifyLyrics`) · Oberfläche nur Deutsch · Feature-Songs mit mehreren Tänzern, viel Abwechslung beim Tanzen · spätere Stufen: Govee, Alexa, Band-Fotos und Wikipedia-Texte · Mikrofon vorhanden · Referenzformat 1280×800 · Referenz-Screenshots im Repo · Govee-Geräte H6063, H610B, H61A2, H6051 alle per LAN ansteuerbar · zentraler Song-Kontext als Architektur-Kern · Last.fm-Profil vorhanden · Konzerte: Heimatort Wien, Umkreis 200 km, oeticket über die inoffizielle Eventim-API.
