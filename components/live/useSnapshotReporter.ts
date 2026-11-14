@@ -51,6 +51,8 @@ export function useSnapshotReporter(enabled: boolean) {
       if (Date.now() - lastReport >= every) void report();
     }, 5000);
     const offs = (["trackChanged", "sectionChanged", "paused", "resumed"] as const).map((e) => songContext.events.on(e, soon));
+    // Likes, Konzerte und Band-Infos kommen nach dem Songwechsel – dann gleich nachmelden (für Alexa)
+    offs.push(songContext.subscribe((s) => `${!!s.song?.user}${!!s.song?.concerts}${!!s.song?.info}`, soon));
     return () => {
       stopped = true;
       clearInterval(timer);

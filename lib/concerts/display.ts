@@ -37,10 +37,10 @@ export function todayLocal(now = new Date()): string {
 export type ConcertCard = { concerts: Concert[]; near: boolean; liveHint: string | null };
 
 /** Termine aller Artists: im Umkreis zuerst, dann nach Datum; höchstens drei. */
-export function topConcerts(song: SongStatic, radiusKm = 200): { list: Concert[]; near: boolean } {
+export function topConcerts(song: SongStatic, radiusKm = 200): { list: Concert[]; all: Concert[]; near: boolean } {
   const isNear = (c: Concert) => c.distanceKm !== undefined && c.distanceKm <= radiusKm;
   const all = [...(song.concerts ?? [])].sort((a, b) => Number(isNear(b)) - Number(isNear(a)) || a.date.localeCompare(b.date));
-  return { list: all.slice(0, 3), near: all.some(isNear) };
+  return { list: all.slice(0, 3), all, near: all.some(isNear) };
 }
 
 /** „Zuletzt live am … in … – dieser Song war dabei“ (setlist.fm). */

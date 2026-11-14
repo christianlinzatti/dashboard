@@ -1,4 +1,7 @@
 import { z } from "zod";
+import { daysUntil } from "@/lib/concerts/display";
+import { home } from "@/lib/concerts/geo";
+import { normalizeLine } from "@/lib/lyrics/text";
 import type { CommandInput, Snapshot } from "@/lib/song-context/snapshot";
 
 /** Nur die Teile der Alexa-Anfrage, die wir brauchen. */
@@ -51,6 +54,11 @@ function slot(req: AlexaRequest, name: string): string | undefined {
   return (resolved ?? s?.value)?.toLowerCase();
 }
 
+/** Gesprochener Slot-Wert ohne Auflösung (z. B. Künstlername). */
+function slotRaw(req: AlexaRequest, name: string): string | undefined {
+  return req.request.intent?.slots?.[name]?.value || undefined;
+}
+
 export { SNAPSHOT_STALE_MS as STALE_MS } from "@/lib/cache-policy";
 import { SNAPSHOT_STALE_MS as STALE_MS } from "@/lib/cache-policy";
 
@@ -64,6 +72,109 @@ function artistsText(s: Snapshot) {
   const main = s.artists.filter((a) => a.role === "main").map((a) => a.name);
   const feat = s.artists.filter((a) => a.role === "feature").map((a) => a.name);
   return feat.length ? `${main.join(" und ")} featuring ${feat.join(" und ")}` : main.join(" und ");
+}
+
+const WEEKDAYS = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
+const MONTHS = [
+  "Jänner",
+  "Februar",
+  "März",
+  "April",
+  "Mai",
+  "Juni",
+  "Juli",
+  "August",
+  "September",
+  "Oktober",
+  "November",
+  "Dezember",
+];
+
+/** „Samstag, 5. Dezember“ (gesprochen, österreichisch). */
+export function spokenDate(iso: string): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  const dt = new Date(Date.UTC(y!, m! - 1, d!));
+  return `${WEEKDAYS[dt.getUTCDay()]}, ${d}. ${MONTHS[m! - 1]}`;
+}
+
+/** Heutiges Datum in Wien (JJJJ-MM-TT), unabhängig von der Server-Zeitzone. */
+export function todayVienna(now: number): string {
+  return new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Vienna" }).format(now);
+}
+
+function inDays(n: number) {
+  return n <= 0 ? "heute" : n === 1 ? "morgen" : `in ${n} Tagen`;
+}
+
+/** Artist aus dem Slot (unscharf) oder alle Artists des Songs. */
+function pickArtists<T extends { name: string }>(list: T[], spoken: string | undefined): T[] {
+  if (!spoken) return list;
+  const q = normalizeLine(spoken);
+  const hit = list.filter((a) => {
+    const n = normalizeLine(a.name);
+    return n === q || n.includes(q) || q.includes(n);
+  });
+  return hit.length ? hit : list;
+}
+
+function concertAnswer(s: Snapshot, spoken: string | undefined, today: string): string {
+  const names = pickArtists(s.artists, spoken).map((a) => normalizeLine(a.name));
+  const list = (s.concerts ?? []).filter((c) => names.includes(normalizeLine(c.artistName)) && c.date >= today);
+  if (!list.length)
+    return `Ich habe keine bevorstehenden Konzerte von ${spoken ? pickArtists(s.artists, spoken)[0]!.name : artistsText(s)} gefunden.`;
+  const { name: homeName, radiusKm } = home();
+  const near = list
+    .filter((c) => c.distanceKm !== undefined && c.distanceKm <= radiusKm)
+    .sort((a, b) => a.date.localeCompare(b.date));
+  // Ort ohne Artikel („im/in der“ hängt vom unbekannten Geschlecht des Veranstaltungsorts ab)
+  const say = (c: (typeof list)[number]) =>
+    `${c.artistName} spielt am ${spokenDate(c.date)} in ${c.city}${c.venue ? `, ${c.venue}` : ""}. Das ist ${inDays(daysUntil(c.date, today))}${c.soldOut ? ", leider ausverkauft" : ""}.`;
+  if (near.length) {
+    const more =
+      near.length > 1 ? ` Danach noch ${near.length - 1} weitere${near.length === 2 ? "r Termin" : " Termine"} in der Nähe.` : "";
+    return say(near[0]!) + more;
+  }
+  const next = [...list].sort((a, b) => a.date.localeCompare(b.date))[0]!;
+  return `In der Nähe von ${homeName} ist nichts geplant. Der nächste Termin: ${say(next)}`;
+}
+
+function playsAnswer(s: Snapshot): string {
+  const u = s.user;
+  if (!u || (u.trackPlays === undefined && u.trackSaved === undefined && u.lovedOnLastfm === undefined))
+    return "Dazu habe ich gerade keine Daten. Ist Last.fm verbunden?";
+  const parts: string[] = [];
+  if (u.trackPlays !== undefined)
+    parts.push(
+      u.trackPlays === 0
+        ? `${s.title} hörst du laut Last.fm zum ersten Mal.`
+        : `${s.title} hast du laut Last.fm ${u.trackPlays === 1 ? "einmal" : `${u.trackPlays} Mal`} gehört.`,
+    );
+  if (u.trackSaved) parts.push("Der Song ist in deinen Lieblingssongs auf Spotify.");
+  if (u.lovedOnLastfm) parts.push("Auf Last.fm hast du ihn mit einem Herz markiert.");
+  return parts.join(" ") || `${s.title} ist nicht in deinen Lieblingssongs.`;
+}
+
+function likeAnswer(s: Snapshot, spoken: string | undefined): string {
+  const artists = s.user?.artists ?? [];
+  if (!artists.length) return "Dazu habe ich gerade keine Daten.";
+  const picked = pickArtists(artists, spoken);
+  return picked
+    .map((a) => {
+      const plays = a.plays ? ` Laut Last.fm hast du ${a.name} ${a.plays === 1 ? "einmal" : `${a.plays} Mal`} gehört.` : "";
+      if (a.following === true) return `Ja, du folgst ${a.name} auf Spotify.${plays}`;
+      if (a.following === false)
+        return a.plays ? `Du folgst ${a.name} nicht auf Spotify.${plays}` : `Nein, du folgst ${a.name} noch nicht.`;
+      return plays.trim() || `Zu ${a.name} habe ich keine Daten.`;
+    })
+    .join(" ");
+}
+
+function aboutAnswer(s: Snapshot, spoken: string | undefined): string {
+  const about = s.about ?? [];
+  if (!about.length) return `Über ${artistsText(s)} habe ich gerade keine Infos.`;
+  const a = pickArtists(about, spoken)[0]!;
+  const facts = a.facts.length ? ` ${a.facts.join(". ")}.` : "";
+  return `${a.summary ?? a.name}${facts}`;
 }
 
 const onOff = (v: string | undefined) => (v === "an" ? true : v === "aus" ? false : undefined);
@@ -116,8 +227,31 @@ export async function handleAlexa(req: AlexaRequest, deps: HandlerDeps) {
       await deps.pushCommand({ type: "qualitaet", value });
       return speak(`Bühnenqualität ${v}.`);
     }
+    case "KonzertIntent": {
+      const s = await live();
+      if (!s) return speak("Das Dashboard ist gerade nicht aktiv.");
+      return speak(concertAnswer(s, slotRaw(req, "kuenstler"), todayVienna(now)));
+    }
+    case "GehoertIntent": {
+      const s = await live();
+      if (!s) return speak("Das Dashboard ist gerade nicht aktiv.");
+      return speak(playsAnswer(s));
+    }
+    case "MagIchIntent": {
+      const s = await live();
+      if (!s) return speak("Das Dashboard ist gerade nicht aktiv.");
+      return speak(likeAnswer(s, slotRaw(req, "kuenstler")));
+    }
+    case "BandInfoIntent": {
+      const s = await live();
+      if (!s) return speak("Das Dashboard ist gerade nicht aktiv.");
+      return speak(aboutAnswer(s, slotRaw(req, "kuenstler")));
+    }
     case "AMAZON.HelpIntent":
-      return speak("Du kannst fragen: Welcher Song läuft? Wer singt gerade? Oder sagen: Lampen aus, Stroboskop an.", false);
+      return speak(
+        "Du kannst fragen: Welcher Song läuft? Wer singt gerade? Wann spielen die in der Nähe? Wie oft habe ich das gehört? Mag ich den Künstler? Erzähl mir was über die Band. Oder sagen: Lampen aus, Stroboskop an.",
+        false,
+      );
     case "AMAZON.StopIntent":
     case "AMAZON.CancelIntent":
       return speak("Tschüss!");

@@ -1,6 +1,8 @@
 import { z } from "zod";
 import type { SongContextState } from "./store";
 import type { LightFrame } from "@/lib/stage/lights";
+import { topConcerts } from "@/lib/concerts/display";
+import type { SongStatic } from "./schema";
 
 /**
  * Kompakter Stand des Song-Kontexts für den Server (Alexa, Pi-Bridge).
@@ -28,6 +30,49 @@ export const snapshotSchema = z.object({
     })
     .nullable(),
   updatedAt: z.number(),
+  // --- Stufe 4/5 für Alexa (optional, kompakt) ---
+  /** Likes, Follows und Hörzahlen; unbekannte Werte fehlen */
+  user: z
+    .object({
+      trackSaved: z.boolean().optional(),
+      lovedOnLastfm: z.boolean().optional(),
+      trackPlays: z.number().int().nonnegative().optional(),
+      artists: z
+        .array(
+          z.object({
+            name: z.string().max(200),
+            following: z.boolean().optional(),
+            plays: z.number().int().nonnegative().optional(),
+          }),
+        )
+        .max(12),
+    })
+    .optional(),
+  /** nächste Konzerte (Umkreis zuerst) */
+  concerts: z
+    .array(
+      z.object({
+        artistName: z.string().max(200),
+        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        city: z.string().max(100),
+        venue: z.string().max(200),
+        distanceKm: z.number().nonnegative().optional(),
+        soldOut: z.boolean().optional(),
+      }),
+    )
+    .max(5)
+    .optional(),
+  /** Kurzinfos zu den Artists (erster Satz aus Wikipedia, Fakten) */
+  about: z
+    .array(
+      z.object({
+        name: z.string().max(200),
+        summary: z.string().max(400).optional(),
+        facts: z.array(z.string().max(120)).max(4),
+      }),
+    )
+    .max(6)
+    .optional(),
 });
 export type Snapshot = z.infer<typeof snapshotSchema>;
 
@@ -65,5 +110,69 @@ export function buildSnapshot(
       ? { scene: light.scene, base: light.signal.base, accent: light.signal.accent, brightness: light.signal.brightness }
       : null,
     updatedAt: Date.now(),
+    ...extras(song),
   };
+}
+
+/**
+ * Erster Satz eines Textes (für gesprochene Antworten), höchstens 300 Zeichen.
+ * Kein Satzende nach Zahlen („3. Generation“, „12. März“), kurzen Abkürzungen („St.“, „z. B.“)
+ * oder innerhalb von Klammern („(* 12. März 1970 in Wien)“).
+ */
+export function firstSentence(text: string): string {
+  const t = text.trim();
+  let depth = 0;
+  let cut = t.length;
+  for (let i = 0; i < t.length; i++) {
+    const ch = t[i]!;
+    if (ch === "(") depth++;
+    else if (ch === ")") depth = Math.max(0, depth - 1);
+    else if (".!?".includes(ch) && depth === 0 && /^(\s+[A-ZÄÖÜ„"]|\s*$)/.test(t.slice(i + 1))) {
+      const word = /(\S+)$/.exec(t.slice(0, i))?.[1] ?? "";
+      if (ch === "." && (/\d$/.test(word) || word.replace(/[^\p{L}]/gu, "").length < 3)) continue;
+      cut = i + 1;
+      break;
+    }
+  }
+  const out = t.slice(0, cut).trim();
+  return out.length > 300 ? `${out.slice(0, 297).trimEnd()}…` : out;
+}
+
+function extras(song: SongStatic): Pick<Snapshot, "user" | "concerts" | "about"> {
+  const name = (id: string) => song.artists.find((a) => a.spotifyId === id)?.name;
+  const out: Pick<Snapshot, "user" | "concerts" | "about"> = {};
+  if (song.user) {
+    const { trackSaved, lovedOnLastfm, trackPlays, artists } = song.user;
+    out.user = {
+      ...(trackSaved !== undefined ? { trackSaved } : {}),
+      ...(lovedOnLastfm !== undefined ? { lovedOnLastfm } : {}),
+      ...(trackPlays !== undefined ? { trackPlays } : {}),
+      artists: Object.entries(artists ?? {}).flatMap(([id, a]) => {
+        const n = name(id);
+        return n ? [{ name: n, ...a }] : [];
+      }),
+    };
+  }
+  if (song.concerts?.length) {
+    out.concerts = topConcerts(song)
+      .all.slice(0, 5)
+      .map((c) => ({
+        artistName: c.artistName,
+        date: c.date,
+        city: c.city,
+        venue: c.venue,
+        ...(c.distanceKm !== undefined ? { distanceKm: c.distanceKm } : {}),
+        ...(c.soldOut ? { soldOut: true } : {}),
+      }));
+  }
+  if (song.info) {
+    out.about = song.artists.flatMap((a) => {
+      const i = song.info!.artists[a.spotifyId];
+      if (!i) return [];
+      return [
+        { name: i.name ?? a.name, ...(i.summary ? { summary: firstSentence(i.summary) } : {}), facts: i.facts.slice(0, 4) },
+      ];
+    });
+  }
+  return out;
 }

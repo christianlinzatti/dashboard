@@ -3,11 +3,26 @@
     "languageModel": {
       "invocationName": "sonic stage",
       "intents": [
-        { "name": "AMAZON.CancelIntent", "samples": [] },
-        { "name": "AMAZON.HelpIntent", "samples": [] },
-        { "name": "AMAZON.StopIntent", "samples": [] },
-        { "name": "AMAZON.NavigateHomeIntent", "samples": [] },
-        { "name": "AMAZON.FallbackIntent", "samples": [] },
+        {
+          "name": "AMAZON.CancelIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.HelpIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.StopIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.NavigateHomeIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.FallbackIntent",
+          "samples": []
+        },
         {
           "name": "WelcherSongIntent",
           "slots": [],
@@ -26,35 +41,158 @@
         },
         {
           "name": "LampenIntent",
-          "slots": [{ "name": "zustand", "type": "ZUSTAND" }],
+          "slots": [
+            {
+              "name": "zustand",
+              "type": "ZUSTAND"
+            }
+          ],
           "samples": ["Lampen {zustand}", "Lichter {zustand}", "mach die Lampen {zustand}", "schalte die Lichter {zustand}"]
         },
         {
           "name": "StroboIntent",
-          "slots": [{ "name": "zustand", "type": "ZUSTAND" }],
+          "slots": [
+            {
+              "name": "zustand",
+              "type": "ZUSTAND"
+            }
+          ],
           "samples": ["Stroboskop {zustand}", "Strobo {zustand}", "schalte das Stroboskop {zustand}"]
         },
         {
           "name": "QualitaetIntent",
-          "slots": [{ "name": "stufe", "type": "STUFE" }],
+          "slots": [
+            {
+              "name": "stufe",
+              "type": "STUFE"
+            }
+          ],
           "samples": ["Qualität {stufe}", "Bühnenqualität {stufe}", "stell die Qualität auf {stufe}"]
+        },
+        {
+          "name": "KonzertIntent",
+          "slots": [
+            {
+              "name": "kuenstler",
+              "type": "AMAZON.Musician"
+            }
+          ],
+          "samples": [
+            "wann spielen die in der Nähe",
+            "wann spielen die live",
+            "wann spielen die in Wien",
+            "gibt es Konzerte",
+            "gibt es Konzerte in der Nähe",
+            "wann ist das nächste Konzert",
+            "wann spielt {kuenstler} live",
+            "wann spielt {kuenstler} in Wien",
+            "gibt es Konzerte von {kuenstler}",
+            "wann kommt {kuenstler} nach Wien"
+          ]
+        },
+        {
+          "name": "GehoertIntent",
+          "samples": [
+            "wie oft habe ich das gehört",
+            "wie oft hab ich das schon gehört",
+            "wie oft habe ich den Song gehört",
+            "wie oft lief der Song schon",
+            "ist das einer meiner Lieblingssongs",
+            "mag ich den Song",
+            "hab ich den Song gespeichert"
+          ]
+        },
+        {
+          "name": "MagIchIntent",
+          "slots": [
+            {
+              "name": "kuenstler",
+              "type": "AMAZON.Musician"
+            }
+          ],
+          "samples": [
+            "mag ich den Künstler",
+            "mag ich die Band",
+            "hab ich den Künstler geliked",
+            "habe ich die Band geliked",
+            "folge ich dem Künstler",
+            "folge ich der Band",
+            "mag ich {kuenstler}",
+            "hab ich {kuenstler} geliked",
+            "folge ich {kuenstler}",
+            "wie oft hab ich {kuenstler} gehört"
+          ]
+        },
+        {
+          "name": "BandInfoIntent",
+          "slots": [
+            {
+              "name": "kuenstler",
+              "type": "AMAZON.Musician"
+            }
+          ],
+          "samples": [
+            "erzähl mir was über die Band",
+            "erzähl mir was über den Künstler",
+            "wer ist die Band",
+            "was weißt du über die Band",
+            "erzähl mir was über {kuenstler}",
+            "wer ist {kuenstler}",
+            "was weißt du über {kuenstler}"
+          ]
         }
       ],
       "types": [
         {
           "name": "ZUSTAND",
           "values": [
-            { "id": "an", "name": { "value": "an", "synonyms": ["ein", "einschalten", "anschalten"] } },
-            { "id": "aus", "name": { "value": "aus", "synonyms": ["ausschalten", "abschalten"] } }
+            {
+              "id": "an",
+              "name": {
+                "value": "an",
+                "synonyms": ["ein", "einschalten", "anschalten"]
+              }
+            },
+            {
+              "id": "aus",
+              "name": {
+                "value": "aus",
+                "synonyms": ["ausschalten", "abschalten"]
+              }
+            }
           ]
         },
         {
           "name": "STUFE",
           "values": [
-            { "id": "niedrig", "name": { "value": "niedrig", "synonyms": ["gering", "sparsam"] } },
-            { "id": "mittel", "name": { "value": "mittel", "synonyms": ["normal"] } },
-            { "id": "hoch", "name": { "value": "hoch", "synonyms": ["maximal", "beste"] } },
-            { "id": "automatisch", "name": { "value": "automatisch", "synonyms": ["auto"] } }
+            {
+              "id": "niedrig",
+              "name": {
+                "value": "niedrig",
+                "synonyms": ["gering", "sparsam"]
+              }
+            },
+            {
+              "id": "mittel",
+              "name": {
+                "value": "mittel",
+                "synonyms": ["normal"]
+              }
+            },
+            {
+              "id": "hoch",
+              "name": {
+                "value": "hoch",
+                "synonyms": ["maximal", "beste"]
+              }
+            },
+            {
+              "id": "automatisch",
+              "name": {
+                "value": "automatisch",
+                "synonyms": ["auto"]
+              }
+            }
           ]
         }
       ]

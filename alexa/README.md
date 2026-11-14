@@ -7,9 +7,17 @@ und Bühnenqualität des Dashboards.
 |---|---|
 | „Alexa, frag Sonic Stage, welcher Song läuft“ | Titel und Artists aus dem Dashboard |
 | „Alexa, frag Sonic Stage, wer singt gerade“ | aktiver Sänger (bei Feature-Songs) |
+| „Alexa, frag Sonic Stage, wann spielen die in der Nähe“ | nächstes Konzert im Umkreis (sonst der nächste Termin überhaupt), mit Countdown |
+| „Alexa, frag Sonic Stage, wann spielt Kai Vento live“ | dasselbe für einen bestimmten Artist des Songs |
+| „Alexa, frag Sonic Stage, wie oft habe ich das gehört“ | Hörzahl (Last.fm), Lieblingssong (Spotify), Herz auf Last.fm |
+| „Alexa, frag Sonic Stage, mag ich den Künstler“ | ob du dem Artist auf Spotify folgst und wie oft du ihn gehört hast |
+| „Alexa, frag Sonic Stage, erzähl mir was über die Band“ | erster Satz aus Wikipedia und Kurzfakten |
 | „Alexa, sag Sonic Stage Lampen aus“ | Govee-Lampen aus (über das Dashboard und die Pi-Bridge) |
 | „Alexa, sag Sonic Stage Stroboskop aus“ | Strobe bei Drops aus |
 | „Alexa, sag Sonic Stage Qualität niedrig“ | Bühnenqualität umstellen |
+
+Nach dem Ändern von `de-DE.json` das Interaktionsmodell in der Alexa-Developer-Console neu einfügen und
+„Build Model“ ausführen.
 
 Befehle erreichen das Dashboard mit seiner nächsten Meldung an den Server, spätestens nach etwa 5 Sekunden.
 

@@ -4,9 +4,10 @@ import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
-import { handleAlexa, type AlexaRequest } from "@/lib/alexa/handler";
+import { handleAlexa, spokenDate, todayVienna, type AlexaRequest } from "@/lib/alexa/handler";
 import { isValidCertUrl, verifyAlexaRequest } from "@/lib/alexa/verify";
-import type { CommandInput, Snapshot } from "@/lib/song-context/snapshot";
+import { buildSnapshot, firstSentence, snapshotSchema, type CommandInput, type Snapshot } from "@/lib/song-context/snapshot";
+import { fixtures } from "@/lib/song-context/fixtures";
 
 /**
  * Test-Zertifizierungsstelle zur Laufzeit (kein privater Schlüssel im Repo):
@@ -212,5 +213,132 @@ describe("Alexa-Intents", () => {
     expect(launch.response).toMatchObject({ shouldEndSession: false });
     expect((await run("AMAZON.HelpIntent")).text).toMatch(/Welcher Song läuft/);
     expect((await run("AMAZON.StopIntent")).text).toBe("Tschüss!");
+  });
+});
+
+describe("Alexa: Konzerte, Hörstatistik, Likes, Band-Infos", () => {
+  const NOW = Date.UTC(2026, 10, 14, 10); // 14.11.2026
+  const song = fixtures.neonlicht!;
+  const full = (): Snapshot => {
+    const s = buildSnapshot(
+      {
+        song,
+        playback: { isPlaying: true, positionMs: 60_000, updatedAt: 0, offsetMs: 0 },
+        positionMs: 60_000,
+        derived: { section: "verse", lineActive: false, lineIdx: 0, activeSingerId: null } as never,
+        live: { bpm: 124 } as never,
+      },
+      null,
+    )!;
+    return { ...s, updatedAt: NOW };
+  };
+  const ask = async (intent: string, slots: Record<string, { value?: string }> = {}, s: Snapshot = full()) => {
+    const req = JSON.parse(request({ intent: { name: intent, slots } })) as AlexaRequest;
+    const res = await handleAlexa(req, { getSnapshot: async () => s, pushCommand: async () => undefined, now: () => NOW });
+    return (res.response as { outputSpeech?: { text: string } }).outputSpeech?.text;
+  };
+
+  it("Schnappschuss enthält kompakte Zusatzdaten und bleibt klein", () => {
+    const s = full();
+    expect(snapshotSchema.safeParse(s).success).toBe(true);
+    expect(s.user).toEqual({
+      trackSaved: true,
+      lovedOnLastfm: false,
+      trackPlays: 37,
+      artists: [
+        { name: "Mira Sol", following: true, plays: 412 },
+        { name: "Kai Vento", following: false, plays: 58 },
+      ],
+    });
+    expect(s.concerts?.map((c) => c.city)).toEqual(["Wien", "Linz", "Berlin"]);
+    expect(s.about?.[0]).toEqual({
+      name: "Mira Sol",
+      summary: "Mira Sol ist eine erfundene Sängerin für die Demo dieses Dashboards.",
+      facts: ["Geboren 1996", "3 Demo-Alben"],
+    });
+    expect(JSON.stringify(s).length).toBeLessThan(2000);
+  });
+
+  it("ohne Zusatzdaten bleibt der Schnappschuss wie bisher", () => {
+    const s = buildSnapshot(
+      {
+        song: { ...song, user: undefined, concerts: undefined, info: undefined },
+        playback: { isPlaying: true, positionMs: 0, updatedAt: 0, offsetMs: 0 },
+        positionMs: 0,
+        derived: { section: null, lineActive: false, lineIdx: 0, activeSingerId: null } as never,
+        live: { bpm: 120 } as never,
+      },
+      null,
+    )!;
+    expect(s).not.toHaveProperty("user");
+    expect(s).not.toHaveProperty("concerts");
+    expect(s).not.toHaveProperty("about");
+  });
+
+  it("Konzerte: Umkreis zuerst, Countdown, bestimmter Artist, nichts in der Nähe", async () => {
+    expect(await ask("KonzertIntent")).toBe(
+      "Mira Sol spielt am Samstag, 5. Dezember in Wien, Gasometer. Das ist in 21 Tagen. Danach noch 1 weiterer Termin in der Nähe.",
+    );
+    expect(await ask("KonzertIntent", { kuenstler: { value: "kai vento" } })).toBe(
+      "Kai Vento spielt am Samstag, 13. Februar in Linz, Posthof. Das ist in 91 Tagen, leider ausverkauft.",
+    );
+    const far = { ...full(), concerts: full().concerts!.filter((c) => c.city === "Berlin") };
+    expect(await ask("KonzertIntent", {}, far)).toBe(
+      "In der Nähe von Wien ist nichts geplant. Der nächste Termin: Mira Sol spielt am Samstag, 28. November in Berlin, Columbiahalle. Das ist in 14 Tagen.",
+    );
+    expect(await ask("KonzertIntent", {}, { ...full(), concerts: undefined })).toBe(
+      "Ich habe keine bevorstehenden Konzerte von Mira Sol featuring Kai Vento gefunden.",
+    );
+  });
+
+  it("Hörstatistik des Songs", async () => {
+    expect(await ask("GehoertIntent")).toBe(
+      "Neonlicht hast du laut Last.fm 37 Mal gehört. Der Song ist in deinen Lieblingssongs auf Spotify.",
+    );
+    const neu = { ...full(), user: { trackPlays: 0, lovedOnLastfm: true, artists: [] } };
+    expect(await ask("GehoertIntent", {}, neu)).toBe(
+      "Neonlicht hörst du laut Last.fm zum ersten Mal. Auf Last.fm hast du ihn mit einem Herz markiert.",
+    );
+    expect(await ask("GehoertIntent", {}, { ...full(), user: undefined })).toMatch(/keine Daten/);
+  });
+
+  it("Mag ich den Künstler? – Follow auf Spotify und Hörzahl", async () => {
+    expect(await ask("MagIchIntent")).toBe(
+      "Ja, du folgst Mira Sol auf Spotify. Laut Last.fm hast du Mira Sol 412 Mal gehört. Du folgst Kai Vento nicht auf Spotify. Laut Last.fm hast du Kai Vento 58 Mal gehört.",
+    );
+    expect(await ask("MagIchIntent", { kuenstler: { value: "Mira" } })).toBe(
+      "Ja, du folgst Mira Sol auf Spotify. Laut Last.fm hast du Mira Sol 412 Mal gehört.",
+    );
+    const unbekannt = { ...full(), user: { artists: [{ name: "Mira Sol", following: false }, { name: "Kai Vento" }] } };
+    expect(await ask("MagIchIntent", {}, unbekannt)).toBe(
+      "Nein, du folgst Mira Sol noch nicht. Zu Kai Vento habe ich keine Daten.",
+    );
+    expect(await ask("MagIchIntent", {}, { ...full(), user: undefined })).toMatch(/keine Daten/);
+  });
+
+  it("Band-Infos: erster Satz und Fakten, wählbarer Artist", async () => {
+    expect(await ask("BandInfoIntent")).toBe(
+      "Mira Sol ist eine erfundene Sängerin für die Demo dieses Dashboards. Geboren 1996. 3 Demo-Alben.",
+    );
+    expect(await ask("BandInfoIntent", { kuenstler: { value: "Kai Vento" } })).toBe(
+      "Kai Vento ist ein erfundener Rapper für die Demo. Geboren 1993.",
+    );
+    expect(await ask("BandInfoIntent", {}, { ...full(), about: undefined })).toMatch(/keine Infos/);
+  });
+
+  it("Hilfsfunktionen", () => {
+    expect(spokenDate("2027-01-06")).toBe("Mittwoch, 6. Jänner");
+    expect(todayVienna(Date.UTC(2026, 11, 31, 23, 30))).toBe("2027-01-01"); // Wien ist UTC+1
+    expect(firstSentence("Queen ist eine Band. Sie wurde 1970 gegründet.")).toBe("Queen ist eine Band.");
+    expect(firstSentence("Die Band „Die 3. Generation“ kommt aus Berlin.")).toBe(
+      "Die Band „Die 3. Generation“ kommt aus Berlin.",
+    );
+    expect(firstSentence("Falco (* 19. Februar 1957 in Wien; † 6. Februar 1998) war ein Sänger. Er gilt als Pionier.")).toBe(
+      "Falco (* 19. Februar 1957 in Wien; † 6. Februar 1998) war ein Sänger.",
+    );
+    expect(firstSentence("Die Band aus St. Pölten spielt z. B. Rock. Mehr folgt.")).toBe(
+      "Die Band aus St. Pölten spielt z. B. Rock.",
+    );
+    expect(firstSentence("x".repeat(400))).toHaveLength(298);
   });
 });
