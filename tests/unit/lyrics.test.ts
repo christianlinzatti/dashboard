@@ -303,5 +303,15 @@ describe("Cache", () => {
     await c.set("k", { a: 1 }, 60);
     expect(await c.get("k")).toEqual({ a: 1 });
     expect(JSON.parse(String(fetchMock.mock.calls[0]![1]!.body))).toEqual(["SET", "k", '{"a":1}', "EX", 60]);
+
+    // große Einträge komprimiert, kleine/alte unkomprimiert lesbar, Kaputtes → null
+    const big = { lines: Array.from({ length: 200 }, (_, i) => ({ startMs: i * 1000, text: "Zeile mit etwas Text" })) };
+    await c.set("gross", big, 60);
+    const stored = String(JSON.parse(String(fetchMock.mock.calls.at(-1)![1]!.body))[2]);
+    expect(stored.startsWith("gz:")).toBe(true);
+    expect(stored.length).toBeLessThan(JSON.stringify(big).length / 3);
+    expect(await c.get("gross")).toEqual(big);
+    store.set("kaputt", "gz:nichtbase64!!");
+    expect(await c.get("kaputt")).toBeNull();
   });
 });

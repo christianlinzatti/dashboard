@@ -1,10 +1,11 @@
 import "server-only";
+import { CACHE_TTL } from "@/lib/cache-policy";
 import { randomUUID } from "node:crypto";
 import { getCache, type Cache } from "@/lib/lyrics/cache";
 import type { Command, CommandInput, Snapshot } from "@/lib/song-context/snapshot";
 
-const SNAPSHOT_TTL = 2 * 3600;
-const COMMAND_TTL = 5 * 60; // nicht abgeholte Befehle verfallen nach 5 min
+const SNAPSHOT_TTL = CACHE_TTL.snapshot;
+const COMMAND_TTL = CACHE_TTL.commands;
 const MAX_COMMANDS = 20;
 
 /**

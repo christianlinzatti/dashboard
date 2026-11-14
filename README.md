@@ -122,6 +122,28 @@ in `e2e.yml` passen und wird deshalb gemeinsam von Hand aktualisiert.
 2. `main` wird zu Production, jeder Branch/PR bekommt eine Preview-URL.
 3. Umgebungsvariablen setzen (Settings → Environment Variables), siehe `.env.example`.
 
+## Cache (Upstash Redis)
+
+Lyrics, Band-Infos und der Dashboard-Stand für Alexa werden serverseitig gecacht. Ohne Redis nur im
+Arbeitsspeicher einzelner, kurzlebiger Server-Instanzen. Deshalb **Upstash Redis verbinden**:
+
+1. Vercel → Projekt → **Storage** → **Create** → **Upstash for Redis** (kostenloser Tarif) → mit dem Projekt verbinden.
+2. Vercel setzt `KV_REST_API_URL`/`KV_REST_API_TOKEN` (bzw. `UPSTASH_REDIS_REST_URL`/`_TOKEN`) automatisch.
+3. Neu deployen. Fertig, am Code ist nichts anzupassen.
+
+| Daten | Haltedauer |
+|---|---|
+| Lyrics (gefunden / nicht gefunden) | 180 Tage / 3 Tage |
+| Band-Infos und Fotos (gefunden / nicht gefunden) | 30 Tage / 3 Tage |
+| Dashboard-Stand für Alexa (persönlich) | 2 Stunden |
+| Befehle (z. B. von Alexa) | 5 Minuten |
+
+Alle Werte stehen in `lib/cache-policy.ts`.
+- Fehlschläge (Drosselung, Timeouts) werden nie gecacht.
+- Einträge ab 1 KB werden komprimiert gespeichert: Lyrics mit Wort-Timings ~30 KB → ~8 KB.
+- Das Dashboard meldet seinen Stand beim Abspielen alle 15 s, sonst jede Minute (Song-/Abschnittswechsel sofort).
+  So bleibt es auch im Dauerbetrieb deutlich unter dem kostenlosen Kontingent von 500 000 Befehlen/Monat.
+
 ## Spotify einrichten
 
 1. Im [Spotify-Developer-Dashboard](https://developer.spotify.com/dashboard) die App öffnen → **Settings**.

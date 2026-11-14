@@ -1,3 +1,18 @@
+import { gunzipSync, gzipSync } from "node:zlib";
+
+/** Ab dieser Größe (Bytes JSON) wird komprimiert gespeichert – Lyrics mit Wort-Timings ~30 KB → ~8 KB. */
+export const COMPRESS_FROM = 1024;
+const GZ = "gz:";
+
+export function encodeValue(value: unknown): string {
+  const json = JSON.stringify(value);
+  return json.length >= COMPRESS_FROM ? GZ + gzipSync(json).toString("base64") : json;
+}
+
+export function decodeValue<T>(raw: string): T {
+  return JSON.parse(raw.startsWith(GZ) ? gunzipSync(Buffer.from(raw.slice(GZ.length), "base64")).toString("utf8") : raw) as T;
+}
+
 /**
  * Cache für Lyrics: Upstash Redis (über REST, wenn konfiguriert), sonst im Speicher.
  * Vercel-Marketplace setzt KV_REST_API_URL/TOKEN bzw. UPSTASH_REDIS_REST_URL/TOKEN.
@@ -38,10 +53,15 @@ export function upstashCache(url: string, token: string, fetchImpl: typeof fetch
   return {
     async get<T>(key: string) {
       const r = await cmd(["GET", key]).catch(() => null);
-      return typeof r === "string" ? (JSON.parse(r) as T) : null;
+      if (typeof r !== "string") return null;
+      try {
+        return decodeValue<T>(r);
+      } catch {
+        return null; // beschädigter Eintrag → wie nicht vorhanden
+      }
     },
     async set(key, value, ttl) {
-      await cmd(["SET", key, JSON.stringify(value), "EX", ttl]).catch(() => undefined);
+      await cmd(["SET", key, encodeValue(value), "EX", ttl]).catch(() => undefined);
     },
   };
 }

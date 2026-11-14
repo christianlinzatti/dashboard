@@ -6,11 +6,11 @@ import { settings } from "@/lib/settings";
 import { buildSnapshot, type Command } from "@/lib/song-context/snapshot";
 import { songContext } from "@/lib/song-context/store";
 import { lightBus } from "@/lib/stage/light-bus";
-
-const INTERVAL_MS = 5000;
+import { REPORT_INTERVAL_MS } from "@/lib/cache-policy";
 
 /**
- * Meldet den Song-Kontext regelmäßig (und bei Songwechsel, Abschnittswechsel, Pause) an den Server
+ * Meldet den Song-Kontext regelmäßig (15 s beim Abspielen, sonst 60 s; bei Songwechsel,
+ * Abschnittswechsel, Pause sofort) an den Server
  * und führt die Befehle aus, die dort warten (z. B. „Alexa, Lichter aus“).
  */
 export function useSnapshotReporter(enabled: boolean) {
@@ -22,6 +22,7 @@ export function useSnapshotReporter(enabled: boolean) {
     const report = async () => {
       const snap = buildSnapshot(songContext.getState(), lightBus.latest());
       if (!snap || stopped) return;
+      lastReport = Date.now();
       try {
         const res = await fetch("/api/song-context", {
           method: "POST",
@@ -43,7 +44,12 @@ export function useSnapshotReporter(enabled: boolean) {
       debounce = setTimeout(() => void report(), 400);
     };
 
-    const timer = setInterval(() => void report(), INTERVAL_MS);
+    // sparsam melden (Upstash-Kontingent): beim Abspielen alle 15 s, sonst jede Minute
+    let lastReport = 0;
+    const timer = setInterval(() => {
+      const every = songContext.getState().playback.isPlaying ? REPORT_INTERVAL_MS.playing : REPORT_INTERVAL_MS.idle;
+      if (Date.now() - lastReport >= every) void report();
+    }, 5000);
     const offs = (["trackChanged", "sectionChanged", "paused", "resumed"] as const).map((e) => songContext.events.on(e, soon));
     return () => {
       stopped = true;

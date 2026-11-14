@@ -1,4 +1,5 @@
 import "server-only";
+import { CACHE_TTL } from "@/lib/cache-policy";
 import { createHash } from "node:crypto";
 import type { Lyrics } from "@/lib/song-context/schema";
 import { createBreaker, type Breaker } from "./breaker";
@@ -12,8 +13,6 @@ import { spotifyColor } from "./providers/spotify-color";
 import type { LyricsProvider, TrackQuery } from "./types";
 
 const CACHE_VERSION = "v2";
-const TTL_FOUND = 30 * 24 * 3600;
-const TTL_MISSING = 24 * 3600;
 export const DEFAULT_PROVIDERS = "musixmatch-desktop,spotify-color,netease,lrclib";
 
 /**
@@ -77,7 +76,7 @@ export function createLyricsService(deps: Deps) {
     const value = { lyrics: r.lyrics, instrumental: r.instrumental, attempts: r.attempts };
     // Fehler/Timeouts nicht dauerhaft cachen – nur echte Treffer und echtes „nicht vorhanden“
     const transient = !r.lyrics && r.attempts.some((a) => a.outcome === "error" || a.outcome === "timeout");
-    if (!transient) await deps.cache.set(key, value, r.lyrics ? TTL_FOUND : TTL_MISSING);
+    if (!transient) await deps.cache.set(key, value, r.lyrics ? CACHE_TTL.lyricsFound : CACHE_TTL.lyricsMissing);
     return { ...value, cached: false };
   };
 }

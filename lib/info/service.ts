@@ -1,4 +1,5 @@
 import "server-only";
+import { CACHE_TTL } from "@/lib/cache-policy";
 import { getCache, type Cache } from "@/lib/lyrics/cache";
 import { normalizeLine } from "@/lib/lyrics/text";
 import type { Info, Photo } from "@/lib/song-context/schema";
@@ -52,9 +53,6 @@ export async function lookupArtist(name: string, http: Http, signal?: AbortSigna
   };
 }
 
-const TTL_FOUND = 7 * 24 * 3600;
-const TTL_MISSING = 24 * 3600;
-
 export function createInfoService(deps: { cache: Cache; http: Http }) {
   /** Infos für alle Artists eines Songs (je Artist gecacht, nacheinander wegen der Ratenbegrenzung). */
   return async function infoFor(
@@ -70,7 +68,7 @@ export function createInfoService(deps: { cache: Cache; http: Http }) {
         try {
           const value = await lookupArtist(a.name, deps.http, signal);
           hit = { value };
-          await deps.cache.set(key, hit, value ? TTL_FOUND : TTL_MISSING);
+          await deps.cache.set(key, hit, value ? CACHE_TTL.infoFound : CACHE_TTL.infoMissing);
         } catch (e) {
           // Überlastung/Netzfehler: nicht cachen, beim nächsten Song erneut versuchen
           complete = false;

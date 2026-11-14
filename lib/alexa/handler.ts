@@ -51,7 +51,8 @@ function slot(req: AlexaRequest, name: string): string | undefined {
   return (resolved ?? s?.value)?.toLowerCase();
 }
 
-export const STALE_MS = 30_000;
+export { SNAPSHOT_STALE_MS as STALE_MS } from "@/lib/cache-policy";
+import { SNAPSHOT_STALE_MS as STALE_MS } from "@/lib/cache-policy";
 
 export type HandlerDeps = {
   getSnapshot: () => Promise<Snapshot | null>;
