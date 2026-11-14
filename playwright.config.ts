@@ -38,5 +38,11 @@ export default defineConfig({
         url: baseURL,
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,
+        // Test-Zugangsdaten: Spotify selbst wird in den Tests nie aufgerufen (Routen werden gemockt)
+        env: {
+          SPOTIFY_CLIENT_ID: "e2e-client-id",
+          SPOTIFY_CLIENT_SECRET: "e2e-client-secret",
+          SESSION_SECRET: "e2e-session-secret-mindestens-32-zeichen-lang",
+        },
       },
 });

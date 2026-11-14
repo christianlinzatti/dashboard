@@ -9,14 +9,18 @@ import { Progress } from "./hud/Progress";
 import { IdleScreen } from "./hud/IdleScreen";
 import { LyricsLayer } from "./lyrics/LyricsLayer";
 import { DebugPanel } from "./debug/DebugPanel";
+import { Controls } from "./hud/Controls";
+import { useSpotifySync } from "./spotify/useSpotifySync";
 
 const Stage = dynamic(() => import("./stage/Stage").then((m) => m.Stage), { ssr: false });
 
-type Props = { demo?: string; t?: number; debug: boolean };
+type Props = { demo?: string; t?: number; debug: boolean; loginError?: string };
 
-export function Dashboard({ demo, t, debug }: Props) {
+export function Dashboard({ demo, t, debug, loginError }: Props) {
   const song = useSongContext((s) => s.song);
   const unknownDemo = demo !== undefined && !fixtures[demo];
+  // Ohne Demo: Live-Betrieb mit Spotify
+  const status = useSpotifySync(demo === undefined);
 
   // Demo-Modus: Song-Kontext aus Fixture laden; mit ?t=<ms> eingefroren (Screenshots).
   useEffect(() => {
@@ -61,9 +65,10 @@ export function Dashboard({ demo, t, debug }: Props) {
           <NowPlayingBar />
           <LyricsLayer />
           <Progress />
+          <Controls live={demo === undefined} />
         </>
       ) : (
-        <IdleScreen unknownDemo={unknownDemo ? demo : undefined} />
+        <IdleScreen status={unknownDemo ? { kind: "idle" } : status} unknownDemo={unknownDemo ? demo : undefined} loginError={loginError} />
       )}
       {debug && <DebugPanel />}
     </main>

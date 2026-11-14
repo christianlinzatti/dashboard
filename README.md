@@ -5,8 +5,10 @@ zeigt den aktuellen Spotify-Song, Lyrics möglichst Wort für Wort und tanzende 
 
 Konzept und Ausbaustufen: [`docs/KONZEPT.md`](docs/KONZEPT.md)
 
-**Stand: Meilenstein 1** – Projektgerüst, zentraler Song-Kontext, Demo-Modus, 3D-Bühne mit den Avataren
-der aktuellen Besetzung, Karaoke-Lyrics, CI/E2E/Security-Workflows. Spotify-Anmeldung folgt in Meilenstein 2.
+**Stand: Meilenstein 2** – Spotify-Anmeldung (PKCE, dauerhaft per verschlüsseltem Cookie), aktueller Song mit
+ms-genau interpolierter Songzeit, Cover-Farben, Steuerleiste (Play/Pause/Skip, Lyrics-Offset).
+Davor (M1): Projektgerüst, zentraler Song-Kontext, Demo-Modus, 3D-Bühne, Karaoke-Lyrics, CI/E2E/Security.
+Lyrics-Provider folgen in Meilenstein 3.
 
 ## Schnellstart
 
@@ -19,7 +21,7 @@ Dann im Browser öffnen:
 
 | URL | Inhalt |
 |---|---|
-| `/` | Startbildschirm (noch ohne Spotify) |
+| `/` | Live-Betrieb mit Spotify (beim ersten Mal: „Mit Spotify anmelden“) |
 | `/?demo=neonlicht` | Feature-Song, Wort-Sync, zwei Sänger (läuft in Echtzeit) |
 | `/?demo=abendrot` | Ein Artist, Zeilen-Sync |
 | `/?demo=instrumental` | Song ohne Lyrics |
@@ -66,4 +68,20 @@ in `e2e.yml` passen und wird deshalb gemeinsam von Hand aktualisiert.
 
 1. In Vercel **Add New → Project** und dieses GitHub-Repository importieren (Framework: Next.js, Standard-Einstellungen).
 2. `main` wird zu Production, jeder Branch/PR bekommt eine Preview-URL.
-3. Umgebungsvariablen nach `.env.example` setzen (werden ab Meilenstein 2 gebraucht).
+3. Umgebungsvariablen setzen (Settings → Environment Variables), siehe `.env.example`.
+
+## Spotify einrichten
+
+1. Im [Spotify-Developer-Dashboard](https://developer.spotify.com/dashboard) die App öffnen → **Settings**.
+2. Unter **Redirect URIs** eintragen (exakt, ohne Schrägstrich am Ende):
+   - `https://<dein-projekt>.vercel.app/api/auth/callback` (Production)
+   - `http://127.0.0.1:3000/api/auth/callback` (lokal; Spotify akzeptiert kein `localhost`)
+3. In Vercel setzen:
+   - `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET` (aus der App)
+   - `SESSION_SECRET` – zufällig, mind. 32 Zeichen, z. B. `openssl rand -base64 48`
+   - `ALLOWED_SPOTIFY_USERS` – deine Spotify-User-ID (schützt das Dashboard vor fremden Konten)
+   - optional `SPOTIFY_REDIRECT_URI`, falls Preview-URLs auf die Production-Callback-URL zeigen sollen
+4. Dashboard öffnen → **Mit Spotify anmelden**. Die Anmeldung bleibt ein Jahr gültig (Refresh-Token im verschlüsselten Cookie).
+
+Hinweis: Seit Februar 2026 schränkt Spotify Apps im Entwicklungsmodus ein. Pflicht für das Dashboard ist nur
+„aktuell gespielter Song“. Lehnt Spotify die Player-Steuerung ab (403), zeigt die Steuerleiste das an – alles andere läuft weiter.

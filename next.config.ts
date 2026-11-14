@@ -20,6 +20,7 @@ const csp = [
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  images: { remotePatterns: [{ protocol: "https", hostname: "i.scdn.co" }] },
   async headers() {
     return [
       {

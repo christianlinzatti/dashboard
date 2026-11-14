@@ -105,11 +105,13 @@ function Dots() {
 }
 
 function NoLyrics({ song }: { song: SongStatic | null }) {
-  if (!song) return null;
+  const state = song?.status.lyrics?.state;
+  // „idle“: Lyrics-Suche noch nicht gestartet – dann nichts anzeigen
+  if (!song || state === "idle") return null;
   return (
     <section className="pointer-events-none absolute inset-x-0 bottom-[12vmin] text-center" data-testid="lyrics-none">
       <p className="text-[clamp(16px,3.4vmin,36px)] font-semibold text-white/50">
-        {song.status.lyrics?.state === "loading" ? "Lyrics werden geladen …" : "Instrumental – keine Lyrics"}
+        {state === "loading" ? "Lyrics werden gesucht …" : "Instrumental – keine Lyrics gefunden"}
       </p>
     </section>
   );

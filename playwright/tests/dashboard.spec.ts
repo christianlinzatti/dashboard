@@ -14,15 +14,6 @@ function collectErrors(page: Page) {
 }
 
 test.describe("Dashboard", () => {
-  test("Startbildschirm ohne Song", async ({ page }) => {
-    const errors = collectErrors(page);
-    await page.goto("/");
-    await expect(page.getByTestId("idle")).toContainText("Kein Song aktiv");
-    await ready(page, false);
-    await expect(page).toHaveScreenshot("leerlauf.png");
-    expect(errors).toEqual([]);
-  });
-
   test("unbekannte Demo zeigt Hinweis", async ({ page }) => {
     await page.goto("/?demo=gibtsnicht");
     await expect(page.getByTestId("idle")).toContainText("„gibtsnicht“ gibt es nicht");
