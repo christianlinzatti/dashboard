@@ -190,7 +190,7 @@ function Typewriter({ line, wordIdx, color }: ModeProps) {
   return (
     <p className={BIG} style={{ color }} data-testid="lyrics-current" aria-label={line.text}>
       <span ref={ref} />
-      <span className="typewriter-cursor">▌</span>
+      <span className="typewriter-cursor" aria-hidden />
     </p>
   );
 }

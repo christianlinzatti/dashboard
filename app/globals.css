@@ -64,4 +64,12 @@ body {
 .stack-word[data-state="now"] { transform: translateY(-0.06em) rotate(-2deg); }
 
 @keyframes blink { 50% { opacity: 0; } }
-.typewriter-cursor { animation: blink 0.9s steps(1) infinite; margin-left: 0.05em; }
+.typewriter-cursor {
+  display: inline-block;
+  width: 0.12em;
+  height: 0.9em;
+  margin-left: 0.06em;
+  vertical-align: -0.08em;
+  background: currentColor;
+  animation: blink 0.9s steps(1) infinite;
+}
