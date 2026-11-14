@@ -4,6 +4,8 @@ on:
   push:
     branches: [main, "claude/**"]
   pull_request:
+  # manuell startbar, z. B. nach „Screenshots aktualisieren“ (Bot-Commits starten keine Workflows)
+  workflow_dispatch:
 
 permissions:
   contents: read
