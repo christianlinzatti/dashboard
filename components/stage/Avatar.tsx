@@ -114,6 +114,7 @@ function AvatarModel({ url, member, song, choreo, frameRef }: AvatarProps & { ur
             data-testid="name-tag"
           >
             {artist.name}
+            {song.user?.artists[artist.spotifyId]?.following && <span className="ml-1">★</span>}
           </span>
         </Html>
       )}

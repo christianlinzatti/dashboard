@@ -16,6 +16,7 @@ import { useSnapshotReporter } from "./live/useSnapshotReporter";
 import { useBridge } from "./bridge/useBridge";
 import { useInfoLoader } from "./info/useInfoLoader";
 import { InfoOverlay } from "./info/InfoOverlay";
+import { useUserLoader } from "./personal/useUserLoader";
 import { useLyricsLoader } from "./lyrics/useLyricsLoader";
 import { useMicAnalysis } from "./audio/useMicAnalysis";
 import type { LyricsMode } from "@/lib/lyrics/director";
@@ -45,6 +46,8 @@ export function Dashboard({ demo, t, debug, loginError, mic, lyricsMode, quality
   useBridge(demo === undefined);
   // Band-Infos und Fotos (MusicBrainz, Wikipedia, Commons)
   useInfoLoader(demo === undefined);
+  // Likes, Follows, Hörstatistik (Spotify, Last.fm)
+  useUserLoader(demo === undefined);
   // Mikrofon: im Live-Betrieb; in Demos nur mit ?mic=1 (Screenshots bleiben reproduzierbar)
   const micCtl = useMicAnalysis(demo === undefined || !!mic);
 

@@ -8,7 +8,7 @@ import { z } from "zod";
 
 export const SCHEMA_VERSION = 1 as const;
 
-export const sourceNames = ["spotify", "lyrics", "music", "info", "palette"] as const;
+export const sourceNames = ["spotify", "lyrics", "music", "info", "palette", "user"] as const;
 export type SourceName = (typeof sourceNames)[number];
 
 export const sourceStatusSchema = z.object({
@@ -117,6 +117,21 @@ export const infoSchema = z.object({
 
 export type Info = z.infer<typeof infoSchema>;
 
+/** Persönliches (Stufe 5): Likes, Follows, Hörstatistik. Unbekannte Werte fehlen. */
+export const userSchema = z.object({
+  /** Song in den Spotify-Lieblingssongs */
+  trackSaved: z.boolean().optional(),
+  /** Song auf Last.fm „geliebt“ */
+  lovedOnLastfm: z.boolean().optional(),
+  /** wie oft gehört (Last.fm) */
+  trackPlays: z.number().int().nonnegative().optional(),
+  artists: z.record(
+    z.string(),
+    z.object({ following: z.boolean().optional(), plays: z.number().int().nonnegative().optional() }),
+  ),
+});
+export type UserInfo = z.infer<typeof userSchema>;
+
 /** Stammdaten: einmal pro Song, serverseitig aggregiert und gecacht. */
 export const songStaticSchema = z.object({
   schemaVersion: z.literal(SCHEMA_VERSION),
@@ -139,6 +154,7 @@ export const songStaticSchema = z.object({
     mood: z.enum(["ruhig", "mittel", "energetisch"]).optional(),
   }),
   info: infoSchema.optional(),
+  user: userSchema.optional(),
   cast: z.array(castMemberSchema),
   status: z.partialRecord(z.enum(sourceNames), sourceStatusSchema),
 });

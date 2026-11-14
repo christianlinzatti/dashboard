@@ -122,6 +122,13 @@ export const neonlicht: SongStatic = {
       },
     ],
   },
+  // Erfundene Hörstatistik (Demo)
+  user: {
+    trackSaved: true,
+    trackPlays: 37,
+    lovedOnLastfm: false,
+    artists: { "demo-mira": { following: true, plays: 412 }, "demo-kai": { following: false, plays: 58 } },
+  },
   cast: [
     { avatarId: "aurora-synth", artistId: "demo-mira", role: "lead", position: 0 },
     { avatarId: "atlas-prism", artistId: "demo-kai", role: "feature", position: -1 },

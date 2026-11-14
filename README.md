@@ -5,7 +5,11 @@ zeigt den aktuellen Spotify-Song, Lyrics möglichst Wort für Wort und tanzende 
 
 Konzept und Ausbaustufen: [`docs/KONZEPT.md`](docs/KONZEPT.md) · Architektur-Bewertung: [`docs/ARCHITEKTUR.md`](docs/ARCHITEKTUR.md)
 
-**Stand: Stufe 4** – Band-Infos & Fotos: MusicBrainz → Wikidata → Wikipedia (de, sonst en) und frei
+**Stand: Stufe 5a** – Persönliches: **zuletzt gehört** (Last.fm, sonst Spotify) auf dem Startbildschirm,
+**Lieblingssong** (Spotify), **auf Last.fm geliebt**, **„37× gehört“**, **★ bei Künstlern, denen du folgst**
+(Kopfzeile und Namensschilder). Last.fm braucht `LASTFM_API_KEY` und `LASTFM_USER`.
+
+Stufe 4 – Band-Infos & Fotos: MusicBrainz → Wikidata → Wikipedia (de, sonst en) und frei
 lizenzierte Fotos von Wikimedia Commons (mit Urheber und Lizenz). **Infokarte** in Intro, Outro, Instrumentalteilen
 und langen Pausen (bei Feature-Songs abwechselnd), **Fakten-Ticker** in Strophen, **Band-Foto als Duoton auf der
 LED-Wand**. Abfragen gedrosselt (MusicBrainz 1/s) und 7 Tage gecacht.

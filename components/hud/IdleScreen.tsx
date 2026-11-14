@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { SpotifyStatus } from "../spotify/useSpotifySync";
+import { RecentList } from "../personal/RecentList";
 
 const loginErrors: Record<string, string> = {
   abgebrochen: "Die Anmeldung wurde abgebrochen.",
@@ -64,6 +65,7 @@ export function IdleScreen({ status, unknownDemo, loginError }: Props) {
           Mit Spotify anmelden
         </a>
       )}
+      {status.kind === "idle" && <RecentList />}
       <nav className="mt-[2vmin] flex flex-wrap justify-center gap-3 text-[clamp(12px,1.9vmin,20px)] text-white/70">
         <span className="self-center">Demos:</span>
         <Link className="rounded-full bg-white/10 px-4 py-2 hover:bg-white/20" href="/?demo=neonlicht">

@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useSongContext } from "@/lib/song-context/store";
 import { artistLine, lyricsLabel, sectionLabel } from "./labels";
+import { LikeBadges } from "../personal/LikeBadges";
 
 export function NowPlayingBar() {
   const song = useSongContext((s) => s.song);
@@ -25,7 +26,20 @@ export function NowPlayingBar() {
       />
       <div className="min-w-0 flex-1">
         <h1 className="truncate text-[clamp(18px,4.2vmin,48px)] font-bold leading-tight">{song.track.title}</h1>
-        <p className="truncate text-[clamp(14px,2.8vmin,30px)] text-white/70">{artistLine(song)}</p>
+        <p className="truncate text-[clamp(14px,2.8vmin,30px)] text-white/70">
+          {artistLine(song)}
+          {song.artists.some((a) => song.user?.artists[a.spotifyId]?.following) && (
+            <span
+              className="ml-2 text-[0.85em]"
+              style={{ color: "#ffd23f" }}
+              title="Du folgst diesem Künstler"
+              data-testid="badge-following"
+            >
+              ★
+            </span>
+          )}
+        </p>
+        <LikeBadges />
       </div>
       <div className="flex shrink-0 flex-col items-end gap-[0.8vmin] text-[clamp(11px,1.9vmin,20px)] font-medium">
         <span
