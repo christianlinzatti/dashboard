@@ -14,12 +14,13 @@ import { useSpotifySync } from "./spotify/useSpotifySync";
 import { useLyricsLoader } from "./lyrics/useLyricsLoader";
 import { useMicAnalysis } from "./audio/useMicAnalysis";
 import type { LyricsMode } from "@/lib/lyrics/director";
+import type { Quality } from "@/lib/stage/quality";
 
 const Stage = dynamic(() => import("./stage/Stage").then((m) => m.Stage), { ssr: false });
 
-type Props = { demo?: string; t?: number; debug: boolean; loginError?: string; mic?: boolean; lyricsMode?: LyricsMode };
+type Props = { demo?: string; t?: number; debug: boolean; loginError?: string; mic?: boolean; lyricsMode?: LyricsMode; quality?: Quality };
 
-export function Dashboard({ demo, t, debug, loginError, mic, lyricsMode }: Props) {
+export function Dashboard({ demo, t, debug, loginError, mic, lyricsMode, quality }: Props) {
   const song = useSongContext((s) => s.song);
   const unknownDemo = demo !== undefined && !fixtures[demo];
   // Ohne Demo: Live-Betrieb mit Spotify
@@ -63,7 +64,7 @@ export function Dashboard({ demo, t, debug, loginError, mic, lyricsMode }: Props
       {song ? (
         <>
           <div className="absolute inset-0">
-            <Stage />
+            <Stage forceQuality={quality} />
           </div>
           {/* Verlauf für Lesbarkeit der Lyrics vor der 3D-Szene */}
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,rgb(0_0_0/0.55)_100%)]" />

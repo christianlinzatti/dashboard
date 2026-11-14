@@ -1,8 +1,9 @@
 "use client";
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Html, useGLTF } from "@react-three/drei";
-import { Suspense, useEffect, useMemo, useRef } from "react";
+import { Html, PerformanceMonitor, useGLTF } from "@react-three/drei";
+import { Bloom, EffectComposer } from "@react-three/postprocessing";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { AnimationMixer, Box3, Object3D, Vector3, type AnimationAction, type Group, type PointLight, type SpotLight } from "three";
 import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js";
 import { avatarById } from "@/lib/avatars/catalog";
@@ -12,6 +13,11 @@ import { planChoreography, type Choreography } from "@/lib/dance/plan";
 import type { Vec2 } from "@/lib/dance/formations";
 import { songContext, useSongContext } from "@/lib/song-context/store";
 import type { CastMember, SongStatic } from "@/lib/song-context/schema";
+import { lightsAt, type LightFrame } from "@/lib/stage/lights";
+import { PRESETS, stepQuality, type Quality } from "@/lib/stage/quality";
+import { settings, useSettings } from "@/lib/settings";
+import { Fog, StageSet } from "./StageSet";
+import { Lasers, MovingHeads } from "./Lights";
 
 const TARGET_HEIGHT = 1.8;
 
@@ -34,7 +40,7 @@ type Frame = {
  * 3D-Bühne. Lädt nur die Avatare der aktuellen Besetzung.
  * Wer was tanzt, wo steht und wie die Kamera schaut, kommt aus dem Choreografie-Plan (lib/dance).
  */
-export function Stage() {
+export function Stage({ forceQuality }: { forceQuality?: Quality }) {
   const song = useSongContext((s) => s.song);
   const bpm = useSongContext((s) => Math.round(s.live.bpm));
   const frozen = useSongContext((s) => s.frozen);
@@ -48,38 +54,72 @@ export function Stage() {
     [song?.trackKey, sectionsKey, bpm, song?.cast],
   );
   const frame = useRef<Frame>({ t: 0, playing: false, positions: {}, anchorMs: null, dropMs: null, pulse: 0, vocal: 0, energy: 0, micActive: false });
+  const lights = useRef<LightFrame | null>(null);
+  const strobe = useRef<HTMLDivElement>(null);
+
+  // Qualität: fest (Einstellung/URL) oder automatisch nach Bildrate; Demos fest „mittel“ (reproduzierbar)
+  const chosen = useSettings((s) => s.quality);
+  const [autoQuality, setAutoQuality] = useState<Quality>("mittel");
+  useEffect(() => settings.getState().hydrate(), []);
+  const quality: Quality = forceQuality ?? (frozen ? "mittel" : chosen === "auto" ? autoQuality : chosen);
+  const preset = PRESETS[quality];
 
   if (!song || !choreo) return null;
 
   return (
+    <div className="absolute inset-0" data-quality={quality}>
     <Canvas
       data-testid="stage"
-      dpr={[1, 1.5]}
+      dpr={preset.dpr}
       frameloop={frozen ? "demand" : "always"}
       camera={{ position: [0, 1.3, 6.6], fov: 36 }}
       gl={{ antialias: true, powerPreference: "high-performance" }}
     >
       <color attach="background" args={[dark]} />
-      <fog attach="fog" args={[dark, 7, 16]} />
-      <hemisphereLight args={["#ffffff", dark, 1.1]} />
-      <directionalLight position={[3, 5, 4]} intensity={1.8} />
-      <mesh rotation-x={-Math.PI / 2}>
-        <circleGeometry args={[6, 64]} />
-        <meshStandardMaterial color={dark} roughness={0.4} metalness={0.3} />
-      </mesh>
-      <Director song={song} choreo={choreo} frameRef={frame} />
+      <fog attach="fog" args={[dark, 9, 20]} />
+      <hemisphereLight args={["#ffffff", dark, 0.9]} />
+      <directionalLight position={[3, 5, 4]} intensity={1.5} />
+      {!frozen && chosen === "auto" && !forceQuality && (
+        <PerformanceMonitor
+          onDecline={() => setAutoQuality((q) => stepQuality(q, -1))}
+          onIncline={() => setAutoQuality((q) => stepQuality(q, 1))}
+          flipflops={3}
+        />
+      )}
+      <StageSet preset={preset} dark={dark} lightsRef={lights} />
+      <MovingHeads key={`h${preset.heads}${preset.realLights}`} count={preset.heads} realLights={preset.realLights} lightsRef={lights} />
+      <Lasers key={`l${preset.lasers}`} count={preset.lasers} lightsRef={lights} />
+      {preset.fog && <Fog lightsRef={lights} color={song.album.palette.accent} />}
+      <Director song={song} choreo={choreo} frameRef={frame} lightsRef={lights} heads={preset.heads} strobeRef={strobe} />
       <Suspense fallback={null}>
         {song.cast.map((c) => (
           <Avatar key={c.avatarId} member={c} song={song} choreo={choreo} frameRef={frame} />
         ))}
         <ReadySignal />
       </Suspense>
+      {preset.bloom && (
+        <EffectComposer multisampling={0} resolutionScale={quality === "hoch" ? 1 : 0.5}>
+          <Bloom mipmapBlur luminanceThreshold={0.7} luminanceSmoothing={0.15} intensity={0.7} />
+        </EffectComposer>
+      )}
     </Canvas>
+      {/* Stroboskop (nur bei Drops, abschaltbar) */}
+      <div ref={strobe} className="pointer-events-none absolute inset-0 bg-white opacity-0" aria-hidden />
+    </div>
   );
 }
 
 /** Berechnet pro Frame Songzeit, Positionen, Fokus (Sänger) und Kamera. Läuft vor den Avataren. */
-function Director({ song, choreo, frameRef }: { song: SongStatic; choreo: Choreography; frameRef: React.RefObject<Frame> }) {
+type DirectorProps = {
+  song: SongStatic;
+  choreo: Choreography;
+  frameRef: React.RefObject<Frame>;
+  lightsRef: React.RefObject<LightFrame | null>;
+  heads: number;
+  strobeRef: React.RefObject<HTMLDivElement | null>;
+};
+
+function Director({ song, choreo, frameRef, lightsRef, heads, strobeRef }: DirectorProps) {
   const camera = useThree((s) => s.camera);
   const spot = useRef<SpotLight>(null);
   const back = useRef<PointLight>(null);
@@ -113,6 +153,19 @@ function Director({ song, choreo, frameRef }: { song: SongStatic; choreo: Choreo
       micActive: mic,
     };
     if (back.current) back.current.intensity = 18 + frameRef.current.energy * 14 + pulse * 30;
+
+    // Lichtszene (LightDirector) – auch Grundlage für externe Lampen (Govee)
+    const lf = lightsAt(song, choreo, heads, {
+      t,
+      anchorMs: frameRef.current.anchorMs,
+      dropMs: frameRef.current.dropMs,
+      energy: live.energy,
+      micActive: mic,
+      singerColor: derived.activeSingerId ? singerColor(derived.activeSingerId) : undefined,
+      strobeAllowed: settings.getState().strobe,
+    });
+    lightsRef.current = lf;
+    if (strobeRef.current) strobeRef.current.style.opacity = String(lf.strobe * 0.55);
 
     const cam = cameraAt(choreo, t);
     camera.position.set(...cam.pos);

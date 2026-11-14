@@ -4,6 +4,11 @@ import { useEffect, useRef, useState } from "react";
 import { songContext, useSongContext } from "@/lib/song-context/store";
 import { POLL_NOW_EVENT } from "../spotify/useSpotifySync";
 import type { MicState } from "@/lib/song-context/schema";
+import { useSettings } from "@/lib/settings";
+import type { Quality } from "@/lib/stage/quality";
+
+const QUALITY_CYCLE: Array<Quality | "auto"> = ["auto", "niedrig", "mittel", "hoch"];
+const qualityLabel: Record<Quality | "auto", string> = { auto: "Auto", niedrig: "Niedrig", mittel: "Mittel", hoch: "Hoch" };
 
 const OFFSET_KEY = "ss_lyrics_offset";
 const HIDE_AFTER_MS = 6000;
@@ -35,6 +40,9 @@ export function Controls({ live, mic }: { live: boolean; mic?: { state: MicState
   const isPlaying = useSongContext((s) => s.playback.isPlaying);
   const offset = useSongContext((s) => s.playback.offsetMs);
   const hideTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const quality = useSettings((s) => s.quality);
+  const strobe = useSettings((s) => s.strobe);
+  const setSettings = useSettings((s) => s.set);
 
   useEffect(() => {
     songContext.getState().setPlayback({ offsetMs: storedOffset() });
@@ -110,6 +118,16 @@ export function Controls({ live, mic }: { live: boolean; mic?: { state: MicState
           </span>
           <button className={btn} onClick={() => changeOffset(100)} aria-label="Lyrics später">+</button>
         </div>
+        <button
+          className={btn}
+          data-testid="quality-toggle"
+          onClick={() => setSettings({ quality: QUALITY_CYCLE[(QUALITY_CYCLE.indexOf(quality) + 1) % QUALITY_CYCLE.length]! })}
+        >
+          Qualität: {qualityLabel[quality]}
+        </button>
+        <button className={btn} data-testid="strobe-toggle" aria-pressed={strobe} onClick={() => setSettings({ strobe: !strobe })}>
+          Strobo {strobe ? "an" : "aus"}
+        </button>
         {mic && (
           <button className={btn} onClick={mic.toggle} data-testid="mic-toggle" aria-pressed={mic.state === "aktiv"}>
             {micLabel[mic.state]}

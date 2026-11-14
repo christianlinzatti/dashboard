@@ -5,7 +5,14 @@ zeigt den aktuellen Spotify-Song, Lyrics möglichst Wort für Wort und tanzende 
 
 Konzept und Ausbaustufen: [`docs/KONZEPT.md`](docs/KONZEPT.md)
 
-**Stand: Meilenstein 6** – Wort-für-Wort-Lyrics und wechselnde Darstellungen:
+**Stand: Meilenstein 8** – Bühne & Licht (Ausbaustufe 2): Podest, Traverse, LED-Rückwand (Farbverlauf,
+Equalizer aus den Mikro-Frequenzbändern, Gegenlicht), Moving Heads mit Lichtkegeln, Laser-Fächer, Bodennebel,
+Bloom und Strobe bei Drops. Der **LightDirector** (`lib/stage/lights.ts`) wählt die Szene je Abschnitt,
+bewegt die Scheinwerfer im Beat-Raster und wechselt Farben auf Taktanfang; er liefert auch ein
+geräteunabhängiges Lichtsignal für die Govee-Lampen (Stufe 3). Qualitätsstufen niedrig/mittel/hoch
+(Pi 4 / Pi 5 / Mini-PC), „Auto“ passt sich der Bildrate an; Qualität und Strobe in der Steuerleiste.
+
+M6 – Wort-für-Wort-Lyrics und wechselnde Darstellungen:
 - Provider (gegen echte Schnittstellen geprüft, Nov. 2026): **NetEase** (Wort-Sync, YRC), **LRCLIB**,
   **Musixmatch Desktop** (Zeilen-Sync; liefert aus Rechenzentren Lockvogel-Treffer, die verworfen werden),
   **Spotify Color-Lyrics** (nur mit `SPOTIFY_SP_DC` + TOTP-Secret, nicht ohne Zugangsdaten testbar).
@@ -47,6 +54,7 @@ Dann im Browser öffnen:
 | `…&t=46000` | Songzeit einfrieren (ms) – für reproduzierbare Screenshots |
 | `…&debug=1` | Debug-Panel mit dem kompletten Song-Kontext |
 | `…&lyrics=stapel` | Darstellung erzwingen (`karaoke`, `wortpop`, `stapel`, `schreibmaschine`, `duett`) |
+| `…&qualitaet=hoch` | Qualitätsstufe der Bühne erzwingen (`niedrig`, `mittel`, `hoch`) |
 | `…&mic=1` | Mikrofon-Analyse auch in der Demo (sonst nur im Live-Betrieb) |
 
 Die Demo-Songs haben frei erfundene Texte.

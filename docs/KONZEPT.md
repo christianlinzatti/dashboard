@@ -547,7 +547,7 @@ Ein **Foto-Ranking** wählt pro Künstler die besten Bilder (Auflösung, Seitenv
 
 ## 12. Umsetzungsplan (Meilensteine)
 
-Erledigt: **M1** (Projektgerüst, Song-Kontext), **M2** (Spotify), **M3** (Lyrics-Grundlage mit LRCLIB), **M4** (3D-Szene mit Tanz-Regie), **M5** (Mikrofon-Analyse), **M6** (Wort-für-Wort-Provider, Lyrics-Modi).
+Erledigt: **M1** (Projektgerüst, Song-Kontext), **M2** (Spotify), **M3** (Lyrics-Grundlage mit LRCLIB), **M4** (3D-Szene mit Tanz-Regie), **M5** (Mikrofon-Analyse), **M6** (Wort-für-Wort-Provider, Lyrics-Modi), **M8** (Bühne & Licht, Stufe 2).
 
 Befund M6 (Nov. 2026, gegen echte Schnittstellen geprüft): NetEase liefert Wort-Sync; Musixmatch Desktop nur Zeilen-Sync über `macro.subtitles.get` (`matcher.track.get` und `track.richsync.get` existieren dort nicht) und aus Rechenzentren falsche Treffer; der Community-Dienst „lyricsplus“ ist abgeschaltet; QQ Music liefert Wort-Sync nur verschlüsselt (QRC) und wurde ausgelassen.
 

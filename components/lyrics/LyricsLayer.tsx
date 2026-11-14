@@ -213,7 +213,8 @@ function Duet({
 }) {
   const singers = song.lyrics?.singers ?? {};
   const agents = [...new Set(lines.map((l) => l.agent).filter((a): a is string => !!a && !!singers[a]))].slice(0, 2);
-  const lastOf = (agent: string) => [...lines.slice(0, Math.max(lineIdx, 0) + 1)].reverse().find((l) => l.agent === agent);
+  // nur bereits begonnene Zeilen (vor der ersten Zeile: nichts)
+  const lastOf = (agent: string) => [...lines.slice(0, lineIdx + 1)].reverse().find((l) => l.agent === agent);
   return (
     <div className="grid w-full grid-cols-2 items-end gap-[4vmin]" data-testid="lyrics-duet">
       {agents.map((agent, side) => {
