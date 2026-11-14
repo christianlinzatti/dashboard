@@ -1,4 +1,5 @@
 import { Dashboard } from "@/components/Dashboard";
+import { lyricsModes, type LyricsMode } from "@/lib/lyrics/director";
 
 type Search = Promise<Record<string, string | string[] | undefined>>;
 
@@ -13,6 +14,7 @@ export default async function Page({ searchParams }: { searchParams: Search }) {
       debug={one(sp.debug) === "1"}
       loginError={one(sp.fehler)}
       mic={one(sp.mic) === "1"}
+      lyricsMode={lyricsModes.includes(one(sp.lyrics) as LyricsMode) ? (one(sp.lyrics) as LyricsMode) : undefined}
     />
   );
 }

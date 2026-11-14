@@ -13,7 +13,7 @@ const track = {
 const lyrics = {
   provider: "lrclib",
   quality: "word-estimated",
-  sections: [{ kind: "chorus", startMs: 0, endMs: 200_000 }],
+  sections: [{ kind: "verse", startMs: 0, endMs: 200_000 }],
   lines: [
     { startMs: 0, endMs: 60_000, text: "Eine sehr lange erste Zeile", words: [
       { startMs: 0, endMs: 10_000, text: "Eine" },
@@ -41,7 +41,7 @@ test("Lyrics werden beim Songwechsel geladen und angezeigt", async ({ page }) =>
   await page.goto("/");
   await expect(page.getByTestId("lyrics-current")).toHaveText("Eine sehr lange erste Zeile");
   await expect(page.getByTestId("lyrics-quality")).toHaveText("Wort-Sync (geschätzt)");
-  await expect(page.getByTestId("section")).toHaveText("Refrain");
+  await expect(page.getByTestId("section")).toHaveText("Strophe");
   expect(requested?.searchParams.get("title")).toBe("Testlied");
   expect(requested?.searchParams.get("durationMs")).toBe("200000");
 });

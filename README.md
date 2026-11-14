@@ -5,7 +5,16 @@ zeigt den aktuellen Spotify-Song, Lyrics möglichst Wort für Wort und tanzende 
 
 Konzept und Ausbaustufen: [`docs/KONZEPT.md`](docs/KONZEPT.md)
 
-**Stand: Meilenstein 5** – Mikrofon-Analyse (nur lokal im Browser): Tempo per Autokorrelation mit
+**Stand: Meilenstein 6** – Wort-für-Wort-Lyrics und wechselnde Darstellungen:
+- Provider (gegen echte Schnittstellen geprüft, Nov. 2026): **NetEase** (Wort-Sync, YRC), **LRCLIB**,
+  **Musixmatch Desktop** (Zeilen-Sync; liefert aus Rechenzentren Lockvogel-Treffer, die verworfen werden),
+  **Spotify Color-Lyrics** (nur mit `SPOTIFY_SP_DC` + TOTP-Secret, nicht ohne Zugangsdaten testbar).
+  Jeder Treffer wird gegen Titel, Artist, Version und Dauer geprüft.
+- **LyricsDirector** wählt pro Abschnitt: Karaoke, Wort-Pop, Stapel, Schreibmaschine, Duett (Feature-Songs);
+  Refrains abwechselnd auffällig, schnelle Parts als Wort-Pop, Background-Vocals in Klammern kleiner/kursiv.
+  Erzwingen per `?lyrics=<modus>`.
+
+M5 – Mikrofon-Analyse (nur lokal im Browser): Tempo per Autokorrelation mit
 Einrasten pro Song, Beat-Tracking mit Phasenregelung, Tanz am gemessenen Beat-Raster, Energie (automatische
 Pegelanpassung), Frequenzbänder, Stimmaktivität für die LED-Gesichter, Drop-Erkennung (zwei Takte
 Höhepunkt-Tanz), Licht pulsiert im Takt. Mikro-Schalter in der Steuerleiste, roter Punkt = Mikro aktiv.
@@ -37,6 +46,7 @@ Dann im Browser öffnen:
 | `/?demo=instrumental` | Song ohne Lyrics |
 | `…&t=46000` | Songzeit einfrieren (ms) – für reproduzierbare Screenshots |
 | `…&debug=1` | Debug-Panel mit dem kompletten Song-Kontext |
+| `…&lyrics=stapel` | Darstellung erzwingen (`karaoke`, `wortpop`, `stapel`, `schreibmaschine`, `duett`) |
 | `…&mic=1` | Mikrofon-Analyse auch in der Demo (sonst nur im Live-Betrieb) |
 
 Die Demo-Songs haben frei erfundene Texte.

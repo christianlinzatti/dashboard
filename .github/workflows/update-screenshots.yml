@@ -27,7 +27,7 @@ jobs:
       - run: npm ci
       - run: npm run build
       - name: Screenshots erzeugen
-        run: npx playwright test --trace off --update-snapshots
+        run: npx playwright test --trace off --update-snapshots=all
         env:
           CI: "true"
       - name: Committen, falls sich etwas geändert hat

@@ -21,7 +21,7 @@ test.describe("Dashboard", () => {
 
   test("Feature-Song im Refrain mit Wort-Sync", async ({ page }) => {
     const errors = collectErrors(page);
-    await page.goto("/?demo=neonlicht&t=46000");
+    await page.goto("/?demo=neonlicht&t=46000&lyrics=karaoke");
     await ready(page);
     await expect(page.getByTestId("now-playing")).toContainText("Neonlicht");
     await expect(page.getByTestId("now-playing")).toContainText("Mira Sol feat. Kai Vento");
@@ -49,7 +49,7 @@ test.describe("Dashboard", () => {
   });
 
   test("Feature-Song: zweiter Sänger in seiner Farbe", async ({ page }) => {
-    await page.goto("/?demo=neonlicht&t=68500");
+    await page.goto("/?demo=neonlicht&t=68500&lyrics=karaoke");
     await ready(page);
     await expect(page.getByTestId("section")).toHaveText("Strophe");
     await expect(page.getByTestId("lyrics-current")).toHaveText("wir drehen auf, wir geben Gas");

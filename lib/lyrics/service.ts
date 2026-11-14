@@ -5,6 +5,9 @@ import { getCache } from "./cache";
 import { findLyrics, toLyrics, type Attempt } from "./chain";
 import { localOverrides } from "./providers/local";
 import { lrclib } from "./providers/lrclib";
+import { musixmatchDesktop } from "./providers/musixmatch";
+import { netease } from "./providers/netease";
+import { spotifyColor } from "./providers/spotify-color";
 import type { LyricsProvider, TrackQuery } from "./types";
 
 const breaker = createBreaker();
@@ -12,14 +15,25 @@ const CACHE_VERSION = "v1";
 const TTL_FOUND = 30 * 24 * 3600;
 const TTL_MISSING = 24 * 3600;
 
-/** Externe Provider, steuerbar über LYRICS_PROVIDERS (kommagetrennt). Weitere folgen in Meilenstein 6. */
-export function activeProviders(): LyricsProvider[] {
-  const all: Record<string, () => LyricsProvider> = { lrclib: () => lrclib() };
-  const wanted = (process.env.LYRICS_PROVIDERS ?? "lrclib")
-    .split(",")
-    .map((s) => s.trim())
-    .filter((id) => id in all);
-  return wanted.map((id) => all[id]!());
+/**
+ * Externe Provider, steuerbar über LYRICS_PROVIDERS (kommagetrennt).
+ * Standard: alle ohne Zugangsdaten nutzbaren; Spotify Color-Lyrics nur mit SPOTIFY_SP_DC + TOTP-Secret.
+ */
+export function activeProviders(env: Record<string, string | undefined> = process.env): LyricsProvider[] {
+  const all: Record<string, () => LyricsProvider | null> = {
+    lrclib: () => lrclib(),
+    netease: () => netease(),
+    "musixmatch-desktop": () => musixmatchDesktop(),
+    "spotify-color": () =>
+      env.SPOTIFY_SP_DC && env.SPOTIFY_TOTP_SECRET
+        ? spotifyColor({ spDc: env.SPOTIFY_SP_DC, totpSecret: env.SPOTIFY_TOTP_SECRET, totpVersion: env.SPOTIFY_TOTP_VERSION ?? "1" })
+        : null,
+  };
+  const wanted = (env.LYRICS_PROVIDERS ?? "musixmatch-desktop,spotify-color,netease,lrclib").split(",").map((x) => x.trim());
+  return wanted.flatMap((id) => {
+    const p = all[id]?.();
+    return p ? [p] : [];
+  });
 }
 
 export type LyricsResponse = {

@@ -13,12 +13,13 @@ import { Controls } from "./hud/Controls";
 import { useSpotifySync } from "./spotify/useSpotifySync";
 import { useLyricsLoader } from "./lyrics/useLyricsLoader";
 import { useMicAnalysis } from "./audio/useMicAnalysis";
+import type { LyricsMode } from "@/lib/lyrics/director";
 
 const Stage = dynamic(() => import("./stage/Stage").then((m) => m.Stage), { ssr: false });
 
-type Props = { demo?: string; t?: number; debug: boolean; loginError?: string; mic?: boolean };
+type Props = { demo?: string; t?: number; debug: boolean; loginError?: string; mic?: boolean; lyricsMode?: LyricsMode };
 
-export function Dashboard({ demo, t, debug, loginError, mic }: Props) {
+export function Dashboard({ demo, t, debug, loginError, mic, lyricsMode }: Props) {
   const song = useSongContext((s) => s.song);
   const unknownDemo = demo !== undefined && !fixtures[demo];
   // Ohne Demo: Live-Betrieb mit Spotify
@@ -68,7 +69,7 @@ export function Dashboard({ demo, t, debug, loginError, mic }: Props) {
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,rgb(0_0_0/0.55)_100%)]" />
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
           <NowPlayingBar />
-          <LyricsLayer />
+          <LyricsLayer forceMode={lyricsMode} />
           <Progress />
           <Controls live={demo === undefined} mic={demo === undefined || mic ? micCtl : undefined} />
         </>
