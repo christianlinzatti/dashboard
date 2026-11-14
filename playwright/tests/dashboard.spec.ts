@@ -32,6 +32,22 @@ test.describe("Dashboard", () => {
     expect(errors).toEqual([]);
   });
 
+  test("Feature-Song: Namensschilder für beide Artists, Solo-Song ohne", async ({ page }) => {
+    await page.goto("/?demo=neonlicht&t=68500");
+    await ready(page);
+    await expect(page.getByTestId("name-tag")).toHaveText(["Mira Sol", "Kai Vento"]);
+    await page.goto("/?demo=abendrot&t=50000");
+    await ready(page);
+    await expect(page.getByTestId("name-tag")).toHaveCount(0);
+  });
+
+  test("Intro: Lead winkt, Choreografie startet", async ({ page }) => {
+    await page.goto("/?demo=neonlicht&t=3000");
+    await ready(page);
+    await expect(page.getByTestId("section")).toHaveText("Intro");
+    await expect(page).toHaveScreenshot("intro.png");
+  });
+
   test("Feature-Song: zweiter Sänger in seiner Farbe", async ({ page }) => {
     await page.goto("/?demo=neonlicht&t=68500");
     await ready(page);

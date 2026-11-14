@@ -179,7 +179,7 @@ describe("LRCLIB", () => {
   const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 
   it("nutzt /get mit Dauer und neutralem User-Agent", async () => {
-    const fetchMock = vi.fn(async (_url: string | URL | Request, _init?: RequestInit) =>
+    const fetchMock = vi.fn<typeof fetch>(async () =>
       json({ id: 1, trackName: "Lied", artistName: "Band", duration: 180, syncedLyrics: "[00:01.00]Hallo\n[00:05.00]Welt" }),
     );
     const r = await lrclib(fetchMock as unknown as typeof fetch).search({ ...q, title: "Lied - Remastered" }, new AbortController().signal);

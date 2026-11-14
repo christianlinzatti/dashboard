@@ -547,7 +547,7 @@ Ein **Foto-Ranking** wählt pro Künstler die besten Bilder (Auflösung, Seitenv
 
 ## 12. Umsetzungsplan (Meilensteine)
 
-Erledigt: **M1** (Projektgerüst, Song-Kontext), **M2** (Spotify), **M3** (Lyrics-Grundlage mit LRCLIB).
+Erledigt: **M1** (Projektgerüst, Song-Kontext), **M2** (Spotify), **M3** (Lyrics-Grundlage mit LRCLIB), **M4** (3D-Szene mit Tanz-Regie).
 
 | # | Meilenstein | Ergebnis |
 |---|---|---|

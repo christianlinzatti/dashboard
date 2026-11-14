@@ -5,7 +5,11 @@ zeigt den aktuellen Spotify-Song, Lyrics möglichst Wort für Wort und tanzende 
 
 Konzept und Ausbaustufen: [`docs/KONZEPT.md`](docs/KONZEPT.md)
 
-**Stand: Meilenstein 3** – Lyrics: Provider-Kette (LRCLIB + eigene Korrekturen in `data/lyrics/`),
+**Stand: Meilenstein 4** – Tanz-Regie: Choreografie-Plan pro Song (Phrasen von 8/16 Takten, Energie je
+Abschnitt, Refrains synchron, Strophen mit Varianten und Kanon, Wiederholungssperre, Genre-Vorlieben),
+Formationen, Kamerafahrten, aktiver Sänger tritt ins Spotlight, Namensschilder bei Feature-Songs.
+
+M3 – Lyrics: Provider-Kette (LRCLIB + eigene Korrekturen in `data/lyrics/`),
 LRC/Enhanced-LRC-Parser, Wort-Schätzung bei Zeilen-Sync, automatische Strophen-/Refrain-Erkennung, Cache
 (Upstash Redis oder Speicher), täglicher Live-Check der Provider.
 Davor: M2 Spotify-Anmeldung, aktueller Song, Cover-Farben, Steuerleiste · M1 Projektgerüst, Song-Kontext,
@@ -50,6 +54,8 @@ Die Demo-Songs haben frei erfundene Texte.
   lesen nur daraus. Schema (zod), Store (Zustand), Ereignisse, Ableitungen, Demo-Fixtures.
 - **Avatare** (`lib/avatars/`): Katalog aus `avatars/manifest.json`, Casting (ein Avatar pro Artist,
   genre-passend, deterministisch). Geladen werden nur die Avatare der aktuellen Besetzung.
+- **Tanz** (`lib/dance/`): `planChoreography()` plant den ganzen Song deterministisch (Seed = Track),
+  `layersAt()/positionsAt()/cameraAt()` werten den Plan zur Songzeit aus – gleiche Songzeit, gleiche Pose.
 - **Lyrics** (`lib/lyrics/`): Provider-Interface, parallele Abfrage mit Timeout und Circuit-Breaker,
   Ranking (eigene > Wort-Sync > Zeilen-Sync > Text), Parser, Abschnitts-Erkennung, Cache. Route `/api/lyrics`.
 - **Oberfläche** (`components/`): HUD, Lyrics (Karaoke-Fill), 3D-Bühne (React Three Fiber), Debug-Panel.
