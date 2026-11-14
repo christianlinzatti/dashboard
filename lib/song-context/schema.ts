@@ -8,7 +8,7 @@ import { z } from "zod";
 
 export const SCHEMA_VERSION = 1 as const;
 
-export const sourceNames = ["spotify", "lyrics", "music", "info", "palette", "user"] as const;
+export const sourceNames = ["spotify", "lyrics", "music", "info", "palette", "user", "concerts"] as const;
 export type SourceName = (typeof sourceNames)[number];
 
 export const sourceStatusSchema = z.object({
@@ -132,6 +132,32 @@ export const userSchema = z.object({
 });
 export type UserInfo = z.infer<typeof userSchema>;
 
+/** Bevorstehendes Konzert (Stufe 5b), aus mehreren Quellen zusammengeführt. */
+export const concertSchema = z.object({
+  artistId: z.string(),
+  artistName: z.string(),
+  /** Datum JJJJ-MM-TT (Ortszeit) */
+  date: z.string(),
+  time: z.string().optional(),
+  venue: z.string(),
+  city: z.string(),
+  country: z.string().optional(),
+  distanceKm: z.number().optional(),
+  ticketUrl: z.string().optional(),
+  soldOut: z.boolean().optional(),
+  providers: z.array(z.string()),
+});
+export type Concert = z.infer<typeof concertSchema>;
+
+/** Zuletzt live gespielte Songs eines Artists (setlist.fm). */
+export const setlistSchema = z.object({
+  date: z.string(),
+  city: z.string().optional(),
+  tour: z.string().optional(),
+  songs: z.array(z.string()),
+});
+export type Setlist = z.infer<typeof setlistSchema>;
+
 /** Stammdaten: einmal pro Song, serverseitig aggregiert und gecacht. */
 export const songStaticSchema = z.object({
   schemaVersion: z.literal(SCHEMA_VERSION),
@@ -155,6 +181,8 @@ export const songStaticSchema = z.object({
   }),
   info: infoSchema.optional(),
   user: userSchema.optional(),
+  concerts: z.array(concertSchema).optional(),
+  setlists: z.record(z.string(), setlistSchema).optional(),
   cast: z.array(castMemberSchema),
   status: z.partialRecord(z.enum(sourceNames), sourceStatusSchema),
 });

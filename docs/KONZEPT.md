@@ -513,7 +513,11 @@ Bei Feature-Songs gilt der Stern pro Artist und erscheint am Namensschild des je
 | **oeticket (Eventim Österreich)** | inoffizielle Eventim-Such-API, kein Key | **wichtigste Quelle für Österreich**; liefert Termine, Locations, Preise und Ticket-Links direkt von oeticket |
 | **Eventim / Reservix (DE)** | gleiche API mit anderem `webId`/Partner | optional für Konzerte in Deutschland |
 
-**oeticket-Anbindung (inoffiziell):**
+**Umsetzungsstand (Stufe 5b):** Ticketmaster, Bandsintown und setlist.fm sind angebunden
+(`lib/concerts/`). oeticket ist **noch nicht** angebunden: Die Eventim-Such-API antwortet Cloud-Servern
+(Vercel, GitHub Actions) mit der Bot-Sperre „Access Denied“ (Akamai). Das Antwortformat ließ sich daher nicht prüfen.
+
+**oeticket-Anbindung (inoffiziell, geplant):**
 
 ```
 GET https://public-api.eventim.com/websearch/search/api/exploration/v1/products

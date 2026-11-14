@@ -29,6 +29,11 @@ jobs:
       - run: npm ci
       - name: Provider testen
         id: test
+        env:
+          # optional: ohne Secret wird die jeweilige Konzert-Quelle übersprungen
+          TICKETMASTER_API_KEY: ${{ secrets.TICKETMASTER_API_KEY }}
+          BANDSINTOWN_APP_ID: ${{ secrets.BANDSINTOWN_APP_ID }}
+          SETLISTFM_API_KEY: ${{ secrets.SETLISTFM_API_KEY }}
         run: npm run test:live 2>&1 | tee provider-check.log
         continue-on-error: true
       - name: Issue bei Ausfall

@@ -57,7 +57,7 @@ test.describe("Robustheit der Bühne", () => {
     await expect(page.getByTestId("stage")).toBeVisible();
     await expect(page.getByTestId("stage-fallback")).toHaveCount(0);
     // Namensschild des fehlenden Avatars (Kai Vento) fehlt, das der anderen ist da
-    await expect(page.getByTestId("name-tag")).toHaveText(["Mira Sol"]);
+    await expect(page.getByTestId("name-tag")).toHaveText([/^Mira Sol/]);
     // nur der absichtlich provozierte Ladefehler, sonst nichts
     expect(errors.filter((e) => !/Could not load \/avatars\/atlas-prism\.glb/.test(e))).toEqual([]);
   });

@@ -23,7 +23,7 @@ test.describe("Dashboard", () => {
   test("Feature-Song: Namensschilder für beide Artists, Solo-Song ohne", async ({ page }) => {
     await page.goto("/?demo=neonlicht&t=68500");
     await ready(page);
-    await expect(page.getByTestId("name-tag")).toHaveText(["Mira Sol", "Kai Vento"]);
+    await expect(page.getByTestId("name-tag")).toHaveText([/^Mira Sol/, /^Kai Vento/]);
     await page.goto("/?demo=abendrot&t=50000");
     await ready(page);
     await expect(page.getByTestId("name-tag")).toHaveCount(0);

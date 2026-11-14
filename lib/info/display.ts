@@ -1,3 +1,4 @@
+import { concertCardAt } from "@/lib/concerts/display";
 import type { Derived, Info, Photo, SongStatic } from "@/lib/song-context/schema";
 
 export const CARD_ROTATE_MS = 12_000;
@@ -41,7 +42,7 @@ export function infoEntries(song: SongStatic): ArtistEntry[] {
  */
 export function infoCardAt(song: SongStatic, d: Derived, t: number): ArtistEntry | null {
   const entries = infoEntries(song);
-  if (!entries.length) return null;
+  if (!entries.length || concertCardAt(song, d, t)) return null; // Konzertkarte hat Vorrang
   const hasLyrics = !!song.lyrics?.lines.length && song.lyrics.quality !== "plain";
   const calmSection = d.section === "intro" || d.section === "outro" || d.section === "instrumental";
   const longGap = !d.lineActive && (d.secondsToNextLyric ?? 0) > 8;
@@ -62,4 +63,9 @@ export function factAt(song: SongStatic, d: Derived, t: number): string | null {
 export function wallPhoto(song: SongStatic): Photo | null {
   const photos = song.info?.photos ?? [];
   return photos.find((p) => p.artistId === song.artists[0]?.spotifyId) ?? photos[0] ?? null;
+}
+
+/** Belegt gerade eine Karte (Info oder Konzerte) den unteren Bereich? */
+export function cardShownAt(song: SongStatic, d: Derived, t: number): boolean {
+  return !!(infoCardAt(song, d, t) ?? concertCardAt(song, d, t));
 }

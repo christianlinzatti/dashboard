@@ -5,7 +5,14 @@ zeigt den aktuellen Spotify-Song, Lyrics möglichst Wort für Wort und tanzende 
 
 Konzept und Ausbaustufen: [`docs/KONZEPT.md`](docs/KONZEPT.md) · Architektur-Bewertung: [`docs/ARCHITEKTUR.md`](docs/ARCHITEKTUR.md)
 
-**Stand: Stufe 5a** – Persönliches: **zuletzt gehört** (Last.fm, sonst Spotify) auf dem Startbildschirm,
+**Stand: Stufe 5b** – Konzerte: In den letzten 15 Sekunden eines Songs zeigt eine **Konzertkarte** die nächsten
+Termine der Artists. Termine im Umkreis von Wien (`CONCERT_RADIUS_KM`, Standard 200 km) stehen zuerst. Die Karte
+zeigt Countdown („in 21 Tagen“), **ausverkauft** und einen **QR-Code zum Ticket**. Dazu kommt „Zuletzt live …
+– dieser Song war dabei“ aus setlist.fm. Quellen sind Ticketmaster (`TICKETMASTER_API_KEY`) und Bandsintown
+(`BANDSINTOWN_APP_ID`). Doppelte Termine werden zusammengeführt, die Daten 12 Stunden gecacht. setlist.fm braucht
+`SETLISTFM_API_KEY`. Ohne Schlüssel bleibt die Karte einfach weg.
+
+Stufe 5a – Persönliches: **zuletzt gehört** (Last.fm, sonst Spotify) auf dem Startbildschirm,
 **Lieblingssong** (Spotify), **auf Last.fm geliebt**, **„37× gehört“**, **★ bei Künstlern, denen du folgst**
 (Kopfzeile und Namensschilder). Last.fm braucht `LASTFM_API_KEY` und `LASTFM_USER`.
 
@@ -139,6 +146,7 @@ Arbeitsspeicher einzelner, kurzlebiger Server-Instanzen. Deshalb **Upstash Redis
 |---|---|
 | Lyrics (gefunden / nicht gefunden) | 180 Tage / 3 Tage |
 | Band-Infos und Fotos (gefunden / nicht gefunden) | 30 Tage / 3 Tage |
+| Konzerttermine / letzte Setlist | 12 Stunden / 3 Tage |
 | Dashboard-Stand für Alexa (persönlich) | 2 Stunden |
 | Befehle (z. B. von Alexa) | 5 Minuten |
 

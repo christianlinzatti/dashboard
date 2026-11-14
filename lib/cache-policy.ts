@@ -13,6 +13,10 @@ export const CACHE_TTL = {
   /** Wikipedia-Texte und Fotos ändern sich langsam */
   infoFound: 30 * DAY,
   infoMissing: 3 * DAY,
+  /** Konzerttermine: neue Termine/Ausverkauft-Status ändern sich laufend */
+  concerts: 12 * 3600,
+  /** letzte Setlist einer Tour */
+  setlist: 3 * DAY,
   /** Hörstand für Alexa – persönliche Daten, bewusst kurz */
   snapshot: 2 * 3600,
   /** nicht abgeholte Befehle verfallen */
