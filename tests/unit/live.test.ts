@@ -30,9 +30,10 @@ describe("Song-Kontext-Schnappschuss", () => {
       title: "Neonlicht",
       section: "verse",
       activeSinger: "Kai Vento",
-      line: "wir drehen auf, wir geben Gas",
+      releaseYear: 2026,
       light: { scene: "strophe" },
     });
+    expect(snap).not.toHaveProperty("line"); // keine Songtexte auf dem Server
     expect(snap.artists).toEqual([
       { name: "Mira Sol", role: "main" },
       { name: "Kai Vento", role: "feature" },

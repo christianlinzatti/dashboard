@@ -169,7 +169,7 @@ describe("Alexa-Intents", () => {
     durationMs: 200_000,
     section: "verse",
     activeSinger: "Kai Vento",
-    line: null,
+    releaseYear: 2026,
     bpm: 124,
     palette: { dominant: "#7b2cff", accent: "#ff4fd8" },
     light: null,
@@ -324,6 +324,13 @@ describe("Alexa: Konzerte, Hörstatistik, Likes, Band-Infos", () => {
       "Kai Vento ist ein erfundener Rapper für die Demo. Geboren 1993.",
     );
     expect(await ask("BandInfoIntent", {}, { ...full(), about: undefined })).toMatch(/keine Infos/);
+  });
+
+  it("Erscheinungsjahr mit Album", async () => {
+    expect(await ask("ErscheinungsjahrIntent")).toBe("Neonlicht ist 2026 erschienen, auf dem Album Stadt aus Glas.");
+    expect(await ask("ErscheinungsjahrIntent", {}, { ...full(), releaseYear: null })).toBe(
+      "Das Erscheinungsjahr von Neonlicht kenne ich nicht.",
+    );
   });
 
   it("Hilfsfunktionen", () => {

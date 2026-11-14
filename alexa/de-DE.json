@@ -140,6 +140,18 @@
             "wer ist {kuenstler}",
             "was weißt du über {kuenstler}"
           ]
+        },
+        {
+          "name": "ErscheinungsjahrIntent",
+          "samples": [
+            "wann ist der Song erschienen",
+            "wann ist das erschienen",
+            "aus welchem Jahr ist der Song",
+            "aus welchem Jahr ist das",
+            "wie alt ist der Song",
+            "wann kam der Song raus",
+            "von wann ist der Song"
+          ]
         }
       ],
       "types": [

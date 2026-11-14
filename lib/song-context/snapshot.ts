@@ -6,19 +6,20 @@ import type { SongStatic } from "./schema";
 
 /**
  * Kompakter Stand des Song-Kontexts für den Server (Alexa, Pi-Bridge).
- * Bewusst klein: keine Lyrics-Volltexte, nur die aktuelle Zeile.
+ * Bewusst klein und ohne Songtexte.
  */
 export const snapshotSchema = z.object({
   trackKey: z.string().max(200),
   title: z.string().max(300),
   artists: z.array(z.object({ name: z.string().max(200), role: z.enum(["main", "feature"]) })).max(12),
   album: z.string().max(300),
+  /** Erscheinungsjahr laut Spotify (Album-Veröffentlichung, bei Best-of/Remaster ggf. später) */
+  releaseYear: z.number().int().min(1800).max(2200).nullable().optional(),
   isPlaying: z.boolean(),
   positionMs: z.number().nonnegative(),
   durationMs: z.number().positive(),
   section: z.string().max(20).nullable(),
   activeSinger: z.string().max(200).nullable(),
-  line: z.string().max(500).nullable(),
   bpm: z.number().positive().max(400),
   palette: z.object({ dominant: z.string().max(9), accent: z.string().max(9) }),
   light: z
@@ -91,19 +92,19 @@ export function buildSnapshot(
 ): Snapshot | null {
   const song = s.song;
   if (!song) return null;
-  const line = s.derived.lineActive ? song.lyrics?.lines[s.derived.lineIdx]?.text : undefined;
+  const year = Number(song.track.releaseDate?.slice(0, 4));
   const singer = song.artists.find((a) => a.spotifyId === s.derived.activeSingerId)?.name;
   return {
     trackKey: song.trackKey,
     title: song.track.title,
     artists: song.artists.map((a) => ({ name: a.name, role: a.role })),
     album: song.album.name,
+    releaseYear: Number.isInteger(year) && year >= 1800 ? year : null,
     isPlaying: s.playback.isPlaying,
     positionMs: Math.round(s.positionMs),
     durationMs: song.track.durationMs,
     section: s.derived.section,
     activeSinger: singer ?? null,
-    line: line ?? null,
     bpm: Math.round(s.live.bpm),
     palette: { dominant: song.album.palette.dominant, accent: song.album.palette.accent },
     light: light

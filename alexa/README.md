@@ -7,6 +7,7 @@ und Bühnenqualität des Dashboards.
 |---|---|
 | „Alexa, frag Sonic Stage, welcher Song läuft“ | Titel und Artists aus dem Dashboard |
 | „Alexa, frag Sonic Stage, wer singt gerade“ | aktiver Sänger (bei Feature-Songs) |
+| „Alexa, frag Sonic Stage, wann ist der Song erschienen“ | Erscheinungsjahr und Album (laut Spotify) |
 | „Alexa, frag Sonic Stage, wann spielen die in der Nähe“ | nächstes Konzert im Umkreis (sonst der nächste Termin überhaupt), mit Countdown |
 | „Alexa, frag Sonic Stage, wann spielt Kai Vento live“ | dasselbe für einen bestimmten Artist des Songs |
 | „Alexa, frag Sonic Stage, wie oft habe ich das gehört“ | Hörzahl (Last.fm), Lieblingssong (Spotify), Herz auf Last.fm |

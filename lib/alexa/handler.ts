@@ -227,6 +227,16 @@ export async function handleAlexa(req: AlexaRequest, deps: HandlerDeps) {
       await deps.pushCommand({ type: "qualitaet", value });
       return speak(`Bühnenqualität ${v}.`);
     }
+    case "ErscheinungsjahrIntent": {
+      const s = await live();
+      if (!s) return speak("Das Dashboard ist gerade nicht aktiv.");
+      const album = s.album ? `, auf dem Album ${s.album}` : "";
+      return speak(
+        s.releaseYear
+          ? `${s.title} ist ${s.releaseYear} erschienen${album}.`
+          : `Das Erscheinungsjahr von ${s.title} kenne ich nicht.`,
+      );
+    }
     case "KonzertIntent": {
       const s = await live();
       if (!s) return speak("Das Dashboard ist gerade nicht aktiv.");
@@ -249,7 +259,7 @@ export async function handleAlexa(req: AlexaRequest, deps: HandlerDeps) {
     }
     case "AMAZON.HelpIntent":
       return speak(
-        "Du kannst fragen: Welcher Song läuft? Wer singt gerade? Wann spielen die in der Nähe? Wie oft habe ich das gehört? Mag ich den Künstler? Erzähl mir was über die Band. Oder sagen: Lampen aus, Stroboskop an.",
+        "Du kannst fragen: Welcher Song läuft? Wer singt gerade? Wann ist der Song erschienen? Wann spielen die in der Nähe? Wie oft habe ich das gehört? Mag ich den Künstler? Erzähl mir was über die Band. Oder sagen: Lampen aus, Stroboskop an.",
         false,
       );
     case "AMAZON.StopIntent":
