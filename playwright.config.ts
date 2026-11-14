@@ -10,9 +10,14 @@ export default defineConfig({
   outputDir: "test-results",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
+  // Software-Rendering (SwiftShader) mit Bloom/Lichtkegeln ist auf CI-Runnern langsam
+  timeout: process.env.CI ? 90_000 : 30_000,
+  workers: process.env.CI ? 2 : undefined,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : "list",
   expect: {
+    // gilt auch für toHaveScreenshot (bis zwei identische Aufnahmen vorliegen)
+    timeout: process.env.CI ? 45_000 : 10_000,
     toHaveScreenshot: { maxDiffPixelRatio: 0.004, animations: "disabled", caret: "hide" },
   },
   use: {

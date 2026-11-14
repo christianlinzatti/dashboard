@@ -16,7 +16,7 @@ jobs:
   playwright:
     name: Playwright (Chromium, 3 Auflösungen)
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     # Gleiches Image wie beim Erzeugen der Referenz-Screenshots → pixelgleiche Ergebnisse
     container:
       image: mcr.microsoft.com/playwright:v1.63.0-noble
