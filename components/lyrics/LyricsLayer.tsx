@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, type CSSProperties } from "react";
 import { markBackground, planLyricsModes, type LyricsMode } from "@/lib/lyrics/director";
+import { infoCardAt } from "@/lib/info/display";
 import type { LyricLine, SongStatic } from "@/lib/song-context/schema";
 import { songContext, useSongContext } from "@/lib/song-context/store";
 
@@ -24,7 +25,13 @@ export function LyricsLayer({ forceMode }: { forceMode?: LyricsMode }) {
     [song?.trackKey, song?.lyrics?.provider, sectionsKey],
   );
 
+  // Während die Infokarte (Intro, Pausen) den unteren Bereich nutzt, macht die Lyrics-Anzeige Platz
+  const cardShown = useSongContext((s) =>
+    s.song ? !!infoCardAt(s.song, s.derived, Math.floor(s.positionMs / 1000) * 1000) : false,
+  );
+
   const lines = song?.lyrics?.quality !== "plain" ? song?.lyrics?.lines : undefined;
+  if (cardShown) return null;
   if (!song || !lines?.length) return <NoLyrics song={song} />;
 
   const current = lineActive ? lines[lineIdx] : undefined;

@@ -82,6 +82,46 @@ export const neonlicht: SongStatic = {
       line(136.5, 141, "heute Nacht sind wir ganz groß", "v2"),
     ],
   },
+  // Erfundene Infos (Demo) – echte kommen aus MusicBrainz/Wikipedia/Commons
+  info: {
+    artists: {
+      "demo-mira": {
+        name: "Mira Sol",
+        summary:
+          "Mira Sol ist eine erfundene Sängerin für die Demo dieses Dashboards. Ihre Songs verbinden Dance-Pop mit Synthesizern der Achtziger.",
+        wikiUrl: "https://de.wikipedia.org/wiki/Demo",
+        lang: "de",
+        facts: ["Geboren 1996", "3 Demo-Alben"],
+      },
+      "demo-kai": {
+        name: "Kai Vento",
+        summary: "Kai Vento ist ein erfundener Rapper für die Demo. Er steuert die zweite Strophe von „Neonlicht“ bei.",
+        wikiUrl: "https://de.wikipedia.org/wiki/Demo",
+        lang: "de",
+        facts: ["Geboren 1993"],
+      },
+    },
+    photos: [
+      {
+        artistId: "demo-mira",
+        url: "/demo/mira-sol.svg",
+        width: 800,
+        height: 500,
+        credit: "Demo-Grafik",
+        license: "CC0",
+        sourceUrl: "/demo/mira-sol.svg",
+      },
+      {
+        artistId: "demo-kai",
+        url: "/demo/kai-vento.svg",
+        width: 800,
+        height: 500,
+        credit: "Demo-Grafik",
+        license: "CC0",
+        sourceUrl: "/demo/kai-vento.svg",
+      },
+    ],
+  },
   cast: [
     { avatarId: "aurora-synth", artistId: "demo-mira", role: "lead", position: 0 },
     { avatarId: "atlas-prism", artistId: "demo-kai", role: "feature", position: -1 },
@@ -91,7 +131,7 @@ export const neonlicht: SongStatic = {
     spotify: { state: "ok", provider: "demo" },
     lyrics: { state: "ok", provider: "demo", detail: "Wort-Sync" },
     music: { state: "ok", provider: "demo" },
-    info: { state: "missing" },
+    info: { state: "ok", provider: "demo" },
     palette: { state: "ok", provider: "demo" },
   },
 };

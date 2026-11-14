@@ -547,7 +547,9 @@ Ein **Foto-Ranking** wählt pro Künstler die besten Bilder (Auflösung, Seitenv
 
 ## 12. Umsetzungsplan (Meilensteine)
 
-Erledigt: **M1** (Projektgerüst, Song-Kontext), **M2** (Spotify), **M3** (Lyrics-Grundlage mit LRCLIB), **M4** (3D-Szene mit Tanz-Regie), **M5** (Mikrofon-Analyse), **M6** (Wort-für-Wort-Provider, Lyrics-Modi), **M8** (Bühne & Licht, Stufe 2), **M9** (Pi-Bridge, Govee per LAN), **M10** (Alexa-Skill, Befehlskanal; virtuelles Smart-Home-Gerät noch offen).
+Erledigt: **M1** (Projektgerüst, Song-Kontext), **M2** (Spotify), **M3** (Lyrics-Grundlage mit LRCLIB), **M4** (3D-Szene mit Tanz-Regie), **M5** (Mikrofon-Analyse), **M6** (Wort-für-Wort-Provider, Lyrics-Modi), **M8** (Bühne & Licht, Stufe 2), **M9** (Pi-Bridge, Govee per LAN), **M10** (Alexa-Skill, Befehlskanal; virtuelles Smart-Home-Gerät noch offen), **M11** (Band-Infos, Fotos, Infokarte, Fakten, Wandfoto).
+
+Befund M11 (Nov. 2026): MusicBrainz meldet Überlast teils als HTTP 200 mit `error`; Wikimedia drosselt Anfragen aus Rechenzentren stark (429). Daher: höflicher Client mit Drosselung je Host, `Retry-After`, langer Cache, Fehlschläge nicht cachen, optionaler Kontakt im User-Agent (`INFO_CONTACT`). Wikipedia-Vorschaubilder kommen inzwischen von `thumb.wikimedia.org` (in der CSP freigegeben).
 
 Befund M6 (Nov. 2026, gegen echte Schnittstellen geprüft): NetEase liefert Wort-Sync; Musixmatch Desktop nur Zeilen-Sync über `macro.subtitles.get` (`matcher.track.get` und `track.richsync.get` existieren dort nicht) und aus Rechenzentren falsche Treffer; der Community-Dienst „lyricsplus“ ist abgeschaltet; QQ Music liefert Wort-Sync nur verschlüsselt (QRC) und wurde ausgelassen.
 

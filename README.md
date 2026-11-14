@@ -5,7 +5,12 @@ zeigt den aktuellen Spotify-Song, Lyrics möglichst Wort für Wort und tanzende 
 
 Konzept und Ausbaustufen: [`docs/KONZEPT.md`](docs/KONZEPT.md) · Architektur-Bewertung: [`docs/ARCHITEKTUR.md`](docs/ARCHITEKTUR.md)
 
-**Stand: Stufe 3** – Govee & Alexa:
+**Stand: Stufe 4** – Band-Infos & Fotos: MusicBrainz → Wikidata → Wikipedia (de, sonst en) und frei
+lizenzierte Fotos von Wikimedia Commons (mit Urheber und Lizenz). **Infokarte** in Intro, Outro, Instrumentalteilen
+und langen Pausen (bei Feature-Songs abwechselnd), **Fakten-Ticker** in Strophen, **Band-Foto als Duoton auf der
+LED-Wand**. Abfragen gedrosselt (MusicBrainz 1/s) und 7 Tage gecacht.
+
+Stufe 3 – Govee & Alexa:
 - **Pi-Bridge** (`bridge/`, Anleitung in `bridge/README.md`): steuert die Govee-Lampen per LAN-API im Takt
   des LightDirectors (Rollen puls/akzent/grund), WebSocket nur lokal und nur für das eigene Dashboard.
 - **Alexa-Skill** (`alexa/README.md`): „Welcher Song läuft?“, „Wer singt?“, Lampen/Strobo/Qualität per Sprache;

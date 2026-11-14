@@ -15,6 +15,8 @@ import { Avatar } from "./Avatar";
 import { Director } from "./Director";
 import { Lasers, MovingHeads } from "./Lights";
 import { ReadySignal } from "./ReadySignal";
+import { PhotoWall } from "./PhotoWall";
+import { wallPhoto } from "@/lib/info/display";
 import { Fog, StageSet } from "./StageSet";
 import { initialFrame, type Frame } from "./types";
 
@@ -86,6 +88,7 @@ function Scene({ forceQuality, onContextLost }: { forceQuality?: Quality; onCont
   useEffect(() => () => document.body.removeAttribute("data-stage-ready"), []);
 
   if (!song || !choreo) return null;
+  const photo = wallPhoto(song);
 
   return (
     <div className="absolute inset-0" data-quality={quality}>
@@ -124,6 +127,17 @@ function Scene({ forceQuality, onContextLost }: { forceQuality?: Quality; onCont
         {preset.fog && <Fog lightsRef={lights} color={song.album.palette.accent} />}
         <Director song={song} choreo={choreo} frameRef={frame} lightsRef={lights} heads={preset.heads} strobeRef={strobe} />
         <Suspense fallback={null}>
+          {photo && (
+            <ErrorBoundary fallback={null} label="Wandfoto">
+              <PhotoWall
+                key={photo.url}
+                url={photo.url}
+                dark={song.album.palette.dark}
+                accent={song.album.palette.accent}
+                lightsRef={lights}
+              />
+            </ErrorBoundary>
+          )}
           {song.cast.map((c) => (
             <Avatar key={c.avatarId} member={c} song={song} choreo={choreo} frameRef={frame} />
           ))}

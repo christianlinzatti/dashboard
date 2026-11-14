@@ -91,19 +91,31 @@ export const castMemberSchema = z.object({
 export type CastMember = z.infer<typeof castMemberSchema>;
 
 export const photoSchema = imageSchema.extend({
+  /** zu welchem Artist das Foto gehört (Spotify-ID) */
+  artistId: z.string().optional(),
   credit: z.string(),
   license: z.string(),
   sourceUrl: z.string(),
 });
 
+export type Photo = z.infer<typeof photoSchema>;
+
 export const infoSchema = z.object({
   artists: z.record(
     z.string(),
-    z.object({ summary: z.string(), wikiUrl: z.string(), lang: z.enum(["de", "en"]), facts: z.array(z.string()) }),
+    z.object({
+      name: z.string().optional(),
+      summary: z.string(),
+      wikiUrl: z.string(),
+      lang: z.enum(["de", "en"]),
+      facts: z.array(z.string()),
+    }),
   ),
   song: z.object({ summary: z.string(), wikiUrl: z.string() }).optional(),
   photos: z.array(photoSchema),
 });
+
+export type Info = z.infer<typeof infoSchema>;
 
 /** Stammdaten: einmal pro Song, serverseitig aggregiert und gecacht. */
 export const songStaticSchema = z.object({

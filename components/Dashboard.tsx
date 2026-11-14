@@ -14,6 +14,8 @@ import { useSpotifySync } from "./spotify/useSpotifySync";
 import { settings } from "@/lib/settings";
 import { useSnapshotReporter } from "./live/useSnapshotReporter";
 import { useBridge } from "./bridge/useBridge";
+import { useInfoLoader } from "./info/useInfoLoader";
+import { InfoOverlay } from "./info/InfoOverlay";
 import { useLyricsLoader } from "./lyrics/useLyricsLoader";
 import { useMicAnalysis } from "./audio/useMicAnalysis";
 import type { LyricsMode } from "@/lib/lyrics/director";
@@ -41,6 +43,8 @@ export function Dashboard({ demo, t, debug, loginError, mic, lyricsMode, quality
   useSnapshotReporter(demo === undefined);
   // Lichtszene an die Pi-Bridge (Govee-Lampen); in Demos aus
   useBridge(demo === undefined);
+  // Band-Infos und Fotos (MusicBrainz, Wikipedia, Commons)
+  useInfoLoader(demo === undefined);
   // Mikrofon: im Live-Betrieb; in Demos nur mit ?mic=1 (Screenshots bleiben reproduzierbar)
   const micCtl = useMicAnalysis(demo === undefined || !!mic);
 
@@ -88,6 +92,7 @@ export function Dashboard({ demo, t, debug, loginError, mic, lyricsMode, quality
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,rgb(0_0_0/0.55)_100%)]" />
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
           <NowPlayingBar />
+          <InfoOverlay />
           <LyricsLayer forceMode={lyricsMode} />
           <Progress />
           <Controls live={demo === undefined} mic={demo === undefined || mic ? micCtl : undefined} />

@@ -7,7 +7,7 @@ const csp = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https://i.scdn.co https://*.spotifycdn.com https://upload.wikimedia.org",
+  "img-src 'self' data: blob: https://i.scdn.co https://*.spotifycdn.com https://upload.wikimedia.org https://thumb.wikimedia.org",
   "font-src 'self' data:",
   "connect-src 'self' ws://127.0.0.1:8787",
   "media-src 'self' blob:",
