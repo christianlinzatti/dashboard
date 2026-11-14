@@ -1,6 +1,6 @@
 # Konzept: „Sonic Stage“ – Lyric-Dashboard (10 Zoll)
 
-Stand: 2026-11-14 · Status: Entwurf zur Abstimmung
+Stand: 2026-11-14 · Status: Entwurf v2 (Rückmeldungen eingearbeitet)
 
 ---
 
@@ -14,7 +14,12 @@ Eine Web-App (Next.js/React), die auf einem 10-Zoll-Dashboard im Vollbild läuft
 4. den Song **live über das Mikrofon analysiert** (Beat, BPM, Energie, Frequenzbänder),
 5. über **Vercel** gehostet und über **GitHub Actions** abgesichert wird (Lint, Typen, Tests, Playwright-Screenshots, Security-Scans).
 
-Ausbaustufe 2: **Bühne mit Lichteffekten** (Spots, Lichtkegel, Laser, Nebel, Bloom), beat-synchron.
+Weitere Ausbaustufen:
+- **Stufe 2:** Bühne mit Lichteffekten (Spots, Lichtkegel, Laser, Nebel, Bloom), beat-synchron.
+- **Stufe 3:** **Govee-Lichter** und **Alexa** einbinden.
+- **Stufe 4:** **Band-Fotos und Infotexte** (z. B. Wikipedia) anzeigen.
+
+**Festgelegt:** Raspberry Pi mit Chromium im Kiosk-Modus · Spotify-Developer-App und Premium vorhanden · kein Apple-Developer-Zugang · inoffizielle Lyrics-Quellen sind gewünscht · Oberfläche **ausschließlich auf Deutsch**.
 
 ---
 
@@ -40,7 +45,15 @@ Da das Skelett einheitlich ist, kann jeder Clip grundsätzlich auf jeden Avatar 
 
 ## 3. Zielgerät & UX-Rahmen
 
-**Annahme** (bitte bestätigen, siehe Abschnitt 13): 10-Zoll-Display im Querformat, **1280×800** (16:10), Touch, Chrome/Chromium im Kiosk-Modus. Zweites Profil für **1024×600** wird mitgetestet.
+**Gerät:** Raspberry Pi mit 10-Zoll-Display, Chromium im Kiosk-Modus. Die Auflösung steht noch nicht fest, deshalb wird das Layout **auflösungsunabhängig** gebaut (Schriftgrößen in `vmin`/`clamp()`, 3D-Kamera passt sich dem Seitenverhältnis an). Getestet werden die typischen 10-Zoll-Panels **1024×600**, **1280×800** und **1920×1200**.
+
+**Raspberry-Pi-spezifisch:**
+- Die GPU ist schwach. Standard sind **2–3 Avatare**, keine Echtzeit-Schatten (gebackener Bodenschatten), DPR 1,0, Ziel 60 fps auf Pi 5 und ≥ 30 fps auf Pi 4. Mehr Tänzer nur bei Feature-Songs mit vereinfachtem Shading (siehe 8.1).
+- Chromium-Flags: `--kiosk --ignore-gpu-blocklist --enable-gpu-rasterization --autoplay-policy=no-user-gesture-required`, Autostart über systemd/labwc, Watchdog lädt die Seite bei Absturz neu.
+- Mikrofon: Der Pi hat keins eingebaut → **USB-Mikrofon** nötig.
+- Ein kleiner **lokaler Dienst auf dem Pi („Pi-Bridge“)** wird ab Stufe 3 gebraucht, weil der Browser keine Geräte im Heimnetz ansteuern kann (Govee per LAN/UDP).
+
+**Sprache:** Alle Texte der Oberfläche sind deutsch. Zahlen- und Zeitformat `de-DE`, keine Sprachumschaltung.
 
 Leitlinien:
 - **Lesbarkeit aus 2–3 m:** aktive Lyric-Zeile ≥ 56 px, Kontextzeilen ≥ 28 px, hoher Kontrast, dunkles Theme (spart Strom/OLED-schonend).
@@ -171,16 +184,20 @@ Alle Provider implementieren dasselbe Interface (`search(track) → LyricsDoc | 
 
 | Prio | Provider | Sync-Level | Zugang | Status/Hinweis |
 |---|---|---|---|---|
-| 1 | **Musixmatch (Richsync)** | Wort | offizielle API, kostenpflichtiger Key | rechtlich sauberste Wort-für-Wort-Quelle; aktivierbar, sobald ein Key vorliegt |
-| 2 | **Apple Music (TTML, Silben-/Wort-Sync)** | Wort | MusicKit-Developer-Token + Apple-Music-Abo | sehr gute Qualität inkl. Duett/Background; nur mit Apple-Developer-Account |
-| 3 | **Community-Aggregatoren (z. B. „Lyrics+“-artige APIs)** | Wort/Zeile | offen | Verfügbarkeit schwankt, Rechtslage unklar → **opt-in per Env-Flag**, nur Privatnutzung |
-| 4 | **NetEase (YRC) / QQ Music (QRC)** | Wort | inoffiziell | stark bei asiatischem Repertoire, inoffiziell → **opt-in** |
-| 5 | **LRCLIB** | Zeile (teils Enhanced-LRC mit Wörtern) | frei, ohne Key | **Standard-Fallback**, zuverlässig, Open Source |
-| 6 | **Lokale Overrides** (`/data/lyrics/*.lrc|.ttml|.json`) | beliebig | Repo | eigene Korrekturen haben immer Vorrang |
+| 1 | **Musixmatch (Richsync, offiziell)** | Wort | kostenpflichtiger Key | nur aktiv, falls später ein Key vorliegt |
+| 2 | ~~Apple Music (TTML)~~ | Wort | Apple-Developer-Account | **entfällt** (kein Zugang); TTML-Parser bleibt für Aggregatoren, die TTML liefern |
+| 3 | **Musixmatch Desktop-API (Richsync, inoffiziell)** | Wort | anonymer Desktop-User-Token | große Abdeckung, Wort-Sync; Token läuft ab und wird automatisch erneuert |
+| 4 | **Community-Aggregatoren (z. B. „Lyrics+“-artige APIs)** | Wort/Zeile | offen | Verfügbarkeit schwankt |
+| 5 | **Spotify Color-Lyrics** (Ansatz von `simonroedig/SpotifyLyrics`) | meist Zeile, teils Silben | `sp_dc`-Cookie → Web-Player-Token | Laut Repo **nicht mehr funktionsfähig**, weil Spotify die Token-Ausgabe (TOTP-basiert) geändert hat. Wird mit aktualisierter Token-Logik umgesetzt, **bricht aber erwartbar immer wieder** → automatisch deaktiviert, wenn er wiederholt fehlschlägt |
+| 6 | **NetEase (YRC) / QQ Music (QRC)** | Wort | inoffiziell | stark bei asiatischem Repertoire, Wort-Sync |
+| 7 | **LRCLIB** | Zeile (teils Enhanced-LRC mit Wörtern) | frei, ohne Key | **zuverlässiger Fallback**, Open Source |
+| 8 | **Lokale Overrides** (`/data/lyrics/*.lrc|.ttml|.json`) | beliebig | Repo | eigene Korrekturen haben immer Vorrang |
 
 Parser: LRC, Enhanced-LRC (`<mm:ss.xx>` je Wort), TTML (Apple), Richsync-JSON, YRC/QRC → alle in `LyricsDoc`.
 
-> Rechtlicher Hinweis: Lyrics sind urheberrechtlich geschützt. Standardmäßig sind nur LRCLIB, lokale Dateien und offizielle Keys aktiv. Inoffizielle Quellen werden nicht standardmäßig aktiviert. Nutzung auf einem privaten Dashboard; keine öffentliche Weiterverbreitung der Texte.
+**Robustheit der inoffiziellen Quellen:** Jeder Provider hat Timeout (2,5 s), Circuit-Breaker (nach 5 Fehlern 1 h Pause) und einen Health-Status, der in den Einstellungen sichtbar ist. Ein täglicher GitHub-Action-Job prüft jeden Provider mit 3 Referenzsongs und legt bei Ausfall ein Issue an. Die Secrets (`SPOTIFY_SP_DC` usw.) liegen nur in den Vercel-Env-Vars.
+
+> Rechtlicher Hinweis: Lyrics sind urheberrechtlich geschützt, und die inoffiziellen Quellen verstoßen gegen die Nutzungsbedingungen der Anbieter. Sie sind auf ausdrücklichen Wunsch für ein **privates** Dashboard eingebaut. Die Vercel-Instanz wird daher per Login (Spotify-Konto-Allowlist) geschützt, damit die Texte nicht öffentlich abrufbar sind.
 
 ### 6.3 Wort-Timing, wenn nur Zeilen-Sync vorliegt
 
@@ -237,8 +254,25 @@ Gemeinsame Effekte: Farben aus dem Album-Cover (dominante Farbe/Akzent), Glow pu
 | Peaks/Drops | `Dance_PowerHit`, `Dance_Stomp`, `Dance_TurnPhrase`, `Dance_PivotStep` |
 
 - **Stil-Bias** über Spotify-Artist-Genres (falls verfügbar) bzw. Klangprofil: Rock → `RockDrive`/`FrontmanDrive`, Latin → `LatinSway`/`AfroPulse`, Jazz → `JazzSwing`/`JazzRebound`, Elektro → `Techno`/`Robot`/`Shuffle`.
-- **Avatar-Casting:** Genre-passende Avatare in die Mitte (z. B. `ember-rock` bei Rock, `velvet-jazz` bei Jazz, `rio-carnival` bei Latin, `neon-pulse`/`quantum-bass` bei Elektro). 3 Avatare Standard, bis zu 5 auf starker Hardware; Aufstellung wechselt beim Songwechsel.
-- **Choreo-Variation:** Avatare nicht synchron identisch – Lead tanzt den Hauptclip, Nebenfiguren Varianten derselben Energiestufe, im Refrain alle synchron (Gänsehaut-Moment).
+- **Avatar-Casting:** Genre-passende Avatare in die Mitte (z. B. `ember-rock` bei Rock, `velvet-jazz` bei Jazz, `rio-carnival` bei Latin, `neon-pulse`/`quantum-bass` bei Elektro). Standard sind 2–3 Avatare; die Besetzung wechselt bei jedem Song, damit nicht immer dieselben Figuren tanzen.
+
+#### Abwechslung beim Tanzen
+
+Ziel: Auch nach einer Stunde Musik soll es nicht nach Endlosschleife aussehen.
+- **Phrasen statt Loops:** Der Clip wechselt alle **8 oder 16 Takte** (zufällig gewichtet) und zusätzlich an jeder Abschnittsgrenze (Strophe → Refrain, Drop, Bridge).
+- **Wiederholungssperre:** Ein Clip darf erst wieder kommen, wenn mindestens 4 andere dran waren; pro Song wird eine Clip-Rotation vorab „gewürfelt“ (Seed = Track-ID, also beim selben Song wiedererkennbar, zwischen Songs verschieden).
+- **Rollen:** Lead tanzt den Hauptclip, Nebenfiguren eine andere Variante derselben Energiestufe, leicht zeitversetzt (Kanon um ½–1 Takt) oder gespiegelt.
+- **Gemeinsame Momente:** Im Refrain und bei Drops tanzen alle **synchron** denselben Clip – der Kontrast macht den Moment.
+- **Formationen:** Linie, V-Form, Halbkreis, Solo-Spotlight (Lead vorn, Rest im Halbdunkel), Tausch der Positionen über Lauf-/Seitschritt-Clips (`SideGlide`, `DiagonalStep`, `CrossStep`).
+- **Kamera:** langsame Fahrten und Schnitte auf Taktanfang (Totale, halbnah auf Lead, leichte Untersicht im Refrain).
+- **Sondermomente:** `Gesture_Wave` beim Songstart/-ende, `PowerHit`/`Stomp` nur auf erkannte Drops, `Idle_Breathe` in längeren Pausen.
+
+#### Feature-Songs: mehrere Tänzer
+
+- **Erkennung:** mehrere Artists im Spotify-Track (`artists.length > 1`) oder Titel mit `feat.`, `ft.`, `featuring`, `with`, `x`, `&`.
+- **Ein Avatar pro beteiligtem Artist** (bis zu 5, plus optional 1–2 Background-Tänzer). Jeder Artist bekommt dauerhaft „seinen“ Avatar mit **Namensschild** in der Farbe des Avatars; die Zuordnung wird gespeichert, damit ein Artist bei späteren Songs wieder denselben Avatar bekommt.
+- **Wer singt gerade?** Falls die Lyrics Sänger kennzeichnen (TTML-`agent`, Zeilenpräfixe wie `[Artist:]`), tritt der aktive Sänger nach vorn, bekommt das Spotlight, sein LED-Gesicht leuchtet und seine Lyric-Zeile erscheint in seiner Farbe; die anderen tanzen dezenter im Hintergrund. Ohne Kennzeichnung wechselt das Spotlight pro Abschnitt.
+- **Performance auf dem Pi:** Bei 4–6 Avataren werden Nebenfiguren mit reduziertem Material und halber Animations-Updaterate gerendert; der Lead bleibt in voller Qualität.
 - **LED-Gesicht:** `FaceLedBar0–4` skalieren/leuchten mit Vocal-Aktivität bzw. aktuellem Wort, `FaceLedEye*` blinken auf Beats (über Emissive-Stärke).
 
 ### 8.2 Asset-Pipeline
@@ -286,7 +320,8 @@ LRC/TTML/Richsync-Parser, Provider-Ranking, Silben-Verteilung, PlaybackClock-Int
 ## 10. Hosting (Vercel)
 
 - GitHub-Integration: `main` → Production, jeder Branch/PR → Preview.
-- Env-Vars: `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, `SESSION_SECRET`, `UPSTASH_REDIS_REST_URL/TOKEN`, optionale Provider-Keys (`MUSIXMATCH_API_KEY`, `APPLE_MUSIC_*`) und Feature-Flags (`LYRICS_ENABLE_UNOFFICIAL=false`).
+- Env-Vars: `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, `SESSION_SECRET`, `UPSTASH_REDIS_REST_URL/TOKEN`, Provider-Secrets (`SPOTIFY_SP_DC`, optional `MUSIXMATCH_API_KEY`), Feature-Flags je Provider (`LYRICS_PROVIDERS=musixmatch-desktop,lyricsplus,spotify-color,netease,qq,lrclib`) und eine Allowlist erlaubter Spotify-Konten (`ALLOWED_SPOTIFY_USERS`).
+- Manche inoffiziellen Quellen sperren Rechenzentrums-IPs wie die von Vercel. Dann laufen diese Anfragen über die Pi-Bridge (private Heim-IP); die Provider-Schnittstelle ist dafür schon ausgelegt.
 - Route Handlers im Node-Runtime (Crypto, Parser); Lyrics-Antworten mit `Cache-Control: s-maxage=86400`.
 - Security-Header (CSP, `Permissions-Policy: microphone=(self)`), keine Tokens im Client.
 - Dashboard-Gerät: Chrome im Kiosk-Modus, z. B.
@@ -301,8 +336,51 @@ LRC/TTML/Richsync-Parser, Provider-Ranking, Silben-Verteilung, PlaybackClock-Int
 - **Lichter:** Moving-Head-Spots (SpotLight + volumetrische Kegel per Additiv-Shader), Wash-Lichter in Cover-Farben, Strobe auf Drops, Laser-Fächer bei hoher Energie, Bodennebel (Partikel/Noise-Shader).
 - **Lichtpult-Logik („LightDirector“):** Szenen pro Energie/Abschnitt (Strophe ruhig/warm, Refrain voll, Drop Strobe+Laser), Bewegungen auf Beat-Phase, Farbwechsel auf Taktanfang.
 - **Postprocessing:** Bloom, leichte Chromatic Aberration auf Kicks, Vignette.
-- **Optional:** Ausgabe der Lichtszenen an echte Lampen (z. B. Philips Hue Entertainment / WLED) – eigenes Modul.
-- Qualitätsstufen beachten: volumetrische Effekte nur auf ausreichend starker Hardware.
+- Qualitätsstufen beachten: Auf dem Pi werden volumetrische Kegel als einfache Additiv-Meshes gerendert, Bloom nur in halber Auflösung.
+- Der LightDirector erzeugt ein geräteunabhängiges Lichtsignal (Farbe, Helligkeit, Akzente pro Beat), das Stufe 3 an echte Lampen weitergibt.
+
+---
+
+## 11a. Ausbaustufe 3: Govee & Alexa
+
+### Pi-Bridge (Voraussetzung)
+
+Kleiner Node-Dienst auf dem Raspberry Pi (systemd), erreichbar nur lokal (`ws://127.0.0.1:8787`). Das Dashboard schickt per WebSocket das Lichtsignal, die Bridge spricht mit den Geräten im Heimnetz. Grund: Der Browser auf Vercel-Seite kann kein UDP senden und keine LAN-Geräte erreichen.
+
+### Govee
+
+| Weg | Latenz | Eignung |
+|---|---|---|
+| **Govee LAN API** (UDP, lokal, über die Pi-Bridge) | ~20–50 ms | **bevorzugt**: Farbe/Helligkeit auf den Beat, Szenenwechsel pro Takt; LAN-Steuerung muss in der Govee-App je Gerät aktiviert sein |
+| **Govee Segment-/Razer-Streaming-Protokoll** (inoffiziell, lokal) | sehr gering | für LED-Strips mit Segmenten: Lauflichter, Spektrum-Anzeige |
+| **Govee Cloud API** (Developer-Key) | 0,5–2 s, Rate-Limit | nur für langsame Dinge: Szene „Party“ an/aus, Grundfarbe pro Song |
+
+Funktionen: Grundfarbe aus dem Album-Cover, Puls auf Kick, Farbwechsel im Refrain, Strobe-Akzent bei Drops (mit Helligkeits-/Frequenzgrenze, Fotosensitivitäts-Schutz), Rückfall auf ruhiges Licht, wenn nichts läuft. Geräte werden in den Einstellungen gruppiert (z. B. „Hinter dem Display“, „Decke“).
+
+### Alexa
+
+- **Eigener Alexa-Skill** („Sonic Stage“, Deutsch), Endpunkt als Next.js-Route-Handler auf Vercel, Account-Linking über das Spotify-Login.
+- Sprachbefehle (Beispiele): „Alexa, sag Sonic Stage, Party-Modus an“, „… welcher Song läuft?“, „… mehr Tänzer“, „… Lichter aus“, „… zeig Infos zur Band“, „… Lyrics größer“.
+- Befehle gelangen in Echtzeit zum Dashboard (Server-Sent Events bzw. Upstash-Redis-Pub/Sub).
+- Zusätzlich ein **virtuelles Smart-Home-Gerät** („Party-Modus“ als Schalter), damit Alexa-Routinen das Dashboard auslösen können, z. B. „Alexa, Party!“ → Spotify-Playlist starten + Dashboard-Party-Modus + Govee-Szene.
+- Spotify-Wiedergabe auf einem Echo wird ganz normal erkannt, da die App den Spotify-Account abfragt, nicht das Gerät.
+
+---
+
+## 11b. Ausbaustufe 4: Band-Fotos & Infotexte
+
+**Quellen** (serverseitig mit Cache in Redis, 7 Tage):
+1. **MusicBrainz** – eindeutige Artist-ID aus Artistname + ISRC, verknüpft mit Wikidata/Wikipedia.
+2. **Wikipedia (de, Fallback en)** – REST-Endpunkt `page/summary`: Kurztext, Gründungsjahr, Herkunft; bei englischem Fallback Hinweis „Text aus der englischen Wikipedia“.
+3. **Wikimedia Commons / Wikidata** – frei lizenzierte Band-Fotos (mit Urheber- und Lizenzangabe im Bild, wie von CC-BY-SA verlangt).
+4. **Spotify-Artist-Bilder** und **TheAudioDB** (Fanart, Banner, Logos) als zusätzliche Bildquellen.
+5. Optional **Wikipedia-Artikel zum Album/Song** für Trivia („Erschienen 1997, Platz 1 in Deutschland“).
+
+**Darstellung (abwechselnd, ohne die Lyrics zu verdrängen):**
+- **Intro/Outro & Instrumentalteile** (> 8 s ohne Text): Vollbild-Infokarte mit Foto (langsamer Ken-Burns-Zoom), Bandname, 2–3 Sätze Text.
+- **Während Strophen:** Fotos laufen auf der LED-Rückwand der Bühne (Stufe 2) oder als gedimmter Hintergrund.
+- **Feature-Songs:** kurze Vorstellung jedes beteiligten Artists mit Foto neben „seinem“ Avatar.
+- **Fakten-Ticker:** einzelne Kurzfakten blenden zwischen Refrains ein.
 
 ---
 
@@ -318,15 +396,19 @@ LRC/TTML/Richsync-Parser, Provider-Ranking, Silben-Verteilung, PlaybackClock-Int
 | M6 | Lyrics-Ausbau | weitere Provider (Musixmatch/Apple per Key, opt-in-Quellen), Wort-Schätzung + Mikro-Verfeinerung, alle Darstellungsmodi, LyricsDirector |
 | M7 | QA | Playwright-Szenarien, Screenshots, Visual-Regression, CodeQL/Gitleaks/Dependabot, Branch-Protection |
 | M8 | Stufe 2 | Bühne, LightDirector, Postprocessing |
+| M9 | Stufe 3a | Pi-Bridge, Govee LAN/Segment-Steuerung |
+| M10 | Stufe 3b | Alexa-Skill, Echtzeit-Kanal, virtuelles Smart-Home-Gerät |
+| M11 | Stufe 4 | MusicBrainz/Wikipedia/Commons-Anbindung, Infokarten, Fotos auf der LED-Wand |
 
 ---
 
 ## 13. Offene Fragen
 
-1. **Gerät:** Welches 10-Zoll-Display genau (Auflösung, Tablet oder Monitor an Raspberry Pi/Mini-PC)? Davon hängen Avatar-Anzahl und Effektstufe ab.
-2. **Browser:** Chrome/Chromium im Kiosk-Modus möglich? (Android-Tablet, iPad und Pi verhalten sich bei Mikrofon/WebGL unterschiedlich.)
-3. **Spotify-Developer-App:** Vorhanden oder soll ich die Einrichtung dokumentieren? Premium-Account (für Steuerung nötig)?
-4. **Lyrics-Provider:** Gibt es einen Musixmatch-Key oder Apple-Developer-Account? Sollen inoffizielle Wort-Sync-Quellen (opt-in, nur privat) überhaupt eingebaut werden?
-5. **Mikrofon:** Steht das Dashboard nahe am Lautsprecher? (Bestimmt die Kalibrierung.)
-6. **Sprache der UI:** Deutsch, Englisch oder beides?
-7. **Screenshots:** Sollen die Referenz-Screenshots im Repo versioniert werden (empfohlen) oder nur als CI-Artefakte?
+1. **Display-Auflösung** – sobald bekannt, wird das passende Profil zum Standard-Screenshot-Viewport (das Layout funktioniert vorher schon auflösungsunabhängig).
+2. **Raspberry-Pi-Modell** (Pi 4 oder Pi 5, RAM)? Davon hängt die Zahl der Tänzer ab.
+3. **USB-Mikrofon** vorhanden, und steht das Dashboard nahe am Lautsprecher?
+4. **Govee-Geräte:** welche Modelle (LAN-fähig? Strips mit Segmenten?) – erst für Stufe 3 nötig.
+5. **Screenshots:** Referenz-Screenshots im Repo versionieren (empfohlen) oder nur als CI-Artefakte?
+
+### Geklärt
+- Raspberry Pi, Chromium im Kiosk-Modus · Spotify-Developer-App + Premium vorhanden · kein Apple-Developer-Zugang · inoffizielle Lyrics-Quellen erwünscht (Referenz: `simonroedig/SpotifyLyrics`) · Oberfläche nur Deutsch · Feature-Songs mit mehreren Tänzern, viel Abwechslung beim Tanzen · spätere Stufen: Govee, Alexa, Band-Fotos und Wikipedia-Texte.
