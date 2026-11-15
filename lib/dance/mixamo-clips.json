@@ -342,10 +342,8 @@
       "genres": ["hip hop", "breakbeat"],
       "fallback": "Dance_PowerHit",
       "auto": true,
-      "file": "/animations/Mixamo_BreakdanceFootworkToIdle.json?v=7260999dbd31",
-      "beats": 12,
-      "detectedBpm": 100,
-      "skip": true
+      "skip": true,
+      "duplicateOf": "Mixamo_BreakdanceFootworkToIdle_2"
     },
     {
       "id": "Mixamo_BreakdanceFreezeVar1",
@@ -379,9 +377,8 @@
       "genres": ["hip hop", "breakbeat"],
       "fallback": "Dance_PowerHit",
       "auto": true,
-      "file": "/animations/Mixamo_BreakdanceFreezeVar2.json?v=2e9f14c0b44b",
-      "beats": 8,
-      "detectedBpm": 150
+      "duplicateOf": "Mixamo_BreakdanceFreezeVar2_1",
+      "skip": true
     },
     {
       "id": "Mixamo_BreakdanceFreezeVar3_1",
@@ -403,9 +400,8 @@
       "genres": ["hip hop", "breakbeat"],
       "fallback": "Dance_PowerHit",
       "auto": true,
-      "file": "/animations/Mixamo_BreakdanceFreezeVar3.json?v=1b3669c948d3",
-      "beats": 8,
-      "detectedBpm": 100
+      "duplicateOf": "Mixamo_BreakdanceFreezeVar3_1",
+      "skip": true
     },
     {
       "id": "Mixamo_BreakdanceFreezeVar4",
@@ -547,9 +543,8 @@
       "genres": ["hip hop", "breakbeat"],
       "fallback": "Dance_PowerHit",
       "auto": true,
-      "file": "/animations/Mixamo_BreakdanceUprock.json?v=002135283ec6",
-      "beats": 8,
-      "detectedBpm": 150
+      "duplicateOf": "Mixamo_BreakdanceUprock_2",
+      "skip": true
     },
     {
       "id": "Mixamo_BrooklynUprock",
@@ -945,9 +940,8 @@
       "genres": ["swing", "jazz", "soul"],
       "fallback": "Dance_JazzSwing",
       "auto": true,
-      "file": "/animations/Mixamo_JazzDancing_5.json?v=7946e58ca973",
-      "beats": 4,
-      "detectedBpm": 100
+      "duplicateOf": "Mixamo_JazzDancing_3",
+      "skip": true
     },
     {
       "id": "Mixamo_JazzDancing",

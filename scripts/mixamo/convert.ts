@@ -7,14 +7,14 @@
  * Schreibt public/animations/<id>.json und ergänzt lib/dance/mixamo-clips.json (Datei, Tempo, Länge).
  */
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { AnimationClip } from "three";
 import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js";
-import { packClip } from "../../lib/dance/clip-pack";
-import type { MixamoEntry } from "../../lib/dance/mixamo";
+import { packClip, unpackClip, type PackedClip } from "../../lib/dance/clip-pack";
+import { isTransition, type MixamoEntry } from "../../lib/dance/mixamo";
 import { estimateBpm, makeLoop, restFromGltf, retargetSamples, type RestBone } from "../../lib/dance/retarget";
-import { autoEntry, energyFromMotion } from "./auto";
+import { autoEntry, DUPLICATE_DISTANCE, energyFromMotion, motionSignature, signatureDistance } from "./auto";
 import { installImageStub } from "./no-dom";
 import { format, resolveConfig } from "prettier";
 
@@ -57,6 +57,7 @@ async function main() {
   }
   mkdirSync(OUT_DIR, { recursive: true });
   const failed: string[] = [];
+  const signatures = new Map<string, number[]>();
 
   // FBX ohne Katalogeintrag (z. B. „Hip Hop Dancing (2).fbx“) automatisch aufnehmen
   const known = new Set(catalog.clips.map((e) => findSource(e, files)).filter((f): f is string => !!f));
@@ -76,7 +77,18 @@ async function main() {
       continue;
     }
     try {
-      const line = convertOne(entry, file, rest);
+      const { line, signature } = convertOne(entry, file, rest);
+      signatures.set(entry.id, signature);
+      // derselbe Tanz schon unter anderem Namen/Nummer da? Dann bleibt der zuerst eingetragene.
+      const twin = findTwin(entry, catalog.clips, signatures);
+      if (twin) {
+        const [keep, drop] = catalog.clips.indexOf(twin) < catalog.clips.indexOf(entry) ? [twin, entry] : [entry, twin];
+        markDuplicate(drop, keep);
+        console.log(`= ${drop.id}: ${drop.source} ist derselbe Tanz wie ${keep.id} (${keep.source}) – übersprungen`);
+        if (drop === entry) continue;
+      }
+      delete entry.duplicateOf;
+      if (entry.auto) entry.skip = isTransition(entry.search) || undefined;
       const neu = entry.auto
         ? ` · auto: Energie ${entry.energy}, Stil ${entry.genres[0]}, Ersatz ${entry.fallback}${entry.skip ? " · übersprungen (Übergang)" : ""}`
         : "";
@@ -109,8 +121,44 @@ export function loopLength(availableFrames: number, beatFrames: number): { beats
   return blend >= 2 ? { beats: 4, blend } : { beats: 0, blend: ideal };
 }
 
+/** Fingerabdruck eines bereits umgewandelten Tanzes aus seiner Clip-Datei (für Tänze, die in diesem Lauf nicht neu umgewandelt werden). */
+function storedSignature(entry: MixamoEntry): number[] | undefined {
+  const path = join(OUT_DIR, `${entry.id}.json`);
+  if (!entry.file || !existsSync(path)) return undefined;
+  const clip = unpackClip(JSON.parse(readFileSync(path, "utf8")) as PackedClip);
+  const rotations = new Map(
+    clip.tracks.filter((t) => t.name.endsWith(".quaternion")).map((t) => [t.name.split(".")[0]!, t.values] as const),
+  );
+  const frames = (clip.tracks[0]?.times.length ?? 1) - 1; // ohne den angehängten Schlussframe
+  return motionSignature(rotations, frames);
+}
+
+/** Anderer umgewandelter Tanz mit (fast) identischer Bewegung */
+function findTwin(entry: MixamoEntry, all: MixamoEntry[], signatures: Map<string, number[]>): MixamoEntry | undefined {
+  const mine = signatures.get(entry.id)!;
+  for (const other of all) {
+    if (other === entry || other.duplicateOf || !other.file) continue;
+    if (!signatures.has(other.id)) {
+      const sig = storedSignature(other);
+      if (!sig) continue;
+      signatures.set(other.id, sig);
+    }
+    if (signatureDistance(mine, signatures.get(other.id)!) < DUPLICATE_DISTANCE) return other;
+  }
+  return undefined;
+}
+
+function markDuplicate(drop: MixamoEntry, keep: MixamoEntry) {
+  rmSync(join(OUT_DIR, `${drop.id}.json`), { force: true });
+  delete drop.file;
+  delete drop.beats;
+  delete drop.detectedBpm;
+  drop.duplicateOf = keep.id;
+  drop.skip = true;
+}
+
 /** Eine FBX-Datei umwandeln; liefert die Erfolgszeile oder wirft mit verständlicher Meldung. */
-function convertOne(entry: MixamoEntry, file: string, rest: RestBone[]): string {
+function convertOne(entry: MixamoEntry, file: string, rest: RestBone[]): { line: string; signature: number[] } {
   const buf = readFileSync(join(SRC_DIR, file));
   const group = new FBXLoader().parse(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength), "");
   const clip = [...group.animations].sort((a, b) => b.duration - a.duration)[0] as AnimationClip | undefined;
@@ -154,7 +202,10 @@ function convertOne(entry: MixamoEntry, file: string, rest: RestBone[]): string 
   writeFileSync(join(OUT_DIR, `${entry.id}.json`), json);
   Object.assign(entry, { file: `/animations/${entry.id}.json?v=${sha}`, beats, detectedBpm: detected ?? undefined });
   const tempo = entry.bpm ? "" : detected ? " (geschätzt)" : " (Standard – bitte im Katalog angeben)";
-  return `${bpm} BPM${tempo} · ${beats} Schläge · ${(json.length / 1024).toFixed(0)} KB`;
+  return {
+    line: `${bpm} BPM${tempo} · ${beats} Schläge · ${(json.length / 1024).toFixed(0)} KB`,
+    signature: motionSignature(loop.rotations, loop.frames),
+  };
 }
 
 // nur als Skript ausführen, nicht beim Import (Tests)

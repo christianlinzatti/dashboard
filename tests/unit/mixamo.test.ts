@@ -474,3 +474,46 @@ describe("Großer Katalog", () => {
     expect(autoEntry("Hip Hop Dancing (7).fbx").skip).toBeUndefined();
   });
 });
+
+describe("Doppelte Tänze", () => {
+  const loadSig = async (id: string) => {
+    const { unpackClip } = await import("@/lib/dance/clip-pack");
+    const { motionSignature } = await import("@/scripts/mixamo/auto");
+    const clip = unpackClip(JSON.parse(readFileSync(join(process.cwd(), "public/animations", `${id}.json`), "utf8")));
+    const rot = new Map(
+      clip.tracks.filter((t) => t.name.endsWith(".quaternion")).map((t) => [t.name.split(".")[0]!, t.values] as const),
+    );
+    return { rot, frames: clip.tracks[0]!.times.length - 1, sig: motionSignature(rot, clip.tracks[0]!.times.length - 1) };
+  };
+
+  it("derselbe Tanz (auch leicht verrauscht) gilt als doppelt, Varianten nicht", async () => {
+    const { DUPLICATE_DISTANCE, motionSignature, signatureDistance } = await import("@/scripts/mixamo/auto");
+    const a = await loadSig("Mixamo_HipHopDancing_3");
+    const b = await loadSig("Mixamo_HipHopDancing_7");
+    // erneuter Download: minimale Abweichungen durch Rundung
+    const noisy = new Map([...a.rot].map(([k, v]) => [k, Float32Array.from(v, (x, i) => x + ((i % 7) - 3) * 1e-4)] as const));
+    expect(signatureDistance(a.sig, motionSignature(noisy, a.frames))).toBeLessThan(DUPLICATE_DISTANCE);
+    expect(signatureDistance(a.sig, b.sig)).toBeGreaterThan(DUPLICATE_DISTANCE * 3);
+    expect(signatureDistance(a.sig, [])).toBe(Infinity);
+  });
+
+  it("der Katalog im Repo enthält keinen Tanz doppelt", async () => {
+    const { default: catalog } = await import("@/lib/dance/mixamo-clips.json");
+    const { DUPLICATE_DISTANCE, signatureDistance } = await import("@/scripts/mixamo/auto");
+    const entries = (catalog.clips as Array<{ id: string; file?: string; duplicateOf?: string }>).filter((c) => c.file);
+    const sigs = await Promise.all(entries.map(async (e) => [e.id, (await loadSig(e.id)).sig] as const));
+    const twins: string[] = [];
+    for (let i = 0; i < sigs.length; i++)
+      for (let j = i + 1; j < sigs.length; j++)
+        if (signatureDistance(sigs[i]![1], sigs[j]![1]) < DUPLICATE_DISTANCE) twins.push(`${sigs[i]![0]} = ${sigs[j]![0]}`);
+    expect(twins).toEqual([]);
+    // als doppelt markierte Einträge verweisen auf einen vorhandenen Tanz und werden nicht eingeplant
+    for (const d of (catalog.clips as Array<{ id: string; duplicateOf?: string; skip?: boolean; file?: string }>).filter(
+      (c) => c.duplicateOf,
+    )) {
+      expect(entries.map((e) => e.id)).toContain(d.duplicateOf);
+      expect(d.skip).toBe(true);
+      expect(d.file).toBeUndefined();
+    }
+  });
+});

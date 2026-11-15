@@ -42,6 +42,17 @@ Jede FBX in `mixamo/`, die nicht im Katalog steht, wird automatisch aufgenommen:
 | Genres und Ersatz-Clip | aus Stichwörtern im Namen (Hip Hop, Samba, Swing, Breakdance, Robot, Shuffle …) |
 | Energie | aus der Bewegung gemessen (Drehgeschwindigkeit der Gelenke und Hüftwippen) |
 
+**Doppelte Downloads** erkennt das Skript an der Bewegung, nicht am Namen. Es vergleicht einen
+Fingerabdruck aus jedem umgewandelten Tanz. Derselbe Tanz zweimal heruntergeladen hat praktisch denselben
+Fingerabdruck, verschiedene Varianten unterscheiden sich deutlich. Der zuerst eingetragene Tanz bleibt,
+der doppelte wird übersprungen:
+
+```
+= Mixamo_JazzDancing_5: Jazz Dancing (5).fbx ist derselbe Tanz wie Mixamo_JazzDancing_3 (Jazz Dancing (3).fbx) – übersprungen
+```
+
+Im Katalog steht er dann mit `"duplicateOf"` und `"skip": true`.
+
 Solche Einträge tragen `"auto": true`, und ihre Energie wird bei jeder Umwandlung neu gemessen. Willst du
 Energie oder Genres selbst festlegen, ändere den Eintrag und entferne `auto`.
 

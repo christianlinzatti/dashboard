@@ -100,3 +100,33 @@ export function autoEntry(file: string): MixamoEntry {
     ...(isTransition(name) ? { skip: true } : {}),
   };
 }
+
+/**
+ * Bewegungs-Fingerabdruck eines umgewandelten Tanzes: je Knochen und Quaternion-Komponente Mittelwert und
+ * Streuung (Beträge, damit q/−q gleich zählen). Derselbe Tanz zweimal heruntergeladen → Abstand ≈ 0;
+ * verschiedene Varianten (z. B. „Hip Hop Dancing (3)“ vs. „(4)“) liegen bei ≥ 0,02.
+ */
+export function motionSignature(rotations: Map<string, ArrayLike<number>>, frames: number): number[] {
+  const out: number[] = [];
+  for (const name of [...rotations.keys()].sort()) {
+    const r = rotations.get(name)!;
+    for (let k = 0; k < 4; k++) {
+      let mean = 0;
+      for (let f = 0; f < frames; f++) mean += Math.abs(r[f * 4 + k]!);
+      mean /= frames;
+      let v = 0;
+      for (let f = 0; f < frames; f++) v += (Math.abs(r[f * 4 + k]!) - mean) ** 2;
+      out.push(mean, Math.sqrt(v / frames));
+    }
+  }
+  return out;
+}
+
+export const DUPLICATE_DISTANCE = 0.005;
+
+export function signatureDistance(a: number[], b: number[]): number {
+  if (a.length !== b.length || !a.length) return Infinity;
+  let s = 0;
+  for (let i = 0; i < a.length; i++) s += (a[i]! - b[i]!) ** 2;
+  return Math.sqrt(s / a.length);
+}

@@ -29,6 +29,8 @@ export type MixamoEntry = {
   auto?: boolean;
   /** nicht in der Choreografie verwenden (z. B. Übergänge wie „Footwork To Idle“, die als Schleife seltsam wirken) */
   skip?: boolean;
+  /** derselbe Tanz wie dieser Eintrag (doppelt heruntergeladen) – wird nicht umgewandelt */
+  duplicateOf?: string;
 };
 
 export const MIXAMO: MixamoEntry[] = (catalog.clips as MixamoEntry[]).map((c) => ({ ...c }));
