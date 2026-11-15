@@ -64,6 +64,8 @@ export const snapshotSchema = z.object({
     .max(5)
     .optional(),
   /** Kurzinfos zu den Artists (erster Satz aus Wikipedia, Fakten) */
+  /** Song-Hintergründe (Genius): Produzenten, Songwriter, Samples */
+  trivia: z.array(z.string().max(200)).max(5).optional(),
   about: z
     .array(
       z.object({
@@ -141,9 +143,11 @@ export function firstSentence(text: string): string {
   return out.length > 300 ? `${out.slice(0, 297).trimEnd()}…` : out;
 }
 
-function extras(song: SongStatic): Pick<Snapshot, "user" | "concerts" | "about"> {
+function extras(song: SongStatic): Pick<Snapshot, "user" | "concerts" | "about" | "trivia"> {
   const name = (id: string) => song.artists.find((a) => a.spotifyId === id)?.name;
-  const out: Pick<Snapshot, "user" | "concerts" | "about"> = {};
+  const out: Pick<Snapshot, "user" | "concerts" | "about" | "trivia"> = {};
+  const trivia = song.info?.song?.trivia?.filter(Boolean).slice(0, 5);
+  if (trivia?.length) out.trivia = trivia.map((t) => t.slice(0, 200));
   if (song.user) {
     const { trackSaved, lovedOnLastfm, trackPlays, artists } = song.user;
     out.user = {

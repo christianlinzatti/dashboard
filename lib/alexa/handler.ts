@@ -177,6 +177,26 @@ function aboutAnswer(s: Snapshot, spoken: string | undefined): string {
   return `${a.summary ?? a.name}${facts}`;
 }
 
+/** Trivia-Zeilen für die Sprachausgabe: Abkürzungen ausschreiben, als Sätze. */
+function spokenTrivia(lines: string[]): string {
+  return lines
+    .map((t) => t.replace(/\bu\. a\./g, "und andere").replace(/\s+$/, ""))
+    .map((t) => (/[.!?]$/.test(t) ? t : `${t}.`))
+    .join(" ");
+}
+
+const SAMPLE_LINE = /^(Sampelt|Zitiert|Coverversion|Wurde in)/;
+
+function triviaAnswer(s: Snapshot, onlySamples: boolean): string {
+  const all = s.trivia ?? [];
+  const lines = onlySamples ? all.filter((t) => SAMPLE_LINE.test(t)) : all.slice(0, 3);
+  if (!lines.length)
+    return onlySamples
+      ? `Zu ${s.title} kenne ich kein Sample und keine Coverversion.`
+      : `Zu ${s.title} habe ich keine Hintergründe gefunden.`;
+  return `Zu ${s.title}: ${spokenTrivia(lines)}`;
+}
+
 const onOff = (v: string | undefined) => (v === "an" ? true : v === "aus" ? false : undefined);
 
 /** Beantwortet eine (bereits geprüfte) Alexa-Anfrage. Sprache: Deutsch. */
@@ -263,6 +283,12 @@ export async function handleAlexa(req: AlexaRequest, deps: HandlerDeps) {
       const s = await live();
       if (!s) return speak("Das Dashboard ist gerade nicht aktiv.");
       return speak(likeAnswer(s, slotRaw(req, "kuenstler")));
+    }
+    case "SongTriviaIntent":
+    case "SampleIntent": {
+      const s = await live();
+      if (!s) return speak("Das Dashboard ist gerade nicht aktiv.");
+      return speak(triviaAnswer(s, intent === "SampleIntent"));
     }
     case "BandInfoIntent": {
       const s = await live();

@@ -348,6 +348,30 @@ describe("Alexa: Konzerte, Hörstatistik, Likes, Band-Infos", () => {
     ]);
   });
 
+  it("Song-Trivia und Samples (Genius), Abkürzungen ausgeschrieben", async () => {
+    const withTrivia = {
+      ...full(),
+      trivia: [
+        "Produziert von Max Martin, Shellback u. a.",
+        "Mitgeschrieben von Kai Vento",
+        "Sampelt „Blue Monday“ von New Order",
+      ],
+    };
+    expect(await ask("SongTriviaIntent", {}, withTrivia)).toBe(
+      "Zu Neonlicht: Produziert von Max Martin, Shellback und andere. Mitgeschrieben von Kai Vento. Sampelt „Blue Monday“ von New Order.",
+    );
+    expect(await ask("SampleIntent", {}, withTrivia)).toBe("Zu Neonlicht: Sampelt „Blue Monday“ von New Order.");
+    const noSample = { ...full(), trivia: ["Produziert von Max Martin"] };
+    expect(await ask("SampleIntent", {}, noSample)).toBe("Zu Neonlicht kenne ich kein Sample und keine Coverversion.");
+    expect(await ask("SongTriviaIntent", {}, { ...full(), trivia: undefined })).toBe(
+      "Zu Neonlicht habe ich keine Hintergründe gefunden.",
+    );
+  });
+
+  it("Schnappschuss übernimmt die Trivia des Demo-Songs", () => {
+    expect(full().trivia).toEqual(["Produziert von Lumen Labs"]);
+  });
+
   it("Erscheinungsjahr mit Album", async () => {
     expect(await ask("ErscheinungsjahrIntent")).toBe("Neonlicht ist 2026 erschienen, auf dem Album Stadt aus Glas.");
     expect(await ask("ErscheinungsjahrIntent", {}, { ...full(), releaseYear: null })).toBe(
