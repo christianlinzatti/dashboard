@@ -7,9 +7,9 @@
       "energy": 2,
       "genres": ["hip hop", "rap", "trap", "r&b"],
       "fallback": "Dance_HipHop",
-      "file": "/animations/Mixamo_HipHop.json?v=f9faa0e55e63",
-      "beats": 20,
-      "detectedBpm": 100
+      "file": "/animations/Mixamo_HipHop.json?v=4a1a2f6eb5da",
+      "beats": 8,
+      "detectedBpm": 138.5
     },
     {
       "id": "Mixamo_Breakdance",
@@ -61,7 +61,10 @@
       "search": "Silly Dancing",
       "energy": 2,
       "genres": ["pop", "dance", "party"],
-      "fallback": "Dance_Groove"
+      "fallback": "Dance_Groove",
+      "file": "/animations/Mixamo_Silly.json?v=3a6cbe7cf690",
+      "beats": 4,
+      "detectedBpm": 90
     },
     {
       "id": "Mixamo_Swing",
@@ -80,7 +83,10 @@
       "search": "Thriller",
       "energy": 2,
       "genres": ["pop", "funk", "disco"],
-      "fallback": "Dance_PopLock"
+      "fallback": "Dance_PopLock",
+      "file": "/animations/Mixamo_Thriller.json?v=ef84d3c6a77d",
+      "beats": 28,
+      "detectedBpm": 100
     },
     {
       "id": "Mixamo_Gangnam",
@@ -88,7 +94,10 @@
       "search": "Gangnam Style",
       "energy": 3,
       "genres": ["k-pop", "pop", "dance"],
-      "fallback": "Dance_FestivalBounce"
+      "fallback": "Dance_FestivalBounce",
+      "file": "/animations/Mixamo_Gangnam.json?v=d55fd6d7f00f",
+      "beats": 24,
+      "detectedBpm": 128.6
     },
     {
       "id": "Mixamo_Rumba",
@@ -126,7 +135,10 @@
       "search": "Wave Hip Hop Dance",
       "energy": 1,
       "genres": ["r&b", "hip hop", "soul"],
-      "fallback": "Dance_LiquidWave"
+      "fallback": "Dance_LiquidWave",
+      "file": "/animations/Mixamo_Wave.json?v=77e830c18519",
+      "beats": 24,
+      "detectedBpm": 100
     },
     {
       "id": "Mixamo_Twist",
@@ -134,7 +146,10 @@
       "search": "Twist Dance",
       "energy": 2,
       "genres": ["rock", "rock'n'roll", "oldies", "schlager"],
-      "fallback": "Dance_RockDrive"
+      "fallback": "Dance_RockDrive",
+      "file": "/animations/Mixamo_Twist.json?v=8b274e29651d",
+      "beats": 12,
+      "detectedBpm": 100
     },
     {
       "id": "Mixamo_Jump",
