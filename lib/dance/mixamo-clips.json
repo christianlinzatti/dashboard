@@ -5,47 +5,89 @@
       "source": "Hip Hop Dancing.fbx",
       "search": "Hip Hop Dancing",
       "energy": 2,
-      "genres": ["hip hop", "rap", "trap", "r&b"],
-      "fallback": "Dance_HipHop"
+      "genres": [
+        "hip hop",
+        "rap",
+        "trap",
+        "r&b"
+      ],
+      "fallback": "Dance_HipHop",
+      "file": "/animations/Mixamo_HipHop.json?v=f9faa0e55e63",
+      "beats": 20,
+      "detectedBpm": 100
     },
     {
       "id": "Mixamo_Breakdance",
       "source": "Breakdance Uprock Var 2.fbx",
       "search": "Breakdance Uprock",
       "energy": 3,
-      "genres": ["hip hop", "rap", "breakbeat"],
-      "fallback": "Dance_PowerHit"
+      "genres": [
+        "hip hop",
+        "rap",
+        "breakbeat"
+      ],
+      "fallback": "Dance_PowerHit",
+      "file": "/animations/Mixamo_Breakdance.json?v=ca6937c9e1ae",
+      "beats": 8,
+      "detectedBpm": 138.5
     },
     {
       "id": "Mixamo_Samba",
       "source": "Samba Dancing.fbx",
       "search": "Samba Dancing",
       "energy": 2,
-      "genres": ["latin", "samba", "reggaeton", "brazil"],
-      "fallback": "Dance_LatinSway"
+      "genres": [
+        "latin",
+        "samba",
+        "reggaeton",
+        "brazil"
+      ],
+      "fallback": "Dance_LatinSway",
+      "file": "/animations/Mixamo_Samba.json?v=899f5e067193",
+      "beats": 48,
+      "detectedBpm": 150
     },
     {
       "id": "Mixamo_Salsa",
       "source": "Salsa Dancing.fbx",
       "search": "Salsa Dancing",
       "energy": 1,
-      "genres": ["latin", "salsa", "bachata"],
-      "fallback": "Dance_LatinSway"
+      "genres": [
+        "latin",
+        "salsa",
+        "bachata"
+      ],
+      "fallback": "Dance_LatinSway",
+      "file": "/animations/Mixamo_Salsa.json?v=c292327333c2",
+      "beats": 44,
+      "detectedBpm": 102.9
     },
     {
       "id": "Mixamo_Shuffle",
       "source": "Shuffling.fbx",
       "search": "Shuffling",
       "energy": 3,
-      "genres": ["techno", "house", "edm", "electro"],
-      "fallback": "Dance_Shuffle"
+      "genres": [
+        "techno",
+        "house",
+        "edm",
+        "electro"
+      ],
+      "fallback": "Dance_Shuffle",
+      "file": "/animations/Mixamo_Shuffle.json?v=5adc27d0568c",
+      "beats": 8,
+      "detectedBpm": 94.7
     },
     {
       "id": "Mixamo_Silly",
       "source": "Silly Dancing.fbx",
       "search": "Silly Dancing",
       "energy": 2,
-      "genres": ["pop", "dance", "party"],
+      "genres": [
+        "pop",
+        "dance",
+        "party"
+      ],
       "fallback": "Dance_Groove"
     },
     {
@@ -53,15 +95,27 @@
       "source": "Swing Dancing.fbx",
       "search": "Swing Dancing",
       "energy": 1,
-      "genres": ["swing", "jazz", "rockabilly", "soul"],
-      "fallback": "Dance_JazzSwing"
+      "genres": [
+        "swing",
+        "jazz",
+        "rockabilly",
+        "soul"
+      ],
+      "fallback": "Dance_JazzSwing",
+      "file": "/animations/Mixamo_Swing.json?v=a76f54f57e2f",
+      "beats": 36,
+      "detectedBpm": 94.7
     },
     {
       "id": "Mixamo_Thriller",
       "source": "Thriller Part 2.fbx",
       "search": "Thriller",
       "energy": 2,
-      "genres": ["pop", "funk", "disco"],
+      "genres": [
+        "pop",
+        "funk",
+        "disco"
+      ],
       "fallback": "Dance_PopLock"
     },
     {
@@ -69,7 +123,11 @@
       "source": "Gangnam Style.fbx",
       "search": "Gangnam Style",
       "energy": 3,
-      "genres": ["k-pop", "pop", "dance"],
+      "genres": [
+        "k-pop",
+        "pop",
+        "dance"
+      ],
       "fallback": "Dance_FestivalBounce"
     },
     {
@@ -77,7 +135,11 @@
       "source": "Rumba Dancing.fbx",
       "search": "Rumba Dancing",
       "energy": 0,
-      "genres": ["latin", "bolero", "ballad"],
+      "genres": [
+        "latin",
+        "bolero",
+        "ballad"
+      ],
       "fallback": "Dance_Waltz"
     },
     {
@@ -85,23 +147,41 @@
       "source": "Belly Dance.fbx",
       "search": "Belly Dance",
       "energy": 1,
-      "genres": ["arab", "oriental", "world"],
-      "fallback": "Dance_LiquidWave"
+      "genres": [
+        "arab",
+        "oriental",
+        "world"
+      ],
+      "fallback": "Dance_LiquidWave",
+      "file": "/animations/Mixamo_Bellydance.json?v=67d9525519cd",
+      "beats": 32,
+      "detectedBpm": 100
     },
     {
       "id": "Mixamo_Robot",
       "source": "Robot Hip Hop Dance.fbx",
       "search": "Robot Hip Hop Dance",
       "energy": 2,
-      "genres": ["electro", "techno", "synth"],
-      "fallback": "Dance_Robot"
+      "genres": [
+        "electro",
+        "techno",
+        "synth"
+      ],
+      "fallback": "Dance_Robot",
+      "file": "/animations/Mixamo_Robot.json?v=bd77345723f0",
+      "beats": 24,
+      "detectedBpm": 100
     },
     {
       "id": "Mixamo_Wave",
       "source": "Wave Hip Hop Dance.fbx",
       "search": "Wave Hip Hop Dance",
       "energy": 1,
-      "genres": ["r&b", "hip hop", "soul"],
+      "genres": [
+        "r&b",
+        "hip hop",
+        "soul"
+      ],
       "fallback": "Dance_LiquidWave"
     },
     {
@@ -109,7 +189,12 @@
       "source": "Twist Dance.fbx",
       "search": "Twist Dance",
       "energy": 2,
-      "genres": ["rock", "rock'n'roll", "oldies", "schlager"],
+      "genres": [
+        "rock",
+        "rock'n'roll",
+        "oldies",
+        "schlager"
+      ],
       "fallback": "Dance_RockDrive"
     },
     {
@@ -117,16 +202,29 @@
       "source": "Joyful Jump.fbx",
       "search": "Joyful Jump",
       "energy": 3,
-      "genres": ["festival", "edm", "pop"],
-      "fallback": "Dance_FestivalBounce"
+      "genres": [
+        "festival",
+        "edm",
+        "pop"
+      ],
+      "fallback": "Dance_FestivalBounce",
+      "file": "/animations/Mixamo_Jump.json?v=a60c5d96aecd",
+      "beats": 4,
+      "detectedBpm": 128.6
     },
     {
       "id": "Mixamo_Tut",
       "source": "Tut Hip Hop Dance.fbx",
       "search": "Tut Hip Hop Dance",
       "energy": 1,
-      "genres": ["hip hop", "electro"],
-      "fallback": "Dance_RobotGroove"
+      "genres": [
+        "hip hop",
+        "electro"
+      ],
+      "fallback": "Dance_RobotGroove",
+      "file": "/animations/Mixamo_Tut.json?v=3deab982dba6",
+      "beats": 16,
+      "detectedBpm": 100
     }
   ]
 }
