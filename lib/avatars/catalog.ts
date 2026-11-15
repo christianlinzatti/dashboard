@@ -21,7 +21,8 @@ export const avatars: AvatarInfo[] = manifest.map((m) => {
   return {
     id,
     name: displayName(id),
-    url: `/avatars/${m.file}`,
+    // Version aus der Prüfsumme: Avatare werden ein Jahr „immutable“ gecacht – ein Update braucht eine neue Adresse
+    url: `/avatars/${m.file}?v=${m.sha256.slice(0, 12)}`,
     preview: `/avatars/${id}.png`,
     clips: m.clips.map((c) => c.name),
   };

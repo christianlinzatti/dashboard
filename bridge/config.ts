@@ -19,6 +19,15 @@ const configSchema = z.object({
       }),
     )
     .min(1),
+  /** Watchdog: Befehl, wenn das Dashboard hängt (z. B. „systemctl --user restart sonic-kiosk.service“) */
+  watchdog: z
+    .object({
+      command: z.string().min(1),
+      timeoutS: z.number().int().min(20).default(60),
+      frameStallS: z.number().int().min(10).default(30),
+      cooldownS: z.number().int().min(60).default(300),
+    })
+    .optional(),
 });
 export type BridgeConfig = z.infer<typeof configSchema>;
 

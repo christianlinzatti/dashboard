@@ -6,6 +6,7 @@ import { deviceStateFor, diffCommands, type LightSignal } from "../../bridge/map
 import { LampController } from "../../bridge/controller.ts";
 import { resolveLamps, type BridgeConfig } from "../../bridge/config.ts";
 import { createBridgeServer } from "../../bridge/server.ts";
+import { createWatchdog } from "../../bridge/watchdog.ts";
 import { discover } from "../../bridge/discovery.ts";
 
 const signal: LightSignal = { base: "#7b2cff", accent: "#ff4fd8", brightness: 0.8, pulse: 1 };
@@ -162,5 +163,90 @@ describe("Pi-Bridge (Integration)", () => {
       evil.once("error", () => r("abgewiesen"));
     });
     expect(result).toBe("abgewiesen");
+  });
+});
+
+describe("Watchdog", () => {
+  const make = () => {
+    let t = 0;
+    const stalls: string[] = [];
+    const wd = createWatchdog({
+      timeoutMs: 60_000,
+      frameStallMs: 30_000,
+      cooldownMs: 300_000,
+      onStall: (r) => void stalls.push(r),
+      now: () => t,
+    });
+    return { wd, stalls, at: (ms: number) => (t = ms) };
+  };
+
+  it("erst nach dem ersten Lebenszeichen scharf; greift bei Ausbleiben ein, dann Sperrzeit", () => {
+    const { wd, stalls, at } = make();
+    at(500_000);
+    expect(wd.check()).toBeNull(); // nie ein Lebenszeichen → nichts tun (Kiosk startet noch)
+    wd.beat(16);
+    at(550_000);
+    expect(wd.check()).toBeNull();
+    at(561_000);
+    expect(wd.check()).toBe("kein Lebenszeichen vom Dashboard");
+    expect(wd.status()).toMatchObject({ armed: false, lastReason: "kein Lebenszeichen vom Dashboard" });
+    // nach dem Neustart meldet sich die Seite wieder, hängt aber gleich erneut → Sperrzeit
+    at(600_000);
+    wd.beat(16);
+    at(700_000);
+    expect(wd.check()).toBeNull();
+    at(861_000 + 1);
+    wd.beat(16);
+    at(940_000);
+    expect(wd.check()).toBe("kein Lebenszeichen vom Dashboard");
+    expect(stalls).toHaveLength(2);
+  });
+
+  it("hängende Grafik nur bei sichtbarer Seite", () => {
+    const { wd, stalls, at } = make();
+    wd.beat(45_000, false); // verdeckt: rAF steht absichtlich
+    at(10_000);
+    expect(wd.check()).toBeNull();
+    wd.beat(45_000, true);
+    expect(wd.check()).toBe("Grafik hängt");
+    expect(stalls).toEqual(["Grafik hängt"]);
+  });
+
+  it("Lebenszeichen über die WebSocket-Verbindung, Status zeigt den Watchdog", async () => {
+    const controller = new LampController([], () => undefined);
+    const wd = createWatchdog({ onStall: () => undefined });
+    const origin = "https://dashboard.example";
+    const bridge = await createBridgeServer({ port: 0, allowedOrigins: [origin], controller, watchdog: wd });
+    cleanups.push(bridge.close);
+    const ws = new WebSocket(`ws://127.0.0.1:${bridge.port}`, { origin });
+    await new Promise((r) => ws.once("open", r));
+    ws.send(JSON.stringify({ type: "heartbeat", frameAgeMs: 17, visible: true }));
+    ws.send(JSON.stringify({ type: "heartbeat", frameAgeMs: -5, visible: true })); // ungültig → ignoriert
+    await expect.poll(() => wd.status().armed, { timeout: 2000 }).toBe(true);
+    expect(wd.status().frameAgeMs).toBe(17);
+    ws.close();
+    const status = await (await fetch(`http://127.0.0.1:${bridge.port}/status`)).json();
+    expect(status.watchdog).toMatchObject({ armed: true, frameAgeMs: 17 });
+  });
+
+  it("Konfiguration: Watchdog optional mit Standardwerten", async () => {
+    const { loadConfig } = await import("../../bridge/config.ts");
+    const { writeFile, mkdtemp } = await import("node:fs/promises");
+    const { tmpdir } = await import("node:os");
+    const dir = await mkdtemp(`${tmpdir()}/bridge-`);
+    await writeFile(
+      `${dir}/c.json`,
+      JSON.stringify({
+        allowedOrigins: ["https://x.example"],
+        lamps: [{ name: "A", role: "puls", ip: "1.2.3.4" }],
+        watchdog: { command: "true" },
+      }),
+    );
+    expect((await loadConfig(`${dir}/c.json`)).watchdog).toEqual({
+      command: "true",
+      timeoutS: 60,
+      frameStallS: 30,
+      cooldownS: 300,
+    });
   });
 });

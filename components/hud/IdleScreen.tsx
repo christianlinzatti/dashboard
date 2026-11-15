@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { idleBrightness } from "@/lib/live/idle-dim";
 import type { SpotifyStatus } from "../spotify/useSpotifySync";
 import { RecentList } from "../personal/RecentList";
 
@@ -39,13 +41,32 @@ function texts(status: SpotifyStatus, unknownDemo?: string): { title: string; te
   }
 }
 
+/** Leerlauf-Helligkeit: misst ab dem Erscheinen des Startbildschirms, Antippen setzt zurück. */
+function useIdleBrightness() {
+  const [since, setSince] = useState(() => Date.now());
+  const [level, setLevel] = useState(1);
+  useEffect(() => {
+    const id = setInterval(() => setLevel(idleBrightness(Date.now() - since)), 15_000);
+    return () => clearInterval(id);
+  }, [since]);
+  const wake = () => {
+    setSince(Date.now());
+    setLevel(1);
+  };
+  return { level, wake };
+}
+
 export function IdleScreen({ status, unknownDemo, loginError }: Props) {
   const { title, text } = texts(status, unknownDemo);
+  const { level, wake } = useIdleBrightness();
   return (
     <div
-      className="flex h-full flex-col items-center justify-center gap-[3vmin] px-6 text-center"
+      className="burnin-drift flex h-full flex-col items-center justify-center gap-[3vmin] px-6 text-center transition-opacity duration-[3000ms]"
+      style={{ opacity: level }}
+      onPointerDown={wake}
       data-testid="idle"
       data-status={status.kind}
+      data-dim={level}
     >
       <div className="size-[14vmin] animate-pulse rounded-full bg-gradient-to-br from-fuchsia-500 to-cyan-400 opacity-80 blur-[1px]" />
       <h1 className="text-[clamp(24px,6vmin,64px)] font-bold">{title}</h1>

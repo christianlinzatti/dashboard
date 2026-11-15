@@ -69,3 +69,18 @@ describe("Bildrate", () => {
     expect(fpsFrom([0.016])).toBeNull();
   });
 });
+
+describe("Leerlauf-Helligkeit", () => {
+  it("10 min gedimmt, 60 min fast aus", async () => {
+    const { idleBrightness } = await import("@/lib/live/idle-dim");
+    expect([0, 9 * 60_000, 10 * 60_000, 59 * 60_000, 60 * 60_000].map(idleBrightness)).toEqual([1, 1, 0.35, 0.35, 0.12]);
+  });
+});
+
+describe("Avatar-Adressen", () => {
+  it("tragen eine Version aus der Prüfsumme (Cache ist ein Jahr gültig)", async () => {
+    const { avatars } = await import("@/lib/avatars/catalog");
+    expect(avatars.length).toBeGreaterThan(5);
+    for (const a of avatars) expect(a.url).toMatch(new RegExp(`^/avatars/${a.id}\\.glb\\?v=[0-9a-f]{12}$`));
+  });
+});

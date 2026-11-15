@@ -137,3 +137,26 @@ body {
   animation: ken-burns 14s ease-in-out infinite alternate;
   transform-origin: center;
 }
+
+/* Burn-in-Schutz: statische Elemente wandern unmerklich (±2 px über 8 min); in eingefrorenen Demos aus */
+@keyframes burnin-drift {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(2px, 1px);
+  }
+  50% {
+    transform: translate(0, 2px);
+  }
+  75% {
+    transform: translate(-2px, 1px);
+  }
+}
+.burnin-drift {
+  animation: burnin-drift 480s linear infinite;
+}
+[data-frozen="true"] .burnin-drift {
+  animation: none;
+}

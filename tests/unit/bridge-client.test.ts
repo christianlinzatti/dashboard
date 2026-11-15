@@ -70,3 +70,27 @@ describe("Bridge-Client", () => {
     expect(sockets).toHaveLength(2); // nach stop() kein Neuverbinden
   });
 });
+
+describe("Lebenszeichen an die Bridge", () => {
+  it("nur bei offener Verbindung, ganzzahlig", async () => {
+    const { createBridgeClient } = await import("@/lib/bridge/client");
+    const sent: string[] = [];
+    const sock = {
+      readyState: 0,
+      send: (d: string) => void sent.push(d),
+      close: () => undefined,
+      onopen: null as (() => void) | null,
+      onclose: null,
+      onerror: null,
+    };
+    const client = createBridgeClient({ url: "ws://x", createSocket: () => sock });
+    client.start();
+    client.heartbeat(12.6, true);
+    expect(sent).toEqual([]); // noch nicht verbunden
+    sock.readyState = 1;
+    sock.onopen?.();
+    client.heartbeat(12.6, true);
+    expect(sent.map((s) => JSON.parse(s))).toEqual([{ type: "heartbeat", frameAgeMs: 13, visible: true }]);
+    client.stop();
+  });
+});

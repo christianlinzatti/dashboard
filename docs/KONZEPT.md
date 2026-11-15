@@ -72,8 +72,8 @@ Getestet werden **1024×600, 1280×800 und 1920×1200**.
 | Oberfläche nur Deutsch, `de-DE`-Formate (österreichisch „Jänner“) | ✅ |
 | Automatische Qualitätsstufen (niedrig/mittel/hoch, „Auto“ nach Bildrate) | ✅ |
 | Robust: Fehlergrenzen je Avatar/Szene, 2D-Ersatz ohne WebGL, Neuaufbau nach GPU-Reset | ✅ |
-| **Burn-in-Schutz** (minimale Drift statischer Elemente, Abdunkeln im Leerlauf) | ○ |
-| **Watchdog** (Seite neu laden bei Hängern, Chromium-Neustart) | ○ |
+| **Burn-in-Schutz** (minimale Drift statischer Elemente, Abdunkeln im Leerlauf) | ✅ |
+| **Watchdog** (Lebenszeichen an die Pi-Bridge, Kiosk-Neustart per systemd) | ✅ |
 | **Display-Zeitplan** (nachts aus, z. B. per `wlr-randr`/HDMI-CEC) | ○ |
 
 ---
@@ -269,9 +269,9 @@ Alles läuft in der Cloud und im Test-Browser. Auf echter Hardware wurde **noch 
 | Thema | Problem heute | Vorschlag |
 |---|---|---|
 | Leistung | Bildrate auf dem Pi unbekannt | Bildrate und Frame-Zeiten im Debug-Panel protokollieren, Standard-Qualität danach festlegen |
-| Ausfallsicherheit | hängt die Seite oder stürzt Chromium ab, bleibt der Bildschirm stehen | Lebenszeichen der Seite an die Pi-Bridge, die bei Ausbleiben neu lädt; systemd startet Chromium neu |
-| Blindflug | Fehler im Kiosk sieht niemand | schlanke Fehlermeldungen an `/api/log` (Ringpuffer in Upstash), Anzeige im Debug-Panel |
-| Startzeit | 17 MB Avatare bei jedem Kaltstart | Service Worker cacht Avatare und Schriften dauerhaft |
+| Ausfallsicherheit | ✅ Lebenszeichen an die Pi-Bridge, Watchdog startet den Kiosk-Dienst neu | – |
+| Blindflug | ✅ Fehler und Leistungsproben im Kiosk-Protokoll (`/api/log`, Debug-Panel) | – |
+| Startzeit | ✅ geklärt: Avatare werden ein Jahr gecacht (jetzt mit Version in der Adresse) | – |
 | Einrichtung | Bridge, Kiosk, Schriften von Hand | ein Setup-Skript für den Pi (Chromium-Autostart, Bridge, `fonts-noto-cjk`, Mikrofon-Freigabe) |
 | Display | läuft rund um die Uhr | Zeitplan (nachts aus), Burn-in-Schutz, im Leerlauf abdunkeln |
 
@@ -315,11 +315,11 @@ Aufwand: S = bis ½ Tag, M = 1–2 Tage, L = mehrere Tage.
 | Baustein | Aufwand |
 |---|---|
 | Pi-Setup-Skript: Kiosk-Autostart, Pi-Bridge, Schriften, Mikrofon-Freigabe, Display-Zeitplan | M |
-| Watchdog über die Pi-Bridge (Lebenszeichen, Neuladen), systemd-Neustart von Chromium | S |
-| Bildraten-Protokoll im Debug-Panel, Messung je Qualitätsstufe, Standard festlegen | S |
-| Fehler-Telemetrie `/api/log` mit Anzeige im Debug-Panel | S |
-| Service Worker: Avatare und Schriften dauerhaft cachen | S |
-| Burn-in-Schutz und Abdunkeln im Leerlauf | S |
+| ✅ Watchdog über die Pi-Bridge (Lebenszeichen, Neuladen), systemd-Neustart von Chromium | S |
+| ◐ Bildraten-Protokoll im Debug-Panel (✅), Messung je Qualitätsstufe und Standard festlegen (braucht Gerät) | S |
+| ✅ Fehler-Telemetrie `/api/log` mit Anzeige im Debug-Panel | S |
+| ✅ entfällt: Avatare werden schon ein Jahr „immutable“ gecacht; neu: Version in der Adresse, damit Updates ankommen | S |
+| ✅ Burn-in-Schutz und Abdunkeln im Leerlauf | S |
 | Govee: Geräte-Zuordnung per Oberfläche, Segment-Lauflichter für RGBIC (falls die Geräte es können) | M |
 
 ### Stufe 7 – Synchronität & Datenqualität

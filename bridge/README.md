@@ -45,6 +45,22 @@ Dashboard (Chromium, Vercel-Seite) ──WebSocket ws://127.0.0.1:8787──► 
 Die Zuordnung in `config.example.json` für H61A2, H610B, H6063 und H6051 ist ein **Vorschlag**.
 Bitte nach Aufstellung im Raum anpassen.
 
+## Watchdog (Kiosk neu starten, wenn das Dashboard hängt)
+
+Das Dashboard schickt alle 10 s ein Lebenszeichen mit, wann zuletzt ein Bild gezeichnet wurde. Bleibt es länger als
+`timeoutS` aus oder hängt die Grafik länger als `frameStallS` (nur bei sichtbarer Seite), führt die Bridge `command` aus –
+höchstens alle `cooldownS` Sekunden. Scharf wird der Watchdog erst nach dem ersten Lebenszeichen.
+
+1. Kiosk als Dienst einrichten: `bridge/sonic-kiosk.service` nach `~/.config/systemd/user/` kopieren, Adresse anpassen,
+   `systemctl --user enable --now sonic-kiosk`.
+2. In `config.json`:
+
+   ```json
+   "watchdog": { "command": "systemctl --user restart sonic-kiosk.service", "timeoutS": 60, "frameStallS": 30, "cooldownS": 300 }
+   ```
+
+`http://127.0.0.1:8787/status` zeigt den Zustand (`watchdog.armed`, letztes Lebenszeichen, letzter Eingriff).
+
 ## Hinweise
 
 - **Chromium und lokale Adressen:** Neuere Chromium-Versionen fragen nach, bevor eine öffentliche Seite

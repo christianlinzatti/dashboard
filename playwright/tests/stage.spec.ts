@@ -51,7 +51,7 @@ test.describe("Robustheit der Bühne", () => {
   test("ein Avatar lädt nicht: die anderen tanzen weiter", async ({ page }) => {
     const errors: string[] = [];
     page.on("pageerror", (e) => errors.push(e.message));
-    await page.route("**/avatars/atlas-prism.glb", (route) => route.abort());
+    await page.route("**/avatars/atlas-prism.glb?*", (route) => route.abort());
     await page.goto("/?demo=neonlicht&t=46000&lyrics=karaoke");
     await ready(page);
     await expect(page.getByTestId("stage")).toBeVisible();

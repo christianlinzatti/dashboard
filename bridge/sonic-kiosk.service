@@ -1,0 +1,14 @@
+# Chromium im Kiosk-Modus als systemd-User-Dienst (startet bei Absturz neu).
+# Installation:  cp bridge/sonic-kiosk.service ~/.config/systemd/user/ && systemctl --user enable --now sonic-kiosk
+# Die Pi-Bridge startet ihn per Watchdog neu, wenn das Dashboard hängt (bridge/config.json → "watchdog").
+[Unit]
+Description=Sonic Stage Kiosk (Chromium)
+After=graphical-session.target
+
+[Service]
+ExecStart=/usr/bin/chromium --kiosk --noerrdialogs --disable-infobars --ignore-gpu-blocklist --enable-gpu-rasterization --autoplay-policy=no-user-gesture-required https://dein-projekt.vercel.app
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=graphical-session.target

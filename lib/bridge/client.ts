@@ -85,6 +85,11 @@ export function createBridgeClient(opts: BridgeClientOptions) {
       stopped = false;
       connect();
     },
+    /** Lebenszeichen für den Watchdog der Bridge (nur bei offener Verbindung). */
+    heartbeat(frameAgeMs: number, visible: boolean) {
+      if (ws && ws.readyState === OPEN)
+        ws.send(JSON.stringify({ type: "heartbeat", frameAgeMs: Math.round(frameAgeMs), visible }));
+    },
     /** Neues Lichtsignal (pro Frame aufrufbar – wird gedrosselt). */
     update(f: Pick<LightFrame, "signal">, lamps: boolean, now = Date.now()) {
       pending = lightMessage(f, lamps);

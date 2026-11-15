@@ -2,12 +2,14 @@
  * Pi-Bridge: verbindet das Dashboard (Browser) mit Geräten im Heimnetz.
  * Start:  node bridge/main.ts [pfad/zur/config.json]   (Node ≥ 22.18, führt TypeScript direkt aus)
  */
+import { execFile } from "node:child_process";
 import dgram from "node:dgram";
 import path from "node:path";
 import { loadConfig, resolveLamps } from "./config.ts";
 import { LampController } from "./controller.ts";
 import { discover } from "./discovery.ts";
 import { createBridgeServer } from "./server.ts";
+import { createWatchdog } from "./watchdog.ts";
 
 const configPath = process.argv[2] ?? path.join(import.meta.dirname, "config.json");
 const cfg = await loadConfig(configPath);
@@ -31,7 +33,21 @@ await refreshLamps();
 setInterval(() => void refreshLamps(), 5 * 60_000);
 setInterval(() => controller.flush(), 25);
 
-const server = await createBridgeServer({ port: cfg.port, allowedOrigins: cfg.allowedOrigins, controller });
+const wd = cfg.watchdog;
+const watchdog = wd
+  ? createWatchdog({
+      timeoutMs: wd.timeoutS * 1000,
+      frameStallMs: wd.frameStallS * 1000,
+      cooldownMs: wd.cooldownS * 1000,
+      onStall: (reason) => {
+        console.warn(`Watchdog: ${reason} – führe aus: ${wd.command}`);
+        execFile("/bin/sh", ["-c", wd.command], (err) => err && console.error("Watchdog-Befehl fehlgeschlagen:", err.message));
+      },
+    })
+  : undefined;
+if (watchdog) setInterval(() => watchdog.check(), 5000);
+
+const server = await createBridgeServer({ port: cfg.port, allowedOrigins: cfg.allowedOrigins, controller, watchdog });
 console.log(`Pi-Bridge läuft auf ws://127.0.0.1:${server.port} (Status: http://127.0.0.1:${server.port}/status)`);
 
 const stop = async () => {

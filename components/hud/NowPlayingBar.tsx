@@ -14,7 +14,10 @@ export function NowPlayingBar() {
   if (!song) return null;
 
   return (
-    <header className="absolute inset-x-0 top-0 flex items-center gap-[2vmin] px-[3vmin] pt-[2.5vmin]" data-testid="now-playing">
+    <header
+      className="burnin-drift absolute inset-x-0 top-0 flex items-center gap-[2vmin] px-[3vmin] pt-[2.5vmin]"
+      data-testid="now-playing"
+    >
       <Image
         src={song.album.coverUrl}
         alt={`Cover: ${song.album.name}`}

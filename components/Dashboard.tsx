@@ -22,6 +22,7 @@ import { useConcertLoader } from "./concerts/useConcertLoader";
 import { useTempoLoader } from "./audio/useTempoLoader";
 import { installTelemetry, report } from "@/lib/live/telemetry";
 import { perf } from "@/lib/stage/perf";
+import { markFrame } from "@/lib/live/frame-clock";
 import { useLyricsLoader } from "./lyrics/useLyricsLoader";
 import { useMicAnalysis } from "./audio/useMicAnalysis";
 import type { LyricsMode } from "@/lib/lyrics/director";
@@ -41,6 +42,7 @@ type Props = {
 
 export function Dashboard({ demo, t, debug, loginError, mic, lyricsMode, quality }: Props) {
   const song = useSongContext((s) => s.song);
+  const frozen = useSongContext((s) => s.frozen);
   const unknownDemo = demo !== undefined && !fixtures[demo];
   // Ohne Demo: Live-Betrieb mit Spotify
   const status = useSpotifySync(demo === undefined);
@@ -96,6 +98,7 @@ export function Dashboard({ demo, t, debug, loginError, mic, lyricsMode, quality
     let raf = 0;
     const loop = () => {
       const s = songContext.getState();
+      markFrame();
       if (!s.frozen) s.tick(performance.now());
       raf = requestAnimationFrame(loop);
     };
@@ -109,7 +112,12 @@ export function Dashboard({ demo, t, debug, loginError, mic, lyricsMode, quality
   ) as CSSProperties;
 
   return (
-    <main className="relative h-dvh w-dvw overflow-hidden bg-[var(--c-dark)]" style={vars} data-testid="dashboard">
+    <main
+      className="relative h-dvh w-dvw overflow-hidden bg-[var(--c-dark)]"
+      style={vars}
+      data-testid="dashboard"
+      data-frozen={frozen}
+    >
       {song ? (
         <>
           <div className="absolute inset-0">

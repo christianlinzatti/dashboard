@@ -5,6 +5,11 @@ zeigt den aktuellen Spotify-Song, Lyrics möglichst Wort für Wort und tanzende 
 
 Konzept und Ausbaustufen: [`docs/KONZEPT.md`](docs/KONZEPT.md) · Architektur-Bewertung: [`docs/ARCHITEKTUR.md`](docs/ARCHITEKTUR.md)
 
+**Neu: Betrieb** – Fehler und alle 5 min eine Leistungsprobe (Bildrate, Qualitätsstufe) landen im Kiosk-Protokoll
+(Debug-Panel `?debug=1`). Ein Watchdog in der Pi-Bridge startet den Kiosk neu, wenn das Dashboard hängt
+(`bridge/README.md`). Burn-in-Schutz: Kopfzeile und Fortschritt wandern unmerklich, der Startbildschirm dunkelt nach 10 min
+ab. Avatar-Dateien tragen eine Version, damit Updates trotz Jahres-Cache ankommen.
+
 **Neu: Tempo-Startwert** – Zu jedem Song mit ISRC holt das Dashboard das Tempo von Deezer (öffentliche API, ohne Key,
 180 Tage gecacht). Avatare und Licht tanzen damit vom ersten Takt an im richtigen Tempo, auch ohne Mikrofon. Mit Mikrofon
 korrigiert der Startwert Oktavfehler (halbes/doppeltes Tempo).

@@ -19,7 +19,10 @@ export function Progress() {
   }, [duration]);
 
   return (
-    <footer className="absolute inset-x-0 bottom-0 flex items-center gap-[2vmin] px-[3vmin] pb-[2.2vmin]" data-testid="progress">
+    <footer
+      className="burnin-drift absolute inset-x-0 bottom-0 flex items-center gap-[2vmin] px-[3vmin] pb-[2.2vmin]"
+      data-testid="progress"
+    >
       <span className="w-[7ch] text-[clamp(11px,1.9vmin,20px)] tabular-nums text-white/70">{formatTime(seconds * 1000)}</span>
       <div className="h-[0.8vmin] min-h-1 flex-1 overflow-hidden rounded-full bg-white/15">
         <div

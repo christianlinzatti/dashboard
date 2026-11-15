@@ -2,6 +2,7 @@ import http from "node:http";
 import { WebSocketServer } from "ws";
 import { z } from "zod";
 import type { LampController } from "./controller.ts";
+import type { Watchdog } from "./watchdog.ts";
 
 /** Nachricht vom Dashboard: aktuelles Lichtsignal (ca. 20×/s, nur bei Änderung). */
 export const lightMessage = z.object({
@@ -15,12 +16,22 @@ export const lightMessage = z.object({
   }),
 });
 
+/** Lebenszeichen vom Dashboard (alle 10 s) für den Watchdog. */
+export const heartbeatMessage = z.object({
+  type: z.literal("heartbeat"),
+  /** ms seit dem letzten gezeichneten Bild (hängt die Grafik?) */
+  frameAgeMs: z.number().min(0).max(86_400_000),
+  visible: z.boolean(),
+});
+
 export type BridgeOptions = {
   host?: string;
   port?: number;
   /** Erlaubte Herkunft der Webseite (z. B. https://dein-projekt.vercel.app) – schützt vor fremden Seiten */
   allowedOrigins: string[];
   controller: LampController;
+  /** optional: Watchdog, der bei ausbleibendem Lebenszeichen eingreift */
+  watchdog?: Watchdog;
 };
 
 /**
@@ -28,7 +39,7 @@ export type BridgeOptions = {
  * GET /status liefert Lampen und Zustand (für Diagnose und das Dashboard).
  */
 export function createBridgeServer(opts: BridgeOptions) {
-  const { host = "127.0.0.1", port = 8787, allowedOrigins, controller } = opts;
+  const { host = "127.0.0.1", port = 8787, allowedOrigins, controller, watchdog } = opts;
   const allowed = (origin: string | undefined) => !!origin && allowedOrigins.includes(origin);
   let clients = 0;
 
@@ -40,7 +51,9 @@ export function createBridgeServer(opts: BridgeOptions) {
     }
     if (req.method === "GET" && req.url === "/status") {
       res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
-      res.end(JSON.stringify({ ok: true, clients, ...controller.status() }));
+      res.end(
+        JSON.stringify({ ok: true, clients, ...controller.status(), ...(watchdog ? { watchdog: watchdog.status() } : {}) }),
+      );
       return;
     }
     res.writeHead(404).end();
@@ -63,7 +76,9 @@ export function createBridgeServer(opts: BridgeOptions) {
         return;
       }
       const m = lightMessage.safeParse(parsed);
-      if (m.success) controller.apply(m.data.signal, m.data.lamps);
+      if (m.success) return controller.apply(m.data.signal, m.data.lamps);
+      const h = heartbeatMessage.safeParse(parsed);
+      if (h.success) watchdog?.beat(h.data.frameAgeMs, h.data.visible);
     });
   });
 
