@@ -24,6 +24,7 @@ import type { RawEvent } from "@/lib/concerts/types";
 
 const WIEN = { name: "Wien", lat: 48.2082, lon: 16.3738, radiusKm: 200 };
 type Http = (url: string, init?: RequestInit) => Promise<Response>;
+type Get = (url: string) => Promise<Response>;
 const ok = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
 const ev = (p: Partial<RawEvent>): RawEvent => ({
   provider: "x",
@@ -344,5 +345,77 @@ describe("Konzertanzeige", () => {
       "Zuletzt live: 02.01.2026",
     );
     expect(liveHint({ ...song, setlists: undefined })).toBeNull();
+  });
+});
+
+describe("Geocoding (Nominatim, echte Antworten)", () => {
+  it("Stadt mit Ländercode bzw. Ländername; nichts gefunden → null", async () => {
+    const { geocodeCity } = await import("@/lib/concerts/geocode");
+    const linz = (await import("../fixtures/nominatim/linz.json")).default;
+    const none = (await import("../fixtures/nominatim/not-found.json")).default;
+    const http = vi.fn<Get>(async () => ok(linz));
+    expect(await geocodeCity("Linz", "AT", http)).toEqual({ lat: 48.3059078, lon: 14.286198 });
+    const u = new URL(http.mock.calls[0]![0]);
+    expect(Object.fromEntries(u.searchParams)).toMatchObject({ city: "Linz", countrycodes: "at", format: "jsonv2", limit: "1" });
+    await geocodeCity("Linz", "Austria", http);
+    expect(new URL(http.mock.calls[1]![0]).searchParams.get("country")).toBe("Austria");
+    expect(await geocodeCity("Zzz", undefined, async () => ok(none))).toBeNull();
+    await expect(geocodeCity("Linz", "AT", async () => ok({}, 429))).rejects.toThrow("429");
+  });
+
+  it("ergänzt fehlende Koordinaten mit Cache, Budget und Gedächtnis je Stadt", async () => {
+    const { fillCoordinates } = await import("@/lib/concerts/geocode");
+    const linz = (await import("../fixtures/nominatim/linz.json")).default;
+    const cache = memoryCache();
+    const http = vi.fn<Get>(async () => ok(linz));
+    const events = [
+      ev({ city: "Linz", country: "AT" }),
+      ev({ city: "Linz", country: "AT", date: "2026-12-02" }), // gleiche Stadt → keine zweite Anfrage
+      ev({ city: "Graz", lat: 47.07, lon: 15.44 }), // hat Koordinaten
+      ev({ city: "Salzburg" }),
+      ev({ city: "Innsbruck" }),
+    ];
+    const out = await fillCoordinates(events, { cache, http, max: 2 });
+    expect(out[0]).toMatchObject({ lat: 48.3059078, geocoded: true });
+    expect(out[1]).toMatchObject({ geocoded: true });
+    expect(out[2]!.geocoded).toBeUndefined();
+    expect(out[3]).toMatchObject({ geocoded: true }); // zweite (letzte) Abfrage im Budget
+    expect(out[4]!.lat).toBeUndefined(); // Budget erschöpft → beim nächsten Mal
+    expect(http).toHaveBeenCalledTimes(2);
+    await fillCoordinates(events, { cache, http, max: 2 });
+    expect(http).toHaveBeenCalledTimes(3); // Linz/Salzburg aus dem Cache, nur Innsbruck neu
+    // Ausfall wird nicht gecacht
+    const broken = vi.fn<Get>(async () => ok({}, 503));
+    const c2 = memoryCache();
+    await fillCoordinates([ev({ city: "Wels" })], { cache: c2, http: broken });
+    await fillCoordinates([ev({ city: "Wels" })], { cache: c2, http: broken });
+    expect(broken).toHaveBeenCalledTimes(2);
+  });
+
+  it("Entfernung aus geocodierten Orten wird markiert (Quellenangabe)", () => {
+    const [c] = mergeEvents(
+      { id: "a", name: "A" },
+      [{ provider: { id: "x", ticketPriority: 1 }, events: [ev({ city: "Linz", lat: 48.3, lon: 14.29, geocoded: true })] }],
+      {
+        today: "2026-11-14",
+        home: WIEN,
+      },
+    );
+    expect(c).toMatchObject({ geocoded: true });
+    expect(c!.distanceKm).toBeGreaterThan(150);
+  });
+
+  it("Dienst ergänzt Koordinaten vor dem Zusammenführen", async () => {
+    const linz = (await import("../fixtures/nominatim/linz.json")).default;
+    const p = { id: "oe", ticketPriority: 1, events: vi.fn(async () => [ev({ city: "Linz", country: "AT", provider: "oe" })]) };
+    const svc = createConcertService({
+      providers: [p],
+      cache: memoryCache(),
+      today: () => "2026-11-14",
+      geoHttp: async () => ok(linz),
+    });
+    const r = await svc([{ id: "a1", name: "A" }]);
+    expect(r.concerts[0]).toMatchObject({ city: "Linz", geocoded: true });
+    expect(r.concerts[0]!.distanceKm).toBeGreaterThan(150);
   });
 });

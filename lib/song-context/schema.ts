@@ -170,6 +170,8 @@ export const concertSchema = z.object({
   distanceKm: z.number().optional(),
   ticketUrl: z.string().optional(),
   soldOut: z.boolean().optional(),
+  /** Entfernung aus OpenStreetMap-Ortsdaten berechnet */
+  geocoded: z.boolean().optional(),
   providers: z.array(z.string()),
 });
 export type Concert = z.infer<typeof concertSchema>;

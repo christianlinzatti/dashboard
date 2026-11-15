@@ -255,7 +255,7 @@ Fakten-Ticker in Strophen, Feature-Artists abwechselnd · ○ Wikipedia-Artikel 
 ✅ Zuletzt gehört (Last.fm, sonst Spotify), Lieblingssong, Herz, Hörzahlen, ★ bei gefolgten Künstlern ·
 ✅ Song per Touch liken · ○ Begrüßung bei gefolgten Künstlern (Avatar winkt) · ○ ähnliche Künstler und Tags (Last.fm)
 ✅ Konzerte aus vier Quellen, zusammengeführt, Umkreis Wien, Countdown, QR-Code, letzte Setlist ·
-○ Geocoding für Orte ohne Koordinaten · ○ Heimatort/Umkreis in den Einstellungen statt Env · ○ Eventim DE/Reservix
+✅ Geocoding für Orte ohne Koordinaten (OpenStreetMap) · ○ Heimatort/Umkreis in den Einstellungen statt Env · ○ Eventim DE/Reservix
 ✅ TheAudioDB, Flickr, Genius-Trivia, Fotoauswahl je Verwendung
 
 ---
@@ -281,7 +281,7 @@ Alles läuft in der Cloud und im Test-Browser. Auf echter Hardware wurde **noch 
 |---|---|
 | Lyrics-Versatz | Mikrofon erkennt Gesangseinsätze, vergleicht mit Zeilenstarts und schlägt einen Offset vor (oder stellt ihn automatisch ein) |
 | geschätzte Wort-Timings | Silben-Onsets aus dem Mikrofon verschieben Wortgrenzen (war geplant, offen) |
-| Konzerte | Geocoding für Orte ohne Koordinaten (Nominatim, gecacht), Eventim DE |
+| Konzerte | Eventim DE; Heimatort/Umkreis in den Einstellungen (Geocoding ist umgesetzt) |
 | Lizenz-/Quellenangaben | Flickr ohne Lizenzfilter ist nur privat vertretbar; bei öffentlicher Nutzung wieder einschränken |
 
 ### 12.3 Interaktion und Erlebnis
@@ -330,7 +330,7 @@ Aufwand: S = bis ½ Tag, M = 1–2 Tage, L = mehrere Tage.
 | Wort-Timing-Verfeinerung per Mikrofon für geschätzte Wörter | L |
 | ✅ Lyrics-Cache: Treffer behalten, nur „nicht gefunden“ bei Provider-Änderung neu prüfen | S |
 | ✅ BPM-Startwert aus externer Quelle (Deezer über ISRC, korrigiert auch Oktavfehler des Mikrofons) | S |
-| Konzerte: Geocoding, Heimatort/Umkreis in den Einstellungen, Eventim DE | M |
+| Konzerte: ✅ Geocoding; offen: Heimatort/Umkreis in den Einstellungen, Eventim DE | M |
 
 ### Stufe 8 – Interaktion
 

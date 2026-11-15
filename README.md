@@ -37,7 +37,8 @@ zeigt Countdown („in 21 Tagen“), **ausverkauft** und einen **QR-Code zum Tic
 schaltet ab), Ticketmaster (`TICKETMASTER_API_KEY`) und Bandsintown (`BANDSINTOWN_APP_ID`). Ticket-Links kommen
 bevorzugt von oeticket. Gezählt wird ein Termin nur, wenn der Künstler wirklich auftritt; Tribute-Shows und
 unscharfe Suchtreffer fallen weg. Doppelte Termine werden zusammengeführt, die Daten 12 Stunden gecacht. setlist.fm braucht
-`SETLISTFM_API_KEY`. Ohne Schlüssel bleibt die Karte einfach weg.
+`SETLISTFM_API_KEY`. Ohne Schlüssel bleibt die Karte einfach weg. Orte ohne Koordinaten werden über
+OpenStreetMap (Nominatim, höchstens 1 Anfrage/s, 1 Jahr gecacht) verortet; `CONCERT_GEOCODING=0` schaltet das ab.
 
 Stufe 5a – Persönliches: **zuletzt gehört** (Last.fm, sonst Spotify) auf dem Startbildschirm,
 **Lieblingssong** (Spotify), **auf Last.fm geliebt**, **„37× gehört“**, **★ bei Künstlern, denen du folgst**

@@ -22,6 +22,9 @@ export const CACHE_TTL = {
   /** Tempo-Startwert (Deezer): gefunden / unbekannt */
   tempoFound: 180 * DAY,
   tempoMissing: 30 * DAY,
+  /** Koordinaten von Konzertorten (Nominatim): Städte bewegen sich nicht */
+  geoFound: 365 * DAY,
+  geoMissing: 30 * DAY,
   /** Hörstand für Alexa – persönliche Daten, bewusst kurz */
   snapshot: 2 * 3600,
   /** nicht abgeholte Befehle verfallen */

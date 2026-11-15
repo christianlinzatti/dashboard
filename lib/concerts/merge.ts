@@ -45,6 +45,7 @@ export function mergeEvents(
             ...(dist !== undefined ? { distanceKm: dist } : {}),
             ...(e.ticketUrl ? { ticketUrl: e.ticketUrl } : {}),
             ...(e.soldOut ? { soldOut: true } : {}),
+            ...(e.geocoded && dist !== undefined ? { geocoded: true } : {}),
             providers: [provider.id],
           },
         });
@@ -53,7 +54,10 @@ export function mergeEvents(
       prev.c.providers.push(provider.id);
       prev.cancelled ||= !!e.cancelled;
       if (e.soldOut) prev.c.soldOut = true;
-      if (prev.c.distanceKm === undefined && dist !== undefined) prev.c.distanceKm = dist;
+      if (prev.c.distanceKm === undefined && dist !== undefined) {
+        prev.c.distanceKm = dist;
+        if (e.geocoded) prev.c.geocoded = true;
+      }
       if (!prev.c.time && e.time) prev.c.time = e.time;
       if (e.ticketUrl && (provider.ticketPriority < prev.prio || !prev.c.ticketUrl)) {
         prev.c.ticketUrl = e.ticketUrl;

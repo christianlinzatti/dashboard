@@ -15,6 +15,7 @@ test.describe("Konzerte", () => {
     await expect(rows.nth(2)).toContainText("Berlin");
     await expect(card.getByTestId("ticket-qr")).toContainText("Tickets Wien");
     await expect(card.getByTestId("live-hint")).toContainText("dieser Song war dabei");
+    await expect(card.getByTestId("osm-credit")).toHaveCount(0); // Demo-Entfernungen ohne OpenStreetMap
     // Info-Karte und Lyrics machen Platz
     await expect(page.getByTestId("info-card")).toHaveCount(0);
     await expect(page).toHaveScreenshot("konzertkarte.png");
@@ -57,6 +58,7 @@ test.describe("Konzerte", () => {
               venue: "Arena",
               city: "Hamburg",
               distanceKm: 740,
+              geocoded: true,
               providers: ["ticketmaster"],
             },
           ],
@@ -67,6 +69,7 @@ test.describe("Konzerte", () => {
     const card = page.getByTestId("concert-card");
     await expect(card).toContainText("Nächste Konzerte");
     await expect(card).toContainText("Hamburg");
+    await expect(card.getByTestId("osm-credit")).toHaveText("Ortsdaten © OpenStreetMap");
     await expect(card.getByTestId("ticket-qr")).toHaveCount(0);
   });
 

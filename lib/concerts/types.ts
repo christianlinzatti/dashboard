@@ -12,6 +12,8 @@ export type RawEvent = {
   ticketUrl?: string;
   soldOut?: boolean;
   cancelled?: boolean;
+  /** Koordinaten per Geocoding ergänzt (OpenStreetMap, Quellenangabe nötig) */
+  geocoded?: boolean;
 };
 
 export interface ConcertProvider {

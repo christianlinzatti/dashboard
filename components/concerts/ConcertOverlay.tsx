@@ -52,6 +52,11 @@ export function ConcertOverlay() {
             </li>
           ))}
         </ul>
+        {card.concerts.some((c) => c.geocoded) && (
+          <p className="text-[clamp(8px,1.2vmin,12px)] text-white/40" data-testid="osm-credit">
+            Ortsdaten © OpenStreetMap
+          </p>
+        )}
         {card.liveHint && (
           <p className="text-[clamp(10px,1.6vmin,16px)] text-white/60" data-testid="live-hint">
             {card.liveHint}

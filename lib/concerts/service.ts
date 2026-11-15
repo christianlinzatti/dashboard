@@ -3,7 +3,9 @@ import { CACHE_TTL } from "@/lib/cache-policy";
 import { getCache, type Cache } from "@/lib/lyrics/cache";
 import { normalizeLine } from "@/lib/lyrics/text";
 import type { Concert } from "@/lib/song-context/schema";
+import { createPoliteFetch } from "@/lib/info/http";
 import { home } from "./geo";
+import { fillCoordinates } from "./geocode";
 import { mergeEvents } from "./merge";
 import { bandsintown, lastSetlist, oeticket, ticketmaster, type LastSetlist } from "./providers";
 import type { ConcertProvider, RawEvent } from "./types";
@@ -26,6 +28,8 @@ export function createConcertService(deps: {
   setlistKey?: string;
   today?: () => string;
   setlistFetch?: typeof fetch;
+  /** Geocoding für Orte ohne Koordinaten (Nominatim); ohne → Orte bleiben ohne Entfernung */
+  geoHttp?: (url: string, signal?: AbortSignal) => Promise<Response>;
 }) {
   return async function concertsFor(artists: Array<{ id: string; name: string }>, signal?: AbortSignal): Promise<ConcertResult> {
     const today = deps.today?.() ?? new Date().toISOString().slice(0, 10);
@@ -46,6 +50,15 @@ export function createConcertService(deps: {
         // vollständig: 12 h; fehlt eine Quelle (z. B. Bot-Sperre), nur kurz – dann neuer Versuch
         const complete = results.every((r) => r.status === "fulfilled");
         await deps.cache.set(key, lists, complete ? CACHE_TTL.concerts : CACHE_TTL.concertsPartial);
+      }
+      if (deps.geoHttp) {
+        const geoHttp = deps.geoHttp;
+        lists = await Promise.all(
+          lists.map(async (l) => ({
+            ...l,
+            events: await fillCoordinates(l.events, { cache: deps.cache, http: geoHttp, signal }),
+          })),
+        );
       }
       all.push(...mergeEvents(a, lists, { today, home: home() }));
 
@@ -73,6 +86,11 @@ export function concertsFor(artists: Array<{ id: string; name: string }>, signal
     providers: concertProviders(),
     cache: getCache(),
     setlistKey: process.env.SETLISTFM_API_KEY,
+    // Nominatim: höchstens 1 Anfrage pro Sekunde (Nutzungsregeln)
+    geoHttp:
+      process.env.CONCERT_GEOCODING === "0"
+        ? undefined
+        : createPoliteFetch({ minIntervalMs: { "nominatim.openstreetmap.org": 1100 } }),
   });
   return shared(artists, signal);
 }
