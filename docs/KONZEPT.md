@@ -298,7 +298,6 @@ Alles läuft in der Cloud und im Test-Browser. Auf echter Hardware wurde **noch 
 
 | Thema | Vorschlag |
 |---|---|
-| `LyricsLayer.tsx` (> 300 Zeilen) | Darstellungsmodi in eigene Dateien (`components/lyrics/modes/`) |
 | Abhängigkeit von inoffiziellen Diensten | ist gewollt; Provider-Check und Breaker fangen Ausfälle ab. Bei dauerhaftem Ausfall Provider in `LYRICS_PROVIDERS` abschalten |
 | GitHub | Branch-Schutz für `main` mit Pflicht-Checks einschalten (Einstellung in GitHub, nicht im Code) |
 | Vercel-Kontingente | Bildoptimierer und Funktionsdauer im Blick behalten (Hobby-Tarif); Bilder werden 30 Tage gecacht |

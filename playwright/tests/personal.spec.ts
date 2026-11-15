@@ -74,14 +74,15 @@ test.describe("Persönliches", () => {
       return r.fulfill({ json: { ok: true } });
     });
     await page.goto("/");
-    await page.getByTestId("like-button").click();
+    // Burn-in-Drift bewegt die Kopfzeile ständig minimal → Playwrights Stillstand-Prüfung überspringen
+    await page.getByTestId("like-button").click({ force: true });
     await expect(page.getByTestId("badge-saved")).toContainText("Lieblingssong");
     expect(likes).toEqual([{ trackId: "4uLU6hMCjMI75M1A2tKUQC", saved: true }]);
     // Steuerleiste wurde durch das Antippen nicht eingeblendet
     await expect(page.getByTestId("controls")).not.toHaveCSS("opacity", "1");
 
     fail = true;
-    await page.getByTestId("badge-saved").click();
+    await page.getByTestId("badge-saved").click({ force: true });
     await expect(page.getByTestId("like-error")).toContainText("neu anmelden");
     await expect(page.getByTestId("badge-saved")).toBeVisible(); // zurückgenommen
   });

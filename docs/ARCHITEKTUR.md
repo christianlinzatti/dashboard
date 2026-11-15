@@ -67,7 +67,7 @@ reproduzierbar (gleiche Songzeit → gleiche Pose, gleiches Licht) und die Logik
 | 13 | Kein Watchdog, keine Fehlermeldungen vom Kiosk | mittel (Bildschirm bleibt bei Hängern stehen, Fehler unbemerkt) | **behoben:** Watchdog in der Pi-Bridge, Kiosk-Protokoll mit Leistungsproben |
 | 18 | Avatar-Adressen ohne Version bei einem Jahr „immutable“-Cache | mittel (Avatar-Updates kämen ein Jahr nicht an) | **behoben:** Prüfsumme als Version in der Adresse |
 | 14 | Lyrics-Cache-Schlüssel enthält die Provider-Liste | niedrig (jede Provider-Änderung lädt alle Songs einmal neu) | **behoben:** Treffer unabhängig von der Provider-Liste; „nicht gefunden“ und Treffer ohne Wort-Sync werden nach einer Änderung einmal neu geprüft; alte Einträge werden übernommen |
-| 15 | `LyricsLayer.tsx` über 300 Zeilen | Wartbarkeit | **offen:** Darstellungsmodi in eigene Dateien |
+| 15 | `LyricsLayer.tsx` über 300 Zeilen | Wartbarkeit | **behoben:** Modi in `components/lyrics/modes/`, Gemeinsames in `shared.tsx` (Umbau pixelgleich geprüft) |
 | 16 | Sporadischer Testfehler (Chiffrat enthielt zufällig „u1“) | niedrig | **behoben:** langer, eindeutiger Klartext im Test |
 | 17 | TTML: Silben, Duett-Typen, `lrc:`-Namensraum, lose Satzzeichen | mittel (falsche Füllung, fehlende Sänger) | **behoben:** Parser gegen echte Antworten geprüft |
 
