@@ -255,7 +255,7 @@ Fakten-Ticker in Strophen, Feature-Artists abwechselnd · ○ Wikipedia-Artikel 
 ✅ Zuletzt gehört (Last.fm, sonst Spotify), Lieblingssong, Herz, Hörzahlen, ★ bei gefolgten Künstlern ·
 ✅ Song per Touch liken · ✅ Begrüßung bei gefolgten Künstlern (Avatar winkt) · ○ ähnliche Künstler und Tags (Last.fm)
 ✅ Konzerte aus vier Quellen, zusammengeführt, Umkreis Wien, Countdown, QR-Code, letzte Setlist ·
-✅ Geocoding für Orte ohne Koordinaten (OpenStreetMap) · ✅ Heimatort/Umkreis in den Einstellungen (pro Konto, `/einstellungen`) · ✅ Eventim DE · ○ Reservix
+✅ Geocoding für Orte ohne Koordinaten (OpenStreetMap) · ✅ Heimatort/Umkreis in den Einstellungen (pro Konto, `/einstellungen`) · ✅ Eventim DE · ○ Reservix (keine öffentliche Schnittstelle: API nur für Partner auf Anfrage, Event-Feed nur über ein Awin-Affiliate-Konto; die Eventim-Suche kennt keinen Reservix-Shop)
 ✅ TheAudioDB, Flickr, Genius-Trivia, Fotoauswahl je Verwendung
 
 ---
