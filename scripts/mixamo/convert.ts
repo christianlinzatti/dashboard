@@ -14,6 +14,8 @@ import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js";
 import { packClip } from "../../lib/dance/clip-pack";
 import type { MixamoEntry } from "../../lib/dance/mixamo";
 import { estimateBpm, makeLoop, restFromGltf, retargetSamples } from "../../lib/dance/retarget";
+import { installImageStub } from "./no-dom";
+import { format, resolveConfig } from "prettier";
 
 const ROOT = process.cwd();
 const SRC_DIR = join(ROOT, "mixamo");
@@ -39,7 +41,8 @@ function findSource(entry: MixamoEntry, files: string[]): string | undefined {
   return files.find((f) => wanted.includes(norm(f)));
 }
 
-function main() {
+async function main() {
+  installImageStub();
   const catalog = JSON.parse(readFileSync(CATALOG, "utf8")) as { clips: MixamoEntry[] };
   // alle Avatare teilen dasselbe Skelett (geprüft im Test „gemeinsame Grundpose“); Quelldateien statt Build-Ausgabe
   const first = readdirSync(join(ROOT, "avatars")).find((f) => f.endsWith(".glb"))!;
@@ -103,7 +106,8 @@ function main() {
       `✓ ${entry.id}: ${file} · ${bpm} BPM${entry.bpm ? "" : detected ? " (geschätzt)" : " (Standard – bitte im Katalog angeben)"} · ${beats} Schläge · ${(json.length / 1024).toFixed(0)} KB`,
     );
   }
-  writeFileSync(CATALOG, `${JSON.stringify(catalog, null, 2)}\n`);
+  // wie im Repo formatiert (sonst schlägt `prettier --check` in der CI an)
+  writeFileSync(CATALOG, await format(JSON.stringify(catalog), { ...(await resolveConfig(CATALOG)), filepath: CATALOG }));
 }
 
-main();
+void main();

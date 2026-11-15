@@ -322,3 +322,20 @@ describe("Mixamo-Tänze in der Choreografie", () => {
     vi.doUnmock("@/lib/dance/mixamo-clips.json");
   });
 });
+
+describe("Umwandlung in Node", () => {
+  it("Texturen in FBX-Dateien „With Skin“ brechen nicht ab (kein DOM in Node)", async () => {
+    const { TextureLoader } = await import("three");
+    const { installImageStub } = await import("@/scripts/mixamo/no-dom");
+    const g = globalThis as { document?: unknown };
+    const before = g.document;
+    delete g.document;
+    expect(() => new TextureLoader().load("figur.png")).toThrow(/document/);
+    const uninstall = installImageStub();
+    expect(() => new TextureLoader().load("figur.png")).not.toThrow();
+    expect(installImageStub()).toBeTypeOf("function"); // zweimal ist harmlos
+    uninstall();
+    expect(g.document).toBeUndefined();
+    if (before) g.document = before;
+  });
+});

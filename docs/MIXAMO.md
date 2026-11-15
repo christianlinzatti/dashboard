@@ -21,7 +21,7 @@ FBX-Dateien dürfen aber nicht als Rohdateien weitergegeben werden. Deshalb gilt
    | Einstellung | Wert |
    |---|---|
    | Format | FBX Binary (.fbx) |
-   | Skin | **Without Skin** (kleinere Datei, keine Figur) |
+   | Skin | **Without Skin** (kleinere Datei; „With Skin“ geht auch, z. B. bei Paketen) |
    | Frames per Second | 30 |
    | Keyframe Reduction | none |
 
@@ -75,3 +75,13 @@ und `fallback` ergänzen. Danach das Skript erneut ausführen.
   Wiederholungssperre und Genre-Bonus. Die Planung bleibt pro Song deterministisch.
 - Pro Song werden nur die Clips geladen, die der Plan verwendet. Bis ein Clip da ist, oder wenn er
   fehlt, tanzt der Avatar den `fallback`. Fehler landen im Protokoll (`/api/log`).
+
+## Probleme
+
+| Meldung | Lösung |
+|---|---|
+| `document is not defined` (FBXLoader/TextureLoader) | behoben: Texturen werden in Node übersprungen. Repo aktualisieren und erneut umwandeln. |
+| `„…“ nicht gefunden` | Dateiname passt nicht zu `source`/`search` im Katalog: Datei umbenennen oder Eintrag anpassen. |
+| Tanz wirkt zu schnell oder zu langsam | Das geschätzte Tempo liegt daneben, oft um den Faktor 2 oder 1,5. `bpm` im Katalog setzen und neu umwandeln. |
+| `package-lock.json` verliert `esbuild` | Passiert mit npm 11 (Node 24) und `npm install`. Mit Node 22 (`.nvmrc`) und `npm ci` arbeiten, oder die Datei vor dem Commit zurücksetzen: `git checkout package-lock.json`. |
+

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { avatarById } from "@/lib/avatars/catalog";
+import { mixamoById } from "@/lib/dance/mixamo";
 import { cameraAt, focusTimeline, layersAt, positionsAt, rotateOnStage, stageAngleAt } from "@/lib/dance/evaluate";
 import { Vector3 } from "three";
 import { fixtures } from "@/lib/song-context/fixtures";
@@ -37,9 +38,10 @@ describe("Choreografie-Plan", () => {
     }
   });
 
-  it("nutzt nur Clips, die der jeweilige Avatar hat", () => {
+  it("nutzt nur Clips, die der jeweilige Avatar hat (Mixamo-Tänze passen auf alle)", () => {
     for (const p of plan.phrases)
-      for (const [id, m] of Object.entries(p.moves)) expect(avatarById.get(id)!.clips).toContain(m.clip);
+      for (const [id, m] of Object.entries(p.moves))
+        if (!mixamoById.has(m.clip)) expect(avatarById.get(id)!.clips).toContain(m.clip);
   });
 
   it("Refrains synchron, Strophen mit unterschiedlichen Tänzen", () => {
