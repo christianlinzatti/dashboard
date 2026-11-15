@@ -249,7 +249,7 @@
       "genres": ["hip hop", "breakbeat"],
       "fallback": "Dance_PowerHit",
       "auto": true,
-      "file": "/animations/Mixamo_BreakdanceEnding1.json?v=25003d933f17",
+      "file": "/animations/Mixamo_BreakdanceEnding1.json?v=2280f9ef957d",
       "beats": 8,
       "detectedBpm": 100,
       "skip": true
@@ -288,7 +288,7 @@
       "genres": ["hip hop", "breakbeat"],
       "fallback": "Dance_PowerHit",
       "auto": true,
-      "file": "/animations/Mixamo_BreakdanceFootwork1.json?v=7d0c059f1e83",
+      "file": "/animations/Mixamo_BreakdanceFootwork1.json?v=70996b5bcb4a",
       "beats": 4,
       "detectedBpm": 100
     },
@@ -333,7 +333,7 @@
       "genres": ["hip hop", "breakbeat"],
       "fallback": "Dance_PowerHit",
       "auto": true,
-      "file": "/animations/Mixamo_BreakdanceFootworkToIdle_2.json?v=ed6ed446972e",
+      "file": "/animations/Mixamo_BreakdanceFootworkToIdle_2.json?v=e6813e30cd74",
       "beats": 12,
       "detectedBpm": 100,
       "skip": true
@@ -347,9 +347,7 @@
       "fallback": "Dance_PowerHit",
       "auto": true,
       "skip": true,
-      "file": "/animations/Mixamo_BreakdanceFootworkToIdle.json?v=f59c9f009922",
-      "beats": 4,
-      "detectedBpm": 100
+      "duplicateOf": "Mixamo_BreakdanceFootworkToIdle_2"
     },
     {
       "id": "Mixamo_BreakdanceFreezeVar1",
@@ -417,7 +415,7 @@
       "genres": ["hip hop", "breakbeat"],
       "fallback": "Dance_PowerHit",
       "auto": true,
-      "file": "/animations/Mixamo_BreakdanceFreezeVar4.json?v=b589b05cc2eb",
+      "file": "/animations/Mixamo_BreakdanceFreezeVar4.json?v=15728a547e88",
       "beats": 4,
       "detectedBpm": 100
     },
@@ -429,7 +427,7 @@
       "genres": ["hip hop", "breakbeat"],
       "fallback": "Dance_PowerHit",
       "auto": true,
-      "file": "/animations/Mixamo_BreakdanceFreezes.json?v=32cf94a10da2",
+      "file": "/animations/Mixamo_BreakdanceFreezes.json?v=600be3ba2123",
       "beats": 12
     },
     {
@@ -482,9 +480,9 @@
       "genres": ["hip hop", "breakbeat"],
       "fallback": "Dance_PowerHit",
       "auto": true,
-      "file": "/animations/Mixamo_BreakdanceUprock_2.json?v=a10511755375",
-      "beats": 4,
-      "detectedBpm": 120
+      "file": "/animations/Mixamo_BreakdanceUprock_2.json?v=e7d33f5d0468",
+      "beats": 8,
+      "detectedBpm": 150
     },
     {
       "id": "Mixamo_BreakdanceUprockToGround_2",
@@ -540,7 +538,7 @@
       "genres": ["hip hop", "breakbeat"],
       "fallback": "Dance_PowerHit",
       "auto": true,
-      "file": "/animations/Mixamo_BreakdanceUprockVar1.json?v=47afe96f0cdb",
+      "file": "/animations/Mixamo_BreakdanceUprockVar1.json?v=76adf2faef76",
       "beats": 4,
       "detectedBpm": 120
     },
@@ -552,8 +550,9 @@
       "genres": ["hip hop", "breakbeat"],
       "fallback": "Dance_PowerHit",
       "auto": true,
-      "duplicateOf": "Mixamo_BreakdanceUprock_2",
-      "skip": true
+      "file": "/animations/Mixamo_BreakdanceUprock.json?v=824e8109b36d",
+      "beats": 4,
+      "detectedBpm": 120
     },
     {
       "id": "Mixamo_BrooklynUprock",
@@ -1096,12 +1095,13 @@
       "id": "Mixamo_SillyDancing_1",
       "source": "Silly Dancing (1).fbx",
       "search": "Silly Dancing",
-      "energy": 1,
+      "energy": 2,
       "genres": ["pop", "dance", "party"],
       "fallback": "Dance_FestivalBounce",
       "auto": true,
-      "duplicateOf": "Mixamo_Silly",
-      "skip": true
+      "file": "/animations/Mixamo_SillyDancing_1.json?v=6be729ee4820",
+      "beats": 4,
+      "detectedBpm": 124.1
     },
     {
       "id": "Mixamo_SwingDancing_1",
@@ -3640,8 +3640,9 @@
       "genres": ["hip hop", "breakbeat"],
       "fallback": "Dance_PowerHit",
       "auto": true,
-      "duplicateOf": "Mixamo_BreakdanceFootworkToIdle",
-      "skip": true
+      "file": "/animations/Mixamo_Breakdance1990_270.json?v=219bba397755",
+      "beats": 4,
+      "detectedBpm": 100
     },
     {
       "id": "Mixamo_Breakdance1990_271",
@@ -3949,9 +3950,8 @@
       "genres": ["hip hop", "breakbeat"],
       "fallback": "Dance_PowerHit",
       "auto": true,
-      "file": "/animations/Mixamo_Breakdance1990_36.json?v=8539d1a7b459",
-      "beats": 8,
-      "detectedBpm": 150
+      "duplicateOf": "Mixamo_BreakdanceUprock_2",
+      "skip": true
     },
     {
       "id": "Mixamo_Breakdance1990_37",
@@ -4023,7 +4023,7 @@
       "genres": ["hip hop", "breakbeat"],
       "fallback": "Dance_PowerHit",
       "auto": true,
-      "duplicateOf": "Mixamo_BreakdanceUprock_2",
+      "duplicateOf": "Mixamo_BreakdanceUprock",
       "skip": true
     },
     {
@@ -4094,7 +4094,7 @@
       "genres": ["hip hop", "breakbeat"],
       "fallback": "Dance_PowerHit",
       "auto": true,
-      "duplicateOf": "Mixamo_BreakdanceFootworkToIdle",
+      "duplicateOf": "Mixamo_Breakdance1990_270",
       "skip": true
     },
     {
