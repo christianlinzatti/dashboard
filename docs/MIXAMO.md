@@ -53,6 +53,20 @@ der doppelte wird übersprungen:
 
 Im Katalog steht er dann mit `"duplicateOf"` und `"skip": true`.
 
+**Was kein Tanz ist**, wird automatisch übersprungen und bekommt `"skipReason": "kein Tanz"`: Kampf, Waffen,
+Gehen und Laufen, Zombies, Telefonieren, Umschauen und Ähnliches. Übergänge, also Idle, Start, Ende oder
+„To Idle“, bekommen `"skipReason": "Übergang"`. **Bühnengesten** werden dagegen genutzt: Guitar Playing und
+Playing Drums bei Rock, Cheering, Clap, Victory und Waving bei Party und Pop.
+
+**Neu nummerierte Downloads:** Lädst du Varianten erneut herunter, vergibt der Browser die Nummern womöglich
+anders, und unter „Hip Hop Dancing (4).fbx“ liegt dann ein anderer Tanz als vorher. Das Skript erkennt das an
+der Bewegung und überschreibt den bisherigen Tanz nicht. Es sichert ihn als eigenen Eintrag
+(`…_alt`, `"preserved": true`):
+
+```
+↺ Mixamo_HipHopDancing_4: Hip Hop Dancing (4).fbx enthält jetzt einen anderen Tanz – der bisherige bleibt als Mixamo_HipHopDancing_4_alt
+```
+
 Solche Einträge tragen `"auto": true`, und ihre Energie wird bei jeder Umwandlung neu gemessen. Willst du
 Energie oder Genres selbst festlegen, ändere den Eintrag und entferne `auto`.
 

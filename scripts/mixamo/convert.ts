@@ -12,9 +12,18 @@ import { join } from "node:path";
 import type { AnimationClip } from "three";
 import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js";
 import { packClip, unpackClip, type PackedClip } from "../../lib/dance/clip-pack";
-import { isTransition, type MixamoEntry } from "../../lib/dance/mixamo";
+import type { MixamoEntry } from "../../lib/dance/mixamo";
 import { estimateBpm, makeLoop, restFromGltf, retargetSamples, type RestBone } from "../../lib/dance/retarget";
-import { autoEntry, DUPLICATE_DISTANCE, energyFromMotion, motionSignature, signatureDistance } from "./auto";
+import {
+  autoEntry,
+  DUPLICATE_DISTANCE,
+  energyFromMotion,
+  motionSignature,
+  preservedId,
+  signatureDistance,
+  skipFields,
+  styleFromName,
+} from "./auto";
 import { installImageStub } from "./no-dom";
 import { format, resolveConfig } from "prettier";
 
@@ -40,6 +49,7 @@ const norm = (s: string) =>
     .replace(/[^a-z0-9]/g, "");
 
 function findSource(entry: MixamoEntry, files: string[]): string | undefined {
+  if (entry.preserved) return undefined; // gesicherter früherer Tanz – gehört zu keiner FBX mehr
   const wanted = [norm(entry.source), norm(entry.search), norm(entry.id.replace(/^Mixamo_/, ""))];
   return files.find((f) => wanted.includes(norm(f)));
 }
@@ -71,14 +81,24 @@ async function main() {
 
   for (const entry of catalog.clips) {
     if (only && entry.id !== only) continue;
+    if (entry.preserved) continue;
     const file = findSource(entry, files);
     if (!file) {
       console.log(`– ${entry.id}: „${entry.source}“ nicht gefunden`);
       continue;
     }
     try {
+      // bisherigen Clip merken: enthält die FBX inzwischen einen anderen Tanz (z. B. neu nummerierte Downloads),
+      // bleibt der alte Tanz als eigener Eintrag erhalten statt überschrieben zu werden
+      const before = storedClip(entry);
       const { line, signature } = convertOne(entry, file, rest);
       signatures.set(entry.id, signature);
+      if (before && signatureDistance(before.signature, signature) >= DUPLICATE_DISTANCE) {
+        const kept = preserve(entry, before, ids);
+        catalog.clips.push(kept);
+        signatures.set(kept.id, before.signature);
+        console.log(`↺ ${entry.id}: ${file} enthält jetzt einen anderen Tanz – der bisherige bleibt als ${kept.id}`);
+      }
       // derselbe Tanz schon unter anderem Namen/Nummer da? Dann bleibt der zuerst eingetragene.
       const twin = findTwin(entry, catalog.clips, signatures);
       if (twin) {
@@ -88,9 +108,14 @@ async function main() {
         if (drop === entry) continue;
       }
       delete entry.duplicateOf;
-      if (entry.auto) entry.skip = isTransition(entry.search) || undefined;
+      if (entry.auto) {
+        // Stil und Überspringen bei jeder Umwandlung neu aus dem Namen (verbesserte Regeln greifen auch für alte Einträge)
+        delete entry.skip;
+        delete entry.skipReason;
+        Object.assign(entry, styleFromName(entry.search), skipFields(entry.search));
+      }
       const neu = entry.auto
-        ? ` · auto: Energie ${entry.energy}, Stil ${entry.genres[0]}, Ersatz ${entry.fallback}${entry.skip ? " · übersprungen (Übergang)" : ""}`
+        ? ` · auto: Energie ${entry.energy}, Stil ${entry.genres[0]}, Ersatz ${entry.fallback}${entry.skip ? ` · übersprungen (${entry.skipReason})` : ""}`
         : "";
       console.log(`✓ ${entry.id}: ${file} · ${line}${neu}`);
     } catch (e) {
@@ -119,6 +144,27 @@ export function loopLength(availableFrames: number, beatFrames: number): { beats
   const bar = Math.round(4 * beatFrames);
   const blend = Math.min(ideal, Math.floor(availableFrames - bar));
   return blend >= 2 ? { beats: 4, blend } : { beats: 0, blend: ideal };
+}
+
+/** Bisheriger Clip eines Eintrags (Inhalt + Fingerabdruck), falls vorhanden */
+function storedClip(entry: MixamoEntry): { packed: PackedClip; signature: number[] } | undefined {
+  const path = join(OUT_DIR, `${entry.id}.json`);
+  if (!entry.file || !existsSync(path)) return undefined;
+  const packed = JSON.parse(readFileSync(path, "utf8")) as PackedClip;
+  return { packed, signature: storedSignature(entry)! };
+}
+
+/** Früheren Tanz unter neuer ID sichern (Datei + Katalogeintrag ohne FBX-Zuordnung). */
+function preserve(entry: MixamoEntry, before: { packed: PackedClip }, ids: Set<string>): MixamoEntry {
+  const id = preservedId(entry.id, ids);
+  ids.add(id);
+  const json = JSON.stringify({ ...before.packed, name: id });
+  const sha = createHash("sha256").update(json).digest("hex").slice(0, 12);
+  writeFileSync(join(OUT_DIR, `${id}.json`), json);
+  const kept: MixamoEntry = { ...entry, id, file: `/animations/${id}.json?v=${sha}`, preserved: true };
+  delete kept.auto;
+  delete kept.duplicateOf;
+  return kept;
 }
 
 /** Fingerabdruck eines bereits umgewandelten Tanzes aus seiner Clip-Datei (für Tänze, die in diesem Lauf nicht neu umgewandelt werden). */

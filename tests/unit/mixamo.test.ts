@@ -488,8 +488,11 @@ describe("Doppelte Tänze", () => {
 
   it("derselbe Tanz (auch leicht verrauscht) gilt als doppelt, Varianten nicht", async () => {
     const { DUPLICATE_DISTANCE, motionSignature, signatureDistance } = await import("@/scripts/mixamo/auto");
-    const a = await loadSig("Mixamo_HipHopDancing_3");
-    const b = await loadSig("Mixamo_HipHopDancing_7");
+    // zwei beliebige verschiedene Tänze aus dem Katalog (Dateien ändern sich mit neuen Downloads)
+    const { default: catalog } = await import("@/lib/dance/mixamo-clips.json");
+    const [first, second] = (catalog.clips as Array<{ id: string; file?: string }>).filter((c) => c.file);
+    const a = await loadSig(first!.id);
+    const b = await loadSig(second!.id);
     // erneuter Download: minimale Abweichungen durch Rundung
     const noisy = new Map([...a.rot].map(([k, v]) => [k, Float32Array.from(v, (x, i) => x + ((i % 7) - 3) * 1e-4)] as const));
     expect(signatureDistance(a.sig, motionSignature(noisy, a.frames))).toBeLessThan(DUPLICATE_DISTANCE);
@@ -514,6 +517,51 @@ describe("Doppelte Tänze", () => {
       expect(entries.map((e) => e.id)).toContain(d.duplicateOf);
       expect(d.skip).toBe(true);
       expect(d.file).toBeUndefined();
+    }
+  });
+});
+
+describe("Keine Tänze, Bühnengesten, gesicherte Tänze", () => {
+  it("Kampf, Waffen, Gehen, Alltag werden übersprungen – Tänze und Bühnengesten nicht", async () => {
+    const { skipReason, styleFromName, preservedId } = await import("@/scripts/mixamo/auto");
+    for (const n of [
+      "Drop Kick",
+      "Grab Rifle From The Side",
+      "Zombie Walk",
+      "Texting While Standing",
+      "Jogging",
+      "Hit On Back Of Head",
+    ])
+      expect(skipReason(n), n).toBe("kein Tanz");
+    for (const n of ["Dancing Running Man", "Guitar Playing", "Cheering", "Standing Clap", "Thriller Part 3", "Macarena Dance"])
+      expect(skipReason(n), n).toBeUndefined();
+    expect(skipReason("Happy Idle")).toBe("Übergang");
+    expect(styleFromName("Guitar Playing").genres).toContain("rock");
+    expect(styleFromName("Playing Drums").fallback).toBe("Dance_RockDrive");
+    expect(styleFromName("Standing Clap").genres).toContain("party");
+    expect(styleFromName("Macaco Side").genres).toContain("brazil");
+    expect(styleFromName("Northern Soul Spin").genres).toContain("soul");
+    expect(preservedId("Mixamo_X", new Set())).toBe("Mixamo_X_alt");
+    expect(preservedId("Mixamo_X", new Set(["Mixamo_X_alt", "Mixamo_X_alt2"]))).toBe("Mixamo_X_alt3");
+  });
+
+  it("Katalog im Repo: automatische Einträge folgen den Regeln, gesicherte Tänze haben eine Datei", async () => {
+    const { default: catalog } = await import("@/lib/dance/mixamo-clips.json");
+    const { skipReason } = await import("@/scripts/mixamo/auto");
+    const { existsSync } = await import("node:fs");
+    type E = {
+      id: string;
+      search: string;
+      auto?: boolean;
+      skip?: boolean;
+      duplicateOf?: string;
+      preserved?: boolean;
+      file?: string;
+    };
+    for (const e of catalog.clips as E[]) {
+      if (e.auto && !e.duplicateOf) expect(!!e.skip, `${e.id} (${e.search})`).toBe(!!skipReason(e.search));
+      if (e.preserved) expect(existsSync(join(process.cwd(), "public/animations", `${e.id}.json`)), e.id).toBe(true);
+      if (e.file) expect(existsSync(join(process.cwd(), "public/animations", `${e.id}.json`)), e.id).toBe(true);
     }
   });
 });

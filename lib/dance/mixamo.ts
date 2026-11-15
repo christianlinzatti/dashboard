@@ -31,6 +31,13 @@ export type MixamoEntry = {
   skip?: boolean;
   /** derselbe Tanz wie dieser Eintrag (doppelt heruntergeladen) – wird nicht umgewandelt */
   duplicateOf?: string;
+  /** Grund für skip (automatisch gesetzt: „Übergang“, „kein Tanz“) */
+  skipReason?: string;
+  /**
+   * früher umgewandelter Tanz, dessen FBX-Name inzwischen einen anderen Tanz enthält (z. B. neu nummerierte
+   * Downloads) – Clip bleibt erhalten, wird aber keiner FBX mehr zugeordnet
+   */
+  preserved?: boolean;
 };
 
 export const MIXAMO: MixamoEntry[] = (catalog.clips as MixamoEntry[]).map((c) => ({ ...c }));

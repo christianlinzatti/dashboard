@@ -10,6 +10,16 @@ import type { Sampled } from "../../lib/dance/retarget";
  */
 
 const STYLES: Array<[RegExp, string[], string]> = [
+  // Bühnengesten
+  [/guitar|drum|headbang/i, ["rock", "metal", "punk"], "Dance_RockDrive"],
+  [
+    /cheer|clap|victory|excited|thankful|greeting|waving|singing|celebrat|hokey|shopping cart/i,
+    ["pop", "dance", "party"],
+    "Dance_FestivalBounce",
+  ],
+  // Capoeira-Bewegungen und Northern Soul
+  [/capoeira|macaco|rasteira|meia lua|ginga|\bau to\b/i, ["latin", "world", "brazil"], "Dance_LatinSway"],
+  [/northern soul/i, ["soul", "funk", "disco"], "Dance_Disco"],
   [/break|uprock|flair|windmill|footwork|freeze|power ?move/i, ["hip hop", "breakbeat"], "Dance_PowerHit"],
   [/robot|tut|popping|locking|wave hip|animation/i, ["electro", "hip hop", "synth"], "Dance_Robot"],
   [/hip ?hop|rap|krump|twerk/i, ["hip hop", "rap", "r&b"], "Dance_HipHop"],
@@ -22,6 +32,18 @@ const STYLES: Array<[RegExp, string[], string]> = [
   [/thriller|disco|funk|moonwalk|soul train/i, ["disco", "funk", "pop"], "Dance_Disco"],
   [/gangnam|k-?pop|macarena|chicken|ymca|silly|party|happy|joy|cheer|jump/i, ["pop", "dance", "party"], "Dance_FestivalBounce"],
 ];
+
+/** Mixamo hat neben Tänzen auch Kampf, Waffen, Gehen, Alltag – auf der Bühne fehl am Platz */
+const NON_DANCE =
+  /rifle|reload|gun|pistol|sword|fight|punch|kick|takedown|disarm|shov|block|uppercut|hit (on|to)|stab|zombie|walk|jog|running|rummag|texting|phone|talking|look|nervous|petting|kiss|stretch|surprised|laugh|thoughtful|wobbl|floating|opening|^entry$|^standing$|jumping down|sitting|crouch|dying|death|injur|sleep|drink|eat/i;
+
+/** Warum ein Clip nicht eingeplant wird (Übergang, kein Tanz) – oder undefined */
+export function skipReason(name: string): "Übergang" | "kein Tanz" | undefined {
+  if (isTransition(name)) return "Übergang";
+  // „Dancing Running Man“ ist ein Tanz, „Running“ nicht
+  if (!/danc/i.test(name) && NON_DANCE.test(name)) return "kein Tanz";
+  return undefined;
+}
 
 /** Basisname ohne Endung und ohne Browser-Nummer: „Hip Hop Dancing (2).fbx“ → „Hip Hop Dancing“ */
 export function baseName(file: string): string {
@@ -97,8 +119,22 @@ export function autoEntry(file: string): MixamoEntry {
     energy: 1,
     ...styleFromName(name),
     auto: true,
-    ...(isTransition(name) ? { skip: true } : {}),
+    ...skipFields(name),
   };
+}
+
+/** skip/skipReason passend zum Namen (für automatische Einträge bei jeder Umwandlung neu) */
+export function skipFields(name: string): { skip?: true; skipReason?: string } {
+  const reason = skipReason(name);
+  return reason ? { skip: true, skipReason: reason } : {};
+}
+
+/** Neue ID für einen gesicherten früheren Tanz: „Mixamo_HipHopDancing_4“ → „…_4_alt“, „…_4_alt2“ … */
+export function preservedId(id: string, taken: Set<string>): string {
+  let n = 1;
+  let out = `${id}_alt`;
+  while (taken.has(out)) out = `${id}_alt${++n}`;
+  return out;
 }
 
 /**
