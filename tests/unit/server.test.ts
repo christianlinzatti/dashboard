@@ -2,7 +2,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { refreshSession, spotifyFetch, SpotifyError } from "@/lib/spotify/api";
 import { seal } from "@/lib/server/crypto";
 import type { Session } from "@/lib/server/session";
-import { cacheKey, createLyricsService } from "@/lib/lyrics/service";
+import { cacheKey, createLyricsService, foundKey } from "@/lib/lyrics/service";
+import { toLyrics } from "@/lib/lyrics/chain";
 import { createBreaker } from "@/lib/lyrics/breaker";
 import { memoryCache } from "@/lib/lyrics/cache";
 import type { LyricsProvider, ProviderResult, TrackQuery } from "@/lib/lyrics/types";
@@ -164,6 +165,60 @@ describe("Lyrics-Service", () => {
     const svc2 = createLyricsService(deps([none]));
     await svc2(q);
     expect((await svc2(q)).cached).toBe(true);
+  });
+
+  describe("Cache bei geänderter Provider-Liste", () => {
+    const wordResult = (p: string): ProviderResult => ({
+      provider: p,
+      sync: "word",
+      lines: [{ startMs: 1000, endMs: 3000, text: "Hallo Welt", words: [{ startMs: 1000, endMs: 3000, text: "Hallo" }] }],
+    });
+
+    it("Wort-Sync-Treffer bleiben, auch wenn ein Provider dazukommt", async () => {
+      const cache = memoryCache();
+      const a = provider("a", async () => wordResult("a"));
+      await createLyricsService({ ...deps([a]), cache })(q);
+      const b = provider("b", async () => wordResult("b"));
+      const r = await createLyricsService({ ...deps([b, a]), cache })(q);
+      expect(r).toMatchObject({ cached: true, lyrics: { provider: "a" } });
+      expect(b.search).not.toHaveBeenCalled();
+    });
+
+    it("Zeilen-Sync wird nach Provider-Änderung einmal neu geprüft und nur durch Besseres ersetzt", async () => {
+      const cache = memoryCache();
+      const line = provider("line", async () => result("line"));
+      await createLyricsService({ ...deps([line]), cache })(q);
+      // neuer Provider findet nichts → alter Treffer bleibt, danach keine weitere Suche
+      const none = provider("none", async () => null);
+      const svc = createLyricsService({ ...deps([none, line]), cache });
+      expect((await svc(q)).lyrics?.provider).toBe("line");
+      expect((await svc(q)).cached).toBe(true);
+      expect(none.search).toHaveBeenCalledTimes(1);
+      // neuer Provider mit Wort-Sync → ersetzt den Treffer
+      const word = provider("word", async () => wordResult("word"));
+      const r = await createLyricsService({ ...deps([word, line]), cache })(q);
+      expect(r).toMatchObject({ cached: false, lyrics: { provider: "word", quality: "word" } });
+    });
+
+    it("„nicht gefunden“ gilt nur für dieselbe Provider-Liste", async () => {
+      const cache = memoryCache();
+      const none = provider("none", async () => null);
+      await createLyricsService({ ...deps([none]), cache })(q);
+      expect((await createLyricsService({ ...deps([none]), cache })(q)).cached).toBe(true);
+      const found = provider("neu", async () => result("neu"));
+      expect((await createLyricsService({ ...deps([found, none]), cache })(q)).lyrics?.provider).toBe("neu");
+    });
+
+    it("Einträge im alten Schlüsselformat werden übernommen", async () => {
+      const cache = memoryCache();
+      const a = provider("a", async () => result("a"));
+      const legacyValue = { lyrics: toLyrics(result("alt"), q), instrumental: false, attempts: [] };
+      await cache.set(cacheKey(q.trackKey, [a], false), legacyValue, 60);
+      const svc = createLyricsService({ ...deps([a]), cache });
+      expect(await svc(q)).toMatchObject({ cached: true, lyrics: { provider: "alt" } });
+      expect(a.search).not.toHaveBeenCalled();
+      expect(await cache.get(foundKey(q.trackKey))).toMatchObject({ lyrics: { provider: "alt" } });
+    });
   });
 
   it("Cache-Schlüssel ändert sich mit der Provider-Konfiguration", () => {

@@ -281,7 +281,6 @@ Alles läuft in der Cloud und im Test-Browser. Auf echter Hardware wurde **noch 
 |---|---|
 | Lyrics-Versatz | Mikrofon erkennt Gesangseinsätze, vergleicht mit Zeilenstarts und schlägt einen Offset vor (oder stellt ihn automatisch ein) |
 | geschätzte Wort-Timings | Silben-Onsets aus dem Mikrofon verschieben Wortgrenzen (war geplant, offen) |
-| Lyrics-Cache | der Schlüssel enthält die Provider-Liste; jede Änderung lädt alle Songs neu. Besser: „nicht gefunden“ getrennt invalidieren, Treffer behalten |
 | Tempo ohne Mikrofon | 120 BPM fest; externer BPM-Startwert (z. B. GetSongBPM) würde Tanz und Licht ohne Mikro verbessern |
 | Konzerte | Geocoding für Orte ohne Koordinaten (Nominatim, gecacht), Eventim DE |
 | Lizenz-/Quellenangaben | Flickr ohne Lizenzfilter ist nur privat vertretbar; bei öffentlicher Nutzung wieder einschränken |
@@ -330,7 +329,7 @@ Aufwand: S = bis ½ Tag, M = 1–2 Tage, L = mehrere Tage.
 |---|---|
 | Automatischer Lyrics-Offset aus Gesangseinsätzen (Vorschlag, auf Wunsch automatisch) | M |
 | Wort-Timing-Verfeinerung per Mikrofon für geschätzte Wörter | L |
-| Lyrics-Cache: Treffer behalten, nur „nicht gefunden“ bei Provider-Änderung neu prüfen | S |
+| ✅ Lyrics-Cache: Treffer behalten, nur „nicht gefunden“ bei Provider-Änderung neu prüfen | S |
 | BPM-Startwert aus externer Quelle | S |
 | Konzerte: Geocoding, Heimatort/Umkreis in den Einstellungen, Eventim DE | M |
 

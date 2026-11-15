@@ -65,7 +65,7 @@ reproduzierbar (gleiche Songzeit → gleiche Pose, gleiches Licht) und die Logik
 | 11 | Konto-Allowlist ist optional | niedrig (Spotify-Entwicklungsmodus begrenzt ohnehin die Nutzer) | **offen:** `ALLOWED_SPOTIFY_USERS` in Production setzen (README) |
 | 12 | Leistung auf echter Pi-Hardware nicht gemessen | mittel | **offen:** erst mit Gerät messbar; „Auto“ regelt herunter |
 | 13 | Kein Watchdog, keine Fehlermeldungen vom Kiosk | mittel (Bildschirm bleibt bei Hängern stehen, Fehler unbemerkt) | **offen:** Konzept Stufe 6 |
-| 14 | Lyrics-Cache-Schlüssel enthält die Provider-Liste | niedrig (jede Provider-Änderung lädt alle Songs einmal neu) | **offen:** Treffer behalten, nur „nicht gefunden“ neu prüfen |
+| 14 | Lyrics-Cache-Schlüssel enthält die Provider-Liste | niedrig (jede Provider-Änderung lädt alle Songs einmal neu) | **behoben:** Treffer unabhängig von der Provider-Liste; „nicht gefunden“ und Treffer ohne Wort-Sync werden nach einer Änderung einmal neu geprüft; alte Einträge werden übernommen |
 | 15 | `LyricsLayer.tsx` über 300 Zeilen | Wartbarkeit | **offen:** Darstellungsmodi in eigene Dateien |
 | 16 | Sporadischer Testfehler (Chiffrat enthielt zufällig „u1“) | niedrig | **behoben:** langer, eindeutiger Klartext im Test |
 | 17 | TTML: Silben, Duett-Typen, `lrc:`-Namensraum, lose Satzzeichen | mittel (falsche Füllung, fehlende Sänger) | **behoben:** Parser gegen echte Antworten geprüft |
