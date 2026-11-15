@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { avatarById } from "@/lib/avatars/catalog";
-import { cameraAt, focusTimeline, layersAt, positionsAt } from "@/lib/dance/evaluate";
+import { cameraAt, focusTimeline, layersAt, positionsAt, rotateOnStage, stageAngleAt } from "@/lib/dance/evaluate";
+import { Vector3 } from "three";
+import { fixtures } from "@/lib/song-context/fixtures";
+import { hoshizora } from "@/lib/song-context/fixtures/hoshizora";
 import { slots } from "@/lib/dance/formations";
 import { contiguous, fallbackSections, planChoreography } from "@/lib/dance/plan";
 import { rng } from "@/lib/dance/rng";
@@ -148,11 +151,58 @@ describe("Auswertung zur Songzeit", () => {
   });
 
   it("Kamera liefert gültige Werte", () => {
-    for (const t of [0, 30_000, 45_000, 199_000]) {
+    for (let t = 0; t < 200_000; t += 1000) {
       const c = cameraAt(plan, t);
-      expect(c.pos.every(Number.isFinite)).toBe(true);
-      expect(c.pos[2]).toBeGreaterThan(3);
+      expect([...c.pos, ...c.target].every(Number.isFinite)).toBe(true);
+      // nie im Boden und nie mitten in den Tänzern
+      expect(c.pos[1]).toBeGreaterThan(0.3);
+      expect(Math.hypot(c.pos[0], c.pos[2])).toBeGreaterThan(2);
     }
+  });
+
+  it("Kamera-Einstellungen: Nahaufnahme folgt dem Sänger, Kreisfahrt umrundet die Bühne, Zoom fährt heran", () => {
+    const at = (cam: string) => plan.phrases.find((p) => p.camera === cam);
+    const nah = at("nah")!;
+    const mid = (p: { startMs: number; endMs: number }) => (p.startMs + p.endMs) / 2;
+    const left = cameraAt(plan, mid(nah), [-1.5, 0.5]);
+    const right = cameraAt(plan, mid(nah), [1.5, 0.5]);
+    expect(left.target[0]).toBeCloseTo(-1.5);
+    expect(right.target[0]).toBeCloseTo(1.5);
+    expect(left.target[1]).toBeGreaterThan(1.2); // Gesicht/Oberkörper
+    expect(left.pos[2] - left.target[2]).toBeLessThan(3); // nah dran
+
+    const kreis = at("kreisfahrt")!;
+    expect(cameraAt(plan, mid(kreis)).pos[2]).toBeLessThan(-4); // hinter der Bühne
+    const quarter = kreis.startMs + (kreis.endMs - kreis.startMs) * 0.3;
+    expect(Math.abs(cameraAt(plan, quarter).pos[0])).toBeGreaterThan(3); // seitlich
+    expect(cameraAt(plan, kreis.endMs - 1).pos[2]).toBeGreaterThan(5); // wieder vorn
+
+    const p2 = planChoreography(hoshizora, 132);
+    const zoom = p2.phrases.find((p) => p.camera === "zoom")!;
+    const dist = (t: number) => Math.hypot(...cameraAt(p2, t).pos.map((v, i) => v - [0, 1, 0][i]!));
+    expect(dist(zoom.endMs - 1)).toBeLessThan(dist(zoom.startMs + 100) - 2);
+    expect(cameraAt(p2, p2.phrases.find((p) => p.camera === "vogel")!.startMs + 8000).pos[1]).toBeGreaterThan(6);
+  });
+
+  it("Drehbühne: eine volle Umdrehung pro Phrase, nur in passenden Abschnitten", () => {
+    const plans = Object.values(fixtures).map((s) => planChoreography(s, s.music.bpmHint ?? 120));
+    const turns = plans.flatMap((c) => c.phrases.filter((p) => p.turn).map((p) => ({ c, p })));
+    expect(turns.length).toBeGreaterThan(0);
+    for (const { c, p } of turns) {
+      expect(["chorus", "instrumental", "bridge"]).toContain(p.section);
+      expect(["kreisfahrt", "nah"]).not.toContain(p.camera);
+      expect(stageAngleAt(c, p.startMs)).toBeCloseTo(0);
+      expect(stageAngleAt(c, (p.startMs + p.endMs) / 2)).toBeCloseTo(Math.PI);
+      expect(stageAngleAt(c, p.endMs - 1)).toBeCloseTo(2 * Math.PI, 2);
+    }
+    const still = plans[0]!.phrases.find((p) => !p.turn)!;
+    expect(stageAngleAt(plans[0]!, still.startMs + 500)).toBe(0);
+    // gleiche Drehrichtung wie three.js (Object3D.rotation.y)
+    const v = new Vector3(1.2, 0, 0.4).applyAxisAngle(new Vector3(0, 1, 0), 0.8);
+    const [x, z] = rotateOnStage([1.2, 0.4], 0.8);
+    expect(x).toBeCloseTo(v.x);
+    expect(z).toBeCloseTo(v.z);
+    expect(rotateOnStage([1, 2], 0)).toEqual([1, 2]);
   });
 
   it("Formationen haben eindeutige Plätze, Platz 0 vorn in der Mitte", () => {

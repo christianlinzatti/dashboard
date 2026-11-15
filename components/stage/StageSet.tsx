@@ -3,10 +3,11 @@
 import { useFrame } from "@react-three/fiber";
 import { MeshReflectorMaterial } from "@react-three/drei";
 import { useMemo, useRef } from "react";
-import { AdditiveBlending, CanvasTexture, Color, DoubleSide, type Mesh, type ShaderMaterial } from "three";
+import { AdditiveBlending, CanvasTexture, Color, DoubleSide, type Group, type Mesh, type ShaderMaterial } from "three";
 import type { LightFrame } from "@/lib/stage/lights";
 import type { QualityPreset } from "@/lib/stage/quality";
 import type { Theme } from "@/lib/stage/themes";
+import type { Frame } from "./types";
 import { Curtain, NeonGrid, Planet, RetroSun, SkyDome, Stars, useFloorTexture } from "./Scenery";
 import { songContext } from "@/lib/song-context/store";
 
@@ -304,3 +305,24 @@ export function WallFrame({ scale, children }: { scale: number; children: React.
 }
 
 export const wallScale = (theme: Theme) => (theme.id === "festival" ? 0.74 : 1);
+
+/** Leuchtmarken am Podestrand – drehen sich mit der Drehbühne (sonst sähe man die Drehung kaum). */
+export function TurntableMarks({ frameRef, color }: { frameRef: React.RefObject<Frame>; color: string }) {
+  const group = useRef<Group>(null);
+  useFrame(() => {
+    if (group.current) group.current.rotation.y = frameRef.current.stageAngle;
+  });
+  return (
+    <group ref={group} position-y={0.006}>
+      {Array.from({ length: 16 }, (_, i) => {
+        const a = (i / 16) * Math.PI * 2;
+        return (
+          <mesh key={i} position={[Math.sin(a) * 4.02, 0, Math.cos(a) * 4.02]} rotation={[-Math.PI / 2, 0, -a]}>
+            <planeGeometry args={[0.07, i % 4 === 0 ? 0.32 : 0.16]} />
+            <meshBasicMaterial color={color} toneMapped={false} transparent opacity={i % 4 === 0 ? 0.95 : 0.55} />
+          </mesh>
+        );
+      })}
+    </group>
+  );
+}

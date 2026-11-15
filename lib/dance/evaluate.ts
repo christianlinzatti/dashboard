@@ -106,31 +106,74 @@ export function positionsAt(
   return Object.fromEntries(c.order.map((id) => [id, lerp2(before[id]!, cur[id]!, fw)]));
 }
 
-type Cam = { pos: readonly [number, number, number]; target: readonly [number, number, number] };
+export type Cam = { pos: readonly [number, number, number]; target: readonly [number, number, number] };
+type V3 = readonly [number, number, number];
 
-const CAMERA: Record<CameraPreset, Cam> = {
+const CAMERA: Record<"totale" | "halbnah" | "untersicht" | "seite" | "vogel", Cam> = {
   totale: { pos: [0, 1.3, 6.6], target: [0, 0.45, 0] },
   halbnah: { pos: [0, 1.45, 5.3], target: [0, 0.95, 0] },
   untersicht: { pos: [0, 0.55, 5.4], target: [0, 1.0, 0] },
   seite: { pos: [2.6, 1.3, 5.6], target: [0, 0.6, 0] },
+  vogel: { pos: [0, 7.6, 3.4], target: [0, 0.3, -0.3] },
 };
+const ZOOM_END: Cam = { pos: [0, 1.35, 3.9], target: [0, 1.0, 0] };
 
-/** Kamera zur Zeit t: weicher Wechsel zwischen Einstellungen über einen Takt, dazu leichtes Schweben. */
-export function cameraAt(c: Choreography, t: number): Cam {
+const mix3 = (x: V3, y: V3, w: number): [number, number, number] => [
+  x[0] + (y[0] - x[0]) * w,
+  x[1] + (y[1] - x[1]) * w,
+  x[2] + (y[2] - x[2]) * w,
+];
+
+/** Anteil der Phrase zur Zeit t (0..1, geglättet) */
+const phraseProgress = (p: Phrase, t: number) => easeInOut((t - p.startMs) / Math.max(p.endMs - p.startMs, 1));
+
+/** Kamera einer Einstellung innerhalb ihrer Phrase; `focus` = Bodenposition des aktiven Sängers. */
+function presetAt(preset: CameraPreset, p: Phrase, t: number, focus: Vec2 | undefined): Cam {
+  switch (preset) {
+    case "nah": {
+      const [x, z] = focus ?? [0, 0];
+      return { pos: [x * 0.6, 1.55, z + 2.3], target: [x, 1.42, z] };
+    }
+    case "kreisfahrt": {
+      const a = 2 * Math.PI * phraseProgress(p, t);
+      return { pos: [Math.sin(a) * 6.2, 1.7, Math.cos(a) * 6.2], target: [0, 0.8, 0] };
+    }
+    case "zoom": {
+      const w = phraseProgress(p, t);
+      return { pos: mix3(CAMERA.totale.pos, ZOOM_END.pos, w), target: mix3(CAMERA.totale.target, ZOOM_END.target, w) };
+    }
+    default:
+      return CAMERA[preset];
+  }
+}
+
+/**
+ * Kamera zur Zeit t: weicher Wechsel zwischen Einstellungen (1,5 Takte, max. 3 s), dazu leichtes Schweben.
+ * Kreisfahrt und Zoom bewegen sich über die ganze Phrase; die Nahaufnahme folgt dem aktiven Sänger.
+ */
+export function cameraAt(c: Choreography, t: number, focus?: Vec2): Cam {
   const i = phraseIndexAt(c, t);
   const p: Phrase | undefined = c.phrases[i];
   if (!p) return CAMERA.totale;
   const prev = c.phrases[i - 1];
-  const a = CAMERA[prev?.camera ?? p.camera];
-  const b = CAMERA[p.camera];
+  const a = prev ? presetAt(prev.camera, prev, t, focus) : presetAt(p.camera, p, t, focus);
+  const b = presetAt(p.camera, p, t, focus);
   const w = easeInOut((t - p.startMs) / Math.min(c.barMs * 1.5, 3000));
-  const sway = Math.sin(t / 4000) * 0.25;
-  type V3 = readonly [number, number, number];
-  const mix = (x: V3, y: V3): [number, number, number] => [
-    x[0] + (y[0] - x[0]) * w,
-    x[1] + (y[1] - x[1]) * w,
-    x[2] + (y[2] - x[2]) * w,
-  ];
-  const pos = mix(a.pos, b.pos);
-  return { pos: [pos[0] + sway, pos[1], pos[2]], target: mix(a.target, b.target) };
+  const sway = Math.sin(t / 4000) * (p.camera === "nah" ? 0.08 : 0.25);
+  const pos = mix3(a.pos, b.pos, w);
+  return { pos: [pos[0] + sway, pos[1], pos[2]], target: mix3(a.target, b.target, w) };
+}
+
+/** Drehbühne: Drehwinkel (Rad, um die Hochachse) – eine volle Umdrehung über die Phrase, sonst 0. */
+export function stageAngleAt(c: Choreography, t: number): number {
+  const p = c.phrases[phraseIndexAt(c, t)];
+  return p?.turn ? 2 * Math.PI * phraseProgress(p, t) : 0;
+}
+
+/** Bodenposition um die Bühnenmitte drehen (gleiche Richtung wie Object3D.rotation.y). */
+export function rotateOnStage([x, z]: Vec2, angle: number): Vec2 {
+  if (!angle) return [x, z];
+  const c = Math.cos(angle);
+  const s = Math.sin(angle);
+  return [x * c + z * s, -x * s + z * c];
 }

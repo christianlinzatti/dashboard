@@ -13,6 +13,8 @@ export type Frame = {
   vocal: number;
   energy: number;
   micActive: boolean;
+  /** Drehbühne: aktueller Drehwinkel (Rad) */
+  stageAngle: number;
 };
 
 export const initialFrame: Frame = {
@@ -25,6 +27,7 @@ export const initialFrame: Frame = {
   vocal: 0,
   energy: 0,
   micActive: false,
+  stageAngle: 0,
 };
 
 export const TARGET_HEIGHT = 1.8;

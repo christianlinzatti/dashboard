@@ -3,7 +3,7 @@
 import { useFrame, useThree } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import { Object3D, type PointLight, type SpotLight } from "three";
-import { cameraAt, focusTimeline, positionsAt } from "@/lib/dance/evaluate";
+import { cameraAt, focusTimeline, phraseIndexAt, positionsAt, rotateOnStage, stageAngleAt } from "@/lib/dance/evaluate";
 import type { Choreography } from "@/lib/dance/plan";
 import { settings } from "@/lib/settings";
 import type { SongStatic } from "@/lib/song-context/schema";
@@ -37,10 +37,15 @@ export function Director({ song, choreo, frameRef, lightsRef, heads, strobeRef, 
   const singerColor = (artistId: string | undefined) =>
     song.artists.find((a) => a.spotifyId === artistId)?.color ?? song.album.palette.accent;
 
-  useFrame(() => {
+  const shot = useRef("");
+  useFrame(({ gl }) => {
     const { positionMs, playback, frozen, derived, live } = songContext.getState();
     const t = positionMs;
-    const positions = positionsAt(choreo, t, { timeline, avatarOf });
+    // Drehbühne: Formation dreht sich mit dem Podest um die Bühnenmitte
+    const stageAngle = stageAngleAt(choreo, t);
+    const positions = Object.fromEntries(
+      Object.entries(positionsAt(choreo, t, { timeline, avatarOf })).map(([id, p]) => [id, rotateOnStage(p, stageAngle)]),
+    );
     const focus = avatarOf(derived.activeSingerId) ?? choreo.order[0];
     const mic = live.micActive;
     // Puls: kurz nach jedem Schlag hell, dann abklingend; ohne Mikro ruhig
@@ -56,6 +61,7 @@ export function Director({ song, choreo, frameRef, lightsRef, heads, strobeRef, 
       vocal: mic ? live.vocal : 0,
       energy: mic ? live.energy : 0.5,
       micActive: mic,
+      stageAngle,
     };
     if (back.current) back.current.intensity = 18 + frameRef.current.energy * 14 + pulse * 30;
 
@@ -75,9 +81,13 @@ export function Director({ song, choreo, frameRef, lightsRef, heads, strobeRef, 
     lightBus.publish(lf);
     if (strobeRef.current) strobeRef.current.style.opacity = String(lf.strobe * 0.55);
 
-    const cam = cameraAt(choreo, t);
+    const cam = cameraAt(choreo, t, focus ? positions[focus] : undefined);
     camera.position.set(...cam.pos);
     camera.lookAt(...cam.target);
+    // für Tests und Debug: aktuelle Kameraeinstellung und Drehbühne am Canvas
+    const phrase = choreo.phrases[phraseIndexAt(choreo, t)];
+    const label = `${phrase?.camera ?? "totale"}${phrase?.turn ? "+drehbuehne" : ""}`;
+    if (label !== shot.current) gl.domElement.dataset.camera = shot.current = label;
 
     // Spotlight folgt dem aktiven Sänger (sonst dem Lead)
     const p = focus ? positions[focus] : undefined;
