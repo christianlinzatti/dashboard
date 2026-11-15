@@ -34,6 +34,7 @@ jobs:
           TICKETMASTER_API_KEY: ${{ secrets.TICKETMASTER_API_KEY }}
           BANDSINTOWN_APP_ID: ${{ secrets.BANDSINTOWN_APP_ID }}
           SETLISTFM_API_KEY: ${{ secrets.SETLISTFM_API_KEY }}
+          BETTER_LYRICS_API_KEY: ${{ secrets.BETTER_LYRICS_API_KEY }}
         run: npm run test:live 2>&1 | tee provider-check.log
         continue-on-error: true
       - name: Issue bei Ausfall

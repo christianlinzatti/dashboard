@@ -211,7 +211,13 @@ describe("Spotify Color-Lyrics", () => {
 
 describe("Provider-Auswahl", () => {
   it("Standard: alle Provider, unbekannte werden ignoriert", () => {
-    expect(activeProviders({}).map((p) => p.id)).toEqual(["musixmatch-desktop", "spotify-color", "netease", "lrclib"]);
+    expect(activeProviders({}).map((p) => p.id)).toEqual([
+      "better-lyrics",
+      "musixmatch-desktop",
+      "spotify-color",
+      "netease",
+      "lrclib",
+    ]);
     expect(activeProviders({ LYRICS_PROVIDERS: "lrclib, unbekannt" }).map((p) => p.id)).toEqual(["lrclib"]);
   });
 });

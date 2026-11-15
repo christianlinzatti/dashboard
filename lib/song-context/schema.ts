@@ -26,10 +26,19 @@ export const imageSchema = z.object({
 });
 export type Image = z.infer<typeof imageSchema>;
 
+export const syllableSchema = z.object({
+  startMs: z.number().nonnegative(),
+  endMs: z.number().nonnegative(),
+  text: z.string(),
+});
+export type LyricSyllable = z.infer<typeof syllableSchema>;
+
 export const wordSchema = z.object({
   startMs: z.number().nonnegative(),
   endMs: z.number().nonnegative(),
   text: z.string(),
+  /** Silben mit eigenem Timing (z. B. „e|nough“) – die Füllung folgt dann Silbe für Silbe */
+  syllables: z.array(syllableSchema).optional(),
 });
 export type LyricWord = z.infer<typeof wordSchema>;
 

@@ -12,6 +12,7 @@ const query = z.object({
   isrc: z.string().max(20).optional(),
   title: z.string().min(1).max(300),
   artists: z.string().min(1).max(500),
+  artistIds: z.string().max(500).optional(),
   album: z.string().max(300).optional(),
   durationMs: z.coerce
     .number()
@@ -26,9 +27,14 @@ export async function GET(req: NextRequest) {
   if (!session) return json({ error: "Nicht angemeldet." }, 401);
   const parsed = query.safeParse(Object.fromEntries(req.nextUrl.searchParams));
   if (!parsed.success) return json({ error: "Ungültige Anfrage." }, 400);
-  const { artists, ...rest } = parsed.data;
+  const { artists, artistIds, ...rest } = parsed.data;
   // Anmelde-Token nur weitergeben, wenn es noch gilt (Erneuerung übernimmt /api/now-playing)
   const userAccessToken = session.expiresAt > Date.now() + 30_000 ? session.accessToken : undefined;
-  const result = await lyricsFor({ ...rest, artists: artists.split("\u001f").filter(Boolean), userAccessToken });
+  const result = await lyricsFor({
+    ...rest,
+    artists: artists.split("\u001f").filter(Boolean),
+    ...(artistIds ? { artistIds: artistIds.split("\u001f").filter(Boolean) } : {}),
+    userAccessToken,
+  });
   return json(result);
 }

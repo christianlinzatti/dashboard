@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { betterLyrics } from "@/lib/lyrics/providers/better-lyrics";
 import { lrclib } from "@/lib/lyrics/providers/lrclib";
 import type { TrackQuery } from "@/lib/lyrics/types";
 
@@ -19,5 +20,19 @@ describe("LRCLIB (live)", () => {
     expect(r!.sync).not.toBe("plain");
     expect(r!.lines.length).toBeGreaterThan(10);
     expect(r!.lines.every((l, i, a) => i === 0 || l.startMs >= a[i - 1]!.startMs)).toBe(true);
+  });
+});
+
+describe("Better Lyrics (live)", () => {
+  // ohne API-Key liefert der Dienst nur Songs aus seinem Cache – „Blinding Lights“ ist dort vorhanden
+  it("Wort-Sync mit Abschnitten für „Blinding Lights“", async () => {
+    const q = references[2]!;
+    const r = await betterLyrics({ apiKey: process.env.BETTER_LYRICS_API_KEY }).search(q, AbortSignal.timeout(15_000));
+    expect(r, "kein Treffer").not.toBeNull();
+    expect(r!.sync).toBe("word");
+    expect(r!.lines.length).toBeGreaterThan(20);
+    expect(r!.sections?.some((s) => s.kind === "chorus")).toBe(true);
+    expect(r!.lines.flatMap((l) => l.words ?? []).some((w) => w.syllables?.length)).toBe(true);
+    expect(Math.abs((r!.durationMs ?? 0) - q.durationMs)).toBeLessThan(3500);
   });
 });

@@ -41,7 +41,28 @@ function wordState(line: LyricLine, t: number): { wordIdx: number; wordProgress:
   const idx = lastStartedIndex(words, t);
   if (idx < 0) return { wordIdx: -1, wordProgress: 0 };
   const w = words[idx]!;
-  return { wordIdx: idx, wordProgress: clamp01((t - w.startMs) / Math.max(w.endMs - w.startMs, 1)) };
+  return {
+    wordIdx: idx,
+    wordProgress: w.syllables?.length
+      ? syllableProgress(w.syllables, t)
+      : clamp01((t - w.startMs) / Math.max(w.endMs - w.startMs, 1)),
+  };
+}
+
+/**
+ * Fortschritt im Wort entlang der Silben, gewichtet nach Zeichen: „e|nough“ füllt erst das „e“ in dessen Zeit,
+ * dann „nough“ in seiner – auch wenn die Silben unterschiedlich lang gesungen werden.
+ */
+export function syllableProgress(syllables: Array<{ startMs: number; endMs: number; text: string }>, t: number): number {
+  const total = syllables.reduce((n, s) => n + Math.max(s.text.length, 1), 0);
+  let done = 0;
+  for (const s of syllables) {
+    const len = Math.max(s.text.length, 1);
+    if (t < s.startMs) break;
+    done += len * clamp01((t - s.startMs) / Math.max(s.endMs - s.startMs, 1));
+    if (t < s.endMs) break;
+  }
+  return clamp01(done / total);
 }
 
 /**

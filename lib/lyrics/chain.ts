@@ -42,7 +42,7 @@ export function toLyrics(r: ProviderResult, q: TrackQuery): Lyrics {
     provider: r.provider,
     quality: estimated ? "word-estimated" : "word",
     lines,
-    sections: detectSections(lines, q.durationMs),
+    sections: r.sections?.length ? r.sections : detectSections(lines, q.durationMs),
     ...(r.singers ? { singers: r.singers } : {}),
   };
 }

@@ -14,6 +14,7 @@ export function lyricsUrl(song: SongStatic) {
     spotifyId: song.track.spotifyId,
     title: song.track.title,
     artists: song.artists.map((a) => a.name).join(SEP),
+    artistIds: song.artists.map((a) => a.spotifyId).join(SEP),
     album: song.album.name,
     durationMs: String(song.track.durationMs),
     ...(song.track.isrc ? { isrc: song.track.isrc } : {}),

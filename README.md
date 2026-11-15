@@ -50,7 +50,9 @@ geräteunabhängiges Lichtsignal für die Govee-Lampen (Stufe 3). Qualitätsstuf
 (Pi 4 / Pi 5 / Mini-PC), „Auto“ passt sich der Bildrate an; Qualität und Strobe in der Steuerleiste.
 
 M6 – Wort-für-Wort-Lyrics und wechselnde Darstellungen:
-- Provider (gegen echte Schnittstellen geprüft, Nov. 2026): **NetEase** (Wort-Sync, YRC), **LRCLIB**,
+- Provider (gegen echte Schnittstellen geprüft, Nov. 2026): **Better Lyrics** (`lyrics-api.boidu.dev`,
+  Apple-Music-TTML mit Wort- und Silben-Timing, echten Songabschnitten und Sängern bei Duetten; ohne
+  `BETTER_LYRICS_API_KEY` nur Songs aus dem Cache des Dienstes), **NetEase** (Wort-Sync, YRC), **LRCLIB**,
   **Musixmatch Desktop** (Zeilen-Sync; liefert aus Rechenzentren Lockvogel-Treffer, die verworfen werden),
   **Spotify Color-Lyrics** (nur mit `SPOTIFY_SP_DC` + TOTP-Secret, nicht ohne Zugangsdaten testbar).
   Jeder Treffer wird gegen Titel, Artist, Version und Dauer geprüft.

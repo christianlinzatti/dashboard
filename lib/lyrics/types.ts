@@ -1,4 +1,4 @@
-import type { LyricLine } from "@/lib/song-context/schema";
+import type { LyricLine, Section } from "@/lib/song-context/schema";
 
 /** Was ein Provider zum Suchen bekommt (aus dem Song-Kontext). */
 export type TrackQuery = {
@@ -7,6 +7,8 @@ export type TrackQuery = {
   isrc?: string;
   title: string;
   artists: string[];
+  /** Spotify-IDs in derselben Reihenfolge wie artists (für die Sänger-Zuordnung) */
+  artistIds?: string[];
   album?: string;
   durationMs: number;
   /** Spotify-Token der Dashboard-Anmeldung (nur serverseitig, für Spotify Color-Lyrics) */
@@ -23,6 +25,8 @@ export type ProviderResult = {
   /** Provider sagt ausdrücklich: Instrumental, kein Text */
   instrumental?: boolean;
   singers?: Record<string, string>;
+  /** vom Provider gelieferte Songabschnitte (z. B. Apple-Music-TTML) statt eigener Erkennung */
+  sections?: Section[];
 };
 
 export interface LyricsProvider {

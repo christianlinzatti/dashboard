@@ -5,6 +5,7 @@ import type { Lyrics } from "@/lib/song-context/schema";
 import { createBreaker, type Breaker } from "./breaker";
 import { getCache, type Cache } from "./cache";
 import { findLyrics, toLyrics, type Attempt } from "./chain";
+import { betterLyrics } from "./providers/better-lyrics";
 import { localOverrides } from "./providers/local";
 import { lrclib } from "./providers/lrclib";
 import { musixmatchDesktop } from "./providers/musixmatch";
@@ -13,7 +14,7 @@ import { spotifyColor } from "./providers/spotify-color";
 import type { LyricsProvider, TrackQuery } from "./types";
 
 const CACHE_VERSION = "v2";
-export const DEFAULT_PROVIDERS = "musixmatch-desktop,spotify-color,netease,lrclib";
+export const DEFAULT_PROVIDERS = "better-lyrics,musixmatch-desktop,spotify-color,netease,lrclib";
 
 /**
  * Externe Provider, steuerbar über LYRICS_PROVIDERS (kommagetrennt).
@@ -21,6 +22,7 @@ export const DEFAULT_PROVIDERS = "musixmatch-desktop,spotify-color,netease,lrcli
  */
 export function activeProviders(env: Record<string, string | undefined> = process.env): LyricsProvider[] {
   const all: Record<string, () => LyricsProvider | null> = {
+    "better-lyrics": () => betterLyrics({ apiKey: env.BETTER_LYRICS_API_KEY || undefined }),
     lrclib: () => lrclib(),
     netease: () => netease(),
     "musixmatch-desktop": () => musixmatchDesktop(),
