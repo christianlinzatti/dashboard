@@ -339,3 +339,13 @@ describe("Umwandlung in Node", () => {
     if (before) g.document = before;
   });
 });
+
+describe("Schleifenlänge", () => {
+  it("ganze Takte, Überblendung bei kurzen Aufnahmen gekürzt", async () => {
+    const { loopLength } = await import("@/scripts/mixamo/convert");
+    const beat = (30 * 60) / 105.9; // 17 Frames
+    expect(loopLength(30 * 20, beat)).toEqual({ beats: 32, blend: 8 }); // 20 s: viele Takte, halbe Schlaglänge
+    expect(loopLength(72, beat)).toEqual({ beats: 4, blend: 4 }); // Rumba: 2,4 s reichen nur mit kurzer Blende
+    expect(loopLength(60, beat).beats).toBe(0); // kürzer als ein Takt
+  });
+});

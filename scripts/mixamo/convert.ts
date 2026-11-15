@@ -24,6 +24,8 @@ const CATALOG = join(ROOT, "lib/dance/mixamo-clips.json");
 const FPS = 30;
 
 const only = process.argv.includes("--only") ? process.argv[process.argv.indexOf("--only") + 1] : undefined;
+// Fehlerverlauf: DEBUG=1 als Umgebungsvariable oder als Argument (`npm run mixamo debug=1` / `-- --debug`)
+const debug = !!process.env.DEBUG || process.argv.some((a) => /^(--)?debug(=1|=true)?$/i.test(a));
 
 function readGltfJson(file: string) {
   const b = readFileSync(file);
@@ -68,15 +70,28 @@ async function main() {
       // Datei nennen und mit der nächsten weitermachen, statt alles abzubrechen
       failed.push(file);
       console.log(`✗ ${entry.id}: ${file} – ${e instanceof Error ? e.message : String(e)}`);
-      if (process.env.DEBUG && e instanceof Error) console.log(e.stack);
+      if (debug && e instanceof Error) console.log(e.stack);
     }
   }
   // wie im Repo formatiert (sonst schlägt `prettier --check` in der CI an)
   writeFileSync(CATALOG, await format(JSON.stringify(catalog), { ...(await resolveConfig(CATALOG)), filepath: CATALOG }));
   if (failed.length) {
-    console.log(`\n${failed.length} Datei(en) nicht umgewandelt: ${failed.join(", ")} (Details mit DEBUG=1)`);
+    console.log(`\n${failed.length} Datei(en) nicht umgewandelt: ${failed.join(", ")} (Details mit: npm run mixamo debug=1)`);
     process.exitCode = 1;
   }
+}
+
+/**
+ * Länge der Schleife in Schlägen (ganze Takte) und Überblendung in Frames.
+ * Bevorzugt eine halbe Schlaglänge Überblendung; reicht die Aufnahme dafür nicht, wird sie bis auf 2 Frames gekürzt.
+ */
+export function loopLength(availableFrames: number, beatFrames: number): { beats: number; blend: number } {
+  const ideal = Math.max(2, Math.round(beatFrames / 2));
+  const beats = Math.floor((availableFrames - ideal) / beatFrames / 4) * 4;
+  if (beats >= 4) return { beats, blend: ideal };
+  const bar = Math.round(4 * beatFrames);
+  const blend = Math.min(ideal, Math.floor(availableFrames - bar));
+  return blend >= 2 ? { beats: 4, blend } : { beats: 0, blend: ideal };
 }
 
 /** Eine FBX-Datei umwandeln; liefert die Erfolgszeile oder wirft mit verständlicher Meldung. */
@@ -97,9 +112,9 @@ function convertOne(entry: MixamoEntry, file: string, rest: RestBone[]): string 
   const bpm = entry.bpm ?? detected ?? 120;
   const beatSec = 60 / bpm;
 
-  // 2. ganze Takte als Schleife, eine halbe Schlaglänge Überblendung
-  const blend = Math.max(2, Math.round((beatSec / 2) * FPS));
-  const beats = Math.floor(((end - start) * FPS - blend) / (beatSec * FPS) / 4) * 4;
+  // 2. ganze Takte als Schleife, bis zu eine halbe Schlaglänge Überblendung
+  //    (bei sehr kurzen Aufnahmen kürzer, damit wenigstens ein Takt hineinpasst)
+  const { beats, blend } = loopLength((end - start) * FPS, beatSec * FPS);
   if (beats < 4) {
     throw new Error(`zu kurz für einen Takt (${(end - start).toFixed(1)} s bei ${bpm} BPM)`);
   }
@@ -124,4 +139,5 @@ function convertOne(entry: MixamoEntry, file: string, rest: RestBone[]): string 
   return `${bpm} BPM${tempo} · ${beats} Schläge · ${(json.length / 1024).toFixed(0)} KB`;
 }
 
-void main();
+// nur als Skript ausführen, nicht beim Import (Tests)
+if (process.argv[1]?.replace(/\\/g, "/").endsWith("scripts/mixamo/convert.ts")) void main();

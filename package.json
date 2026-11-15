@@ -18,7 +18,7 @@
     "e2e": "playwright test --trace off",
     "e2e:update": "playwright test --trace off --update-snapshots=all",
     "avatars": "node scripts/optimize-avatars.mjs",
-    "mixamo": "tsx scripts/mixamo/convert.ts",
+    "mixamo": "tsx --no-deprecation scripts/mixamo/convert.ts",
     "test:live": "vitest run --config vitest.live.config.mts",
     "format": "prettier --write .",
     "format:check": "prettier --check ."

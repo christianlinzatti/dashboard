@@ -81,7 +81,7 @@ und `fallback` ergänzen. Danach das Skript erneut ausführen.
 | Meldung | Lösung |
 |---|---|
 | `document is not defined` (FBXLoader/TextureLoader) | behoben: Texturen werden in Node übersprungen. Repo aktualisieren und erneut umwandeln. |
-| `✗ Mixamo_…: <Datei> – <Fehler>` | Diese Datei ließ sich nicht umwandeln; die übrigen laufen weiter. Mit `DEBUG=1` (Windows: `set DEBUG=1`) zeigt das Skript den ganzen Fehlerverlauf. Oft hilft ein erneuter Download mit FBX Binary. |
+| `✗ Mixamo_…: <Datei> – <Fehler>` | Diese Datei ließ sich nicht umwandeln; die übrigen laufen weiter. Mit `npm run mixamo debug=1` zeigt das Skript den ganzen Fehlerverlauf. Oft hilft ein erneuter Download mit FBX Binary. |
 | `„…“ nicht gefunden` | Dateiname passt nicht zu `source`/`search` im Katalog: Datei umbenennen oder Eintrag anpassen. |
 | Tanz wirkt zu schnell oder zu langsam | Das geschätzte Tempo liegt daneben, oft um den Faktor 2 oder 1,5. `bpm` im Katalog setzen und neu umwandeln. |
 | `package-lock.json` verliert `esbuild` | Passiert mit npm 11 (Node 24) und `npm install`. Mit Node 22 (`.nvmrc`) und `npm ci` arbeiten, oder die Datei vor dem Commit zurücksetzen: `git checkout package-lock.json`. |
