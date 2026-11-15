@@ -14,7 +14,8 @@ import {
   type RestBone,
 } from "@/lib/dance/retarget";
 
-const AVATARS = join(process.cwd(), "public/avatars");
+// Quell-Avatare (public/avatars entsteht erst beim Build)
+const AVATARS = join(process.cwd(), "avatars");
 const gltf = (file: string) => {
   const b = readFileSync(join(AVATARS, file));
   return JSON.parse(b.subarray(20, 20 + b.readUInt32LE(12)).toString("utf8"));

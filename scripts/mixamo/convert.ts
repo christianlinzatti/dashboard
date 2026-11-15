@@ -41,9 +41,9 @@ function findSource(entry: MixamoEntry, files: string[]): string | undefined {
 
 function main() {
   const catalog = JSON.parse(readFileSync(CATALOG, "utf8")) as { clips: MixamoEntry[] };
-  const manifest = JSON.parse(readFileSync(join(ROOT, "public/avatars/manifest.json"), "utf8")) as Array<{ url: string }>;
-  // alle Avatare teilen dasselbe Skelett (geprüft im Test „gemeinsame Grundpose“)
-  const rest = restFromGltf(readGltfJson(join(ROOT, "public", manifest[0]!.url)));
+  // alle Avatare teilen dasselbe Skelett (geprüft im Test „gemeinsame Grundpose“); Quelldateien statt Build-Ausgabe
+  const first = readdirSync(join(ROOT, "avatars")).find((f) => f.endsWith(".glb"))!;
+  const rest = restFromGltf(readGltfJson(join(ROOT, "avatars", first)));
   const files = existsSync(SRC_DIR) ? readdirSync(SRC_DIR).filter((f) => f.toLowerCase().endsWith(".fbx")) : [];
   if (!files.length) {
     console.log(`Keine FBX-Dateien in ${SRC_DIR}. Anleitung: docs/MIXAMO.md`);
