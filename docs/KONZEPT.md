@@ -238,7 +238,7 @@ Vercel: `main` → Production, Branches → Preview. Bilder von TheAudioDB/Flick
 
 ### Stufe 2 – Bühne & Licht
 ✅ Bühne, LED-Wand, Moving Heads, Laser, Nebel, Bloom, Qualitätsstufen, geräteunabhängiges Lichtsignal ·
-○ Logo der Band als Bühnenprojektion · ○ 3D-Lyrics in der Szene für Refrain-Momente
+✅ Logo der Band über der LED-Wand (ruhige Teile) · ○ 3D-Lyrics in der Szene für Refrain-Momente
 
 ### Stufe 3 – Govee & Alexa
 ✅ Pi-Bridge (`bridge/`, systemd, nur lokal, Origin-Prüfung), Govee LAN mit Discovery und Rollen
@@ -253,7 +253,7 @@ Fakten-Ticker in Strophen, Feature-Artists abwechselnd · ○ Wikipedia-Artikel 
 
 ### Stufe 5 – Persönliches, Konzerte, weitere Quellen
 ✅ Zuletzt gehört (Last.fm, sonst Spotify), Lieblingssong, Herz, Hörzahlen, ★ bei gefolgten Künstlern ·
-✅ Song per Touch liken · ○ Begrüßung bei gefolgten Künstlern (Avatar winkt) · ○ ähnliche Künstler und Tags (Last.fm)
+✅ Song per Touch liken · ✅ Begrüßung bei gefolgten Künstlern (Avatar winkt) · ○ ähnliche Künstler und Tags (Last.fm)
 ✅ Konzerte aus vier Quellen, zusammengeführt, Umkreis Wien, Countdown, QR-Code, letzte Setlist ·
 ✅ Geocoding für Orte ohne Koordinaten (OpenStreetMap) · ○ Heimatort/Umkreis in den Einstellungen statt Env · ○ Eventim DE/Reservix
 ✅ TheAudioDB, Flickr, Genius-Trivia, Fotoauswahl je Verwendung
@@ -343,7 +343,7 @@ Aufwand: S = bis ½ Tag, M = 1–2 Tage, L = mehrere Tage.
 
 | Baustein | Aufwand |
 |---|---|
-| Band-Logo als Bühnenprojektion, Avatar winkt bei gefolgten Künstlern | S |
+| ✅ Band-Logo als Bühnenprojektion, Avatar winkt bei gefolgten Künstlern | S |
 | 3D-Lyrics in der Szene für Refrain-Highlights (nur ab Qualität „mittel“) | M |
 | Leerlauf-Bildschirm: Wochen-Statistik, ähnliche Künstler, nächstes Konzert der Lieblingskünstler | M |
 

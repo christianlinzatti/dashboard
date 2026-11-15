@@ -81,3 +81,37 @@ test.describe("Band-Infos", () => {
     expect((await request.get("/api/info?ids=a&names=b")).status()).toBe(401);
   });
 });
+
+test("Live: Band-Logo erscheint auf der Bühne und in der Infokarte", async ({ page }) => {
+  const track = {
+    id: "0VjIjW4GlUZAMYd2vXMi3b",
+    type: "track",
+    name: "Logolied",
+    duration_ms: 200_000,
+    explicit: false,
+    artists: [{ id: "a1", name: "Testband" }],
+    album: { name: "A", images: [{ url: "/demo/pulsar.svg", width: 300, height: 300 }] },
+  };
+  await page.route("**/api/now-playing", (r) =>
+    r.fulfill({ json: { state: "playing", progressMs: 2000, fetchedAt: 0, track, user: "Test" } }),
+  );
+  await page.route("**/api/lyrics?*", (r) =>
+    r.fulfill({ json: { lyrics: null, instrumental: true, cached: false, attempts: [] } }),
+  );
+  await page.route("**/api/info?*", (r) =>
+    r.fulfill({
+      json: {
+        complete: true,
+        info: {
+          artists: {
+            a1: { name: "Testband", summary: "Eine Band.", wikiUrl: "u", lang: "de", facts: [], logo: "/demo/test-logo.svg" },
+          },
+          photos: [],
+        },
+      },
+    }),
+  );
+  await page.goto("/");
+  await expect(page.locator("[data-wall-logo]")).toHaveAttribute("data-wall-logo", "/demo/test-logo.svg");
+  await expect(page.getByTestId("artist-logo")).toHaveAttribute("src", "/demo/test-logo.svg");
+});

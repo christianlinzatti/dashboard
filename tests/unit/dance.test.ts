@@ -64,6 +64,18 @@ describe("Choreografie-Plan", () => {
       if (formations[i] === formations[i - 1]) expect(plan.phrases[i]!.section).toBe("outro");
   });
 
+  it("auch gefolgte Feature-Artists winken zum Start, nicht gefolgte tanzen", () => {
+    const kai = neonlicht.cast.find((c) => c.artistId === "demo-kai")!.avatarId;
+    expect(plan.phrases[0]!.moves[kai]!.clip).not.toBe("Gesture_Wave"); // Kai wird nicht gefolgt
+    const followed = {
+      ...neonlicht,
+      user: { ...neonlicht.user!, artists: { ...neonlicht.user!.artists, "demo-kai": { following: true } } },
+    };
+    const p2 = planChoreography(followed, 124);
+    expect(p2.phrases[0]!.moves[kai]!.clip).toBe("Gesture_Wave");
+    expect(p2.phrases[1]!.moves[kai]!.clip).not.toBe("Gesture_Wave"); // nur die erste Phrase
+  });
+
   it("ist pro Song deterministisch und unterscheidet sich zwischen Songs", () => {
     expect(planChoreography(neonlicht, 124)).toEqual(plan);
     const other = planChoreography({ ...neonlicht, trackKey: "anders" }, 124);

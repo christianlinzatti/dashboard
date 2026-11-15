@@ -17,6 +17,7 @@ import { Director } from "./Director";
 import { Lasers, MovingHeads } from "./Lights";
 import { ReadySignal } from "./ReadySignal";
 import { PhotoWall } from "./PhotoWall";
+import { LogoWall } from "./LogoWall";
 import { wallPhotoAt } from "@/lib/info/display";
 import { displayUrl } from "@/lib/info/photos";
 import { Fog, StageSet } from "./StageSet";
@@ -86,10 +87,15 @@ function Scene({ forceQuality, onContextLost }: { forceQuality?: Quality; onCont
 
   // Neu planen nur, wenn sich Song, Abschnitte, Besetzung oder Tempo ändern
   const sectionsKey = song?.lyrics?.sections.map((s) => `${s.kind}${s.startMs}`).join() ?? "";
+  // gefolgte Artists winken beim Songstart – die Daten kommen kurz nach dem Songwechsel
+  const followKey = Object.entries(song?.user?.artists ?? {})
+    .filter(([, a]) => a.following)
+    .map(([id]) => id)
+    .join();
   const choreo = useMemo(
     () => (song ? planChoreography(song, bpm) : null),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst nur bei inhaltlichen Änderungen
-    [song?.trackKey, sectionsKey, bpm, song?.cast],
+    [song?.trackKey, sectionsKey, bpm, song?.cast, followKey],
   );
   const frame = useRef<Frame>(initialFrame);
   const lights = useRef<LightFrame | null>(null);
@@ -106,9 +112,10 @@ function Scene({ forceQuality, onContextLost }: { forceQuality?: Quality; onCont
   useEffect(() => () => document.body.removeAttribute("data-stage-ready"), []);
 
   if (!song || !choreo) return null;
+  const logo = song.info?.artists[song.artists[0]?.spotifyId ?? ""]?.logo;
 
   return (
-    <div className="absolute inset-0" data-quality={quality}>
+    <div className="absolute inset-0" data-quality={quality} data-wall-logo={logo ? displayUrl(logo, 640) : undefined}>
       <Canvas
         data-testid="stage"
         dpr={preset.dpr}
@@ -154,6 +161,11 @@ function Scene({ forceQuality, onContextLost }: { forceQuality?: Quality; onCont
                 accent={song.album.palette.accent}
                 lightsRef={lights}
               />
+            </ErrorBoundary>
+          )}
+          {logo && (
+            <ErrorBoundary key={logo} fallback={null} label="Logo">
+              <LogoWall url={displayUrl(logo, 640)} accent={song.album.palette.accent} lightsRef={lights} />
             </ErrorBoundary>
           )}
           {song.cast.map((c) => (

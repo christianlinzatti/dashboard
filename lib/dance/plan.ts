@@ -152,8 +152,9 @@ export function planChoreography(song: SongStatic, bpm: number): Choreography {
       } else {
         const used = new Set<string>();
         order.forEach((id, i) => {
-          // Lead bekommt beim Songstart ein Winken
-          if (i === 0 && phrases.length === 0 && sec.kind === "intro" && available[id]!.has(WAVE_CLIP))
+          // Beim Songstart winken der Lead und alle Artists, denen du folgst
+          const followed = !!song.user?.artists[cast[i]?.artistId ?? ""]?.following;
+          if ((i === 0 || followed) && phrases.length === 0 && sec.kind === "intro" && available[id]!.has(WAVE_CLIP))
             return (moves[id] = WAVE_CLIP);
           // Nebenfiguren möglichst andere Variante als die anderen
           const opts = pool(id, [...recent[id]!, ...used]);
