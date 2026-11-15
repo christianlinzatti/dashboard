@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useRef, type CSSProperties } from "react";
 import { markBackground, planLyricsModes, type LyricsMode } from "@/lib/lyrics/director";
 import { cardShownAt } from "@/lib/info/display";
+import { secondLineFill, secondLineFor, type SecondLine } from "@/lib/lyrics/second-line";
+import { useSettings } from "@/lib/settings";
 import type { LyricLine, SongStatic } from "@/lib/song-context/schema";
 import { songContext, useSongContext } from "@/lib/song-context/store";
 
@@ -17,6 +19,7 @@ export function LyricsLayer({ forceMode }: { forceMode?: LyricsMode }) {
   const wordIdx = useSongContext((s) => s.derived.wordIdx);
   const longGap = useSongContext((s) => (s.derived.secondsToNextLyric ?? 0) > 3);
   const beforeFirst = useSongContext((s) => s.derived.lineIdx < 0);
+  const secondMode = useSettings((s) => s.secondLine);
 
   const sectionsKey = song?.lyrics?.sections.map((s) => s.startMs).join() ?? "";
   const modes = useMemo(
@@ -35,7 +38,10 @@ export function LyricsLayer({ forceMode }: { forceMode?: LyricsMode }) {
   if (!song || !lines?.length) return <NoLyrics song={song} />;
 
   const current = lineActive ? lines[lineIdx] : undefined;
-  const mode: LyricsMode = forceMode ?? modes[lineActive ? lineIdx : lineIdx + 1] ?? "karaoke";
+  const second = current && song.lyrics ? secondLineFor(song.lyrics, current, secondMode) : null;
+  const planned: LyricsMode = forceMode ?? modes[lineActive ? lineIdx : lineIdx + 1] ?? "karaoke";
+  // Wort-Pop/Schreibmaschine zeigen nur ein Wort bzw. tippen – mit zweiter Zeile lieber Karaoke
+  const mode: LyricsMode = second && !forceMode && (planned === "wortpop" || planned === "schreibmaschine") ? "karaoke" : planned;
   const prev = lineActive ? lines[lineIdx - 1] : lines[lineIdx];
   const next = lines[lineIdx + 1];
   const color = (l?: LyricLine) => (l ? singerColor(song, l) : song.album.palette.accent);
@@ -55,7 +61,7 @@ export function LyricsLayer({ forceMode }: { forceMode?: LyricsMode }) {
       aria-live="off"
     >
       {mode === "duett" ? (
-        <Duet song={song} lines={lines} lineIdx={lineIdx} current={current} wordIdx={wordIdx} gap={gap} />
+        <Duet song={song} lines={lines} lineIdx={lineIdx} current={current} wordIdx={wordIdx} gap={gap} second={second} />
       ) : (
         <>
           {mode === "karaoke" || mode === "schreibmaschine" ? (
@@ -74,7 +80,12 @@ export function LyricsLayer({ forceMode }: { forceMode?: LyricsMode }) {
           ) : (
             <Karaoke key={lineIdx} line={current} wordIdx={wordIdx} color={color(current)} />
           )}
-          <Context text={next?.text} />
+          {/* Umschrift/Übersetzung ersetzt die Vorschau der nächsten Zeile (Platz auf 10 Zoll) */}
+          {current && second && (mode === "karaoke" || mode === "stapel") ? (
+            <SecondLineView key={`2-${lineIdx}`} line={current} second={second} color={color(current)} />
+          ) : (
+            <Context text={next?.text} />
+          )}
         </>
       )}
     </section>
@@ -136,6 +147,40 @@ function Karaoke({ line, wordIdx, color }: ModeProps) {
           ) : (
             <span className="text-white/35">{w.text}</span>
           )}
+        </span>
+      ))}
+    </p>
+  );
+}
+
+/** Zweite Zeile (Umschrift mit eigenem Timing oder Übersetzung), Füllung pro Frame direkt im DOM. */
+function SecondLineView({ line, second, color }: { line: LyricLine; second: SecondLine; color: string }) {
+  const ref = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    const apply = (t: number) => {
+      const spans = ref.current?.querySelectorAll<HTMLElement>("[data-fill]");
+      if (!spans) return;
+      secondLineFill(line, second, t).forEach((p, i) => spans[i]?.style.setProperty("--p", String(p)));
+    };
+    apply(songContext.getState().positionMs);
+    return songContext.subscribe((s) => s.positionMs, apply);
+  }, [line, second]);
+  const parts = second.words?.length ? second.words.map((w) => w.text) : [second.text];
+  return (
+    <p
+      ref={ref}
+      className={`text-[clamp(16px,3.8vmin,44px)] font-semibold leading-tight ${second.kind === "uebersetzung" ? "italic" : ""}`}
+      style={{ "--c-singer": color } as CSSProperties}
+      data-testid="lyrics-second"
+      data-kind={second.kind}
+      lang={second.lang}
+    >
+      {parts.map((text, i) => (
+        <span key={i}>
+          {i > 0 && " "}
+          <span data-fill className="word-fill">
+            {text}
+          </span>
         </span>
       ))}
     </p>
@@ -231,6 +276,7 @@ function Duet({
   current,
   wordIdx,
   gap,
+  second,
 }: {
   song: SongStatic;
   lines: LyricLine[];
@@ -238,6 +284,7 @@ function Duet({
   current?: LyricLine;
   wordIdx: number;
   gap: React.ReactNode;
+  second: SecondLine | null;
 }) {
   const singers = song.lyrics?.singers ?? {};
   const agents = [...new Set(lines.map((l) => l.agent).filter((a): a is string => !!a && !!singers[a]))].slice(0, 2);
@@ -263,6 +310,7 @@ function Duet({
             {active && current ? (
               <div className="[&>p]:text-[clamp(24px,5.6vmin,72px)]">
                 <Karaoke line={current} wordIdx={wordIdx} color={artist?.color ?? song.album.palette.accent} />
+                {second && <SecondLineView line={current} second={second} color={artist?.color ?? song.album.palette.accent} />}
               </div>
             ) : (
               <p className="text-[clamp(16px,3.4vmin,40px)] font-semibold text-white/30">{line?.text ?? ""}</p>

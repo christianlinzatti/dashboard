@@ -1,5 +1,6 @@
 import { createStore } from "zustand/vanilla";
 import { useStore } from "zustand";
+import { secondLineModes, type SecondLineMode } from "@/lib/lyrics/second-line";
 import { qualities, type Quality } from "@/lib/stage/quality";
 
 /** Geräte-Einstellungen (pro Dashboard im Browser gespeichert). */
@@ -10,10 +11,12 @@ export type Settings = {
   strobe: boolean;
   /** Externe Lampen (Govee über die Pi-Bridge) ansteuern */
   lamps: boolean;
+  /** Zweite Lyrics-Zeile: Umschrift/Übersetzung */
+  secondLine: SecondLineMode;
 };
 
 const KEY = "ss_settings";
-const defaults: Settings = { quality: "auto", strobe: true, lamps: true };
+const defaults: Settings = { quality: "auto", strobe: true, lamps: true, secondLine: "auto" };
 
 function load(): Settings {
   try {
@@ -25,6 +28,9 @@ function load(): Settings {
           : defaults.quality,
       strobe: typeof raw.strobe === "boolean" ? raw.strobe : defaults.strobe,
       lamps: typeof raw.lamps === "boolean" ? raw.lamps : defaults.lamps,
+      secondLine: secondLineModes.includes(raw.secondLine as SecondLineMode)
+        ? (raw.secondLine as SecondLineMode)
+        : defaults.secondLine,
     };
   } catch {
     return defaults;
@@ -36,8 +42,8 @@ export const settings = createStore<Settings & { set(p: Partial<Settings>): void
   set(p) {
     set(p);
     try {
-      const { quality, strobe, lamps } = get();
-      localStorage.setItem(KEY, JSON.stringify({ quality, strobe, lamps }));
+      const { quality, strobe, lamps, secondLine } = get();
+      localStorage.setItem(KEY, JSON.stringify({ quality, strobe, lamps, secondLine }));
     } catch {
       /* privater Modus */
     }

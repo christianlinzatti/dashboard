@@ -44,6 +44,8 @@ export function toLyrics(r: ProviderResult, q: TrackQuery): Lyrics {
     lines,
     sections: r.sections?.length ? r.sections : detectSections(lines, q.durationMs),
     ...(r.singers ? { singers: r.singers } : {}),
+    ...(r.transliterationLang ? { transliterationLang: r.transliterationLang } : {}),
+    ...(r.translationLang ? { translationLang: r.translationLang } : {}),
   };
 }
 

@@ -48,6 +48,10 @@ export const lineSchema = z.object({
   text: z.string(),
   agent: z.string().optional(),
   words: z.array(wordSchema).optional(),
+  /** Umschrift in lateinischer Schrift (z. B. Rōmaji), mit eigenem Wort-Timing, falls vorhanden */
+  transliteration: z.object({ text: z.string(), words: z.array(wordSchema).optional() }).optional(),
+  /** Übersetzung der Zeile (Text, ohne Timing) */
+  translation: z.string().optional(),
 });
 export type LyricLine = z.infer<typeof lineSchema>;
 
@@ -66,6 +70,9 @@ export const lyricsSchema = z.object({
   quality: z.enum(["word", "word-estimated", "line", "plain"]),
   lines: z.array(lineSchema),
   sections: z.array(sectionSchema),
+  /** Sprache der Umschrift (z. B. „ja-Latn“) und der Übersetzung (z. B. „en-US“) */
+  transliterationLang: z.string().optional(),
+  translationLang: z.string().optional(),
   /** Zuordnung Sänger-Kennung (z. B. TTML-Agent "v1") → Spotify-Artist-ID */
   singers: z.record(z.string(), z.string()).optional(),
 });

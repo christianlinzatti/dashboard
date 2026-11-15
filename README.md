@@ -5,6 +5,12 @@ zeigt den aktuellen Spotify-Song, Lyrics möglichst Wort für Wort und tanzende 
 
 Konzept und Ausbaustufen: [`docs/KONZEPT.md`](docs/KONZEPT.md) · Architektur-Bewertung: [`docs/ARCHITEKTUR.md`](docs/ARCHITEKTUR.md)
 
+**Neu: Umschrift und Übersetzung** – Liefert Better Lyrics eine Umschrift (z. B. Japanisch → Rōmaji, Koreanisch →
+lateinisch) oder eine Übersetzung, erscheint sie als zweite Zeile unter dem Liedtext. Die Umschrift wird mit eigenem
+Timing mitgefüllt. Die Einstellung „automatisch“ zeigt die Umschrift bei nicht-lateinischer Schrift und Übersetzungen nur,
+wenn sie deutsch sind; der Schalter „2. Zeile“ in der Steuerleiste wechselt zu Umschrift, Übersetzung (jede Sprache)
+oder aus. Demo: `/?demo=hoshizora`.
+
 **Stand: Stufe 5c** – Mehr Bilder und Trivia:
 - **TheAudioDB** (ohne eigenen Key nutzbar): Bühnenbilder im 16:9-Format für die LED-Wand, Band-Logos auf der
   Infokarte, deutsche Biografie als Ersatz, wenn es keinen Wikipedia-Artikel gibt, sowie Stil, Mitgliederzahl und Herkunft.
@@ -201,3 +207,8 @@ chromium --kiosk --noerrdialogs --disable-infobars \
 - **Mikrofon:** USB-Mikrofon anschließen, beim ersten Start die Freigabe erlauben (wird für die Domain
   gespeichert). Danach startet die Analyse automatisch. Audio wird nur lokal im Browser ausgewertet.
 - `--autoplay-policy=no-user-gesture-required` sorgt dafür, dass die Audio-Analyse ohne Antippen startet.
+- **Schriften für Japanisch/Chinesisch/Koreanisch** (Liedtexte mit Umschrift), sonst erscheinen Kästchen:
+
+  ```bash
+  sudo apt install fonts-noto-cjk
+  ```

@@ -5,6 +5,7 @@ import { songContext, useSongContext } from "@/lib/song-context/store";
 import { POLL_NOW_EVENT } from "../spotify/useSpotifySync";
 import type { MicState } from "@/lib/song-context/schema";
 import { useSettings } from "@/lib/settings";
+import { hasSecondLine, secondLineLabel, secondLineModes } from "@/lib/lyrics/second-line";
 import { useBridgeState } from "../bridge/useBridge";
 import type { Quality } from "@/lib/stage/quality";
 
@@ -43,6 +44,8 @@ export function Controls({ live, mic }: { live: boolean; mic?: { state: MicState
   const hideTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const quality = useSettings((s) => s.quality);
   const strobe = useSettings((s) => s.strobe);
+  const secondLine = useSettings((s) => s.secondLine);
+  const secondAvailable = useSongContext((s) => hasSecondLine(s.song?.lyrics));
   const lamps = useSettings((s) => s.lamps);
   const bridge = useBridgeState((s) => s.state);
   const setSettings = useSettings((s) => s.set);
@@ -143,6 +146,17 @@ export function Controls({ live, mic }: { live: boolean; mic?: { state: MicState
         >
           Qualität: {qualityLabel[quality]}
         </button>
+        {secondAvailable && (
+          <button
+            className={btn}
+            data-testid="second-line-toggle"
+            onClick={() =>
+              setSettings({ secondLine: secondLineModes[(secondLineModes.indexOf(secondLine) + 1) % secondLineModes.length]! })
+            }
+          >
+            2. Zeile: {secondLineLabel[secondLine]}
+          </button>
+        )}
         <button
           className={btn}
           data-testid="strobe-toggle"

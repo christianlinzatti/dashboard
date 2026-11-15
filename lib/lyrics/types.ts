@@ -25,6 +25,9 @@ export type ProviderResult = {
   /** Provider sagt ausdrücklich: Instrumental, kein Text */
   instrumental?: boolean;
   singers?: Record<string, string>;
+  /** Sprache der Umschrift/Übersetzung in den Zeilen */
+  transliterationLang?: string;
+  translationLang?: string;
   /** vom Provider gelieferte Songabschnitte (z. B. Apple-Music-TTML) statt eigener Erkennung */
   sections?: Section[];
 };

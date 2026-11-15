@@ -37,6 +37,8 @@ export function fromTtml(ttml: string, q: TrackQuery): ProviderResult | null {
     ...(doc.durationMs !== undefined ? { durationMs: doc.durationMs } : {}),
     ...(doc.sections.length ? { sections: doc.sections } : {}),
     ...(singers ? { singers } : {}),
+    ...(doc.transliterationLang ? { transliterationLang: doc.transliterationLang } : {}),
+    ...(doc.translationLang ? { translationLang: doc.translationLang } : {}),
   };
 }
 

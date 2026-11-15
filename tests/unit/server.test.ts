@@ -184,10 +184,13 @@ describe("Geräte-Einstellungen", () => {
     });
     const { settings } = await import("@/lib/settings");
     settings.getState().set({ quality: "hoch", strobe: false });
-    expect(JSON.parse(store.get("ss_settings")!)).toEqual({ quality: "hoch", strobe: false, lamps: true });
-    store.set("ss_settings", JSON.stringify({ quality: "ultra", strobe: "ja" }));
+    expect(JSON.parse(store.get("ss_settings")!)).toEqual({ quality: "hoch", strobe: false, lamps: true, secondLine: "auto" });
+    settings.getState().set({ secondLine: "uebersetzung" });
     settings.getState().hydrate();
-    expect(settings.getState()).toMatchObject({ quality: "auto", strobe: true });
+    expect(settings.getState().secondLine).toBe("uebersetzung");
+    store.set("ss_settings", JSON.stringify({ quality: "ultra", strobe: "ja", secondLine: "klingonisch" }));
+    settings.getState().hydrate();
+    expect(settings.getState()).toMatchObject({ quality: "auto", strobe: true, secondLine: "auto" });
     vi.unstubAllGlobals();
   });
 });

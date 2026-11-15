@@ -18,6 +18,55 @@ const decode = (s: string) =>
     .replace(/&amp;/g, "&");
 
 const attr = (tag: string, name: string) => new RegExp(`\\s${name}="([^"]*)"`).exec(tag)?.[1];
+/** Apple-Attribute kommen als itunes:… oder (Quelle lrc.red) als lrc:… */
+const appleAttr = (tag: string, name: string) => attr(tag, `itunes:${name}`) ?? attr(tag, `lrc:${name}`);
+
+/**
+ * Wörter aus einer Folge von Spans: Leerzeichen trennen Wörter (auch innerhalb des Span-Texts),
+ * Spans ohne Leerzeichen dazwischen sind Silben desselben Worts (Silben-Timing bleibt erhalten).
+ * Text außerhalb der Spans (z. B. „)“) wird an das vorige Wort angehängt.
+ */
+export function parseWords(inner: string): { words: LyricWord[]; text: string } {
+  const words: LyricWord[] = [];
+  let glue = false; // nächste Silbe an das vorige Wort anhängen?
+  for (const t of inner.matchAll(/<span\b([^>]*)>([^<]*)<\/span>|(\s+)|<[^>]+>|([^<\s]+)/g)) {
+    if (t[3]) {
+      glue = false;
+      continue;
+    }
+    const prev = words.at(-1);
+    if (t[4] !== undefined) {
+      // lose Satzzeichen zwischen/nach Spans
+      if (prev) {
+        const raw = decode(t[4]);
+        prev.text += raw;
+        if (prev.syllables) prev.syllables.at(-1)!.text += raw;
+      }
+      continue;
+    }
+    if (t[1] === undefined) continue;
+    const text = decode(t[2]!);
+    const ws = ttmlTime(attr(t[1], "begin"));
+    const we = ttmlTime(attr(t[1], "end"));
+    if (ws === undefined || we === undefined || !text.trim()) continue;
+    if (glue && prev && !/^\s/.test(text)) {
+      prev.syllables ??= [{ startMs: prev.startMs, endMs: prev.endMs, text: prev.text }];
+      prev.syllables.push({ startMs: ws, endMs: we, text: text.trim() });
+      prev.text += text.trim();
+      prev.endMs = we;
+    } else words.push({ startMs: ws, endMs: we, text: text.replace(/\s+/g, " ").trim() });
+    glue = !/\s$/.test(text);
+  }
+  const text = words.length
+    ? words.map((w) => w.text).join(" ")
+    : decode(inner.replace(/<[^>]+>/g, ""))
+        .replace(/\s+/g, " ")
+        .trim();
+  return { words, text };
+}
+
+const same = (a: string, b: string) =>
+  a.toLowerCase().replace(/[\s\p{P}]+/gu, "") === b.toLowerCase().replace(/[\s\p{P}]+/gu, "");
 
 /** Apple-Music-Abschnittsnamen (itunes:songPart) → eigene Abschnittsarten. */
 const PART: Record<string, SectionKind> = {
@@ -40,6 +89,9 @@ export type TtmlDoc = {
   /** Abschnitte aus itunes:songPart, Lücken als Intro/Instrumental/Outro ergänzt; leer, wenn keine Angaben */
   sections: Section[];
   durationMs?: number;
+  /** Sprache/Schrift der Umschrift (z. B. „ja-Latn“) bzw. Übersetzung (z. B. „en-US“) */
+  transliterationLang?: string;
+  translationLang?: string;
   /** einzelne Sänger (person/character) mit Name, in Reihenfolge des ersten Auftretens */
   agents: Array<{ id: string; name?: string }>;
 };
@@ -51,7 +103,7 @@ export type TtmlDoc = {
  * - Hintergrundgesang (ttm:role="x-bg") wird ausgelassen – die Karaoke-Füllung folgt der Hauptstimme.
  */
 export function parseTtml(ttml: string, songDurationMs?: number): TtmlDoc {
-  const timing = /itunes:timing="Line"/i.test(ttml) ? "line" : "word";
+  const timing = /(?:itunes|lrc):timing="Line"/i.test(ttml) ? "line" : "word";
   const durationMs = ttmlTime(/<body[^>]*\sdur="([^"]+)"/.exec(ttml)?.[1]) ?? songDurationMs;
 
   const personAgents = new Map<string, string | undefined>();
@@ -65,11 +117,14 @@ export function parseTtml(ttml: string, songDurationMs?: number): TtmlDoc {
   }
 
   const lines: LyricLine[] = [];
+  const keyIndex = new Map<string, number>();
   const sections: Section[] = [];
   const seenAgents: string[] = [];
   const divRe = /<div\b([^>]*)>([\s\S]*?)<\/div>/g;
-  const blocks = [...ttml.matchAll(divRe)];
-  const containers = blocks.length ? blocks.map((b) => ({ tag: b[1]!, body: b[2]! })) : [{ tag: "", body: ttml }];
+  // Nur den <body> lesen: Umschriften/Übersetzungen im <head> enthalten ebenfalls Spans
+  const body = /<body\b[^>]*>([\s\S]*?)<\/body>/.exec(ttml)?.[1] ?? ttml;
+  const blocks = [...body.matchAll(divRe)];
+  const containers = blocks.length ? blocks.map((b) => ({ tag: b[1]!, body: b[2]! })) : [{ tag: "", body }];
 
   for (const c of containers) {
     const before = lines.length;
@@ -80,49 +135,51 @@ export function parseTtml(ttml: string, songDurationMs?: number): TtmlDoc {
       const agent = attr(p[1]!, "ttm:agent");
       // Hintergrundgesang entfernen (verschachtelte Spans)
       const inner = p[2]!.replace(/<span[^>]*ttm:role="x-bg"[^>]*>(?:\s*<span\b[^>]*>[^<]*<\/span>\s*)*<\/span>/g, "");
-      const words: LyricWord[] = [];
-      let glue = false; // nächste Silbe an das vorige Wort anhängen?
-      const tokens = inner.matchAll(/<span\b([^>]*)>([^<]*)<\/span>|(\s+)|<[^>]+>|([^<\s]+)/g);
-      for (const t of tokens) {
-        if (t[3]) {
-          glue = false;
-          continue;
-        }
-        if (t[1] !== undefined) {
-          const text = decode(t[2]!);
-          const ws = ttmlTime(attr(t[1], "begin"));
-          const we = ttmlTime(attr(t[1], "end"));
-          if (ws === undefined || we === undefined || !text.trim()) continue;
-          const prev = words.at(-1);
-          if (glue && prev) {
-            // Silbe desselben Worts: Text anhängen, Silben mit eigenem Timing behalten
-            prev.syllables ??= [{ startMs: prev.startMs, endMs: prev.endMs, text: prev.text }];
-            prev.syllables.push({ startMs: ws, endMs: we, text: text.trim() });
-            prev.text += text.trim();
-            prev.endMs = we;
-          } else words.push({ startMs: ws, endMs: we, text: text.trim() });
-          glue = !/\s$/.test(text);
-        }
-      }
-      const text =
-        words.length > 0
-          ? words.map((w) => w.text).join(" ")
-          : decode(inner.replace(/<[^>]+>/g, ""))
-              .replace(/\s+/g, " ")
-              .trim();
+      const { words, text } = parseWords(inner);
+      const key = appleAttr(p[1]!, "key");
       if (!text) continue;
       if (agent && personAgents.has(agent) && !seenAgents.includes(agent)) seenAgents.push(agent);
+      if (key) keyIndex.set(key, lines.length);
       lines.push({ startMs: start, endMs: end, text, ...(agent ? { agent } : {}), ...(words.length ? { words } : {}) });
     }
-    const kind = PART[(attr(c.tag, "itunes:songPart") ?? "").toLowerCase()];
+    const kind = PART[(appleAttr(c.tag, "songPart") ?? "").toLowerCase()];
     const ds = ttmlTime(attr(c.tag, "begin")) ?? lines[before]?.startMs;
     const de = ttmlTime(attr(c.tag, "end")) ?? lines.at(-1)?.endMs;
     if (kind && ds !== undefined && de !== undefined && lines.length > before) sections.push({ kind, startMs: ds, endMs: de });
   }
 
+  // Umschrift (z. B. ja-Latn) mit eigenem Timing und Übersetzung (Zeilentext) über den Zeilenschlüssel
+  const translit = /<transliteration\b([^>]*)>([\s\S]*?)<\/transliteration>/.exec(ttml);
+  let transliterationLang: string | undefined;
+  if (translit) {
+    for (const m of translit[2]!.matchAll(/<text\b[^>]*\sfor="([^"]+)"[^>]*>([\s\S]*?)<\/text>/g)) {
+      const line = lines[keyIndex.get(m[1]!) ?? -1];
+      if (!line) continue;
+      const { words, text } = parseWords(m[2]!);
+      if (!text || same(text, line.text)) continue; // gleiche Schrift → keine Umschrift nötig
+      line.transliteration = { text, ...(words.length ? { words } : {}) };
+      transliterationLang = attr(translit[1]!, "xml:lang");
+    }
+  }
+  const transl = /<translation\b([^>]*)>([\s\S]*?)<\/translation>/.exec(ttml);
+  let translationLang: string | undefined;
+  if (transl) {
+    for (const m of transl[2]!.matchAll(/<text\b[^>]*\sfor="([^"]+)"[^>]*>([\s\S]*?)<\/text>/g)) {
+      const line = lines[keyIndex.get(m[1]!) ?? -1];
+      const text = decode(m[2]!.replace(/<[^>]+>/g, ""))
+        .replace(/\s+/g, " ")
+        .trim();
+      if (!line || !text || same(text, line.text)) continue;
+      line.translation = text;
+      translationLang = attr(transl[1]!, "xml:lang");
+    }
+  }
+
   return {
     timing,
     lines,
+    ...(transliterationLang ? { transliterationLang } : {}),
+    ...(translationLang ? { translationLang } : {}),
     sections: sections.length ? fillGaps(sections, durationMs) : [],
     ...(durationMs !== undefined ? { durationMs } : {}),
     agents: seenAgents.map((id) => ({ id, ...(personAgents.get(id) ? { name: personAgents.get(id) } : {}) })),
@@ -133,7 +190,11 @@ export function parseTtml(ttml: string, songDurationMs?: number): TtmlDoc {
 function fillGaps(sections: Section[], durationMs?: number): Section[] {
   const out: Section[] = [];
   const sorted = [...sections].sort((a, b) => a.startMs - b.startMs);
-  if (sorted[0]!.startMs > 3000) out.push({ kind: "intro", startMs: 0, endMs: sorted[0]!.startMs });
+  if (sorted[0]!.startMs > 3000) {
+    if (sorted[0]!.kind === "intro")
+      sorted[0]!.startMs = 0; // markiertes Intro bis zum Songanfang verlängern
+    else out.push({ kind: "intro", startMs: 0, endMs: sorted[0]!.startMs });
+  }
   sorted.forEach((s, i) => {
     out.push(s);
     const next = sorted[i + 1];
