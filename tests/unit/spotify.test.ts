@@ -32,9 +32,13 @@ const track: SpotifyTrack = spotifyTrackSchema.parse({
 
 describe("Session-Verschlüsselung", () => {
   it("ver- und entschlüsselt", () => {
-    const token = seal({ uid: "u1", n: 42 }, SECRET);
-    expect(unseal(token, SECRET)).toEqual({ uid: "u1", n: 42 });
-    expect(token).not.toContain("u1");
+    // langer, eindeutiger Klartext: ein kurzer Wert wie „u1“ kann im Base64 zufällig vorkommen (flackernder Test)
+    const uid = "klartext-benutzer-0815";
+    const token = seal({ uid, n: 42 }, SECRET);
+    expect(unseal(token, SECRET)).toEqual({ uid, n: 42 });
+    expect(token).not.toContain(uid);
+    expect(Buffer.from(token.replace(/\./g, ""), "base64url").toString("latin1")).not.toContain(uid);
+    expect(token).not.toContain(Buffer.from(JSON.stringify({ uid })).toString("base64url").slice(0, 12));
   });
 
   it("erkennt Manipulation und falschen Schlüssel", () => {
