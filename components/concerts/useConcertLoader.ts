@@ -28,9 +28,15 @@ export function useConcertLoader(enabled: boolean) {
         try {
           const res = await fetch(concertsUrl(song), { signal: ctrl.signal });
           if (!res.ok) return;
-          const { concerts, setlists } = (await res.json()) as { concerts: Concert[]; setlists: Record<string, Setlist> };
+          const { concerts, setlists, area } = (await res.json()) as {
+            concerts: Concert[];
+            setlists: Record<string, Setlist>;
+            area?: { name: string; radiusKm: number };
+          };
           if (songContext.getState().song?.trackKey === key)
-            songContext.getState().mergeSong({ concerts, setlists, status: { concerts: { state: "ok" } } });
+            songContext
+              .getState()
+              .mergeSong({ concerts, setlists, ...(area ? { concertArea: area } : {}), status: { concerts: { state: "ok" } } });
         } catch {
           /* Konzerte sind optional */
         }

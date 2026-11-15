@@ -26,6 +26,11 @@ export function ConcertOverlay() {
       <div className="flex min-w-0 flex-1 flex-col gap-[1vmin]">
         <h2 className="text-[clamp(14px,2.6vmin,28px)] font-extrabold">
           {card.near ? "Live in deiner Nähe" : "Nächste Konzerte"}
+          {card.area && (
+            <span className="ml-2 text-[0.6em] font-semibold text-white/50" data-testid="concert-area">
+              {card.area.name} · {card.area.radiusKm >= 5000 ? "überall" : `${card.area.radiusKm} km`}
+            </span>
+          )}
         </h2>
         <ul className="flex flex-col gap-[0.8vmin]">
           {card.concerts.map((c) => (

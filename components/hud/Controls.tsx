@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { songContext, useSongContext } from "@/lib/song-context/store";
 import { POLL_NOW_EVENT } from "../spotify/useSpotifySync";
@@ -181,6 +182,11 @@ export function Controls({ live, mic }: { live: boolean; mic?: { state: MicState
           <button className={btn} onClick={mic.toggle} data-testid="mic-toggle" aria-pressed={mic.state === "aktiv"}>
             {micLabel[mic.state]}
           </button>
+        )}
+        {live && (
+          <Link className={btn} href="/einstellungen" data-testid="settings-link">
+            Einstellungen
+          </Link>
         )}
         {live && (
           <button className={btn} onClick={logout}>

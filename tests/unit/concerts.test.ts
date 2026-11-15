@@ -457,3 +457,50 @@ describe("Geocoding (Nominatim, echte Antworten)", () => {
     expect(r.concerts[0]!.distanceKm).toBeGreaterThan(150);
   });
 });
+
+describe("Heimatort und Umkreis", () => {
+  it("Ortssuche liefert Namen und Koordinaten (echte Antwort)", async () => {
+    const { geocodePlace } = await import("@/lib/concerts/geocode");
+    const linz = (await import("../fixtures/nominatim/linz.json")).default;
+    const http = vi.fn<Get>(async () => ok(linz));
+    expect(await geocodePlace("Linz", http)).toEqual({ name: "Linz", lat: 48.3059078, lon: 14.286198 });
+    expect(new URL(http.mock.calls[0]![0]).searchParams.get("q")).toBe("Linz");
+    expect(await geocodePlace("Zzz", async () => ok([]))).toBeNull();
+  });
+
+  it("Einstellungen pro Konto, wirksamer Bereich mit Standard", async () => {
+    const { createPrefsStore, effectiveArea } = await import("@/lib/server/prefs-store");
+    const store = createPrefsStore(memoryCache());
+    expect(effectiveArea(await store.get("u1"))).toMatchObject({ name: "Wien", radiusKm: 200, custom: false });
+    await store.set("u1", { home: { name: "Linz", lat: 48.3, lon: 14.29 }, radiusKm: 100 });
+    expect(effectiveArea(await store.get("u1"))).toEqual({ name: "Linz", lat: 48.3, lon: 14.29, radiusKm: 100, custom: true });
+    expect(effectiveArea(await store.get("u2"))).toMatchObject({ name: "Wien" });
+    await expect(store.set("u1", { radiusKm: 3 })).rejects.toThrow(); // ungültig
+  });
+
+  it("Dienst rechnet Entfernungen vom eingestellten Ort und meldet den Bereich", async () => {
+    const p = {
+      id: "oe",
+      ticketPriority: 1,
+      events: vi.fn(async () => [
+        ev({ city: "Linz", lat: 48.31, lon: 14.29 }),
+        ev({ city: "Wien", date: "2026-12-02", lat: 48.21, lon: 16.37 }),
+      ]),
+    };
+    const svc = createConcertService({ providers: [p], cache: memoryCache(), today: () => "2026-11-14" });
+    const r = await svc([{ id: "a", name: "A" }], undefined, { name: "Linz", lat: 48.3059, lon: 14.2862, radiusKm: 50 });
+    expect(r.area).toEqual({ name: "Linz", radiusKm: 50 });
+    expect(r.concerts.map((c) => [c.city, c.distanceKm])).toEqual([
+      ["Linz", 1], // ~0,5 km vom eingestellten Punkt
+      ["Wien", 155],
+    ]);
+  });
+
+  it("Karte nutzt den Umkreis des Bereichs", () => {
+    const song = { ...fixtures.neonlicht!, concertArea: { name: "Linz", radiusKm: 2 } };
+    const d = { section: "outro", lineActive: false } as Derived;
+    const card = concertCardAt(song, d, 190_000)!;
+    expect(card.near).toBe(false); // Wien (3 km) liegt nicht mehr im 2-km-Umkreis
+    expect(card.area).toEqual({ name: "Linz", radiusKm: 2 });
+  });
+});

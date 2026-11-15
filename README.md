@@ -5,6 +5,11 @@ zeigt den aktuellen Spotify-Song, Lyrics möglichst Wort für Wort und tanzende 
 
 Konzept und Ausbaustufen: [`docs/KONZEPT.md`](docs/KONZEPT.md) · Architektur-Bewertung: [`docs/ARCHITEKTUR.md`](docs/ARCHITEKTUR.md)
 
+**Neu: Einstellungen** (`/einstellungen`, auch am Handy) – Heimatort und Umkreis für „Konzerte in deiner Nähe“.
+Gilt pro Spotify-Konto auf allen Geräten und für Alexa; der Ort wird über OpenStreetMap gesucht. Ohne Einstellung gilt
+`HOME_LOCATION`/`CONCERT_RADIUS_KM` (Standard Wien, 200 km). Neue Konzertquelle: **Eventim Deutschland**. Alexa kennt
+Song-Hintergründe: „Erzähl mir was über den Song“, „Was ist das für ein Sample?“.
+
 **Neu: Bühne** – Das Band-Logo (TheAudioDB) leuchtet in Intro, Outro und Instrumentalteilen über der LED-Wand;
 Avatare von Künstlern, denen du folgst, winken zum Songstart.
 

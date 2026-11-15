@@ -50,6 +50,7 @@ test.describe("Konzerte", () => {
         json: {
           providers: ["ticketmaster"],
           setlists: {},
+          area: { name: "Linz", radiusKm: 100 },
           concerts: [
             {
               artistId: "0OdUWJ0sBjDrqHygGUXeCF",
@@ -68,6 +69,7 @@ test.describe("Konzerte", () => {
     await page.goto("/");
     const card = page.getByTestId("concert-card");
     await expect(card).toContainText("Nächste Konzerte");
+    await expect(card.getByTestId("concert-area")).toHaveText("Linz · 100 km");
     await expect(card).toContainText("Hamburg");
     await expect(card.getByTestId("osm-credit")).toHaveText("Ortsdaten © OpenStreetMap");
     await expect(card.getByTestId("ticket-qr")).toHaveCount(0);

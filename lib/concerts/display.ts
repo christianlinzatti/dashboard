@@ -34,10 +34,18 @@ export function todayLocal(now = new Date()): string {
   return `${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())}`;
 }
 
-export type ConcertCard = { concerts: Concert[]; near: boolean; liveHint: string | null };
+export type ConcertCard = {
+  concerts: Concert[];
+  near: boolean;
+  liveHint: string | null;
+  area?: { name: string; radiusKm: number };
+};
 
 /** Termine aller Artists: im Umkreis zuerst, dann nach Datum; höchstens drei. */
-export function topConcerts(song: SongStatic, radiusKm = 200): { list: Concert[]; all: Concert[]; near: boolean } {
+export function topConcerts(
+  song: SongStatic,
+  radiusKm = song.concertArea?.radiusKm ?? 200,
+): { list: Concert[]; all: Concert[]; near: boolean } {
   const isNear = (c: Concert) => c.distanceKm !== undefined && c.distanceKm <= radiusKm;
   const all = [...(song.concerts ?? [])].sort((a, b) => Number(isNear(b)) - Number(isNear(a)) || a.date.localeCompare(b.date));
   return { list: all.slice(0, 3), all, near: all.some(isNear) };
@@ -62,5 +70,5 @@ export function concertCardAt(song: SongStatic, d: Derived, t: number): ConcertC
   if (!song.concerts?.length) return null;
   if (t < song.track.durationMs - CONCERT_WINDOW_MS || d.lineActive) return null;
   const { list, near } = topConcerts(song);
-  return { concerts: list, near, liveHint: liveHint(song) };
+  return { concerts: list, near, liveHint: liveHint(song), ...(song.concertArea ? { area: song.concertArea } : {}) };
 }

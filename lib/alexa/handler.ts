@@ -122,7 +122,8 @@ function concertAnswer(s: Snapshot, spoken: string | undefined, today: string): 
   const list = (s.concerts ?? []).filter((c) => names.includes(normalizeLine(c.artistName)) && c.date >= today);
   if (!list.length)
     return `Ich habe keine bevorstehenden Konzerte von ${spoken ? pickArtists(s.artists, spoken)[0]!.name : artistsText(s)} gefunden.`;
-  const { name: homeName, radiusKm } = home();
+  // eingestellter Heimatort/Umkreis (vom Dashboard gemeldet), sonst Server-Standard
+  const { name: homeName, radiusKm } = s.concertArea ?? home();
   const near = list
     .filter((c) => c.distanceKm !== undefined && c.distanceKm <= radiusKm)
     .sort((a, b) => a.date.localeCompare(b.date));

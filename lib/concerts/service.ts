@@ -22,7 +22,13 @@ export function concertProviders(env: Record<string, string | undefined> = proce
   ];
 }
 
-export type ConcertResult = { concerts: Concert[]; setlists: Record<string, LastSetlist>; providers: string[] };
+export type ConcertArea = { name: string; lat: number; lon: number; radiusKm: number };
+export type ConcertResult = {
+  concerts: Concert[];
+  setlists: Record<string, LastSetlist>;
+  providers: string[];
+  area: { name: string; radiusKm: number };
+};
 
 export function createConcertService(deps: {
   providers: ConcertProvider[];
@@ -33,7 +39,11 @@ export function createConcertService(deps: {
   /** Geocoding für Orte ohne Koordinaten (Nominatim); ohne → Orte bleiben ohne Entfernung */
   geoHttp?: (url: string, signal?: AbortSignal) => Promise<Response>;
 }) {
-  return async function concertsFor(artists: Array<{ id: string; name: string }>, signal?: AbortSignal): Promise<ConcertResult> {
+  return async function concertsFor(
+    artists: Array<{ id: string; name: string }>,
+    signal?: AbortSignal,
+    area: ConcertArea = home(),
+  ): Promise<ConcertResult> {
     const today = deps.today?.() ?? new Date().toISOString().slice(0, 10);
     const all: Concert[] = [];
     const setlists: Record<string, LastSetlist> = {};
@@ -62,7 +72,7 @@ export function createConcertService(deps: {
           })),
         );
       }
-      all.push(...mergeEvents(a, lists, { today, home: home() }));
+      all.push(...mergeEvents(a, lists, { today, home: area }));
 
       if (deps.setlistKey) {
         const sk = `setlist:v1:${normalizeLine(a.name)}`;
@@ -78,12 +88,17 @@ export function createConcertService(deps: {
         if (sl.v) setlists[a.id] = sl.v;
       }
     }
-    return { concerts: all, setlists, providers: deps.providers.map((p) => p.id) };
+    return {
+      concerts: all,
+      setlists,
+      providers: deps.providers.map((p) => p.id),
+      area: { name: area.name, radiusKm: area.radiusKm },
+    };
   };
 }
 
 let shared: ReturnType<typeof createConcertService> | undefined;
-export function concertsFor(artists: Array<{ id: string; name: string }>, signal?: AbortSignal) {
+export function concertsFor(artists: Array<{ id: string; name: string }>, signal?: AbortSignal, area?: ConcertArea) {
   shared ??= createConcertService({
     providers: concertProviders(),
     cache: getCache(),
@@ -94,5 +109,5 @@ export function concertsFor(artists: Array<{ id: string; name: string }>, signal
         ? undefined
         : createPoliteFetch({ minIntervalMs: { "nominatim.openstreetmap.org": 1100 } }),
   });
-  return shared(artists, signal);
+  return shared(artists, signal, area);
 }

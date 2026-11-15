@@ -64,6 +64,8 @@ export const snapshotSchema = z.object({
     .max(5)
     .optional(),
   /** Kurzinfos zu den Artists (erster Satz aus Wikipedia, Fakten) */
+  /** Bereich für „in der Nähe“ (Heimatort, Umkreis) */
+  concertArea: z.object({ name: z.string().max(100), radiusKm: z.number().positive() }).optional(),
   /** Song-Hintergründe (Genius): Produzenten, Songwriter, Samples */
   trivia: z.array(z.string().max(200)).max(5).optional(),
   about: z
@@ -143,9 +145,10 @@ export function firstSentence(text: string): string {
   return out.length > 300 ? `${out.slice(0, 297).trimEnd()}…` : out;
 }
 
-function extras(song: SongStatic): Pick<Snapshot, "user" | "concerts" | "about" | "trivia"> {
+function extras(song: SongStatic): Pick<Snapshot, "user" | "concerts" | "about" | "trivia" | "concertArea"> {
   const name = (id: string) => song.artists.find((a) => a.spotifyId === id)?.name;
-  const out: Pick<Snapshot, "user" | "concerts" | "about" | "trivia"> = {};
+  const out: Pick<Snapshot, "user" | "concerts" | "about" | "trivia" | "concertArea"> = {};
+  if (song.concertArea) out.concertArea = { name: song.concertArea.name.slice(0, 100), radiusKm: song.concertArea.radiusKm };
   const trivia = song.info?.song?.trivia?.filter(Boolean).slice(0, 5);
   if (trivia?.length) out.trivia = trivia.map((t) => t.slice(0, 200));
   if (song.user) {

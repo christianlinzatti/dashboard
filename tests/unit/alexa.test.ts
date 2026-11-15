@@ -291,6 +291,15 @@ describe("Alexa: Konzerte, Hörstatistik, Likes, Band-Infos", () => {
     );
   });
 
+  it("Konzerte: eingestellter Heimatort statt Standard", async () => {
+    const linz = {
+      ...full(),
+      concertArea: { name: "Linz", radiusKm: 200 },
+      concerts: full().concerts!.filter((c) => c.city === "Berlin"),
+    };
+    expect(await ask("KonzertIntent", {}, linz)).toMatch(/^In der Nähe von Linz ist nichts geplant\./);
+  });
+
   it("Hörstatistik des Songs", async () => {
     expect(await ask("GehoertIntent")).toBe(
       "Neonlicht hast du laut Last.fm 37 Mal gehört. Der Song ist in deinen Lieblingssongs auf Spotify.",

@@ -210,6 +210,8 @@ export const songStaticSchema = z.object({
   user: userSchema.optional(),
   concerts: z.array(concertSchema).optional(),
   setlists: z.record(z.string(), setlistSchema).optional(),
+  /** Bereich, für den „in deiner Nähe“ gilt (Heimatort und Umkreis) */
+  concertArea: z.object({ name: z.string(), radiusKm: z.number().positive() }).optional(),
   cast: z.array(castMemberSchema),
   status: z.partialRecord(z.enum(sourceNames), sourceStatusSchema),
 });

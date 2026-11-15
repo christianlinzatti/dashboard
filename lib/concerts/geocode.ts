@@ -5,7 +5,19 @@ import { normalizeLine } from "@/lib/lyrics/text";
 import type { RawEvent } from "./types";
 
 type Http = (url: string, signal?: AbortSignal) => Promise<Response>;
-const resultSchema = z.array(z.object({ lat: z.coerce.number(), lon: z.coerce.number() }));
+const resultSchema = z.array(
+  z.object({ lat: z.coerce.number(), lon: z.coerce.number(), name: z.string().optional(), display_name: z.string().optional() }),
+);
+
+/** Frei eingegebener Ort (z. B. „Linz“, „Graz, Steiermark“) für die Heimat-Einstellung. */
+export async function geocodePlace(query: string, http: Http, signal?: AbortSignal) {
+  const q = new URLSearchParams({ q: query, format: "jsonv2", limit: "1", "accept-language": "de" });
+  const res = await http(`https://nominatim.openstreetmap.org/search?${q}`, signal);
+  if (!res.ok) throw new Error(`Nominatim ${res.status}`);
+  const [hit] = resultSchema.parse(await res.json());
+  if (!hit || !Number.isFinite(hit.lat) || !Number.isFinite(hit.lon)) return null;
+  return { name: hit.name || hit.display_name?.split(",")[0]?.trim() || query, lat: hit.lat, lon: hit.lon };
+}
 
 /**
  * Koordinaten einer Stadt über Nominatim (OpenStreetMap). Nutzungsregeln: höchstens 1 Anfrage/s

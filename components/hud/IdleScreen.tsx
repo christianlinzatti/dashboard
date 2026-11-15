@@ -87,6 +87,15 @@ export function IdleScreen({ status, unknownDemo, loginError }: Props) {
         </a>
       )}
       {status.kind === "idle" && <RecentList />}
+      {status.kind === "idle" && (
+        <Link
+          href="/einstellungen"
+          className="text-[clamp(12px,1.9vmin,20px)] text-white/60 underline"
+          data-testid="settings-link"
+        >
+          Einstellungen (Heimatort für Konzerte)
+        </Link>
+      )}
       <nav className="mt-[2vmin] flex flex-wrap justify-center gap-3 text-[clamp(12px,1.9vmin,20px)] text-white/70">
         <span className="self-center">Demos:</span>
         <Link className="rounded-full bg-white/10 px-4 py-2 hover:bg-white/20" href="/?demo=neonlicht">
