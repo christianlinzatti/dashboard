@@ -14,6 +14,7 @@ import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js";
 import { packClip } from "../../lib/dance/clip-pack";
 import type { MixamoEntry } from "../../lib/dance/mixamo";
 import { estimateBpm, makeLoop, restFromGltf, retargetSamples, type RestBone } from "../../lib/dance/retarget";
+import { autoEntry, energyFromMotion } from "./auto";
 import { installImageStub } from "./no-dom";
 import { format, resolveConfig } from "prettier";
 
@@ -57,6 +58,16 @@ async function main() {
   mkdirSync(OUT_DIR, { recursive: true });
   const failed: string[] = [];
 
+  // FBX ohne Katalogeintrag (z. B. „Hip Hop Dancing (2).fbx“) automatisch aufnehmen
+  const known = new Set(catalog.clips.map((e) => findSource(e, files)).filter((f): f is string => !!f));
+  const ids = new Set(catalog.clips.map((e) => e.id));
+  for (const file of files.filter((f) => !known.has(f))) {
+    const entry = autoEntry(file);
+    while (ids.has(entry.id)) entry.id += "_neu";
+    ids.add(entry.id);
+    catalog.clips.push(entry);
+  }
+
   for (const entry of catalog.clips) {
     if (only && entry.id !== only) continue;
     const file = findSource(entry, files);
@@ -65,7 +76,9 @@ async function main() {
       continue;
     }
     try {
-      console.log(`✓ ${entry.id}: ${file} · ${convertOne(entry, file, rest)}`);
+      const line = convertOne(entry, file, rest);
+      const neu = entry.auto ? ` · neu: Energie ${entry.energy}, Stil ${entry.genres[0]}, Ersatz ${entry.fallback}` : "";
+      console.log(`✓ ${entry.id}: ${file} · ${line}${neu}`);
     } catch (e) {
       // Datei nennen und mit der nächsten weitermachen, statt alles abzubrechen
       failed.push(file);
@@ -130,7 +143,10 @@ function convertOne(entry: MixamoEntry, file: string, rest: RestBone[]): string 
   const loop = makeLoop(sampled, blend);
 
   // 3. auf 120 BPM normieren (1 Schlag = 0,5 s), packen, schreiben
-  const packed = packClip(entry.id, { ...loop, fps: (FPS * bpm) / 120 });
+  const normalized = { ...loop, fps: (FPS * bpm) / 120 };
+  // automatisch aufgenommene Tänze: Energie aus der Bewegung (bis `auto` im Katalog entfernt wird)
+  if (entry.auto) entry.energy = energyFromMotion(normalized);
+  const packed = packClip(entry.id, normalized);
   const json = JSON.stringify(packed);
   const sha = createHash("sha256").update(json).digest("hex").slice(0, 12);
   writeFileSync(join(OUT_DIR, `${entry.id}.json`), json);

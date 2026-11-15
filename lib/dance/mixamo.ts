@@ -25,6 +25,8 @@ export type MixamoEntry = {
   file?: string;
   beats?: number;
   detectedBpm?: number;
+  /** automatisch aus einer FBX ohne Katalogeintrag aufgenommen: Energie wird bei jeder Umwandlung neu gemessen */
+  auto?: boolean;
 };
 
 export const MIXAMO: MixamoEntry[] = (catalog.clips as MixamoEntry[]).map((c) => ({ ...c }));

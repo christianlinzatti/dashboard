@@ -28,6 +28,23 @@ FBX-Dateien dürfen aber nicht als Rohdateien weitergegeben werden. Deshalb gilt
 5. Die Datei nach `mixamo/` im Projektordner legen. Der Dateiname sollte zu `source` oder `search`
    im Katalog passen; Groß-/Kleinschreibung, Leer- und Sonderzeichen sind egal.
 
+### Mehrere Varianten mit gleichem Namen
+
+Viele Tänze gibt es bei Mixamo mehrfach, z. B. ein gutes Dutzend „Hip Hop Dancing“. Lade einfach alle
+herunter. Der Browser nummeriert sie durch: „Hip Hop Dancing (1).fbx“, „(2)“ … Du kannst sie auch frei
+umbenennen.
+
+Jede FBX in `mixamo/`, die nicht im Katalog steht, wird automatisch aufgenommen:
+
+| Was | Woher |
+|---|---|
+| ID | aus dem Dateinamen, z. B. `Mixamo_HipHopDancing_2` |
+| Genres und Ersatz-Clip | aus Stichwörtern im Namen (Hip Hop, Samba, Swing, Breakdance, Robot, Shuffle …) |
+| Energie | aus der Bewegung gemessen (Drehgeschwindigkeit der Gelenke und Hüftwippen) |
+
+Solche Einträge tragen `"auto": true`, und ihre Energie wird bei jeder Umwandlung neu gemessen. Willst du
+Energie oder Genres selbst festlegen, ändere den Eintrag und entferne `auto`.
+
 ## 2. Umwandeln
 
 ```bash

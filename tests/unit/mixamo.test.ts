@@ -349,3 +349,56 @@ describe("Schleifenlänge", () => {
     expect(loopLength(60, beat).beats).toBe(0); // kürzer als ein Takt
   });
 });
+
+describe("Automatisch aufgenommene Tänze", () => {
+  it("Name, ID und Stil aus dem Dateinamen – auch für Browser-Nummern", async () => {
+    const { autoEntry, baseName, idFromFile, styleFromName } = await import("@/scripts/mixamo/auto");
+    expect(baseName("Hip Hop Dancing (2).fbx")).toBe("Hip Hop Dancing");
+    expect(idFromFile("Hip Hop Dancing (2).fbx")).toBe("Mixamo_HipHopDancing_2");
+    expect(idFromFile("Hip Hop Dancing.fbx")).toBe("Mixamo_HipHopDancing");
+    expect(idFromFile("Bachata Ö-Step.FBX")).toBe("Mixamo_BachataOStep");
+    expect(styleFromName("Wave Hip Hop Dance").fallback).toBe("Dance_Robot");
+    expect(styleFromName("Hip Hop Dancing").genres).toContain("hip hop");
+    expect(styleFromName("Breakdance Freeze Var 4").fallback).toBe("Dance_PowerHit");
+    expect(styleFromName("Tango").genres).toEqual(["latin"]);
+    expect(styleFromName("Irgendwas")).toEqual({ genres: ["pop", "dance"], fallback: "Dance_Groove" });
+    expect(autoEntry("Salsa Dancing (3).fbx")).toMatchObject({
+      id: "Mixamo_SalsaDancing_3",
+      source: "Salsa Dancing (3).fbx",
+      search: "Salsa Dancing",
+      genres: ["latin"],
+      auto: true,
+    });
+  });
+
+  it("Energie aus der Bewegung passt zu den umgewandelten Tänzen", async () => {
+    const { energyFromMotion } = await import("@/scripts/mixamo/auto");
+    const { unpackClip } = await import("@/lib/dance/clip-pack");
+    const energyOf = (id: string) => {
+      const clip = unpackClip(JSON.parse(readFileSync(join(process.cwd(), "public/animations", `${id}.json`), "utf8")));
+      const q = clip.tracks.filter((t) => t.name.endsWith(".quaternion"));
+      const frames = q[0]!.times.length;
+      const fps = (frames - 1) / clip.duration;
+      return energyFromMotion({
+        fps,
+        frames,
+        rotations: new Map(q.map((t) => [t.name.split(".")[0]!, Float32Array.from(t.values)])),
+        hips: Float32Array.from(clip.tracks.find((t) => t.name === "Hips.position")!.values),
+      });
+    };
+    expect(energyOf("Mixamo_Bellydance")).toBe(1);
+    expect(energyOf("Mixamo_Salsa")).toBe(1);
+    expect(energyOf("Mixamo_HipHop")).toBe(2);
+    expect(energyOf("Mixamo_Breakdance")).toBe(3);
+    expect(energyOf("Mixamo_Gangnam")).toBe(3);
+    // Stillstand → ruhig
+    expect(
+      energyFromMotion({
+        fps: 30,
+        frames: 3,
+        rotations: new Map([["Hips", new Float32Array(12).fill(0.5)]]),
+        hips: new Float32Array(9),
+      }),
+    ).toBe(0);
+  });
+});
