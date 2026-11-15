@@ -326,6 +326,28 @@ describe("Alexa: Konzerte, Hörstatistik, Likes, Band-Infos", () => {
     expect(await ask("BandInfoIntent", {}, { ...full(), about: undefined })).toMatch(/keine Infos/);
   });
 
+  it("Song merken über den Befehlskanal; schon gespeichert → Hinweis", async () => {
+    const cmds: unknown[] = [];
+    const run = async (intent: string, snap: Snapshot) => {
+      const req = JSON.parse(request({ intent: { name: intent } })) as AlexaRequest;
+      const res = await handleAlexa(req, {
+        getSnapshot: async () => snap,
+        pushCommand: async (c) => void cmds.push(c),
+        now: () => NOW,
+      });
+      return (res.response as { outputSpeech?: { text: string } }).outputSpeech?.text;
+    };
+    expect(await run("MerkenIntent", full())).toBe("Neonlicht ist schon in deinen Lieblingssongs.");
+    expect(cmds).toEqual([]);
+    expect(await run("NichtMerkenIntent", full())).toBe("Ich entferne Neonlicht aus deinen Lieblingssongs.");
+    const notSaved = { ...full(), user: { trackSaved: false, artists: [] } };
+    expect(await run("MerkenIntent", notSaved)).toBe("Ich speichere Neonlicht in deinen Lieblingssongs.");
+    expect(cmds).toEqual([
+      { type: "merken", on: false, trackKey: "demo-neonlicht" },
+      { type: "merken", on: true, trackKey: "demo-neonlicht" },
+    ]);
+  });
+
   it("Erscheinungsjahr mit Album", async () => {
     expect(await ask("ErscheinungsjahrIntent")).toBe("Neonlicht ist 2026 erschienen, auf dem Album Stadt aus Glas.");
     expect(await ask("ErscheinungsjahrIntent", {}, { ...full(), releaseYear: null })).toBe(

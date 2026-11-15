@@ -45,3 +45,26 @@ export async function artistsFollowed(call: Call, artistIds: string[]): Promise<
   );
   return r ? Object.fromEntries(ids.map((id, i) => [id, r[i]!])) : {};
 }
+
+type CallInit = (path: string, init?: RequestInit) => Promise<Response>;
+
+/**
+ * Song in den Lieblingssongs speichern bzw. entfernen. Neuer Bibliotheks-Endpunkt (PUT/DELETE /me/library?uris=…),
+ * Rückfall auf /me/tracks?ids=…. Liefert true bei Erfolg, „scope“ wenn die Berechtigung fehlt.
+ */
+export async function saveTrack(call: CallInit, trackId: string, saved: boolean): Promise<true | "scope" | false> {
+  if (!/^[A-Za-z0-9]{10,}$/.test(trackId)) return false;
+  const method = saved ? "PUT" : "DELETE";
+  const paths = [
+    `/me/library?uris=${encodeURIComponent(`spotify:track:${trackId}`)}`,
+    `/me/tracks?ids=${encodeURIComponent(trackId)}`,
+  ];
+  let scope = false;
+  for (const p of paths) {
+    const res = await call(p, { method }).catch(() => null);
+    if (!res) continue;
+    if (res.ok) return true;
+    if (res.status === 403 || res.status === 401) scope = true;
+  }
+  return scope ? "scope" : false;
+}

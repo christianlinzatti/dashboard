@@ -245,7 +245,7 @@ Vercel: `main` → Production, Branches → Preview. Bilder von TheAudioDB/Flick
 (Puls/Akzent/Grund) · ○ Segment-Streaming für RGBIC-Lauflichter · ○ Geräte-Zuordnung per Oberfläche statt Konfigurationsdatei
 ✅ Alexa: Welcher Song, wer singt, Erscheinungsjahr, Konzerte in der Nähe, wie oft gehört, mag ich den Künstler,
 Band-Infos, Lampen/Strobo/Qualität · ○ virtuelles Smart-Home-Gerät („Party-Modus“ für Routinen) ·
-○ Song per Sprache liken
+✅ Song per Sprache merken
 
 ### Stufe 4 – Band-Infos & Fotos
 ✅ MusicBrainz → Wikidata → Wikipedia (de, sonst en), Commons-Fotos mit Lizenz, Infokarte in ruhigen Teilen,
@@ -253,7 +253,7 @@ Fakten-Ticker in Strophen, Feature-Artists abwechselnd · ○ Wikipedia-Artikel 
 
 ### Stufe 5 – Persönliches, Konzerte, weitere Quellen
 ✅ Zuletzt gehört (Last.fm, sonst Spotify), Lieblingssong, Herz, Hörzahlen, ★ bei gefolgten Künstlern ·
-○ Song per Touch liken · ○ Begrüßung bei gefolgten Künstlern (Avatar winkt) · ○ ähnliche Künstler und Tags (Last.fm)
+✅ Song per Touch liken · ○ Begrüßung bei gefolgten Künstlern (Avatar winkt) · ○ ähnliche Künstler und Tags (Last.fm)
 ✅ Konzerte aus vier Quellen, zusammengeführt, Umkreis Wien, Countdown, QR-Code, letzte Setlist ·
 ○ Geocoding für Orte ohne Koordinaten · ○ Heimatort/Umkreis in den Einstellungen statt Env · ○ Eventim DE/Reservix
 ✅ TheAudioDB, Flickr, Genius-Trivia, Fotoauswahl je Verwendung
@@ -337,7 +337,7 @@ Aufwand: S = bis ½ Tag, M = 1–2 Tage, L = mehrere Tage.
 
 | Baustein | Aufwand |
 |---|---|
-| Song liken per Touch und Alexa (`user-library-modify`) | S |
+| ✅ Song liken per Touch und Alexa (`user-library-modify`) | S |
 | Alexa-Smart-Home-Gerät „Party-Modus“ (OAuth, eigener Smart-Home-Skill) | L |
 | weitere Alexa-Befehle: nächster Song, Pause, Lyrics-Modus, „Was ist das für ein Sample?“ | S |
 

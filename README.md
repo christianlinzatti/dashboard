@@ -5,6 +5,10 @@ zeigt den aktuellen Spotify-Song, Lyrics möglichst Wort für Wort und tanzende 
 
 Konzept und Ausbaustufen: [`docs/KONZEPT.md`](docs/KONZEPT.md) · Architektur-Bewertung: [`docs/ARCHITEKTUR.md`](docs/ARCHITEKTUR.md)
 
+**Neu: Song merken** – Herz in der Kopfzeile antippen speichert den Song in den Spotify-Lieblingssongs („♡ Merken“)
+oder entfernt ihn wieder; per Alexa: „merk dir den Song“. Braucht die Berechtigung `user-library-modify`:
+**nach dem Update einmal abmelden und neu anmelden.**
+
 **Neu: Umschrift und Übersetzung** – Liefert Better Lyrics eine Umschrift (z. B. Japanisch → Rōmaji, Koreanisch →
 lateinisch) oder eine Übersetzung, erscheint sie als zweite Zeile unter dem Liedtext. Die Umschrift wird mit eigenem
 Timing mitgefüllt. Die Einstellung „automatisch“ zeigt die Umschrift bei nicht-lateinischer Schrift und Übersetzungen nur,

@@ -152,6 +152,28 @@
             "wann kam der Song raus",
             "von wann ist der Song"
           ]
+        },
+        {
+          "name": "MerkenIntent",
+          "samples": [
+            "merk dir den Song",
+            "merk dir das",
+            "speicher den Song",
+            "gefällt mir",
+            "like den Song",
+            "füge den Song zu meinen Lieblingssongs hinzu",
+            "den Song mag ich"
+          ]
+        },
+        {
+          "name": "NichtMerkenIntent",
+          "samples": [
+            "entferne den Song",
+            "entferne den Song aus meinen Lieblingssongs",
+            "den Song nicht mehr merken",
+            "vergiss den Song",
+            "gefällt mir nicht mehr"
+          ]
         }
       ],
       "types": [

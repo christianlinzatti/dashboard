@@ -13,6 +13,7 @@ und Bühnenqualität des Dashboards.
 | „Alexa, frag Sonic Stage, wie oft habe ich das gehört“ | Hörzahl (Last.fm), Lieblingssong (Spotify), Herz auf Last.fm |
 | „Alexa, frag Sonic Stage, mag ich den Künstler“ | ob du dem Artist auf Spotify folgst und wie oft du ihn gehört hast |
 | „Alexa, frag Sonic Stage, erzähl mir was über die Band“ | erster Satz aus Wikipedia und Kurzfakten |
+| „Alexa, sag Sonic Stage, merk dir den Song“ | speichert den laufenden Song in den Spotify-Lieblingssongs (über das Dashboard); „entferne den Song“ nimmt ihn heraus |
 | „Alexa, sag Sonic Stage Lampen aus“ | Govee-Lampen aus (über das Dashboard und die Pi-Bridge) |
 | „Alexa, sag Sonic Stage Stroboskop aus“ | Strobe bei Drops aus |
 | „Alexa, sag Sonic Stage Qualität niedrig“ | Bühnenqualität umstellen |

@@ -167,3 +167,47 @@ describe("Persönliches zusammenführen", () => {
     expect(ago(1_700_000_000 - 30 * 3600, now)).toBe("gestern");
   });
 });
+
+describe("Song merken", () => {
+  it("speichert über den neuen Bibliotheks-Endpunkt, sonst /me/tracks; fehlende Berechtigung erkannt", async () => {
+    const { saveTrack } = await import("@/lib/personal/spotify-library");
+    const calls: Array<[string, string | undefined]> = [];
+    const ok = await saveTrack(
+      async (p, init) => {
+        calls.push([p, init?.method]);
+        return new Response(null, { status: p.startsWith("/me/library") ? 404 : 200 });
+      },
+      "4uLU6hMCjMI75M1A2tKUQC",
+      true,
+    );
+    expect(ok).toBe(true);
+    expect(calls).toEqual([
+      ["/me/library?uris=spotify%3Atrack%3A4uLU6hMCjMI75M1A2tKUQC", "PUT"],
+      ["/me/tracks?ids=4uLU6hMCjMI75M1A2tKUQC", "PUT"],
+    ]);
+    expect(await saveTrack(async () => new Response(null, { status: 403 }), "4uLU6hMCjMI75M1A2tKUQC", false)).toBe("scope");
+    expect(await saveTrack(async () => new Response(null, { status: 500 }), "4uLU6hMCjMI75M1A2tKUQC", false)).toBe(false);
+    expect(await saveTrack(async () => new Response(null), "kaputt", true)).toBe(false);
+  });
+
+  it("zeigt sofort an und nimmt bei Fehler zurück", async () => {
+    const { setLiked } = await import("@/lib/personal/like");
+    const { songContext } = await import("@/lib/song-context/store");
+    const { neonlicht } = await import("@/lib/song-context/fixtures/neonlicht");
+    songContext.getState().setSong({ ...neonlicht, user: { trackSaved: false, artists: {} } });
+    const seen: Array<boolean | undefined> = [];
+    const ok = await setLiked(true, (async (_u: string, init: RequestInit) => {
+      seen.push(songContext.getState().song?.user?.trackSaved);
+      expect(JSON.parse(init.body as string)).toEqual({ trackId: "demo-neonlicht", saved: true });
+      return Response.json({ ok: true });
+    }) as typeof fetch);
+    expect(ok).toEqual({ ok: true });
+    expect(seen).toEqual([true]); // schon vor der Antwort sichtbar
+    const fail = await setLiked(false, (async () =>
+      Response.json({ error: "Bitte neu anmelden", reauth: true }, { status: 403 })) as typeof fetch);
+    expect(fail).toEqual({ ok: false, error: "Bitte neu anmelden", reauth: true });
+    expect(songContext.getState().song?.user?.trackSaved).toBe(true); // zurückgenommen
+    songContext.getState().setSong(null);
+    expect(await setLiked(true)).toEqual({ ok: false, error: "Kein Song aktiv." });
+  });
+});

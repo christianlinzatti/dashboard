@@ -47,6 +47,45 @@ test.describe("Persönliches", () => {
     await expect(page.getByTestId("badge-saved")).toHaveCount(0);
   });
 
+  test("Live: Song per Antippen merken; Fehler wird gemeldet und zurückgenommen", async ({ page }) => {
+    const track = {
+      id: "4uLU6hMCjMI75M1A2tKUQC",
+      type: "track",
+      name: "Merklied",
+      duration_ms: 200_000,
+      explicit: false,
+      artists: [{ id: "0OdUWJ0sBjDrqHygGUXeCF", name: "Band" }],
+      album: { name: "A", images: [{ url: "/demo/pulsar.svg", width: 300, height: 300 }] },
+    };
+    await page.route("**/api/now-playing", (r) =>
+      r.fulfill({ json: { state: "playing", progressMs: 30_000, fetchedAt: 0, track, user: "T" } }),
+    );
+    await page.route("**/api/lyrics?*", (r) =>
+      r.fulfill({ json: { lyrics: null, instrumental: true, cached: false, attempts: [] } }),
+    );
+    await page.route("**/api/info?*", (r) => r.fulfill({ json: { complete: true, info: { artists: {}, photos: [] } } }));
+    await page.route("**/api/personal?*", (r) => r.fulfill({ json: { user: { trackSaved: false, artists: {} } } }));
+    const likes: unknown[] = [];
+    let fail = false;
+    await page.route("**/api/like", async (r) => {
+      likes.push(r.request().postDataJSON());
+      if (fail)
+        return r.fulfill({ status: 403, json: { error: "Bitte einmal neu anmelden, um Songs zu speichern.", reauth: true } });
+      return r.fulfill({ json: { ok: true } });
+    });
+    await page.goto("/");
+    await page.getByTestId("like-button").click();
+    await expect(page.getByTestId("badge-saved")).toContainText("Lieblingssong");
+    expect(likes).toEqual([{ trackId: "4uLU6hMCjMI75M1A2tKUQC", saved: true }]);
+    // Steuerleiste wurde durch das Antippen nicht eingeblendet
+    await expect(page.getByTestId("controls")).not.toHaveCSS("opacity", "1");
+
+    fail = true;
+    await page.getByTestId("badge-saved").click();
+    await expect(page.getByTestId("like-error")).toContainText("neu anmelden");
+    await expect(page.getByTestId("badge-saved")).toBeVisible(); // zurückgenommen
+  });
+
   test("Startbildschirm: zuletzt gehört", async ({ page }) => {
     await page.route("**/api/now-playing", (r) => r.fulfill({ json: { state: "idle", user: "Test" } }));
     await page.route("**/api/recent", (r) =>
@@ -77,6 +116,7 @@ test.describe("Persönliches", () => {
 
   test("APIs nur mit Anmeldung", async ({ request }) => {
     expect((await request.get("/api/recent")).status()).toBe(401);
+    expect((await request.post("/api/like", { data: { trackId: "4uLU6hMCjMI75M1A2tKUQC", saved: true } })).status()).toBe(401);
     expect((await request.get("/api/personal?trackId=a&title=b&ids=c&names=d")).status()).toBe(401);
   });
 });

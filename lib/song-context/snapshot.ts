@@ -82,6 +82,8 @@ export const commandSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("lampen"), on: z.boolean() }),
   z.object({ type: z.literal("strobo"), on: z.boolean() }),
   z.object({ type: z.literal("qualitaet"), value: z.enum(["auto", "niedrig", "mittel", "hoch"]) }),
+  /** aktuellen Song in den Lieblingssongs speichern (true) oder entfernen (false) */
+  z.object({ type: z.literal("merken"), on: z.boolean(), trackKey: z.string().max(200).optional() }),
 ]);
 export type CommandInput = z.infer<typeof commandSchema>;
 export type Command = CommandInput & { id: string; createdAt: number };

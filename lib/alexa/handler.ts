@@ -227,6 +227,18 @@ export async function handleAlexa(req: AlexaRequest, deps: HandlerDeps) {
       await deps.pushCommand({ type: "qualitaet", value });
       return speak(`Bühnenqualität ${v}.`);
     }
+    case "MerkenIntent":
+    case "NichtMerkenIntent": {
+      const s = await live();
+      if (!s) return speak("Das Dashboard ist gerade nicht aktiv.");
+      const on = intent === "MerkenIntent";
+      if (s.user?.trackSaved === on)
+        return speak(on ? `${s.title} ist schon in deinen Lieblingssongs.` : `${s.title} ist nicht in deinen Lieblingssongs.`);
+      await deps.pushCommand({ type: "merken", on, trackKey: s.trackKey });
+      return speak(
+        on ? `Ich speichere ${s.title} in deinen Lieblingssongs.` : `Ich entferne ${s.title} aus deinen Lieblingssongs.`,
+      );
+    }
     case "ErscheinungsjahrIntent": {
       const s = await live();
       if (!s) return speak("Das Dashboard ist gerade nicht aktiv.");
@@ -259,7 +271,7 @@ export async function handleAlexa(req: AlexaRequest, deps: HandlerDeps) {
     }
     case "AMAZON.HelpIntent":
       return speak(
-        "Du kannst fragen: Welcher Song läuft? Wer singt gerade? Wann ist der Song erschienen? Wann spielen die in der Nähe? Wie oft habe ich das gehört? Mag ich den Künstler? Erzähl mir was über die Band. Oder sagen: Lampen aus, Stroboskop an.",
+        "Du kannst fragen: Welcher Song läuft? Wer singt gerade? Wann ist der Song erschienen? Wann spielen die in der Nähe? Wie oft habe ich das gehört? Mag ich den Künstler? Erzähl mir was über die Band. Merk dir den Song. Oder sagen: Lampen aus, Stroboskop an.",
         false,
       );
     case "AMAZON.StopIntent":

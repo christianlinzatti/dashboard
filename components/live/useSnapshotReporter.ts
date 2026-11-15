@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { settingsPatchFor } from "@/lib/live/commands";
+import { setLiked } from "@/lib/personal/like";
 import { settings } from "@/lib/settings";
 import { buildSnapshot, type Command } from "@/lib/song-context/snapshot";
 import { songContext } from "@/lib/song-context/store";
@@ -34,6 +35,8 @@ export function useSnapshotReporter(enabled: boolean) {
         for (const c of commands) {
           const patch = settingsPatchFor(c);
           if (patch) settings.getState().set(patch);
+          // „Alexa, merk dir den Song“ – nur, wenn noch derselbe Song läuft
+          if (c.type === "merken" && (!c.trackKey || c.trackKey === songContext.getState().song?.trackKey)) void setLiked(c.on);
         }
       } catch {
         /* nächster Versuch beim nächsten Intervall */
