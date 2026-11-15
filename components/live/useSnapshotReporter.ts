@@ -35,8 +35,8 @@ export function useSnapshotReporter(enabled: boolean) {
         for (const c of commands) {
           const patch = settingsPatchFor(c);
           if (patch) settings.getState().set(patch);
-          // „Alexa, merk dir den Song“ – nur, wenn noch derselbe Song läuft
-          if (c.type === "merken" && (!c.trackKey || c.trackKey === songContext.getState().song?.trackKey)) void setLiked(c.on);
+          // „Alexa, merk dir den Song“ – gilt dem Song, der beim Sprechen lief (auch wenn er inzwischen gewechselt hat)
+          if (c.type === "merken") void setLiked(c.on, fetch, c.trackKey);
         }
       } catch {
         /* nächster Versuch beim nächsten Intervall */

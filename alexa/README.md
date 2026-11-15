@@ -21,7 +21,10 @@ und Bühnenqualität des Dashboards.
 Nach dem Ändern von `de-DE.json` das Interaktionsmodell in der Alexa-Developer-Console neu einfügen und
 „Build Model“ ausführen.
 
-Befehle erreichen das Dashboard mit seiner nächsten Meldung an den Server, spätestens nach etwa 5 Sekunden.
+Befehle erreichen das Dashboard mit seiner nächsten Meldung an den Server: beim Abspielen nach höchstens 15 Sekunden,
+sonst nach höchstens einer Minute. „Merk dir den Song“ gilt dem Song, der beim Sprechen lief – auch wenn er inzwischen
+gewechselt hat. Wiedergabe-Befehle (nächster Song, Pause) sind deshalb bewusst nicht eingebaut: dafür ist die
+Verzögerung zu groß; Alexa steuert Spotify direkt.
 
 ## Einrichtung
 

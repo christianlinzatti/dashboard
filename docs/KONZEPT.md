@@ -337,7 +337,7 @@ Aufwand: S = bis ½ Tag, M = 1–2 Tage, L = mehrere Tage.
 |---|---|
 | ✅ Song liken per Touch und Alexa (`user-library-modify`) | S |
 | Alexa-Smart-Home-Gerät „Party-Modus“ (OAuth, eigener Smart-Home-Skill) | L |
-| weitere Alexa-Befehle: nächster Song, Pause, Lyrics-Modus, „Was ist das für ein Sample?“ | S |
+| weitere Alexa-Befehle: „Was ist das für ein Sample?“ (Genius) · Wiedergabe (nächster Song, Pause) **entfällt**: Befehle erreichen das Dashboard erst mit der nächsten Meldung (bis 15 s), Alexa steuert Spotify direkt | S |
 
 ### Stufe 9 – Show
 

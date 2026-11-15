@@ -211,3 +211,22 @@ describe("Song merken", () => {
     expect(await setLiked(true)).toEqual({ ok: false, error: "Kein Song aktiv." });
   });
 });
+
+describe("Song merken per Alexa nach Songwechsel", () => {
+  it("speichert direkt über die Song-ID, ohne die Anzeige des neuen Songs zu ändern", async () => {
+    const { setLiked } = await import("@/lib/personal/like");
+    const { songContext } = await import("@/lib/song-context/store");
+    const { neonlicht } = await import("@/lib/song-context/fixtures/neonlicht");
+    songContext.getState().setSong({ ...neonlicht, user: { trackSaved: false, artists: {} } });
+    const bodies: unknown[] = [];
+    const f = (async (_u: string, init: RequestInit) => {
+      bodies.push(JSON.parse(init.body as string));
+      return Response.json({ ok: true });
+    }) as typeof fetch;
+    expect(await setLiked(true, f, "4uLU6hMCjMI75M1A2tKUQC")).toEqual({ ok: true });
+    expect(bodies).toEqual([{ trackId: "4uLU6hMCjMI75M1A2tKUQC", saved: true }]);
+    expect(songContext.getState().song?.user?.trackSaved).toBe(false); // laufender Song unverändert
+    expect(await setLiked(true, f, "local:x")).toEqual({ ok: false, error: "Unbekannter Song." });
+    songContext.getState().setSong(null);
+  });
+});
