@@ -1,0 +1,435 @@
+{
+  "page": 1,
+  "products": [
+    {
+      "attractions": [
+        {
+          "name": "Udo West"
+        }
+      ],
+      "categories": [
+        {
+          "name": "Konzerte"
+        },
+        {
+          "name": "Rock & Pop",
+          "parentCategory": {
+            "name": "Konzerte"
+          }
+        }
+      ],
+      "currency": "EUR",
+      "description": "Italo Schlager trifft poppigen NDW Spirit. Udo West serviert gefühlvolle und ironische Songs, Roy Birra & die Bianco Boys bringen Sommerlaune und Mitsinggarantie.",
+      "hasRecommendation": false,
+      "imageUrl": "https://www.eventim.de/obj/mam/eventim.light/b0/21/udo-west---roy-birra---die-bianco-boys-tickets_489023_3897097_222x222.jpg",
+      "inStock": true,
+      "link": "https://www.eventim.de/event/udo-west-roy-birra-die-bianco-boys-haus-des-gastes-21142591/",
+      "name": "Udo West / Roy Birra & Die Bianco Boys",
+      "price": 28.42,
+      "productGroupId": "4065107",
+      "productId": "21142591",
+      "promoter": {
+        "id": "1518372",
+        "name": "DJK/SV 1965 Wargolshausen e.V."
+      },
+      "rating": {
+        "average": 5.0,
+        "count": 12
+      },
+      "status": "Available",
+      "tags": ["TICKETDIRECT", "MOBILE_TICKET"],
+      "type": "LiveEntertainment",
+      "typeAttributes": {
+        "liveEntertainment": {
+          "location": {
+            "city": "Wargolshausen",
+            "name": "Haus des Gastes",
+            "postalCode": "97618"
+          },
+          "startDate": "2026-11-21T20:30:00+01:00"
+        }
+      },
+      "url": {
+        "domain": "https://www.eventim.de",
+        "path": "/event/udo-west-roy-birra-die-bianco-boys-haus-des-gastes-21142591/"
+      }
+    },
+    {
+      "attractions": [
+        {
+          "name": "Roy Bianco & Die Abbrunzati Boys"
+        }
+      ],
+      "categories": [
+        {
+          "name": "Konzerte"
+        },
+        {
+          "name": "Rock & Pop",
+          "parentCategory": {
+            "name": "Konzerte"
+          }
+        },
+        {
+          "name": "Konzerte"
+        },
+        {
+          "name": "Schlager & Volksmusik",
+          "parentCategory": {
+            "name": "Konzerte"
+          }
+        },
+        {
+          "name": "VIP & Extras"
+        },
+        {
+          "name": "VIP & Specials",
+          "parentCategory": {
+            "name": "VIP & Extras"
+          }
+        }
+      ],
+      "currency": "EUR",
+      "description": "Nach fast zwei Jahren ohne Auftritt in den Indoor-Arenen der Republik und im Ausland ist es endlich wieder so weit: Roy Bianco & Die Abbrunzati Boys live!",
+      "hasRecommendation": false,
+      "imageUrl": "https://www.eventim.de/obj/media/DE-eventim/teaser/222x222/2026/roy-bianco-und-die-abbrunzati-boys-2027-1026-tickets-2026.jpg",
+      "inStock": true,
+      "link": "https://www.eventim.de/event/roy-bianco-die-abbrunzati-boys-tour-2027-wiener-stadthalle-22266703/",
+      "name": "Roy Bianco & Die Abbrunzati Boys - TOUR 2027",
+      "price": 74.4,
+      "productGroupId": "4216685",
+      "productId": "22266703",
+      "promoter": {
+        "id": "485968",
+        "name": "80:Spoon Agency GmbH"
+      },
+      "rating": {
+        "average": 4.4969000816345215,
+        "count": 163
+      },
+      "status": "Available",
+      "tags": ["TICKETDIRECT", "FANTICKET"],
+      "type": "LiveEntertainment",
+      "typeAttributes": {
+        "liveEntertainment": {
+          "location": {
+            "city": "Wien",
+            "geoLocation": {
+              "latitude": 48.20899999461727,
+              "longitude": 16.370000025698776
+            },
+            "name": "WIENER STADTHALLE",
+            "postalCode": "1150"
+          },
+          "startDate": "2027-09-30T19:00:00+02:00"
+        }
+      },
+      "url": {
+        "domain": "https://www.eventim.de",
+        "path": "/event/roy-bianco-die-abbrunzati-boys-tour-2027-wiener-stadthalle-22266703/"
+      }
+    },
+    {
+      "attractions": [
+        {
+          "name": "Roy Bianco & Die Abbrunzati Boys"
+        }
+      ],
+      "categories": [
+        {
+          "name": "Konzerte"
+        },
+        {
+          "name": "Rock & Pop",
+          "parentCategory": {
+            "name": "Konzerte"
+          }
+        },
+        {
+          "name": "Konzerte"
+        },
+        {
+          "name": "Schlager & Volksmusik",
+          "parentCategory": {
+            "name": "Konzerte"
+          }
+        },
+        {
+          "name": "VIP & Extras"
+        },
+        {
+          "name": "VIP & Specials",
+          "parentCategory": {
+            "name": "VIP & Extras"
+          }
+        }
+      ],
+      "currency": "EUR",
+      "description": "Nach fast zwei Jahren ohne Auftritt in den Indoor-Arenen der Republik und im Ausland ist es endlich wieder so weit: Roy Bianco & Die Abbrunzati Boys live!",
+      "hasRecommendation": false,
+      "imageUrl": "https://www.eventim.de/obj/media/DE-eventim/teaser/222x222/2026/roy-bianco-und-die-abbrunzati-boys-2027-1026-tickets-2026.jpg",
+      "inStock": true,
+      "link": "https://www.eventim.de/event/roy-bianco-die-abbrunzati-boys-tour-2027-salzburgarena-22233855/",
+      "name": "Roy Bianco & Die Abbrunzati Boys - TOUR 2027",
+      "price": 74.4,
+      "productGroupId": "4216685",
+      "productId": "22233855",
+      "promoter": {
+        "id": "485968",
+        "name": "80:Spoon Agency GmbH"
+      },
+      "rating": {
+        "average": 4.4969000816345215,
+        "count": 163
+      },
+      "status": "Available",
+      "tags": ["TICKETDIRECT", "FANTICKET"],
+      "type": "LiveEntertainment",
+      "typeAttributes": {
+        "liveEntertainment": {
+          "location": {
+            "city": "Salzburg",
+            "geoLocation": {
+              "latitude": 47.82363956495345,
+              "longitude": 13.028413735818855
+            },
+            "name": "Salzburgarena",
+            "postalCode": "5020"
+          },
+          "startDate": "2027-10-01T19:00:00+02:00"
+        }
+      },
+      "url": {
+        "domain": "https://www.eventim.de",
+        "path": "/event/roy-bianco-die-abbrunzati-boys-tour-2027-salzburgarena-22233855/"
+      }
+    },
+    {
+      "attractions": [
+        {
+          "name": "Roy Bianco & Die Abbrunzati Boys"
+        }
+      ],
+      "categories": [
+        {
+          "name": "Konzerte"
+        },
+        {
+          "name": "Rock & Pop",
+          "parentCategory": {
+            "name": "Konzerte"
+          }
+        },
+        {
+          "name": "Konzerte"
+        },
+        {
+          "name": "Schlager & Volksmusik",
+          "parentCategory": {
+            "name": "Konzerte"
+          }
+        },
+        {
+          "name": "VIP & Extras"
+        },
+        {
+          "name": "VIP & Specials",
+          "parentCategory": {
+            "name": "VIP & Extras"
+          }
+        }
+      ],
+      "currency": "EUR",
+      "description": "Nach fast zwei Jahren ohne Auftritt in den Indoor-Arenen der Republik und im Ausland ist es endlich wieder so weit: Roy Bianco & Die Abbrunzati Boys live!",
+      "hasRecommendation": false,
+      "imageUrl": "https://www.eventim.de/obj/media/DE-eventim/teaser/222x222/2026/roy-bianco-und-die-abbrunzati-boys-2027-1026-tickets-2026.jpg",
+      "inStock": true,
+      "link": "https://www.eventim.de/event/roy-bianco-die-abbrunzati-boys-tour-2027-the-hall-22347795/",
+      "name": "Roy Bianco & Die Abbrunzati Boys - TOUR 2027",
+      "price": 83.65,
+      "productGroupId": "4216685",
+      "productId": "22347795",
+      "promoter": {
+        "id": "1056495",
+        "name": "Gadget Entertainment AG"
+      },
+      "rating": {
+        "average": 4.4969000816345215,
+        "count": 163
+      },
+      "status": "Available",
+      "tags": ["TICKETDIRECT", "FANTICKET", "MOBILE_TICKET"],
+      "type": "LiveEntertainment",
+      "typeAttributes": {
+        "liveEntertainment": {
+          "location": {
+            "city": "Dübendorf",
+            "geoLocation": {
+              "latitude": 47.396087016519424,
+              "longitude": 8.611997984234115
+            },
+            "name": "THE HALL",
+            "postalCode": "8600"
+          },
+          "startDate": "2027-10-02T19:00:00+02:00"
+        }
+      },
+      "url": {
+        "domain": "https://www.eventim.de",
+        "path": "/event/roy-bianco-die-abbrunzati-boys-tour-2027-the-hall-22347795/"
+      }
+    },
+    {
+      "attractions": [
+        {
+          "name": "Roy Bianco & Die Abbrunzati Boys"
+        }
+      ],
+      "categories": [
+        {
+          "name": "Konzerte"
+        },
+        {
+          "name": "Rock & Pop",
+          "parentCategory": {
+            "name": "Konzerte"
+          }
+        },
+        {
+          "name": "Konzerte"
+        },
+        {
+          "name": "Schlager & Volksmusik",
+          "parentCategory": {
+            "name": "Konzerte"
+          }
+        },
+        {
+          "name": "VIP & Extras"
+        },
+        {
+          "name": "VIP & Specials",
+          "parentCategory": {
+            "name": "VIP & Extras"
+          }
+        }
+      ],
+      "currency": "EUR",
+      "description": "Nach fast zwei Jahren ohne Auftritt in den Indoor-Arenen der Republik und im Ausland ist es endlich wieder so weit: Roy Bianco & Die Abbrunzati Boys live!",
+      "hasRecommendation": false,
+      "imageUrl": "https://www.eventim.de/obj/media/DE-eventim/teaser/222x222/2026/roy-bianco-und-die-abbrunzati-boys-2027-1026-tickets-2026.jpg",
+      "inStock": true,
+      "link": "https://www.eventim.de/event/roy-bianco-die-abbrunzati-boys-tour-2027-olympiahalle-muenchen-22324397/",
+      "name": "Roy Bianco & Die Abbrunzati Boys - TOUR 2027 - Zusatzshow",
+      "price": 67.9,
+      "productGroupId": "4216685",
+      "productId": "22324397",
+      "promoter": {
+        "id": "525097",
+        "name": "INNSITE BOOKING GmbH & Co. OHG"
+      },
+      "rating": {
+        "average": 4.4969000816345215,
+        "count": 163
+      },
+      "status": "Available",
+      "tags": ["FANTICKET"],
+      "type": "LiveEntertainment",
+      "typeAttributes": {
+        "liveEntertainment": {
+          "location": {
+            "city": "München",
+            "geoLocation": {
+              "latitude": 48.173888623453166,
+              "longitude": 11.545562301344738
+            },
+            "name": "Olympiahalle München",
+            "postalCode": "80809"
+          },
+          "startDate": "2027-10-04T19:00:00+02:00"
+        }
+      },
+      "url": {
+        "domain": "https://www.eventim.de",
+        "path": "/event/roy-bianco-die-abbrunzati-boys-tour-2027-olympiahalle-muenchen-22324397/"
+      }
+    },
+    {
+      "attractions": [
+        {
+          "name": "Roy Bianco & Die Abbrunzati Boys"
+        }
+      ],
+      "categories": [
+        {
+          "name": "Konzerte"
+        },
+        {
+          "name": "Rock & Pop",
+          "parentCategory": {
+            "name": "Konzerte"
+          }
+        },
+        {
+          "name": "Konzerte"
+        },
+        {
+          "name": "Schlager & Volksmusik",
+          "parentCategory": {
+            "name": "Konzerte"
+          }
+        },
+        {
+          "name": "VIP & Extras"
+        },
+        {
+          "name": "VIP & Specials",
+          "parentCategory": {
+            "name": "VIP & Extras"
+          }
+        }
+      ],
+      "description": "Nach fast zwei Jahren ohne Auftritt in den Indoor-Arenen der Republik und im Ausland ist es endlich wieder so weit: Roy Bianco & Die Abbrunzati Boys live!",
+      "hasRecommendation": false,
+      "imageUrl": "https://www.eventim.de/obj/media/DE-eventim/teaser/222x222/2026/roy-bianco-und-die-abbrunzati-boys-2027-1026-tickets-2026.jpg",
+      "inStock": false,
+      "link": "https://www.eventim.de/event/roy-bianco-die-abbrunzati-boys-tour-2027-quarterback-immobilien-arena-22196328/",
+      "name": "Arena Ticket - Roy Bianco & Die Abbrunzati Boys - TOUR 2027",
+      "productGroupId": "4216685",
+      "productId": "22196328",
+      "promoter": {
+        "id": "2153",
+        "name": "ZSL Betreibergesellschaft mbH"
+      },
+      "rating": {
+        "average": 4.4969000816345215,
+        "count": 163
+      },
+      "status": "Available",
+      "tags": ["FANTICKET"],
+      "type": "LiveEntertainment",
+      "typeAttributes": {
+        "liveEntertainment": {
+          "location": {
+            "city": "Leipzig",
+            "geoLocation": {
+              "latitude": 51.3667000066365,
+              "longitude": 12.383299984976256
+            },
+            "name": "QUARTERBACK Immobilien ARENA",
+            "postalCode": "04105"
+          },
+          "startDate": "2027-10-07T19:00:00+02:00"
+        }
+      },
+      "url": {
+        "domain": "https://www.eventim.de",
+        "path": "/event/roy-bianco-die-abbrunzati-boys-tour-2027-quarterback-immobilien-arena-22196328/"
+      }
+    }
+  ],
+  "results": 10,
+  "searchTerm": "Roy Bianco",
+  "totalPages": 1,
+  "totalResults": 18
+}

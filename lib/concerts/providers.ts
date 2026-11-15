@@ -228,17 +228,25 @@ export function isOeticketMatch(p: { name: string; attractions: Array<{ name: st
   return lower.startsWith(a) && /^\s*($|[-–—@:|(,])/.test(p.name.slice(a.length));
 }
 
-export function oeticket(http: Http = fetch, maxPages = 2): ConcertProvider {
+/** Eventim-Shops mit derselben Such-API (inoffiziell, ohne Key). */
+export const EVENTIM_SHOPS = {
+  oeticket: { webId: "web__oeticket-at", retailPartner: "EOE", ticketPriority: 1 }, // Österreich: Ticket-Link bevorzugt
+  eventim: { webId: "web__eventim-de", retailPartner: undefined, ticketPriority: 1.5 }, // Deutschland
+} as const;
+
+/** Eventim-Suche für einen Shop (oeticket.com, eventim.de). Treffer nur bei echtem Auftritt des Künstlers. */
+export function eventimSearch(id: keyof typeof EVENTIM_SHOPS, http: Http = fetch, maxPages = 2): ConcertProvider {
+  const shop = EVENTIM_SHOPS[id];
   return {
-    id: "oeticket",
-    ticketPriority: 1, // Ticket-Link direkt beim österreichischen Anbieter
+    id,
+    ticketPriority: shop.ticketPriority,
     async events(artist, signal) {
       const out: RawEvent[] = [];
       for (let page = 1; page <= maxPages; page++) {
         const q = new URLSearchParams({
-          webId: "web__oeticket-at",
+          webId: shop.webId,
           language: "de",
-          retail_partner: "EOE",
+          ...(shop.retailPartner ? { retail_partner: shop.retailPartner } : {}),
           page: String(page),
           top: "50",
           sort: "DateAsc",
@@ -248,13 +256,13 @@ export function oeticket(http: Http = fetch, maxPages = 2): ConcertProvider {
           signal,
           headers: { Accept: "application/json" },
         });
-        if (!res.ok) throw new Error(`oeticket ${res.status}`);
+        if (!res.ok) throw new Error(`${id} ${res.status}`);
         const body = oeSchema.parse(await res.json());
         for (const p of body.products) {
           const le = p.typeAttributes.liveEntertainment;
           if (!le?.location?.city || !isOeticketMatch(p, artist)) continue;
           out.push({
-            provider: "oeticket",
+            provider: id,
             artistName: artist,
             date: le.startDate.slice(0, 10), // Ortszeit (mit Zeitzonen-Offset geliefert)
             time: le.startDate.slice(11, 16) || undefined,
@@ -273,3 +281,6 @@ export function oeticket(http: Http = fetch, maxPages = 2): ConcertProvider {
     },
   };
 }
+
+/** oeticket (Eventim Österreich). */
+export const oeticket = (http: Http = fetch, maxPages = 2) => eventimSearch("oeticket", http, maxPages);

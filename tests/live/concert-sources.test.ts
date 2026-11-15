@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bandsintown, lastSetlist, oeticket, ticketmaster } from "@/lib/concerts/providers";
+import { bandsintown, eventimSearch, lastSetlist, oeticket, ticketmaster } from "@/lib/concerts/providers";
 
 // Echte Konzert-Quellen; laufen nur, wenn die Schlüssel als Secrets hinterlegt sind.
 const { TICKETMASTER_API_KEY: tm, BANDSINTOWN_APP_ID: bit, SETLISTFM_API_KEY: sl } = process.env;
@@ -13,6 +13,14 @@ describe("Konzert-Quellen (live)", () => {
     } catch (e) {
       // Bot-Sperre für Rechenzentrums-IPs ist kein Formatfehler
       if (String(e).includes("oeticket 403")) ctx.skip();
+      throw e;
+    }
+  });
+  it("Eventim Deutschland: Antwortformat passt", async (ctx) => {
+    try {
+      expect(Array.isArray(await eventimSearch("eventim").events("Roy Bianco & Die Abbrunzati Boys"))).toBe(true);
+    } catch (e) {
+      if (String(e).includes(" 403")) ctx.skip(); // Bot-Sperre ist kein Formatfehler
       throw e;
     }
   });

@@ -41,8 +41,8 @@ oder aus. Demo: `/?demo=hoshizora`.
 Stufe 5b – Konzerte: In den letzten 15 Sekunden eines Songs zeigt eine **Konzertkarte** die nächsten
 Termine der Artists. Termine im Umkreis von Wien (`CONCERT_RADIUS_KM`, Standard 200 km) stehen zuerst. Die Karte
 zeigt Countdown („in 21 Tagen“), **ausverkauft** und einen **QR-Code zum Ticket**. Dazu kommt „Zuletzt live …
-– dieser Song war dabei“ aus setlist.fm. Quellen sind **oeticket** (inoffizielle Eventim-Suche, ohne Key; `OETICKET=0`
-schaltet ab), Ticketmaster (`TICKETMASTER_API_KEY`) und Bandsintown (`BANDSINTOWN_APP_ID`). Ticket-Links kommen
+– dieser Song war dabei“ aus setlist.fm. Quellen sind **oeticket** und **Eventim Deutschland** (inoffizielle Eventim-Suche, ohne Key; `OETICKET=0`
+bzw. `EVENTIM_DE=0` schaltet ab), Ticketmaster (`TICKETMASTER_API_KEY`) und Bandsintown (`BANDSINTOWN_APP_ID`). Ticket-Links kommen
 bevorzugt von oeticket. Gezählt wird ein Termin nur, wenn der Künstler wirklich auftritt; Tribute-Shows und
 unscharfe Suchtreffer fallen weg. Doppelte Termine werden zusammengeführt, die Daten 12 Stunden gecacht. setlist.fm braucht
 `SETLISTFM_API_KEY`. Ohne Schlüssel bleibt die Karte einfach weg. Orte ohne Koordinaten werden über

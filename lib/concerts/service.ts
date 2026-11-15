@@ -7,7 +7,7 @@ import { createPoliteFetch } from "@/lib/info/http";
 import { home } from "./geo";
 import { fillCoordinates } from "./geocode";
 import { mergeEvents } from "./merge";
-import { bandsintown, lastSetlist, oeticket, ticketmaster, type LastSetlist } from "./providers";
+import { bandsintown, eventimSearch, lastSetlist, oeticket, ticketmaster, type LastSetlist } from "./providers";
 import type { ConcertProvider, RawEvent } from "./types";
 
 /** Aktive Konzert-Provider (nur die mit Zugangsdaten). */
@@ -15,6 +15,8 @@ export function concertProviders(env: Record<string, string | undefined> = proce
   return [
     // oeticket braucht keinen Key; mit OETICKET=0 abschaltbar
     ...(env.OETICKET !== "0" ? [oeticket()] : []),
+    // Eventim Deutschland: gleiche Schnittstelle; mit EVENTIM_DE=0 abschaltbar
+    ...(env.EVENTIM_DE !== "0" ? [eventimSearch("eventim")] : []),
     ...(env.TICKETMASTER_API_KEY ? [ticketmaster(env.TICKETMASTER_API_KEY)] : []),
     ...(env.BANDSINTOWN_APP_ID ? [bandsintown(env.BANDSINTOWN_APP_ID)] : []),
   ];

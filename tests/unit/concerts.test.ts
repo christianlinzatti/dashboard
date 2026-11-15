@@ -238,6 +238,43 @@ describe("oeticket (echte Antworten der Eventim-Such-API)", () => {
   });
 });
 
+describe("Eventim Deutschland (echte Antwort)", () => {
+  it("eigener Shop, Fremdtreffer verworfen, Ticket-Link von eventim.de", async () => {
+    const { eventimSearch } = await import("@/lib/concerts/providers");
+    const de = (await import("../fixtures/oeticket/eventim-de-roy-bianco.json")).default;
+    const http = vi.fn<Http>(async () => ok(de));
+    const out = await eventimSearch("eventim", http).events("Roy Bianco & Die Abbrunzati Boys");
+    const url = new URL(http.mock.calls[0]![0]);
+    expect(url.searchParams.get("webId")).toBe("web__eventim-de");
+    expect(url.searchParams.has("retail_partner")).toBe(false);
+    expect(out.map((e) => e.city)).toEqual(["Wien", "Salzburg", "Dübendorf", "München", "Leipzig"]); // nicht „Udo West / Roy Birra …“
+    expect(out[0]).toMatchObject({ provider: "eventim", ticketUrl: expect.stringContaining("https://www.eventim.de/event/") });
+  });
+
+  it("gleicher Termin bei oeticket und Eventim: ein Konzert, oeticket-Link bevorzugt", async () => {
+    const { EVENTIM_SHOPS } = await import("@/lib/concerts/providers");
+    const [c] = mergeEvents(
+      { id: "a", name: "A" },
+      [
+        {
+          provider: { id: "eventim", ticketPriority: EVENTIM_SHOPS.eventim.ticketPriority },
+          events: [ev({ provider: "eventim", ticketUrl: "https://www.eventim.de/x" })],
+        },
+        {
+          provider: { id: "oeticket", ticketPriority: EVENTIM_SHOPS.oeticket.ticketPriority },
+          events: [ev({ provider: "oeticket", ticketUrl: "https://www.oeticket.com/x" })],
+        },
+        {
+          provider: { id: "ticketmaster", ticketPriority: 2 },
+          events: [ev({ provider: "ticketmaster", ticketUrl: "https://tm/x" })],
+        },
+      ],
+      { today: "2026-11-14", home: WIEN },
+    );
+    expect(c).toMatchObject({ ticketUrl: "https://www.oeticket.com/x", providers: ["eventim", "oeticket", "ticketmaster"] });
+  });
+});
+
 describe("setlist.fm", () => {
   it("letzte Setlist mit Songs, Datum umgestellt, x-api-key gesetzt", async () => {
     const http = vi.fn<Http>(async () =>
@@ -268,10 +305,11 @@ describe("setlist.fm", () => {
 
 describe("Konzert-Dienst", () => {
   it("Provider nur mit Zugangsdaten", () => {
-    expect(concertProviders({}).map((p) => p.id)).toEqual(["oeticket"]);
-    expect(concertProviders({ OETICKET: "0" }).map((p) => p.id)).toEqual([]);
+    expect(concertProviders({}).map((p) => p.id)).toEqual(["oeticket", "eventim"]);
+    expect(concertProviders({ OETICKET: "0", EVENTIM_DE: "0" }).map((p) => p.id)).toEqual([]);
     expect(concertProviders({ TICKETMASTER_API_KEY: "k", BANDSINTOWN_APP_ID: "a" }).map((p) => p.id)).toEqual([
       "oeticket",
+      "eventim",
       "ticketmaster",
       "bandsintown",
     ]);
