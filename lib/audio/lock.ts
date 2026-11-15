@@ -57,3 +57,15 @@ export function updateAnchor(anchor: number | null, beatSongMs: number, danceBea
 export function beatStride(danceBeatMs: number, measuredBeatMs: number) {
   return Math.max(1, Math.round(danceBeatMs / measuredBeatMs));
 }
+
+/**
+ * Oktavfehler auflösen: Die Mikrofon-Erkennung misst manchmal das halbe, doppelte oder 1,5-fache Tempo.
+ * Liegt ein Vielfaches nahe am Startwert (z. B. von Deezer), wird es übernommen; sonst bleibt der Messwert.
+ */
+export function resolveOctave(measured: number, hint: number | undefined, tolerance = 0.06): number {
+  if (!hint || !(measured > 0)) return measured;
+  const near = (x: number) => Math.abs(x - hint) / hint <= tolerance;
+  if (near(measured)) return measured;
+  for (const f of [2, 0.5, 1.5, 2 / 3]) if (near(measured * f)) return measured * f;
+  return measured;
+}

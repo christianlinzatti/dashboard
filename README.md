@@ -5,6 +5,10 @@ zeigt den aktuellen Spotify-Song, Lyrics möglichst Wort für Wort und tanzende 
 
 Konzept und Ausbaustufen: [`docs/KONZEPT.md`](docs/KONZEPT.md) · Architektur-Bewertung: [`docs/ARCHITEKTUR.md`](docs/ARCHITEKTUR.md)
 
+**Neu: Tempo-Startwert** – Zu jedem Song mit ISRC holt das Dashboard das Tempo von Deezer (öffentliche API, ohne Key,
+180 Tage gecacht). Avatare und Licht tanzen damit vom ersten Takt an im richtigen Tempo, auch ohne Mikrofon. Mit Mikrofon
+korrigiert der Startwert Oktavfehler (halbes/doppeltes Tempo).
+
 **Neu: Song merken** – Herz in der Kopfzeile antippen speichert den Song in den Spotify-Lieblingssongs („♡ Merken“)
 oder entfernt ihn wieder; per Alexa: „merk dir den Song“. Braucht die Berechtigung `user-library-modify`:
 **nach dem Update einmal abmelden und neu anmelden.**

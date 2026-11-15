@@ -19,6 +19,9 @@ export const CACHE_TTL = {
   concertsPartial: 30 * 60,
   /** letzte Setlist einer Tour */
   setlist: 3 * DAY,
+  /** Tempo-Startwert (Deezer): gefunden / unbekannt */
+  tempoFound: 180 * DAY,
+  tempoMissing: 30 * DAY,
   /** Hörstand für Alexa – persönliche Daten, bewusst kurz */
   snapshot: 2 * 3600,
   /** nicht abgeholte Befehle verfallen */

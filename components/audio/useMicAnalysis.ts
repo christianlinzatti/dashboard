@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { timeScaleFor } from "@/lib/avatars/catalog";
-import { beatStride, TempoLock, updateAnchor } from "@/lib/audio/lock";
+import { beatStride, resolveOctave, TempoLock, updateAnchor } from "@/lib/audio/lock";
 import { startMic, type MicHandle } from "@/lib/audio/mic";
 import { positionAt } from "@/lib/song-context/derive";
 import type { Live, MicState } from "@/lib/song-context/schema";
@@ -84,7 +84,8 @@ export function useMicAnalysis(enabled: boolean) {
           vocal: f.vocal,
         };
 
-        const locked = lock.push(bs.bpm, bs.confidence, f.dt);
+        // Startwert (Deezer) löst Oktavfehler auf: 85 statt 170 BPM gemessen → 170
+        const locked = lock.push(resolveOctave(bs.bpm, s.song?.music.bpmHint), bs.confidence, f.dt);
         if (locked !== null) {
           patch.bpm = locked;
           patch.tempoLocked = true;

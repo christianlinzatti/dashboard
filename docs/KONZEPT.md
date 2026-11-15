@@ -152,8 +152,8 @@ Konzerte 12 h (Teilergebnis 30 min), Setlist 3 Tage, Schnappschuss 2 h, Befehle 
 
 ✅ PKCE-Login, verschlüsselte Session, Single-Flight-Refresh (Spotify rotiert Refresh-Tokens), Konto-Allowlist
 (`ALLOWED_SPOTIFY_USERS`), Polling mit lokaler Uhr, manueller Lyrics-Offset pro Gerät, Steuerleiste
-(Play/Pause/Skip). Spotify sperrt *Audio Features/Analysis* für neue Apps: Tempo und Energie kommen aus dem Mikrofon,
-ohne Mikrofon gilt 120 BPM.
+(Play/Pause/Skip). Spotify sperrt *Audio Features/Analysis* für neue Apps: Tempo und Energie kommen aus dem Mikrofon;
+den Startwert liefert Deezer über die ISRC (ohne Treffer 120 BPM).
 
 ---
 
@@ -281,7 +281,6 @@ Alles läuft in der Cloud und im Test-Browser. Auf echter Hardware wurde **noch 
 |---|---|
 | Lyrics-Versatz | Mikrofon erkennt Gesangseinsätze, vergleicht mit Zeilenstarts und schlägt einen Offset vor (oder stellt ihn automatisch ein) |
 | geschätzte Wort-Timings | Silben-Onsets aus dem Mikrofon verschieben Wortgrenzen (war geplant, offen) |
-| Tempo ohne Mikrofon | 120 BPM fest; externer BPM-Startwert (z. B. GetSongBPM) würde Tanz und Licht ohne Mikro verbessern |
 | Konzerte | Geocoding für Orte ohne Koordinaten (Nominatim, gecacht), Eventim DE |
 | Lizenz-/Quellenangaben | Flickr ohne Lizenzfilter ist nur privat vertretbar; bei öffentlicher Nutzung wieder einschränken |
 
@@ -330,7 +329,7 @@ Aufwand: S = bis ½ Tag, M = 1–2 Tage, L = mehrere Tage.
 | Automatischer Lyrics-Offset aus Gesangseinsätzen (Vorschlag, auf Wunsch automatisch) | M |
 | Wort-Timing-Verfeinerung per Mikrofon für geschätzte Wörter | L |
 | ✅ Lyrics-Cache: Treffer behalten, nur „nicht gefunden“ bei Provider-Änderung neu prüfen | S |
-| BPM-Startwert aus externer Quelle | S |
+| ✅ BPM-Startwert aus externer Quelle (Deezer über ISRC, korrigiert auch Oktavfehler des Mikrofons) | S |
 | Konzerte: Geocoding, Heimatort/Umkreis in den Einstellungen, Eventim DE | M |
 
 ### Stufe 8 – Interaktion

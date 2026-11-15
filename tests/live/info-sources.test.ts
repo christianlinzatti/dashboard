@@ -22,3 +22,12 @@ describe("Info-Quellen (live)", () => {
     expect(info!.wikiUrl).toMatch(/wikipedia\.org/);
   }, 60_000);
 });
+
+describe("Deezer-Tempo (live)", () => {
+  it("BPM für „Blinding Lights“ über die ISRC", async () => {
+    const { deezerBpm } = await import("@/lib/music/deezer");
+    const bpm = await deezerBpm("USUG11904206", 200_040);
+    expect(bpm).toBeGreaterThan(160);
+    expect(bpm).toBeLessThan(180);
+  });
+});

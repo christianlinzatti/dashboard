@@ -19,6 +19,7 @@ import { InfoOverlay } from "./info/InfoOverlay";
 import { useUserLoader } from "./personal/useUserLoader";
 import { ConcertOverlay } from "./concerts/ConcertOverlay";
 import { useConcertLoader } from "./concerts/useConcertLoader";
+import { useTempoLoader } from "./audio/useTempoLoader";
 import { useLyricsLoader } from "./lyrics/useLyricsLoader";
 import { useMicAnalysis } from "./audio/useMicAnalysis";
 import type { LyricsMode } from "@/lib/lyrics/director";
@@ -52,6 +53,8 @@ export function Dashboard({ demo, t, debug, loginError, mic, lyricsMode, quality
   useUserLoader(demo === undefined);
   // Bevorstehende Konzerte (Ticketmaster, Bandsintown) und letzte Setlist (setlist.fm)
   useConcertLoader(demo === undefined);
+  // Tempo-Startwert (Deezer), bis das Mikrofon eingerastet ist
+  useTempoLoader(demo === undefined);
   // Mikrofon: im Live-Betrieb; in Demos nur mit ?mic=1 (Screenshots bleiben reproduzierbar)
   const micCtl = useMicAnalysis(demo === undefined || !!mic);
 
