@@ -195,7 +195,8 @@
       "energy": 1,
       "genres": ["hip hop", "breakbeat"],
       "fallback": "Dance_PowerHit",
-      "auto": true
+      "auto": true,
+      "skip": true
     },
     {
       "id": "Mixamo_BboyUprock",
@@ -249,7 +250,8 @@
       "auto": true,
       "file": "/animations/Mixamo_BreakdanceEnding1.json?v=2280f9ef957d",
       "beats": 8,
-      "detectedBpm": 100
+      "detectedBpm": 100,
+      "skip": true
     },
     {
       "id": "Mixamo_BreakdanceEnding2",
@@ -261,7 +263,8 @@
       "auto": true,
       "file": "/animations/Mixamo_BreakdanceEnding2.json?v=b26297fa0abd",
       "beats": 12,
-      "detectedBpm": 100
+      "detectedBpm": 100,
+      "skip": true
     },
     {
       "id": "Mixamo_BreakdanceEnding3",
@@ -270,7 +273,8 @@
       "energy": 1,
       "genres": ["hip hop", "breakbeat"],
       "fallback": "Dance_PowerHit",
-      "auto": true
+      "auto": true,
+      "skip": true
     },
     {
       "id": "Mixamo_BreakdanceFootwork1",
@@ -314,7 +318,8 @@
       "fallback": "Dance_PowerHit",
       "auto": true,
       "file": "/animations/Mixamo_BreakdanceFootworkToFreeze.json?v=f184f4683a3d",
-      "beats": 4
+      "beats": 4,
+      "skip": true
     },
     {
       "id": "Mixamo_BreakdanceFootworkToIdle_2",
@@ -326,7 +331,8 @@
       "auto": true,
       "file": "/animations/Mixamo_BreakdanceFootworkToIdle_2.json?v=e6813e30cd74",
       "beats": 12,
-      "detectedBpm": 100
+      "detectedBpm": 100,
+      "skip": true
     },
     {
       "id": "Mixamo_BreakdanceFootworkToIdle",
@@ -338,7 +344,8 @@
       "auto": true,
       "file": "/animations/Mixamo_BreakdanceFootworkToIdle.json?v=7260999dbd31",
       "beats": 12,
-      "detectedBpm": 100
+      "detectedBpm": 100,
+      "skip": true
     },
     {
       "id": "Mixamo_BreakdanceFreezeVar1",
@@ -430,7 +437,8 @@
       "energy": 1,
       "genres": ["hip hop", "breakbeat"],
       "fallback": "Dance_PowerHit",
-      "auto": true
+      "auto": true,
+      "skip": true
     },
     {
       "id": "Mixamo_BreakdanceReady_3",
@@ -439,7 +447,8 @@
       "energy": 1,
       "genres": ["hip hop", "breakbeat"],
       "fallback": "Dance_PowerHit",
-      "auto": true
+      "auto": true,
+      "skip": true
     },
     {
       "id": "Mixamo_BreakdanceReady",
@@ -448,7 +457,8 @@
       "energy": 1,
       "genres": ["hip hop", "breakbeat"],
       "fallback": "Dance_PowerHit",
-      "auto": true
+      "auto": true,
+      "skip": true
     },
     {
       "id": "Mixamo_BreakdanceSwipes",
@@ -481,7 +491,8 @@
       "energy": 1,
       "genres": ["hip hop", "breakbeat"],
       "fallback": "Dance_PowerHit",
-      "auto": true
+      "auto": true,
+      "skip": true
     },
     {
       "id": "Mixamo_BreakdanceUprockToGround",
@@ -490,7 +501,8 @@
       "energy": 1,
       "genres": ["hip hop", "breakbeat"],
       "fallback": "Dance_PowerHit",
-      "auto": true
+      "auto": true,
+      "skip": true
     },
     {
       "id": "Mixamo_BreakdanceUprockVar1End",
@@ -502,7 +514,8 @@
       "auto": true,
       "file": "/animations/Mixamo_BreakdanceUprockVar1End.json?v=8d98a4882bbb",
       "beats": 4,
-      "detectedBpm": 124.1
+      "detectedBpm": 124.1,
+      "skip": true
     },
     {
       "id": "Mixamo_BreakdanceUprockVar1Start",
@@ -511,7 +524,8 @@
       "energy": 1,
       "genres": ["hip hop", "breakbeat"],
       "fallback": "Dance_PowerHit",
-      "auto": true
+      "auto": true,
+      "skip": true
     },
     {
       "id": "Mixamo_BreakdanceUprockVar1",

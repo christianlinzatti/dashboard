@@ -4,7 +4,7 @@ import { contiguous } from "@/lib/song-context/sections";
 
 export { contiguous };
 import { ENERGY_CLIPS, IDLE_CLIP, WAVE_CLIP, genreBias, type Energy } from "./clips";
-import { mixamoClips, mixamoForEnergy, mixamoGenreBias } from "./mixamo";
+import { mixamoClips, mixamoForEnergy, mixamoGenreBias, mixamoOffStyle } from "./mixamo";
 import { slots, type Formation, type Vec2 } from "./formations";
 import { rng } from "./rng";
 
@@ -128,6 +128,9 @@ export function planChoreography(song: SongStatic, bpm: number): Choreography {
   const genres = song.music.genres.length ? song.music.genres : song.artists.flatMap((a) => a.genres);
   const bias = genreBias(genres);
   mixamoGenreBias(genres).forEach((c) => bias.add(c));
+  // passender Stil doppelt so oft, fremder Stil (z. B. Breakdance bei Swing) seltener
+  const offStyle = mixamoOffStyle(genres);
+  const weightOf = (c: string) => (bias.has(c) ? 2 : offStyle.has(c) ? 0.35 : 1);
   // Mixamo-Tänze passen auf alle Avatare (gemeinsames Skelett) und kommen zu den eingebauten Clips dazu
   const clipsFor = (e: Energy) => [...ENERGY_CLIPS[e], ...mixamoForEnergy(e)];
 
@@ -166,7 +169,7 @@ export function planChoreography(song: SongStatic, bpm: number): Choreography {
       const pool = (id: string, avoid: string[]) => {
         const all = clipsFor(energy).filter((c) => available[id]!.has(c));
         const fresh = all.filter((c) => !avoid.includes(c));
-        return (fresh.length ? fresh : all).map((c) => [c, bias.has(c) ? 2 : 1] as const);
+        return (fresh.length ? fresh : all).map((c) => [c, weightOf(c)] as const);
       };
 
       const moves: Record<string, string> = {};
@@ -174,7 +177,7 @@ export function planChoreography(song: SongStatic, bpm: number): Choreography {
         const common = clipsFor(energy).filter((c) => order.every((id) => available[id]!.has(c)));
         const lead = order[0]!;
         const fresh = common.filter((c) => !recent[lead]!.includes(c));
-        const clip = r.weighted((fresh.length ? fresh : common).map((c) => [c, bias.has(c) ? 2 : 1] as const));
+        const clip = r.weighted((fresh.length ? fresh : common).map((c) => [c, weightOf(c)] as const));
         order.forEach((id) => (moves[id] = clip));
       } else {
         const used = new Set<string>();

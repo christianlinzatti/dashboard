@@ -386,11 +386,25 @@ describe("Automatisch aufgenommene Tänze", () => {
         hips: Float32Array.from(clip.tracks.find((t) => t.name === "Hips.position")!.values),
       });
     };
-    expect(energyOf("Mixamo_Bellydance")).toBe(1);
-    expect(energyOf("Mixamo_Salsa")).toBe(1);
-    expect(energyOf("Mixamo_HipHop")).toBe(2);
+    // echte Tänze: ruhig < wild (die Dateien kommen von Mixamo und können sich ändern → nur die Reihenfolge)
+    expect(energyOf("Mixamo_Bellydance")).toBeLessThan(energyOf("Mixamo_Breakdance"));
     expect(energyOf("Mixamo_Breakdance")).toBe(3);
-    expect(energyOf("Mixamo_Gangnam")).toBe(3);
+    // künstliche Bewegung: Arme/Beine pendeln mit wachsender Geschwindigkeit
+    const swing = (radPerSec: number) => {
+      const fps = 30;
+      const frames = 61;
+      const rot = new Float32Array(frames * 4);
+      for (let f = 0; f < frames; f++)
+        rot.set(new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), Math.sin(f / 10) * radPerSec * 0.33).toArray(), f * 4);
+      const bones = ["Hips", "Spine", "LeftArm", "RightArm", "LeftUpLeg", "RightUpLeg"];
+      return energyFromMotion({
+        fps,
+        frames,
+        rotations: new Map(bones.map((b) => [b, rot])),
+        hips: new Float32Array(frames * 3),
+      });
+    };
+    expect([swing(1), swing(2.5), swing(4.5), swing(8)]).toEqual([0, 1, 2, 3]);
     // Stillstand → ruhig
     expect(
       energyFromMotion({
@@ -400,5 +414,63 @@ describe("Automatisch aufgenommene Tänze", () => {
         hips: new Float32Array(9),
       }),
     ).toBe(0);
+  });
+});
+
+describe("Großer Katalog", () => {
+  it("Übergänge werden erkannt und nicht eingeplant; fremder Stil seltener", async () => {
+    vi.resetModules();
+    const entry = (id: string, genres: string[], extra = {}) => ({
+      id,
+      source: `${id}.fbx`,
+      search: id,
+      energy: 2,
+      genres,
+      fallback: "Dance_Groove",
+      file: `/animations/${id}.json`,
+      ...extra,
+    });
+    vi.doMock("@/lib/dance/mixamo-clips.json", () => ({
+      default: {
+        clips: [
+          entry("Mixamo_Break", ["hip hop", "breakbeat"]),
+          entry("Mixamo_Party", ["pop", "dance"]),
+          entry("Mixamo_ToIdle", ["hip hop"], { skip: true }),
+        ],
+      },
+    }));
+    const { isTransition, mixamoClips, mixamoOffStyle } = await import("@/lib/dance/mixamo");
+    const { planChoreography } = await import("@/lib/dance/plan");
+    const { neonlicht } = await import("@/lib/song-context/fixtures/neonlicht");
+
+    expect(isTransition("Breakdance Footwork To Idle")).toBe(true);
+    expect(isTransition("Breakdance Uprock Var 1 End")).toBe(true);
+    expect(isTransition("breakdance ending 3")).toBe(true);
+    expect(isTransition("Bboy Uprock Start")).toBe(true);
+    expect(isTransition("Breakdance Freezes")).toBe(false);
+    expect(isTransition("Dancing Running Man")).toBe(false);
+    expect(mixamoClips.map((c) => c.id)).toEqual(["Mixamo_Break", "Mixamo_Party"]);
+    expect([...mixamoOffStyle(["swing"])]).toEqual(["Mixamo_Break"]);
+    expect([...mixamoOffStyle(["hip hop"])]).toEqual([]);
+
+    const uses = (genres: string[], clip: string) => {
+      let n = 0;
+      for (let i = 0; i < 60; i++) {
+        const c = planChoreography({ ...neonlicht, trackKey: `k${i}`, music: { ...neonlicht.music, genres } }, 124);
+        for (const p of c.phrases) for (const m of Object.values(p.moves)) if (m.clip === clip) n++;
+        for (const p of c.phrases) for (const m of Object.values(p.moves)) expect(m.clip).not.toBe("Mixamo_ToIdle");
+      }
+      return n;
+    };
+    // Swing-Song: Breakdance seltener als der neutrale Party-Tanz; Hip-Hop-Song: Breakdance öfter
+    expect(uses(["swing"], "Mixamo_Break")).toBeLessThan(uses(["swing"], "Mixamo_Party"));
+    expect(uses(["hip hop"], "Mixamo_Break")).toBeGreaterThan(uses(["swing"], "Mixamo_Break"));
+    vi.doUnmock("@/lib/dance/mixamo-clips.json");
+  });
+
+  it("automatische Einträge für Übergänge sind übersprungen", async () => {
+    const { autoEntry } = await import("@/scripts/mixamo/auto");
+    expect(autoEntry("Breakdance Footwork To Idle (2).fbx").skip).toBe(true);
+    expect(autoEntry("Hip Hop Dancing (7).fbx").skip).toBeUndefined();
   });
 });

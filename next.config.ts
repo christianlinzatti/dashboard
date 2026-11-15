@@ -49,6 +49,11 @@ const nextConfig: NextConfig = {
         source: "/avatars/:file*",
         headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
       },
+      {
+        // Tanz-Clips werden mit ?v=<Prüfsumme> geladen → dürfen dauerhaft im Browser bleiben
+        source: "/animations/:file*",
+        headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
+      },
     ];
   },
 };

@@ -27,12 +27,32 @@ export type MixamoEntry = {
   detectedBpm?: number;
   /** automatisch aus einer FBX ohne Katalogeintrag aufgenommen: Energie wird bei jeder Umwandlung neu gemessen */
   auto?: boolean;
+  /** nicht in der Choreografie verwenden (z. B. Übergänge wie „Footwork To Idle“, die als Schleife seltsam wirken) */
+  skip?: boolean;
 };
 
 export const MIXAMO: MixamoEntry[] = (catalog.clips as MixamoEntry[]).map((c) => ({ ...c }));
 
 /** Nur Tänze, die wirklich umgewandelt im Repo liegen. */
-export const mixamoClips = MIXAMO.filter((c): c is MixamoEntry & { file: string } => !!c.file);
+export const mixamoClips = MIXAMO.filter((c): c is MixamoEntry & { file: string } => !!c.file && !c.skip);
+
+/** Übergänge, Anfänge und Schlussposen – als Schleife ungeeignet */
+export function isTransition(name: string): boolean {
+  return /\b(to (idle|ground|freeze|stand)|ending|end|start|ready|idle)\b/i.test(name);
+}
+
+const GENERIC = new Set(["pop", "dance", "party", "festival"]);
+
+/**
+ * Mixamo-Tänze mit eigenem Stil, der nicht zum Song passt (z. B. Breakdance bei Swing) – werden seltener gewählt,
+ * damit ein großer Katalog eines Stils nicht jede Choreografie prägt.
+ */
+export function mixamoOffStyle(genres: string[]): Set<string> {
+  const match = new Set(mixamoGenreBias(genres));
+  return new Set(
+    mixamoClips.filter((c) => !match.has(c.id) && c.genres.some((g) => !GENERIC.has(g.toLowerCase()))).map((c) => c.id),
+  );
+}
 
 export const mixamoById = new Map(mixamoClips.map((c) => [c.id, c]));
 

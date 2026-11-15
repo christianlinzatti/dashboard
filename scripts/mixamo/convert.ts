@@ -77,7 +77,9 @@ async function main() {
     }
     try {
       const line = convertOne(entry, file, rest);
-      const neu = entry.auto ? ` · neu: Energie ${entry.energy}, Stil ${entry.genres[0]}, Ersatz ${entry.fallback}` : "";
+      const neu = entry.auto
+        ? ` · auto: Energie ${entry.energy}, Stil ${entry.genres[0]}, Ersatz ${entry.fallback}${entry.skip ? " · übersprungen (Übergang)" : ""}`
+        : "";
       console.log(`✓ ${entry.id}: ${file} · ${line}${neu}`);
     } catch (e) {
       // Datei nennen und mit der nächsten weitermachen, statt alles abzubrechen

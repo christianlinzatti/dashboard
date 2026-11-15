@@ -1,6 +1,6 @@
 import { Quaternion } from "three";
 import type { Energy } from "../../lib/dance/clips";
-import type { MixamoEntry } from "../../lib/dance/mixamo";
+import { isTransition, type MixamoEntry } from "../../lib/dance/mixamo";
 import type { Sampled } from "../../lib/dance/retarget";
 
 /**
@@ -90,5 +90,13 @@ export function energyFromMotion(s: Pick<Sampled, "fps" | "frames" | "rotations"
 /** Katalogeintrag für eine FBX ohne Eintrag; Energie wird nach der Umwandlung gemessen. */
 export function autoEntry(file: string): MixamoEntry {
   const name = baseName(file);
-  return { id: idFromFile(file), source: file, search: name, energy: 1, ...styleFromName(name), auto: true };
+  return {
+    id: idFromFile(file),
+    source: file,
+    search: name,
+    energy: 1,
+    ...styleFromName(name),
+    auto: true,
+    ...(isTransition(name) ? { skip: true } : {}),
+  };
 }
