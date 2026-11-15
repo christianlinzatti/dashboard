@@ -1,6 +1,7 @@
 # Architektur-Bewertung „Sonic Stage“
 
-Stand: 2026-11-14, nach Meilenstein 8 (Bühne & Licht). Ergänzt `docs/KONZEPT.md` um den tatsächlichen Ist-Stand.
+Stand: 2026-11-15, nach Stufe 5 (inkl. Better Lyrics, Umschrift/Übersetzung). Ergänzt `docs/KONZEPT.md` (v3) um die
+technische Bewertung. Abschnitt 1 zeigt den Kern; die vollständige Liste der Quellen und Routen steht im Konzept, Abschnitt 4.
 
 ## 1. Ist-Architektur
 
@@ -10,6 +11,7 @@ Browser (Dashboard, Next.js App Router, React 19)
 │  ├─ useSpotifySync      /api/now-playing → songFromTrack() → setSong / setPlayback (Uhr-Abgleich)
 │  ├─ useLyricsLoader     /api/lyrics → mergeSong({ lyrics }) (mit Neuversuchen)
 │  ├─ useMicAnalysis      Web Audio → Beat/Tempo/Energie/Drops → setLive
+│  ├─ useInfoLoader / useUserLoader / useConcertLoader   Infos, Persönliches, Konzerte → mergeSong
 │  └─ Cover-Palette       extractPalette() → mergeSong({ album.palette })
 ├─ SONG-KONTEXT           lib/song-context (zod-Schema, Zustand-Store, Ereignisse, derive())
 └─ Verbraucher (lesen nur)
@@ -21,7 +23,12 @@ Server (Vercel Route Handlers)
 ├─ /api/auth/*           OAuth + PKCE, Session AES-256-GCM im httpOnly-Cookie, Single-Flight-Refresh
 ├─ /api/now-playing      Spotify „currently playing“ (zod, tolerant gegenüber entfernten Feldern)
 ├─ /api/player/[action]  Steuerung (403 im Entwicklungsmodus verständlich gemeldet)
-└─ /api/lyrics           Provider-Kette → Cache (Upstash/Speicher), eigene Korrekturen ohne Cache
+├─ /api/lyrics           Provider-Kette → Cache (Upstash/Speicher), eigene Korrekturen ohne Cache
+├─ /api/info, /api/personal, /api/recent, /api/concerts   Anreicherung, je Quelle gecacht
+├─ /api/song-context     Schnappschuss für Alexa, Befehlskanal
+└─ /api/alexa            Alexa-Skill (Signaturprüfung)
+
+Pi (lokal): bridge/ – WebSocket vom Browser, Govee per LAN/UDP
 ```
 
 **Leitprinzip:** Fachlogik liegt in reinen, deterministischen Funktionen (`lib/`): Choreografie, Licht,
@@ -57,16 +64,22 @@ reproduzierbar (gleiche Songzeit → gleiche Pose, gleiches Licht) und die Logik
 | 10 | Circuit-Breaker und Speicher-Cache leben pro Serverless-Instanz | niedrig | **offen:** mit Upstash ist der Lyrics-Cache geteilt; der Breaker dient nur dem Schutz vor Dauerfehlern |
 | 11 | Konto-Allowlist ist optional | niedrig (Spotify-Entwicklungsmodus begrenzt ohnehin die Nutzer) | **offen:** `ALLOWED_SPOTIFY_USERS` in Production setzen (README) |
 | 12 | Leistung auf echter Pi-Hardware nicht gemessen | mittel | **offen:** erst mit Gerät messbar; „Auto“ regelt herunter |
+| 13 | Kein Watchdog, keine Fehlermeldungen vom Kiosk | mittel (Bildschirm bleibt bei Hängern stehen, Fehler unbemerkt) | **offen:** Konzept Stufe 6 |
+| 14 | Lyrics-Cache-Schlüssel enthält die Provider-Liste | niedrig (jede Provider-Änderung lädt alle Songs einmal neu) | **offen:** Treffer behalten, nur „nicht gefunden“ neu prüfen |
+| 15 | `LyricsLayer.tsx` über 300 Zeilen | Wartbarkeit | **offen:** Darstellungsmodi in eigene Dateien |
+| 16 | Sporadischer Testfehler (Chiffrat enthielt zufällig „u1“) | niedrig | **behoben:** langer, eindeutiger Klartext im Test |
+| 17 | TTML: Silben, Duett-Typen, `lrc:`-Namensraum, lose Satzzeichen | mittel (falsche Füllung, fehlende Sänger) | **behoben:** Parser gegen echte Antworten geprüft |
 
 ## 3. Qualitätssicherung
 
-| | vorher | jetzt |
+| | Meilenstein 8 | jetzt (Stufe 5+) |
 |---|---|---|
-| Unit-Tests | 132 | 143 |
-| Abdeckung `lib/` (Anweisungen / Verzweigungen / Funktionen / Zeilen) | 83 / 77 / 82 / – % | 91 / 82 / 88 / 93 % |
-| Mindest-Abdeckung in der CI | – | 88 / 78 / 85 / 90 % |
-| E2E-Tests (je Auflösung) | 37 | 39 (+ ohne WebGL, + Avatar lädt nicht) |
-| E2E-Laufzeit | ein Job, ~7–8 min | drei parallele Jobs (je Auflösung) |
+| Unit-Tests | 143 | 263 |
+| Abdeckung (Anweisungen / Verzweigungen / Funktionen / Zeilen) | 91 / 82 / 88 / 93 % | 91 / 82 / 88 / 94 % |
+| Mindest-Abdeckung in der CI | 88 / 78 / 85 / 90 % | unverändert |
+| E2E-Tests (je Auflösung) | 39 | 54 |
+| E2E-Laufzeit | drei parallele Jobs | unverändert, ~3–4 min gesamt |
+| Live-Checks echter Dienste (täglich) | Lyrics | + Info-Quellen, Konzerte, Better Lyrics |
 
 **Workflows:**
 
@@ -81,12 +94,12 @@ reproduzierbar (gleiche Songzeit → gleiche Pose, gleiches Licht) und die Logik
 Lokal können einzelne Bilder (vor allem 1024×600 mit Bloom) leicht abweichen; neue Referenzen immer über den
 Workflow „Screenshots aktualisieren“ erzeugen.
 
-## 4. Empfehlungen für die nächsten Stufen
+## 4. Empfehlungen
 
-1. ~~**Serverseitiger Song-Kontext-Schnappschuss (vor Stufe 3):**~~ umgesetzt – `/api/song-context` speichert pro Nutzer den
-   kompakten Stand (Track, Artists, Abschnitt, Palette, Lichtsignal) in Upstash. Alexa („Welcher Song läuft?“)
-   und die Pi-Bridge lesen daraus. Der Browser bleibt Quelle für beat-genaue Daten (WebSocket zur Pi-Bridge).
-2. **Upstash in Production aktivieren:** geteilter Lyrics-Cache über alle Serverless-Instanzen, Grundlage für 1.
-3. **Leistungsmessung auf dem Pi:** Bildrate je Qualitätsstufe protokollieren (Debug-Panel), Voreinstellung danach festlegen.
-4. **Echte Daten statt Mocks prüfen:** Spotify-Steuerung (403 im Entwicklungsmodus?) und Color-Lyrics mit dem
-   Anmelde-Token sind nur gegen nachgebildete Antworten getestet.
+Die priorisierten nächsten Ausbaustufen stehen im Konzept (`docs/KONZEPT.md`, Abschnitte 12 und 13). Kurzfassung:
+
+1. **Betrieb auf dem Gerät (Stufe 6):** Leistung messen, Watchdog, Fehler-Telemetrie, Service-Worker-Cache,
+   Setup-Skript für den Pi. Das ist die größte Lücke: Auf echter Hardware wurde noch nichts gemessen.
+2. **Kleine Verbesserungen ohne Gerät:** Lyrics-Cache-Schlüssel (#14), BPM-Startwert, Geocoding für Konzerte,
+   Song liken per Touch.
+3. **Production:** Upstash verbinden, `ALLOWED_SPOTIFY_USERS` setzen, Branch-Schutz für `main` in GitHub einschalten.
