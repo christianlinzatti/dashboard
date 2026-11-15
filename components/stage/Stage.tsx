@@ -23,7 +23,7 @@ import { PhotoWall } from "./PhotoWall";
 import { LogoWall } from "./LogoWall";
 import { wallPhotoAt } from "@/lib/info/display";
 import { displayUrl } from "@/lib/info/photos";
-import { Fog, StageSet, WallFrame, wallScale } from "./StageSet";
+import { Fog, StageSet, TurntableMarks, WallFrame, wallScale } from "./StageSet";
 import { Effects } from "./Effects";
 import { initialFrame, type Frame } from "./types";
 
@@ -179,6 +179,7 @@ function Scene({
           beatMs={choreo.beatMs}
           lightsRef={lights}
         />
+        <TurntableMarks frameRef={frame} color={song.album.palette.accent} />
         <MovingHeads
           key={`h${preset.heads}${preset.realLights}`}
           count={preset.heads}

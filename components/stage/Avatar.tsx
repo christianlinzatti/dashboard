@@ -104,7 +104,10 @@ function AvatarModel({ url, member, song, choreo, frameRef }: AvatarProps & { ur
     ledsTouched.current = f.micActive;
 
     const p = f.positions[member.avatarId];
-    if (group.current && p) group.current.position.set(p[0], 0, p[1]);
+    if (group.current && p) {
+      group.current.position.set(p[0], 0, p[1]);
+      group.current.rotation.y = f.stageAngle; // Drehbühne: Tänzer drehen sich mit
+    }
   });
 
   const artist = song.track.isFeature ? song.artists.find((a) => a.spotifyId === member.artistId) : undefined;

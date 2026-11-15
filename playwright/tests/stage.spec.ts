@@ -36,6 +36,24 @@ test.describe("Bühne & Licht", () => {
     });
   }
 
+  // Kamera-Einstellungen und Drehbühne (aus dem Plan des Demo-Songs)
+  const shots = [
+    { name: "kamera-nah", q: "demo=neonlicht&t=20000&lyrics=karaoke", camera: "nah" },
+    { name: "kamera-kreisfahrt", q: "demo=neonlicht&t=98000&lyrics=karaoke", camera: "kreisfahrt" },
+    { name: "drehbuehne", q: "demo=abendrot&t=50000", camera: "untersicht+drehbuehne" },
+  ] as const;
+  for (const { name, q, camera } of shots) {
+    test(`Kamera ${name}`, async ({ page }) => {
+      const errors: string[] = [];
+      page.on("pageerror", (e) => errors.push(e.message));
+      await page.goto(`/?${q}&qualitaet=hoch`);
+      await ready(page);
+      await expect(page.locator("[data-testid=stage] canvas")).toHaveAttribute("data-camera", camera);
+      await expect(page).toHaveScreenshot(`${name}.png`);
+      expect(errors).toEqual([]);
+    });
+  }
+
   test("Bühne lässt sich umschalten und bleibt gespeichert", async ({ page }) => {
     await page.goto("/?demo=neonlicht&t=46000");
     await expect(page.locator("[data-theme=festival]")).toBeVisible();

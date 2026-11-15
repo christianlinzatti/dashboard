@@ -208,6 +208,11 @@ deutsche Übersetzung falls vorhanden, Schalter „2. Zeile“. Info- und Konzer
 synchrone Refrains, Kamera-Einstellung je Abschnitt, aktiver Sänger tritt nach vorn, LED-Gesichter.
 ✅ **LightDirector**: Szenen je Abschnitt, Moving Heads, Laser, Nebel, LED-Wand mit Band-Foto (wechselt je Abschnitt),
 Stroboskop nur bei Drops und abschaltbar.
+✅ **Kamera & Drehbühne:** acht Einstellungen pro Phrase – Totale, Halbnah, Untersicht, Seite, **Nahaufnahme**
+(folgt dem aktiven Sänger), **Kreisfahrt** (360° um die Bühne über die ganze Phrase, endet wieder vorn),
+**Vogelperspektive**, **Zoom** (Fahrt von der Totale heran); Wechsel weich über 1,5 Takte. Die **Drehbühne** dreht
+Podest und Formation in Refrain/Instrumental/Bridge zufällig (pro Song fest) einmal um 360° – nie zusammen mit
+Kreisfahrt oder Nahaufnahme; Leuchtmarken am Podestrand zeigen die Drehung.
 ✅ **Bühnen-Themen** (`lib/stage/themes.ts`): Club (LED-Wand, Spiegelboden), Festival (Abendhimmel, Dach mit PA,
 kleinere Wand), Synthwave (Retro-Sonne, Berge, Neonraster im Takt), Jazz-Keller (Vorhang, Holzdielen, Spiegelkugel,
 keine Laser, gedämpftes Licht), Weltraum (Sternenhimmel mit Nebel, Ringplanet, Mondboden). Auswahl: URL `?buehne=` >
