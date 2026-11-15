@@ -23,6 +23,8 @@ Legende: ✅ umgesetzt · ◐ teilweise · ○ offen
 | 5c | TheAudioDB, Flickr, Genius-Trivia, Fotoauswahl | ✅ |
 | extra | Better Lyrics (Apple-TTML, Silben-Timing, echte Songabschnitte, Duette), Umschrift/Übersetzung | ✅ |
 | extra | Alexa kennt Konzerte, Hörstatistik, Likes, Band-Infos, Erscheinungsjahr | ✅ |
+| extra | Fünf Bühnen (Club, Festival, Synthwave, Jazz-Keller, Weltraum) mit Spezialeffekten | ✅ |
+| extra | Mixamo-Tänze (Umwandlungs-Pipeline, Clips laden zur Laufzeit) | in Arbeit |
 
 **Festgelegt:** Raspberry Pi (noch nicht gekauft) mit Chromium im Kiosk-Modus · Spotify-Developer-App und Premium ·
 kein Apple-Developer-Zugang · inoffizielle Quellen erwünscht · Oberfläche **ausschließlich Deutsch** ·
@@ -206,6 +208,16 @@ deutsche Übersetzung falls vorhanden, Schalter „2. Zeile“. Info- und Konzer
 synchrone Refrains, Kamera-Einstellung je Abschnitt, aktiver Sänger tritt nach vorn, LED-Gesichter.
 ✅ **LightDirector**: Szenen je Abschnitt, Moving Heads, Laser, Nebel, LED-Wand mit Band-Foto (wechselt je Abschnitt),
 Stroboskop nur bei Drops und abschaltbar.
+✅ **Bühnen-Themen** (`lib/stage/themes.ts`): Club (LED-Wand, Spiegelboden), Festival (Abendhimmel, Dach mit PA,
+kleinere Wand), Synthwave (Retro-Sonne, Berge, Neonraster im Takt), Jazz-Keller (Vorhang, Holzdielen, Spiegelkugel,
+keine Laser, gedämpftes Licht), Weltraum (Sternenhimmel mit Nebel, Ringplanet, Mondboden). Auswahl: URL `?buehne=` >
+Einstellung (Steuerleiste, Alexa „Bühne Weltraum“) > Genre > wechselnd pro Song. Die Cover-Palette wird je Thema
+anteilig in Richtung der Themenfarben verschoben – Song bleibt erkennbar, Bühne bekommt ihren Look.
+✅ **Effekt-Regie** (`lib/stage/effects.ts`): plant pro Song aus der Choreografie Pyro-Fontänen, Funken, CO₂-Jets,
+Konfetti, Feuerwerk, Beat-Ringe, Sternschnuppen und Spiegelkugel-Glitzer (Refrain-Beginn = Knall, letzter Refrain =
+Finale, hohe Energie = Ringe/Funken, ruhige Teile = Sternschnuppen); bei Mikro-Drops zusätzlich CO₂ + Pyro.
+Partikel werden komplett im Vertex-Shader aus „Alter des Einsatzes + Zufallswert“ berechnet: zustandslos
+(gleiche Songzeit → gleiches Bild), kaum CPU-Last; Partikelanzahl je Qualitätsstufe (35 / 65 / 100 %).
 
 ---
 

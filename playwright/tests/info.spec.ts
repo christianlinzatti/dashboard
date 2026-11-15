@@ -111,6 +111,8 @@ test("Live: Band-Logo erscheint auf der Bühne und in der Infokarte", async ({ p
       },
     }),
   );
+  // Logo erscheint auf der LED-Wand – Bühne fest auf Club (ohne Genre wechselt sie sonst pro Song)
+  await page.addInitScript(() => localStorage.setItem("ss_settings", JSON.stringify({ stage: "club" })));
   await page.goto("/");
   await expect(page.locator("[data-wall-logo]")).toHaveAttribute("data-wall-logo", "/demo/test-logo.svg");
   await expect(page.getByTestId("artist-logo")).toHaveAttribute("src", "/demo/test-logo.svg");

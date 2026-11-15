@@ -19,6 +19,7 @@ und Bühnenqualität des Dashboards.
 | „Alexa, sag Sonic Stage Lampen aus“ | Govee-Lampen aus (über das Dashboard und die Pi-Bridge) |
 | „Alexa, sag Sonic Stage Stroboskop aus“ | Strobe bei Drops aus |
 | „Alexa, sag Sonic Stage Qualität niedrig“ | Bühnenqualität umstellen |
+| „Alexa, sag Sonic Stage Bühne Weltraum“ | Bühne wechseln (Club, Festival, Synthwave, Jazz, Weltraum, automatisch) |
 
 Nach dem Ändern von `de-DE.json` das Interaktionsmodell in der Alexa-Developer-Console neu einfügen und
 „Build Model“ ausführen.

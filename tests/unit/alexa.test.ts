@@ -200,6 +200,11 @@ describe("Alexa-Intents", () => {
     expect((await run("QualitaetIntent", { stufe: { value: "automatisch" } })).cmds).toEqual([
       { type: "qualitaet", value: "auto" },
     ]);
+    expect((await run("BuehneIntent", { buehne: { value: "weltraum" } })).cmds).toEqual([{ type: "buehne", value: "weltraum" }]);
+    expect((await run("BuehneIntent", { buehne: { value: "automatisch" } })).text).toMatch(/passt sich/);
+    const keineBuehne = await run("BuehneIntent", { buehne: { value: "Mond" } });
+    expect(keineBuehne.cmds).toEqual([]);
+    expect(keineBuehne.text).toMatch(/Welche Bühne/);
     const unklar = await run("LampenIntent", { zustand: { value: "lila" } });
     expect(unklar.cmds).toEqual([]);
     expect(unklar.text).toMatch(/an- oder ausschalten/);

@@ -1,0 +1,91 @@
+import type { Choreography } from "@/lib/dance/plan";
+import { rng } from "@/lib/dance/rng";
+import type { EffectKind, Theme } from "./themes";
+
+/** Ein Spezialeffekt-Einsatz: Art, Start, Dauer der Auslösung, Stärke 0..1, Zufallssaat für die Partikel. */
+export type Cue = { kind: EffectKind; startMs: number; durationMs: number; intensity: number; seed: number };
+
+/** Wie lange Partikel nach dem Ende der Auslösung noch sichtbar sind (Flugzeit). */
+export const LINGER_MS: Record<EffectKind, number> = {
+  pyro: 1600,
+  funken: 1300,
+  co2: 1800,
+  konfetti: 0,
+  feuerwerk: 2600,
+  ringe: 1200,
+  sternschnuppen: 1500,
+  glitzer: 0,
+};
+
+/**
+ * Effekt-Regie: plant die Spezialeffekte eines Songs aus der Choreografie –
+ * deterministisch (gleicher Song, gleiche Effekte; gleiche Songzeit, gleiches Bild).
+ *
+ * - Refrain-Beginn: Pyro-Fontänen / CO₂-Jets / Funkenregen (je nach Bühne)
+ * - letzter Refrain: Konfetti-Kanonen und Feuerwerk
+ * - Abschnitte mit hoher Energie: Beat-Ringe auf dem Boden, Funken auf jedem zweiten Takt
+ * - ruhige Abschnitte: Sternschnuppen bzw. Spiegelkugel-Glitzer
+ */
+export function planEffects(c: Choreography, theme: Theme): Cue[] {
+  const allowed = new Set(theme.effects);
+  const r = rng(`${c.trackKey}:fx:${theme.id}`);
+  const out: Cue[] = [];
+  const add = (kind: EffectKind, startMs: number, durationMs: number, intensity: number) => {
+    if (allowed.has(kind)) out.push({ kind, startMs, durationMs, intensity, seed: Math.floor(r.next() * 1e6) });
+  };
+  const sectionStarts = c.phrases.filter((p, i) => i === 0 || c.phrases[i - 1]!.section !== p.section);
+  // Finale: letzter Refrain – ohne Refrain (z. B. Instrumental) der letzte energiereiche Abschnitt
+  const lastChorus =
+    sectionStarts.filter((p) => p.section === "chorus").at(-1) ??
+    sectionStarts.filter((p) => p.section === "instrumental" && p.energy >= 2).at(-1);
+
+  c.phrases.forEach((p, i) => {
+    const first = i === 0 || c.phrases[i - 1]!.section !== p.section;
+    const len = p.endMs - p.startMs;
+
+    if (first && (p.section === "chorus" || (p.section === "instrumental" && p.energy >= 2))) {
+      // Knall zum Refrain: eine Hauptattraktion, dazu evtl. Funken
+      const hits = theme.effects.filter((k) => k === "pyro" || k === "co2" || k === "funken");
+      const main = hits.length ? r.pick(hits) : undefined;
+      if (main) add(main, p.startMs, main === "co2" ? 1000 : 2 * c.barMs, 1);
+      if (main !== "funken" && r.next() < 0.6) add("funken", p.startMs + 4 * c.barMs, c.barMs, 0.8);
+    }
+    if (p === lastChorus) {
+      add("konfetti", p.startMs, 8000, 1);
+      add("feuerwerk", p.startMs + c.barMs, Math.min(len, 16 * c.barMs), 1);
+    }
+    if (p.energy >= 2) add("ringe", p.startMs, len, p.energy >= 3 ? 1 : 0.6);
+    if (p.energy >= 3) for (let b = 2; b * c.barMs < len - c.barMs; b += 4) add("funken", p.startMs + b * c.barMs, c.barMs, 0.6);
+    if (p.section === "intro" || p.section === "bridge" || p.section === "outro" || p.energy <= 0)
+      add("sternschnuppen", p.startMs, len, 0.7);
+    add("glitzer", p.startMs, len, p.energy >= 2 ? 1 : 0.5);
+  });
+  return out.sort((a, b) => a.startMs - b.startMs);
+}
+
+/** Bei einem (per Mikrofon erkannten) Drop: alles, was die Bühne hergibt. */
+export function dropCues(dropMs: number, c: Choreography, theme: Theme): Cue[] {
+  const kinds: EffectKind[] = ["co2", "pyro", "funken"];
+  return kinds
+    .filter((k) => theme.effects.includes(k))
+    .map((kind) => ({
+      kind,
+      startMs: dropMs,
+      durationMs: kind === "co2" ? 1200 : c.barMs,
+      intensity: 1,
+      seed: Math.round(dropMs),
+    }));
+}
+
+export type ActiveCue = Cue & { ageMs: number };
+
+/** Aktive Effekte zur Songzeit t (inkl. nachfliegender Partikel). Spätere Einsätze zuerst. */
+export function effectsAt(cues: readonly Cue[], t: number, extra: readonly Cue[] = []): ActiveCue[] {
+  const out: ActiveCue[] = [];
+  for (const list of [extra, cues])
+    for (const q of list) {
+      if (q.startMs > t) continue;
+      if (t < q.startMs + q.durationMs + LINGER_MS[q.kind]) out.push({ ...q, ageMs: t - q.startMs });
+    }
+  return out.sort((a, b) => b.startMs - a.startMs);
+}

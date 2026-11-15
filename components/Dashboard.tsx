@@ -27,6 +27,7 @@ import { useLyricsLoader } from "./lyrics/useLyricsLoader";
 import { useMicAnalysis } from "./audio/useMicAnalysis";
 import type { LyricsMode } from "@/lib/lyrics/director";
 import type { Quality } from "@/lib/stage/quality";
+import type { ThemeId } from "@/lib/stage/themes";
 
 const Stage = dynamic(() => import("./stage/Stage").then((m) => m.Stage), { ssr: false });
 
@@ -38,9 +39,11 @@ type Props = {
   mic?: boolean;
   lyricsMode?: LyricsMode;
   quality?: Quality;
+  /** Bühnen-Thema fest vorgeben (URL ?buehne=…, z. B. für Screenshots) */
+  theme?: ThemeId;
 };
 
-export function Dashboard({ demo, t, debug, loginError, mic, lyricsMode, quality }: Props) {
+export function Dashboard({ demo, t, debug, loginError, mic, lyricsMode, quality, theme }: Props) {
   const song = useSongContext((s) => s.song);
   const frozen = useSongContext((s) => s.frozen);
   const unknownDemo = demo !== undefined && !fixtures[demo];
@@ -121,7 +124,7 @@ export function Dashboard({ demo, t, debug, loginError, mic, lyricsMode, quality
       {song ? (
         <>
           <div className="absolute inset-0">
-            <Stage forceQuality={quality} />
+            <Stage forceQuality={quality} forceTheme={theme} />
           </div>
           {/* Verlauf für Lesbarkeit der Lyrics vor der 3D-Szene */}
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,rgb(0_0_0/0.55)_100%)]" />

@@ -122,6 +122,7 @@ Dann im Browser öffnen:
 | `…&debug=1` | Debug-Panel mit dem kompletten Song-Kontext |
 | `…&lyrics=stapel` | Darstellung erzwingen (`karaoke`, `wortpop`, `stapel`, `schreibmaschine`, `duett`) |
 | `…&qualitaet=hoch` | Qualitätsstufe der Bühne erzwingen (`niedrig`, `mittel`, `hoch`) |
+| `…&buehne=weltraum` | Bühne erzwingen (`club`, `festival`, `synthwave`, `jazz`, `weltraum`) |
 | `…&mic=1` | Mikrofon-Analyse auch in der Demo (sonst nur im Live-Betrieb) |
 
 Die Demo-Songs haben frei erfundene Texte.

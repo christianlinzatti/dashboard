@@ -2,6 +2,7 @@ import { createStore } from "zustand/vanilla";
 import { useStore } from "zustand";
 import { secondLineModes, type SecondLineMode } from "@/lib/lyrics/second-line";
 import { qualities, type Quality } from "@/lib/stage/quality";
+import { isThemeChoice, type ThemeChoice } from "@/lib/stage/themes";
 
 /** Geräte-Einstellungen (pro Dashboard im Browser gespeichert). */
 export type Settings = {
@@ -13,10 +14,12 @@ export type Settings = {
   lamps: boolean;
   /** Zweite Lyrics-Zeile: Umschrift/Übersetzung */
   secondLine: SecondLineMode;
+  /** Bühne: "auto" wählt nach Genre (sonst wechselnd pro Song) */
+  stage: ThemeChoice;
 };
 
 const KEY = "ss_settings";
-const defaults: Settings = { quality: "auto", strobe: true, lamps: true, secondLine: "auto" };
+const defaults: Settings = { quality: "auto", strobe: true, lamps: true, secondLine: "auto", stage: "auto" };
 
 function load(): Settings {
   try {
@@ -31,6 +34,7 @@ function load(): Settings {
       secondLine: secondLineModes.includes(raw.secondLine as SecondLineMode)
         ? (raw.secondLine as SecondLineMode)
         : defaults.secondLine,
+      stage: isThemeChoice(raw.stage) ? raw.stage : defaults.stage,
     };
   } catch {
     return defaults;
@@ -42,8 +46,8 @@ export const settings = createStore<Settings & { set(p: Partial<Settings>): void
   set(p) {
     set(p);
     try {
-      const { quality, strobe, lamps, secondLine } = get();
-      localStorage.setItem(KEY, JSON.stringify({ quality, strobe, lamps, secondLine }));
+      const { quality, strobe, lamps, secondLine, stage } = get();
+      localStorage.setItem(KEY, JSON.stringify({ quality, strobe, lamps, secondLine, stage }));
     } catch {
       /* privater Modus */
     }

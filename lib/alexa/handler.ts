@@ -3,6 +3,7 @@ import { daysUntil } from "@/lib/concerts/display";
 import { home } from "@/lib/concerts/geo";
 import { normalizeLine } from "@/lib/lyrics/text";
 import type { CommandInput, Snapshot } from "@/lib/song-context/snapshot";
+import { isThemeChoice, THEMES } from "@/lib/stage/themes";
 
 /** Nur die Teile der Alexa-Anfrage, die wir brauchen. */
 export const alexaRequestSchema = z.object({
@@ -248,6 +249,13 @@ export async function handleAlexa(req: AlexaRequest, deps: HandlerDeps) {
       await deps.pushCommand({ type: "qualitaet", value });
       return speak(`Bühnenqualität ${v}.`);
     }
+    case "BuehneIntent": {
+      const v = slot(req, "buehne");
+      const value = v === "automatisch" ? "auto" : v;
+      if (!isThemeChoice(value)) return speak("Welche Bühne? Club, Festival, Synthwave, Jazz oder Weltraum.", false);
+      await deps.pushCommand({ type: "buehne", value });
+      return speak(value === "auto" ? "Die Bühne passt sich wieder dem Song an." : `Bühne ${THEMES[value].label}.`);
+    }
     case "MerkenIntent":
     case "NichtMerkenIntent": {
       const s = await live();
@@ -298,7 +306,7 @@ export async function handleAlexa(req: AlexaRequest, deps: HandlerDeps) {
     }
     case "AMAZON.HelpIntent":
       return speak(
-        "Du kannst fragen: Welcher Song läuft? Wer singt gerade? Wann ist der Song erschienen? Wann spielen die in der Nähe? Wie oft habe ich das gehört? Mag ich den Künstler? Erzähl mir was über die Band. Merk dir den Song. Oder sagen: Lampen aus, Stroboskop an.",
+        "Du kannst fragen: Welcher Song läuft? Wer singt gerade? Wann ist der Song erschienen? Wann spielen die in der Nähe? Wie oft habe ich das gehört? Mag ich den Künstler? Erzähl mir was über die Band. Merk dir den Song. Oder sagen: Lampen aus, Stroboskop an, Bühne Weltraum.",
         false,
       );
     case "AMAZON.StopIntent":

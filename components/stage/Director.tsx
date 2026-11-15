@@ -10,6 +10,7 @@ import type { SongStatic } from "@/lib/song-context/schema";
 import { songContext } from "@/lib/song-context/store";
 import { lightsAt, type LightFrame } from "@/lib/stage/lights";
 import { lightBus } from "@/lib/stage/light-bus";
+import type { Theme } from "@/lib/stage/themes";
 import type { Frame } from "./types";
 
 /** Berechnet pro Frame Songzeit, Positionen, Fokus (Sänger) und Kamera. Läuft vor den Avataren. */
@@ -20,9 +21,10 @@ type DirectorProps = {
   lightsRef: React.RefObject<LightFrame | null>;
   heads: number;
   strobeRef: React.RefObject<HTMLDivElement | null>;
+  theme: Theme;
 };
 
-export function Director({ song, choreo, frameRef, lightsRef, heads, strobeRef }: DirectorProps) {
+export function Director({ song, choreo, frameRef, lightsRef, heads, strobeRef, theme }: DirectorProps) {
   const camera = useThree((s) => s.camera);
   const spot = useRef<SpotLight>(null);
   const back = useRef<PointLight>(null);
@@ -66,6 +68,8 @@ export function Director({ song, choreo, frameRef, lightsRef, heads, strobeRef }
       micActive: mic,
       singerColor: derived.activeSingerId ? singerColor(derived.activeSingerId) : undefined,
       strobeAllowed: settings.getState().strobe,
+      headLevel: theme.headLevel,
+      lasers: theme.lasers,
     });
     lightsRef.current = lf;
     lightBus.publish(lf);

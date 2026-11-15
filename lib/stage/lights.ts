@@ -33,6 +33,9 @@ export type LightInput = {
   micActive: boolean;
   singerColor?: string;
   strobeAllowed: boolean;
+  /** Bühnen-Thema: Helligkeit der Moving Heads (Jazz gedämpft) und ob Laser erlaubt sind */
+  headLevel?: number;
+  lasers?: boolean;
 };
 
 const SCENE_OF: Record<SectionKind, LightScene> = {
@@ -96,7 +99,7 @@ export function lightsAt(song: SongStatic, c: Choreography, heads: number, input
     const pan = Math.sin(phase) * prof.amp * mirror + center * 0.12;
     const tilt = 0.35 + Math.cos(phase * 0.5) * prof.amp * 0.4;
     const color = scene === "bridge" || scene === "intro" ? (input.singerColor ?? pal.accent) : i % 2 === 0 ? barColor : alt;
-    const intensity = on ? Math.min(1, prof.base * (0.75 + 0.25 * pulse) * (0.7 + energy * 0.5)) : 0;
+    const intensity = on ? Math.min(1, prof.base * (0.75 + 0.25 * pulse) * (0.7 + energy * 0.5)) * (input.headLevel ?? 1) : 0;
     return { pan, tilt, color, intensity };
   });
 
@@ -109,7 +112,7 @@ export function lightsAt(song: SongStatic, c: Choreography, heads: number, input
     scene,
     heads: out,
     lasers: {
-      on: prof.lasers && energy > 0.45,
+      on: prof.lasers && energy > 0.45 && input.lasers !== false,
       spread: scene === "drop" ? 1.1 : 0.55 + 0.25 * Math.sin(beats / 8),
       rotation: Math.sin(beats / 16) * 0.4,
       color: alt,

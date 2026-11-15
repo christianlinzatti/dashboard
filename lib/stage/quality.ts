@@ -13,12 +13,14 @@ export type QualityPreset = {
   fog: boolean;
   lasers: number;
   dpr: [number, number];
+  /** Anteil der Partikel bei Spezialeffekten (Pyro, Konfetti, Feuerwerk …) */
+  particles: number;
 };
 
 export const PRESETS: Record<Quality, QualityPreset> = {
-  niedrig: { heads: 2, realLights: 0, bloom: false, reflector: false, fog: false, lasers: 4, dpr: [1, 1] },
-  mittel: { heads: 4, realLights: 2, bloom: true, reflector: false, fog: true, lasers: 6, dpr: [1, 1.25] },
-  hoch: { heads: 6, realLights: 4, bloom: true, reflector: true, fog: true, lasers: 10, dpr: [1, 1.5] },
+  niedrig: { heads: 2, realLights: 0, bloom: false, reflector: false, fog: false, lasers: 4, dpr: [1, 1], particles: 0.35 },
+  mittel: { heads: 4, realLights: 2, bloom: true, reflector: false, fog: true, lasers: 6, dpr: [1, 1.25], particles: 0.65 },
+  hoch: { heads: 6, realLights: 4, bloom: true, reflector: true, fog: true, lasers: 10, dpr: [1, 1.5], particles: 1 },
 };
 
 export function stepQuality(q: Quality, dir: 1 | -1): Quality {

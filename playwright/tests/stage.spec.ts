@@ -14,6 +14,41 @@ test.describe("Bühne & Licht", () => {
     });
   }
 
+  // Jede Bühne mit typischem Effekt (Songzeit fest → Partikel deterministisch)
+  const themes = [
+    { theme: "festival", q: "demo=neonlicht&t=41000&lyrics=karaoke", fx: "pyro" },
+    { theme: "festival-finale", q: "demo=neonlicht&t=129000&lyrics=karaoke&buehne=festival", fx: "konfetti" },
+    { theme: "club", q: "demo=instrumental&t=44200", fx: "co2" },
+    { theme: "synthwave", q: "demo=hoshizora&t=31000", fx: "ringe" },
+    { theme: "jazz", q: "demo=abendrot&t=44000", fx: "glitzer" },
+    { theme: "weltraum", q: "demo=neonlicht&t=5000&buehne=weltraum", fx: "sternschnuppen" },
+  ] as const;
+  for (const { theme, q, fx } of themes) {
+    test(`Bühne ${theme}`, async ({ page }) => {
+      const errors: string[] = [];
+      page.on("pageerror", (e) => errors.push(e.message));
+      await page.goto(`/?${q}&qualitaet=hoch`);
+      await ready(page);
+      await expect(page.locator(`[data-theme=${theme.split("-")[0]}]`)).toBeVisible();
+      await expect(page.locator(`[data-testid=stage] canvas[data-fx*=${fx}]`)).toHaveCount(1);
+      await expect(page).toHaveScreenshot(`buehne-${theme}.png`);
+      expect(errors).toEqual([]);
+    });
+  }
+
+  test("Bühne lässt sich umschalten und bleibt gespeichert", async ({ page }) => {
+    await page.goto("/?demo=neonlicht&t=46000");
+    await expect(page.locator("[data-theme=festival]")).toBeVisible();
+    await page.mouse.click(640, 300);
+    const toggle = page.getByTestId("stage-toggle");
+    await expect(toggle).toHaveText("Bühne: Auto");
+    await tapControl(page, toggle);
+    await expect(toggle).toHaveText("Bühne: Club");
+    await expect(page.locator("[data-theme=club]")).toBeVisible();
+    await page.reload();
+    await expect(page.locator("[data-theme=club]")).toBeVisible();
+  });
+
   test("Qualität und Strobe lassen sich umschalten und bleiben gespeichert", async ({ page }) => {
     await page.goto("/?demo=neonlicht");
     await expect(page.getByTestId("now-playing")).toBeVisible();

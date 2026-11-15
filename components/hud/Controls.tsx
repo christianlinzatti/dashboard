@@ -9,6 +9,9 @@ import { useSettings } from "@/lib/settings";
 import { hasSecondLine, secondLineLabel, secondLineModes } from "@/lib/lyrics/second-line";
 import { useBridgeState } from "../bridge/useBridge";
 import type { Quality } from "@/lib/stage/quality";
+import { THEMES, themeIds, type ThemeChoice } from "@/lib/stage/themes";
+
+const STAGE_CYCLE: ThemeChoice[] = ["auto", ...themeIds];
 
 const QUALITY_CYCLE: Array<Quality | "auto"> = ["auto", "niedrig", "mittel", "hoch"];
 const qualityLabel: Record<Quality | "auto", string> = { auto: "Auto", niedrig: "Niedrig", mittel: "Mittel", hoch: "Hoch" };
@@ -45,6 +48,7 @@ export function Controls({ live, mic }: { live: boolean; mic?: { state: MicState
   const hideTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const quality = useSettings((s) => s.quality);
   const strobe = useSettings((s) => s.strobe);
+  const stage = useSettings((s) => s.stage);
   const secondLine = useSettings((s) => s.secondLine);
   const secondAvailable = useSongContext((s) => hasSecondLine(s.song?.lyrics));
   const lamps = useSettings((s) => s.lamps);
@@ -146,6 +150,13 @@ export function Controls({ live, mic }: { live: boolean; mic?: { state: MicState
           onClick={() => setSettings({ quality: QUALITY_CYCLE[(QUALITY_CYCLE.indexOf(quality) + 1) % QUALITY_CYCLE.length]! })}
         >
           Qualität: {qualityLabel[quality]}
+        </button>
+        <button
+          className={btn}
+          data-testid="stage-toggle"
+          onClick={() => setSettings({ stage: STAGE_CYCLE[(STAGE_CYCLE.indexOf(stage) + 1) % STAGE_CYCLE.length]! })}
+        >
+          Bühne: {stage === "auto" ? "Auto" : THEMES[stage].label}
         </button>
         {secondAvailable && (
           <button

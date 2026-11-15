@@ -196,6 +196,22 @@
             "von wem ist das Sample",
             "wurde der Song gesampelt"
           ]
+        },
+        {
+          "name": "BuehneIntent",
+          "slots": [
+            {
+              "name": "buehne",
+              "type": "BUEHNE"
+            }
+          ],
+          "samples": [
+            "Bühne {buehne}",
+            "wechsel die Bühne auf {buehne}",
+            "stell die Bühne auf {buehne}",
+            "zeig die {buehne} Bühne",
+            "mach eine {buehne} Bühne"
+          ]
         }
       ],
       "types": [
@@ -247,6 +263,53 @@
               "name": {
                 "value": "automatisch",
                 "synonyms": ["auto"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "BUEHNE",
+          "values": [
+            {
+              "id": "club",
+              "name": {
+                "value": "Club",
+                "synonyms": ["Disco", "Nachtclub", "Klub"]
+              }
+            },
+            {
+              "id": "festival",
+              "name": {
+                "value": "Festival",
+                "synonyms": ["Open Air", "Freiluft", "Festivalbühne"]
+              }
+            },
+            {
+              "id": "synthwave",
+              "name": {
+                "value": "Synthwave",
+                "synonyms": ["Retro", "Achtziger", "Neon"]
+              }
+            },
+            {
+              "id": "jazz",
+              "name": {
+                "value": "Jazz",
+                "synonyms": ["Jazzkeller", "Jazz Keller", "Jazzclub", "Theater"]
+              }
+            },
+            {
+              "id": "weltraum",
+              "name": {
+                "value": "Weltraum",
+                "synonyms": ["Weltall", "All", "Space", "Sterne"]
+              }
+            },
+            {
+              "id": "auto",
+              "name": {
+                "value": "automatisch",
+                "synonyms": ["auto", "passend", "nach Genre"]
               }
             }
           ]

@@ -10,6 +10,8 @@ import type { SongStatic } from "@/lib/song-context/schema";
 import { useSongContext } from "@/lib/song-context/store";
 import type { LightFrame } from "@/lib/stage/lights";
 import { PRESETS, stepQuality, type Quality } from "@/lib/stage/quality";
+import { planEffects } from "@/lib/stage/effects";
+import { THEMES, themedPalette, themeFor, type Theme, type ThemeId } from "@/lib/stage/themes";
 import { fpsFrom, perf } from "@/lib/stage/perf";
 import { ErrorBoundary } from "../ErrorBoundary";
 import { Avatar } from "./Avatar";
@@ -20,7 +22,8 @@ import { PhotoWall } from "./PhotoWall";
 import { LogoWall } from "./LogoWall";
 import { wallPhotoAt } from "@/lib/info/display";
 import { displayUrl } from "@/lib/info/photos";
-import { Fog, StageSet } from "./StageSet";
+import { Fog, StageSet, WallFrame, wallScale } from "./StageSet";
+import { Effects } from "./Effects";
 import { initialFrame, type Frame } from "./types";
 
 function hasWebGL() {
@@ -65,7 +68,7 @@ function Backdrop({ song }: { song: SongStatic | null }) {
  * Robust: ohne WebGL oder bei Fehlern in der Szene erscheint ein 2D-Hintergrund; nach einem
  * Verlust des Grafikkontexts (z. B. GPU-Reset auf dem Pi) wird die Szene neu aufgebaut.
  */
-export function Stage({ forceQuality }: { forceQuality?: Quality }) {
+export function Stage({ forceQuality, forceTheme }: { forceQuality?: Quality; forceTheme?: ThemeId }) {
   const song = useSongContext((s) => s.song);
   const [webgl] = useState(() => (typeof document === "undefined" ? true : hasWebGL()));
   const [generation, setGeneration] = useState(0);
@@ -74,13 +77,32 @@ export function Stage({ forceQuality }: { forceQuality?: Quality }) {
   return (
     // Neuer Song oder neuer Grafikkontext → Fehlerzustand zurücksetzen
     <ErrorBoundary key={`${song?.trackKey}:${generation}`} fallback={<Backdrop song={song} />} label="3D-Bühne">
-      <Scene forceQuality={forceQuality} onContextLost={() => setTimeout(() => setGeneration((g) => g + 1), 1500)} />
+      <Scene
+        forceQuality={forceQuality}
+        forceTheme={forceTheme}
+        onContextLost={() => setTimeout(() => setGeneration((g) => g + 1), 1500)}
+      />
     </ErrorBoundary>
   );
 }
 
-function Scene({ forceQuality, onContextLost }: { forceQuality?: Quality; onContextLost: () => void }) {
-  const song = useSongContext((s) => s.song);
+function Scene({
+  forceQuality,
+  forceTheme,
+  onContextLost,
+}: {
+  forceQuality?: Quality;
+  forceTheme?: ThemeId;
+  onContextLost: () => void;
+}) {
+  const raw = useSongContext((s) => s.song);
+  // Bühnen-Thema: URL > Einstellung > Genre/Track; die Cover-Palette wird in Richtung Thema verschoben
+  const themeChoice = useSettings((s) => s.stage);
+  const theme: Theme | null = raw ? THEMES[forceTheme ?? themeFor(raw, themeChoice)] : null;
+  const song = useMemo(
+    () => (raw && theme?.tint ? { ...raw, album: { ...raw.album, palette: themedPalette(raw.album.palette, theme) } } : raw),
+    [raw, theme],
+  );
   const bpm = useSongContext((s) => Math.round(s.live.bpm));
   const frozen = useSongContext((s) => s.frozen);
   const dark = song?.album.palette.dark ?? "#0b0712";
@@ -93,10 +115,11 @@ function Scene({ forceQuality, onContextLost }: { forceQuality?: Quality; onCont
     .map(([id]) => id)
     .join();
   const choreo = useMemo(
-    () => (song ? planChoreography(song, bpm) : null),
+    () => (raw ? planChoreography(raw, bpm) : null),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst nur bei inhaltlichen Änderungen
-    [song?.trackKey, sectionsKey, bpm, song?.cast, followKey],
+    [raw?.trackKey, sectionsKey, bpm, raw?.cast, followKey],
   );
+  const cues = useMemo(() => (choreo && theme ? planEffects(choreo, theme) : []), [choreo, theme]);
   const frame = useRef<Frame>(initialFrame);
   const lights = useRef<LightFrame | null>(null);
   const strobe = useRef<HTMLDivElement>(null);
@@ -111,11 +134,16 @@ function Scene({ forceQuality, onContextLost }: { forceQuality?: Quality; onCont
 
   useEffect(() => () => document.body.removeAttribute("data-stage-ready"), []);
 
-  if (!song || !choreo) return null;
+  if (!song || !choreo || !theme) return null;
   const logo = song.info?.artists[song.artists[0]?.spotifyId ?? ""]?.logo;
 
   return (
-    <div className="absolute inset-0" data-quality={quality} data-wall-logo={logo ? displayUrl(logo, 640) : undefined}>
+    <div
+      className="absolute inset-0"
+      data-quality={quality}
+      data-theme={theme.id}
+      data-wall-logo={logo && theme.wall === "led" ? displayUrl(logo, 640) : undefined}
+    >
       <Canvas
         data-testid="stage"
         dpr={preset.dpr}
@@ -130,7 +158,7 @@ function Scene({ forceQuality, onContextLost }: { forceQuality?: Quality; onCont
         }
       >
         <color attach="background" args={[dark]} />
-        <fog attach="fog" args={[dark, 9, 20]} />
+        <fog attach="fog" args={[dark, 9, theme.fogFar]} />
         <hemisphereLight args={["#ffffff", dark, 0.9]} />
         <directionalLight position={[3, 5, 4]} intensity={1.5} />
         {!frozen && chosen === "auto" && !forceQuality && (
@@ -141,32 +169,60 @@ function Scene({ forceQuality, onContextLost }: { forceQuality?: Quality; onCont
           />
         )}
         {!frozen && <FpsMeter quality={quality} />}
-        <StageSet preset={preset} dark={dark} lightsRef={lights} />
+        <StageSet
+          preset={preset}
+          dark={dark}
+          accent={song.album.palette.accent}
+          theme={theme}
+          beatMs={choreo.beatMs}
+          lightsRef={lights}
+        />
         <MovingHeads
           key={`h${preset.heads}${preset.realLights}`}
           count={preset.heads}
           realLights={preset.realLights}
           lightsRef={lights}
         />
-        <Lasers key={`l${preset.lasers}`} count={preset.lasers} lightsRef={lights} />
+        {theme.lasers && <Lasers key={`l${preset.lasers}`} count={preset.lasers} lightsRef={lights} />}
         {preset.fog && <Fog lightsRef={lights} color={song.album.palette.accent} />}
-        <Director song={song} choreo={choreo} frameRef={frame} lightsRef={lights} heads={preset.heads} strobeRef={strobe} />
+        <Director
+          song={song}
+          choreo={choreo}
+          frameRef={frame}
+          lightsRef={lights}
+          heads={preset.heads}
+          strobeRef={strobe}
+          theme={theme}
+        />
+        <Effects
+          key={theme.id}
+          cues={cues}
+          choreo={choreo}
+          theme={theme}
+          palette={song.album.palette}
+          frameRef={frame}
+          scale={preset.particles}
+        />
         <Suspense fallback={null}>
-          {photoUrl && (
-            <ErrorBoundary key={photoUrl} fallback={null} label="Wandfoto">
-              <PhotoWall
-                key={photoUrl}
-                url={displayUrl(photoUrl)}
-                dark={song.album.palette.dark}
-                accent={song.album.palette.accent}
-                lightsRef={lights}
-              />
-            </ErrorBoundary>
-          )}
-          {logo && (
-            <ErrorBoundary key={logo} fallback={null} label="Logo">
-              <LogoWall url={displayUrl(logo, 640)} accent={song.album.palette.accent} lightsRef={lights} />
-            </ErrorBoundary>
+          {theme.wall === "led" && (
+            <WallFrame scale={wallScale(theme)}>
+              {photoUrl && (
+                <ErrorBoundary key={photoUrl} fallback={null} label="Wandfoto">
+                  <PhotoWall
+                    key={photoUrl}
+                    url={displayUrl(photoUrl)}
+                    dark={song.album.palette.dark}
+                    accent={song.album.palette.accent}
+                    lightsRef={lights}
+                  />
+                </ErrorBoundary>
+              )}
+              {logo && (
+                <ErrorBoundary key={logo} fallback={null} label="Logo">
+                  <LogoWall url={displayUrl(logo, 640)} accent={song.album.palette.accent} lightsRef={lights} />
+                </ErrorBoundary>
+              )}
+            </WallFrame>
           )}
           {song.cast.map((c) => (
             <Avatar key={c.avatarId} member={c} song={song} choreo={choreo} frameRef={frame} />
