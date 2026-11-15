@@ -4,6 +4,7 @@ import { contiguous } from "@/lib/song-context/sections";
 
 export { contiguous };
 import { ENERGY_CLIPS, IDLE_CLIP, WAVE_CLIP, genreBias, type Energy } from "./clips";
+import { mixamoClips, mixamoForEnergy, mixamoGenreBias } from "./mixamo";
 import { slots, type Formation, type Vec2 } from "./formations";
 import { rng } from "./rng";
 
@@ -105,11 +106,15 @@ export function planChoreography(song: SongStatic, bpm: number): Choreography {
   const beatMs = 500 / timeScale; // ein Tanz-Schlag (Clips: 1 Schlag = 0,5 s bei 120 BPM)
   const barMs = beatMs * 4;
   const r = rng(`${song.trackKey}:${Math.round(bpm)}`);
-  const bias = genreBias(song.music.genres.length ? song.music.genres : song.artists.flatMap((a) => a.genres));
+  const genres = song.music.genres.length ? song.music.genres : song.artists.flatMap((a) => a.genres);
+  const bias = genreBias(genres);
+  mixamoGenreBias(genres).forEach((c) => bias.add(c));
+  // Mixamo-Tänze passen auf alle Avatare (gemeinsames Skelett) und kommen zu den eingebauten Clips dazu
+  const clipsFor = (e: Energy) => [...ENERGY_CLIPS[e], ...mixamoForEnergy(e)];
 
   const cast = [...song.cast].sort((a, b) => rankOf(a) - rankOf(b) || Math.abs(a.position) - Math.abs(b.position));
   const order = cast.map((c) => c.avatarId);
-  const clipsOf = (id: string) => new Set(avatarById.get(id)?.clips ?? []);
+  const clipsOf = (id: string) => new Set([...(avatarById.get(id)?.clips ?? []), ...mixamoClips.map((c) => c.id)]);
   const available = Object.fromEntries(order.map((id) => [id, clipsOf(id)]));
   const recent: Record<string, string[]> = Object.fromEntries(order.map((id) => [id, []]));
 
@@ -137,14 +142,14 @@ export function planChoreography(song: SongStatic, bpm: number): Choreography {
       const camera = r.pick(CAMERAS[sec.kind]);
 
       const pool = (id: string, avoid: string[]) => {
-        const all = ENERGY_CLIPS[energy].filter((c) => available[id]!.has(c));
+        const all = clipsFor(energy).filter((c) => available[id]!.has(c));
         const fresh = all.filter((c) => !avoid.includes(c));
         return (fresh.length ? fresh : all).map((c) => [c, bias.has(c) ? 2 : 1] as const);
       };
 
       const moves: Record<string, string> = {};
       if (sync) {
-        const common = ENERGY_CLIPS[energy].filter((c) => order.every((id) => available[id]!.has(c)));
+        const common = clipsFor(energy).filter((c) => order.every((id) => available[id]!.has(c)));
         const lead = order[0]!;
         const fresh = common.filter((c) => !recent[lead]!.includes(c));
         const clip = r.weighted((fresh.length ? fresh : common).map((c) => [c, bias.has(c) ? 2 : 1] as const));

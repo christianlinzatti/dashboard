@@ -7,6 +7,8 @@ import { AnimationMixer, Box3, Object3D, Vector3, type AnimationAction, type Gro
 import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js";
 import { avatarById } from "@/lib/avatars/catalog";
 import { IDLE_CLIP } from "@/lib/dance/clips";
+import { fallbackFor } from "@/lib/dance/mixamo";
+import { loadedMixamo } from "@/lib/dance/mixamo-loader";
 import { layersAt, type Layer } from "@/lib/dance/evaluate";
 import type { Choreography } from "@/lib/dance/plan";
 import type { CastMember, SongStatic } from "@/lib/song-context/schema";
@@ -57,11 +59,15 @@ function AvatarModel({ url, member, song, choreo, frameRef }: AvatarProps & { ur
     };
   }, [mixer]);
 
-  const action = (name: string) => {
+  const action = (name: string): AnimationAction | undefined => {
     let a = actions.current.get(name);
     if (!a) {
-      const clip = animations.find((c) => c.name === name);
-      if (!clip) return undefined;
+      // eingebaut, sonst geladener Mixamo-Clip; fehlt er (noch), tanzt der Avatar den Ersatz-Clip
+      const clip = animations.find((c) => c.name === name) ?? loadedMixamo(name);
+      if (!clip) {
+        const fb = fallbackFor(name);
+        return fb ? action(fb) : undefined;
+      }
       a = mixer.clipAction(clip);
       a.play();
       actions.current.set(name, a);

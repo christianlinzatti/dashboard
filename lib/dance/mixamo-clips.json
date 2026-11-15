@@ -1,0 +1,132 @@
+{
+  "clips": [
+    {
+      "id": "Mixamo_HipHop",
+      "source": "Hip Hop Dancing.fbx",
+      "search": "Hip Hop Dancing",
+      "energy": 2,
+      "genres": ["hip hop", "rap", "trap", "r&b"],
+      "fallback": "Dance_HipHop"
+    },
+    {
+      "id": "Mixamo_Breakdance",
+      "source": "Breakdance Uprock Var 2.fbx",
+      "search": "Breakdance Uprock",
+      "energy": 3,
+      "genres": ["hip hop", "rap", "breakbeat"],
+      "fallback": "Dance_PowerHit"
+    },
+    {
+      "id": "Mixamo_Samba",
+      "source": "Samba Dancing.fbx",
+      "search": "Samba Dancing",
+      "energy": 2,
+      "genres": ["latin", "samba", "reggaeton", "brazil"],
+      "fallback": "Dance_LatinSway"
+    },
+    {
+      "id": "Mixamo_Salsa",
+      "source": "Salsa Dancing.fbx",
+      "search": "Salsa Dancing",
+      "energy": 1,
+      "genres": ["latin", "salsa", "bachata"],
+      "fallback": "Dance_LatinSway"
+    },
+    {
+      "id": "Mixamo_Shuffle",
+      "source": "Shuffling.fbx",
+      "search": "Shuffling",
+      "energy": 3,
+      "genres": ["techno", "house", "edm", "electro"],
+      "fallback": "Dance_Shuffle"
+    },
+    {
+      "id": "Mixamo_Silly",
+      "source": "Silly Dancing.fbx",
+      "search": "Silly Dancing",
+      "energy": 2,
+      "genres": ["pop", "dance", "party"],
+      "fallback": "Dance_Groove"
+    },
+    {
+      "id": "Mixamo_Swing",
+      "source": "Swing Dancing.fbx",
+      "search": "Swing Dancing",
+      "energy": 1,
+      "genres": ["swing", "jazz", "rockabilly", "soul"],
+      "fallback": "Dance_JazzSwing"
+    },
+    {
+      "id": "Mixamo_Thriller",
+      "source": "Thriller Part 2.fbx",
+      "search": "Thriller",
+      "energy": 2,
+      "genres": ["pop", "funk", "disco"],
+      "fallback": "Dance_PopLock"
+    },
+    {
+      "id": "Mixamo_Gangnam",
+      "source": "Gangnam Style.fbx",
+      "search": "Gangnam Style",
+      "energy": 3,
+      "genres": ["k-pop", "pop", "dance"],
+      "fallback": "Dance_FestivalBounce"
+    },
+    {
+      "id": "Mixamo_Rumba",
+      "source": "Rumba Dancing.fbx",
+      "search": "Rumba Dancing",
+      "energy": 0,
+      "genres": ["latin", "bolero", "ballad"],
+      "fallback": "Dance_Waltz"
+    },
+    {
+      "id": "Mixamo_Bellydance",
+      "source": "Belly Dance.fbx",
+      "search": "Belly Dance",
+      "energy": 1,
+      "genres": ["arab", "oriental", "world"],
+      "fallback": "Dance_LiquidWave"
+    },
+    {
+      "id": "Mixamo_Robot",
+      "source": "Robot Hip Hop Dance.fbx",
+      "search": "Robot Hip Hop Dance",
+      "energy": 2,
+      "genres": ["electro", "techno", "synth"],
+      "fallback": "Dance_Robot"
+    },
+    {
+      "id": "Mixamo_Wave",
+      "source": "Wave Hip Hop Dance.fbx",
+      "search": "Wave Hip Hop Dance",
+      "energy": 1,
+      "genres": ["r&b", "hip hop", "soul"],
+      "fallback": "Dance_LiquidWave"
+    },
+    {
+      "id": "Mixamo_Twist",
+      "source": "Twist Dance.fbx",
+      "search": "Twist Dance",
+      "energy": 2,
+      "genres": ["rock", "rock'n'roll", "oldies", "schlager"],
+      "fallback": "Dance_RockDrive"
+    },
+    {
+      "id": "Mixamo_Jump",
+      "source": "Joyful Jump.fbx",
+      "search": "Joyful Jump",
+      "energy": 3,
+      "genres": ["festival", "edm", "pop"],
+      "fallback": "Dance_FestivalBounce"
+    },
+    {
+      "id": "Mixamo_Tut",
+      "source": "Tut Hip Hop Dance.fbx",
+      "search": "Tut Hip Hop Dance",
+      "energy": 1,
+      "genres": ["hip hop", "electro"],
+      "fallback": "Dance_RobotGroove"
+    }
+  ]
+}

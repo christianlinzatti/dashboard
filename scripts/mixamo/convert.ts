@@ -1,0 +1,109 @@
+/**
+ * Mixamo-FBX → kompakte Tanz-Clips für die Avatare.
+ *
+ *   1. FBX von mixamo.com laden (siehe docs/MIXAMO.md) und nach ./mixamo legen (nicht im Repo).
+ *   2. npm run mixamo            (alle gefundenen)   ·   npm run mixamo -- --only Mixamo_Samba
+ *
+ * Schreibt public/animations/<id>.json und ergänzt lib/dance/mixamo-clips.json (Datei, Tempo, Länge).
+ */
+import { createHash } from "node:crypto";
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+import type { AnimationClip } from "three";
+import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js";
+import { packClip } from "../../lib/dance/clip-pack";
+import type { MixamoEntry } from "../../lib/dance/mixamo";
+import { estimateBpm, makeLoop, restFromGltf, retargetSamples } from "../../lib/dance/retarget";
+
+const ROOT = process.cwd();
+const SRC_DIR = join(ROOT, "mixamo");
+const OUT_DIR = join(ROOT, "public/animations");
+const CATALOG = join(ROOT, "lib/dance/mixamo-clips.json");
+const FPS = 30;
+
+const only = process.argv.includes("--only") ? process.argv[process.argv.indexOf("--only") + 1] : undefined;
+
+function readGltfJson(file: string) {
+  const b = readFileSync(file);
+  return JSON.parse(b.subarray(20, 20 + b.readUInt32LE(12)).toString("utf8"));
+}
+
+const norm = (s: string) =>
+  s
+    .toLowerCase()
+    .replace(/\.fbx$/, "")
+    .replace(/[^a-z0-9]/g, "");
+
+function findSource(entry: MixamoEntry, files: string[]): string | undefined {
+  const wanted = [norm(entry.source), norm(entry.search), norm(entry.id.replace(/^Mixamo_/, ""))];
+  return files.find((f) => wanted.includes(norm(f)));
+}
+
+function main() {
+  const catalog = JSON.parse(readFileSync(CATALOG, "utf8")) as { clips: MixamoEntry[] };
+  const manifest = JSON.parse(readFileSync(join(ROOT, "public/avatars/manifest.json"), "utf8")) as Array<{ url: string }>;
+  // alle Avatare teilen dasselbe Skelett (geprüft im Test „gemeinsame Grundpose“)
+  const rest = restFromGltf(readGltfJson(join(ROOT, "public", manifest[0]!.url)));
+  const files = existsSync(SRC_DIR) ? readdirSync(SRC_DIR).filter((f) => f.toLowerCase().endsWith(".fbx")) : [];
+  if (!files.length) {
+    console.log(`Keine FBX-Dateien in ${SRC_DIR}. Anleitung: docs/MIXAMO.md`);
+    return;
+  }
+  mkdirSync(OUT_DIR, { recursive: true });
+
+  for (const entry of catalog.clips) {
+    if (only && entry.id !== only) continue;
+    const file = findSource(entry, files);
+    if (!file) {
+      console.log(`– ${entry.id}: „${entry.source}“ nicht gefunden`);
+      continue;
+    }
+    const buf = readFileSync(join(SRC_DIR, file));
+    const group = new FBXLoader().parse(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength), "");
+    const clip = [...group.animations].sort((a, b) => b.duration - a.duration)[0] as AnimationClip | undefined;
+    if (!clip || clip.duration < 1) {
+      console.log(`✗ ${entry.id}: keine Animation in ${file}`);
+      continue;
+    }
+    const start = entry.start ?? 0;
+    const end = Math.min(entry.end ?? clip.duration, clip.duration);
+
+    // 1. Tempo: aus dem Wippen der Hüfte schätzen (oder Katalogwert)
+    const probe = retargetSamples({ source: group, clip, target: rest, fps: FPS, from: start, to: end });
+    const ys = Array.from({ length: probe.frames }, (_, f) => probe.hips[f * 3 + 1]!);
+    const detected = estimateBpm(ys, FPS);
+    const bpm = entry.bpm ?? detected ?? 120;
+    const beatSec = 60 / bpm;
+
+    // 2. ganze Takte als Schleife, eine halbe Schlaglänge Überblendung
+    const blend = Math.max(2, Math.round((beatSec / 2) * FPS));
+    const beats = Math.floor(((end - start) * FPS - blend) / (beatSec * FPS) / 4) * 4;
+    if (beats < 4) {
+      console.log(`✗ ${entry.id}: zu kurz für einen Takt (${(end - start).toFixed(1)} s bei ${bpm} BPM)`);
+      continue;
+    }
+    const loopFrames = Math.round(beats * beatSec * FPS);
+    const sampled = retargetSamples({
+      source: group,
+      clip,
+      target: rest,
+      fps: FPS,
+      from: start,
+      to: start + (loopFrames + blend - 1) / FPS,
+    });
+    const loop = makeLoop(sampled, blend);
+
+    // 3. auf 120 BPM normieren (1 Schlag = 0,5 s), packen, schreiben
+    const packed = packClip(entry.id, { ...loop, fps: (FPS * bpm) / 120 });
+    const json = JSON.stringify(packed);
+    const sha = createHash("sha256").update(json).digest("hex").slice(0, 12);
+    writeFileSync(join(OUT_DIR, `${entry.id}.json`), json);
+    Object.assign(entry, { file: `/animations/${entry.id}.json?v=${sha}`, beats, detectedBpm: detected ?? undefined });
+    console.log(
+      `✓ ${entry.id}: ${file} · ${bpm} BPM${entry.bpm ? "" : detected ? " (geschätzt)" : " (Standard – bitte im Katalog angeben)"} · ${beats} Schläge · ${(json.length / 1024).toFixed(0)} KB`,
+    );
+  }
+  writeFileSync(CATALOG, `${JSON.stringify(catalog, null, 2)}\n`);
+}
+
+main();

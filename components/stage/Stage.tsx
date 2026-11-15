@@ -3,7 +3,8 @@
 import { Canvas, useFrame } from "@react-three/fiber";
 import { PerformanceMonitor } from "@react-three/drei";
 import { Bloom, EffectComposer } from "@react-three/postprocessing";
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, use, useEffect, useMemo, useRef, useState } from "react";
+import { loadMixamo, mixamoIdsIn } from "@/lib/dance/mixamo-loader";
 import { planChoreography } from "@/lib/dance/plan";
 import { useSettings } from "@/lib/settings";
 import type { SongStatic } from "@/lib/song-context/schema";
@@ -119,6 +120,7 @@ function Scene({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst nur bei inhaltlichen Änderungen
     [raw?.trackKey, sectionsKey, bpm, raw?.cast, followKey],
   );
+  const mixamoIds = useMemo(() => (choreo ? mixamoIdsIn(choreo) : []), [choreo]);
   const cues = useMemo(() => (choreo && theme ? planEffects(choreo, theme) : []), [choreo, theme]);
   const frame = useRef<Frame>(initialFrame);
   const lights = useRef<LightFrame | null>(null);
@@ -227,6 +229,7 @@ function Scene({
           {song.cast.map((c) => (
             <Avatar key={c.avatarId} member={c} song={song} choreo={choreo} frameRef={frame} />
           ))}
+          <MixamoClips ids={mixamoIds} />
           <ReadySignal />
         </Suspense>
         {preset.bloom && (
@@ -239,4 +242,10 @@ function Scene({
       <div ref={strobe} className="pointer-events-none absolute inset-0 bg-white opacity-0" aria-hidden />
     </div>
   );
+}
+
+/** Lädt die Mixamo-Clips des Songs (Suspense: Screenshots warten darauf). */
+function MixamoClips({ ids }: { ids: string[] }) {
+  use(loadMixamo(ids));
+  return null;
 }

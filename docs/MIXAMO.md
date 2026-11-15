@@ -1,0 +1,77 @@
+# Mixamo-Tänze einbinden
+
+Die Avatare haben ein Skelett mit Mixamo-Knochennamen. Tänze von [mixamo.com](https://www.mixamo.com)
+lassen sich deshalb umwandeln und auf **alle** Avatare übertragen. Ein Retargeting über Knochenrichtungen
+gleicht die unterschiedliche Grundpose (Mixamo T-Pose ↔ Avatar) aus.
+
+**Lizenz:** Mixamo-Animationen dürfen in eigenen Projekten verwendet werden. Die heruntergeladenen
+FBX-Dateien dürfen aber nicht als Rohdateien weitergegeben werden. Deshalb gilt:
+
+- Der Ordner `mixamo/` ist in `.gitignore` und bleibt lokal.
+- Ins Repo kommen nur die umgewandelten Clips (`public/animations/*.json`).
+
+## 1. Herunterladen
+
+1. Bei mixamo.com mit einem (kostenlosen) Adobe-Konto anmelden.
+2. Einen Tanz aus `lib/dance/mixamo-clips.json` suchen (Feld `search`, z. B. „Samba Dancing“).
+   Die Figur ist egal; es wird nur die Bewegung übernommen.
+3. Wenn angeboten, **In Place** aktivieren. Die übrigen Regler bleiben auf Standard.
+4. **Download** mit diesen Einstellungen:
+
+   | Einstellung | Wert |
+   |---|---|
+   | Format | FBX Binary (.fbx) |
+   | Skin | **Without Skin** (kleinere Datei, keine Figur) |
+   | Frames per Second | 30 |
+   | Keyframe Reduction | none |
+
+5. Die Datei nach `mixamo/` im Projektordner legen. Der Dateiname sollte zu `source` oder `search`
+   im Katalog passen; Groß-/Kleinschreibung, Leer- und Sonderzeichen sind egal.
+
+## 2. Umwandeln
+
+```bash
+npm run mixamo
+```
+
+Für einen einzelnen Tanz:
+
+```bash
+npm run mixamo -- --only Mixamo_Samba
+```
+
+Das Skript arbeitet in diesen Schritten:
+
+1. Es überträgt die Bewegung Frame für Frame auf das Avatar-Skelett. Finger bleiben in Grundpose.
+   Die Hüfte wippt weiter, wandert aber nicht von ihrem Platz.
+2. Es schätzt das Tempo aus dem Wippen der Hüfte. Ein Wert `bpm` im Katalog hat Vorrang.
+3. Es schneidet ganze Takte als nahtlose Schleife heraus und normiert auf 120 BPM. Wie bei den
+   eingebauten Clips ist dann ein Schlag eine halbe Sekunde, und die Bühne passt das Tempo an den Song an.
+4. Es schreibt `public/animations/<id>.json` (etwa 100 KB) und trägt Datei, Tempo und Länge in den
+   Katalog ein.
+
+Danach die Clips und den Katalog committen:
+
+```bash
+git add public/animations lib/dance/mixamo-clips.json
+```
+
+## 3. Feinschliff im Katalog (`lib/dance/mixamo-clips.json`)
+
+| Feld | Bedeutung |
+|---|---|
+| `energy` | 0 ruhig · 1 mittel · 2 hoch · 3 Höhepunkt: in welchen Songteilen der Tanz vorkommt |
+| `genres` | Stichwörter. Passt ein Song-Genre dazu, wird der Tanz doppelt so oft gewählt. |
+| `fallback` | eingebauter Clip, solange der Mixamo-Clip lädt oder fehlt |
+| `bpm` | Tempo der Aufnahme, falls die Schätzung danebenliegt (Ausgabe des Skripts prüfen) |
+| `start`, `end` | Ausschnitt in Sekunden, z. B. um einen Anlauf am Anfang wegzulassen |
+
+Für einen **neuen Tanz** einen Eintrag mit `id` (`Mixamo_…`), `source`, `search`, `energy`, `genres`
+und `fallback` ergänzen. Danach das Skript erneut ausführen.
+
+## Wie es zur Laufzeit funktioniert
+
+- Die Choreografie plant Mixamo-Tänze wie eingebaute Clips: nach Energie des Songteils,
+  Wiederholungssperre und Genre-Bonus. Die Planung bleibt pro Song deterministisch.
+- Pro Song werden nur die Clips geladen, die der Plan verwendet. Bis ein Clip da ist, oder wenn er
+  fehlt, tanzt der Avatar den `fallback`. Fehler landen im Protokoll (`/api/log`).

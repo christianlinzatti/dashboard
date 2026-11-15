@@ -14,3 +14,6 @@ playwright-report/
 blob-report/
 coverage/
 bridge/config.json
+
+# Mixamo-Rohdateien (Lizenz: nur umgewandelte Clips ins Repo)
+/mixamo/

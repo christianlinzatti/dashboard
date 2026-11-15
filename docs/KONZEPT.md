@@ -24,7 +24,7 @@ Legende: ✅ umgesetzt · ◐ teilweise · ○ offen
 | extra | Better Lyrics (Apple-TTML, Silben-Timing, echte Songabschnitte, Duette), Umschrift/Übersetzung | ✅ |
 | extra | Alexa kennt Konzerte, Hörstatistik, Likes, Band-Infos, Erscheinungsjahr | ✅ |
 | extra | Fünf Bühnen (Club, Festival, Synthwave, Jazz-Keller, Weltraum) mit Spezialeffekten | ✅ |
-| extra | Mixamo-Tänze (Umwandlungs-Pipeline, Clips laden zur Laufzeit) | in Arbeit |
+| extra | Mixamo-Tänze: Retargeting-Pipeline, 16 vorgeschlagene Tänze im Katalog, Laden zur Laufzeit | ✅ (Clips nach Download, docs/MIXAMO.md) |
 
 **Festgelegt:** Raspberry Pi (noch nicht gekauft) mit Chromium im Kiosk-Modus · Spotify-Developer-App und Premium ·
 kein Apple-Developer-Zugang · inoffizielle Quellen erwünscht · Oberfläche **ausschließlich Deutsch** ·
@@ -213,6 +213,12 @@ kleinere Wand), Synthwave (Retro-Sonne, Berge, Neonraster im Takt), Jazz-Keller 
 keine Laser, gedämpftes Licht), Weltraum (Sternenhimmel mit Nebel, Ringplanet, Mondboden). Auswahl: URL `?buehne=` >
 Einstellung (Steuerleiste, Alexa „Bühne Weltraum“) > Genre > wechselnd pro Song. Die Cover-Palette wird je Thema
 anteilig in Richtung der Themenfarben verschoben – Song bleibt erkennbar, Bühne bekommt ihren Look.
+✅ **Mixamo-Tänze** (docs/MIXAMO.md): `npm run mixamo` überträgt heruntergeladene FBX-Tänze über Knochenrichtungen
+auf das gemeinsame Avatar-Skelett (Welt-Rotation + Ausgleich T-Pose ↔ Avatar-Grundpose; im Test < 0,5° Abweichung,
+an einer echten Mixamo-Datei 0° an Armen/Beinen, ≤ 6° an der Wirbelsäule wegen zwei fehlender Wirbel), schätzt das Tempo
+aus dem Hüftwippen, schneidet ganze Takte als nahtlose Schleife und normiert auf 120 BPM. Rohdateien bleiben lokal
+(Lizenz), ins Repo kommen nur kompakte Clips (~100 KB, Int16/Base64). Die Choreografie plant sie wie eingebaute Clips
+(Energie, Genre-Bonus); geladen wird pro Song nur, was der Plan braucht, sonst Ersatz-Clip.
 ✅ **Effekt-Regie** (`lib/stage/effects.ts`): plant pro Song aus der Choreografie Pyro-Fontänen, Funken, CO₂-Jets,
 Konfetti, Feuerwerk, Beat-Ringe, Sternschnuppen und Spiegelkugel-Glitzer (Refrain-Beginn = Knall, letzter Refrain =
 Finale, hohe Energie = Ringe/Funken, ruhige Teile = Sternschnuppen); bei Mikro-Drops zusätzlich CO₂ + Pyro.

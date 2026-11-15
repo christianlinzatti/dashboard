@@ -1,0 +1,49 @@
+import catalog from "./mixamo-clips.json";
+import type { Energy } from "./clips";
+
+/**
+ * Katalog der umgewandelten Mixamo-Tänze (`npm run mixamo`, siehe docs/MIXAMO.md).
+ * Einträge ohne `file` sind Vorschläge, deren FBX noch nicht heruntergeladen/umgewandelt wurde.
+ */
+export type MixamoEntry = {
+  id: string;
+  /** Dateiname der heruntergeladenen FBX in ./mixamo (nicht im Repo) */
+  source: string;
+  /** Mixamo-Suchbegriff, unter dem der Tanz zu finden ist */
+  search: string;
+  energy: Energy;
+  /** Genre-Stichwörter (Teilwort, ohne Groß-/Kleinschreibung), bei denen der Tanz bevorzugt wird */
+  genres: string[];
+  /** eingebauter Clip, solange der Mixamo-Clip lädt oder fehlt */
+  fallback: string;
+  /** Tempo der Aufnahme; leer = geschätzt */
+  bpm?: number | null;
+  /** Ausschnitt der Aufnahme in Sekunden */
+  start?: number;
+  end?: number | null;
+  /** vom Umwandlungsskript gesetzt */
+  file?: string;
+  beats?: number;
+  detectedBpm?: number;
+};
+
+export const MIXAMO: MixamoEntry[] = (catalog.clips as MixamoEntry[]).map((c) => ({ ...c }));
+
+/** Nur Tänze, die wirklich umgewandelt im Repo liegen. */
+export const mixamoClips = MIXAMO.filter((c): c is MixamoEntry & { file: string } => !!c.file);
+
+export const mixamoById = new Map(mixamoClips.map((c) => [c.id, c]));
+
+export function mixamoForEnergy(e: Energy): string[] {
+  return mixamoClips.filter((c) => c.energy === e).map((c) => c.id);
+}
+
+export function mixamoGenreBias(genres: string[]): string[] {
+  const g = genres.map((x) => x.toLowerCase());
+  return mixamoClips.filter((c) => c.genres.some((w) => g.some((x) => x.includes(w.toLowerCase())))).map((c) => c.id);
+}
+
+/** Eingebauter Ersatz für einen Clip-Namen (Mixamo-Clip noch nicht geladen). */
+export function fallbackFor(clip: string): string | undefined {
+  return mixamoById.get(clip)?.fallback;
+}
