@@ -94,6 +94,42 @@ describe("Better Lyrics: Apple-Music-TTML (echte Struktur, Text anonymisiert)", 
 });
 
 describe("TTML-Sonderfälle", () => {
+  it("Beispiel aus der Better-Lyrics-Doku: mehrere Sänger, Leerzeichen in den Spans", () => {
+    const head =
+      '<ttm:agent type="person" xml:id="v1"><ttm:name type="full">Artist Name</ttm:name></ttm:agent>' +
+      '<ttm:agent type="person" xml:id="v2"><ttm:name type="full">Featured Artist</ttm:name></ttm:agent>';
+    const body =
+      '<div><p ttm:agent="v1" begin="0:05.123" end="0:08.456">\n  <span begin="0:05.123" end="0:06.789">First </span>\n  <span begin="0:06.789" end="0:08.456">vocalist</span>\n</p>' +
+      '<p ttm:agent="v2" begin="0:08.456" end="0:11.789">\n  <span begin="0:08.456" end="0:10.123">Second </span>\n  <span begin="0:10.123" end="0:11.789">vocalist</span>\n</p></div>';
+    const doc = parseTtml(tt(body, head));
+    expect(doc.lines.map((l) => [l.agent, l.text, l.words!.length])).toEqual([
+      ["v1", "First vocalist", 2],
+      ["v2", "Second vocalist", 2],
+    ]);
+    expect(doc.lines[0]!.words![0]).toEqual({ startMs: 5123, endMs: 6789, text: "First" });
+    const q2: TrackQuery = { ...q, artists: ["Featured Artist", "Artist Name"], artistIds: ["feat", "main"] };
+    expect(fromTtml(tt(body, head), q2)!.singers).toEqual({ v1: "main", v2: "feat" });
+  });
+
+  it("Agent-Typen: nur person/character sind einzelne Sänger; selbstschließend; eigene IDs", () => {
+    const head =
+      '<ttm:agent type="person" xml:id="voice1"/>' +
+      '<ttm:agent type="character" xml:id="voice2"><ttm:name type="full">Erzähler</ttm:name></ttm:agent>' +
+      '<ttm:agent type="group" xml:id="v1000"/>' +
+      '<ttm:agent type="other" xml:id="v2000"/>' +
+      '<ttm:agent type="organization" xml:id="org"><ttm:name type="full">Chor</ttm:name></ttm:agent>';
+    const p = (agent: string, t: number) =>
+      `<p ttm:agent="${agent}" begin="${t}" end="${t + 1}"><span begin="${t}" end="${t + 1}">x</span></p>`;
+    const doc = parseTtml(
+      tt(`<div>${p("voice2", 1)}${p("v1000", 2)}${p("voice1", 3)}${p("v2000", 4)}${p("org", 5)}</div>`, head),
+    );
+    expect(doc.agents).toEqual([{ id: "voice2", name: "Erzähler" }, { id: "voice1" }]);
+    expect(doc.lines.map((l) => l.agent)).toEqual(["voice2", "v1000", "voice1", "v2000", "org"]); // Zeilen bleiben erhalten
+    const duo: TrackQuery = { ...q, artists: ["A", "B"], artistIds: ["a", "b"] };
+    // Gruppenzeilen ohne Zuordnung: alle zusammen, kein einzelner Sänger im Fokus
+    expect(mapAgents(doc.agents, duo)).toEqual({ voice2: "a", voice1: "b" });
+  });
+
   it("Duett: Sänger über Namen, sonst in Reihenfolge; Gruppen ausgenommen", () => {
     const head =
       '<ttm:agent type="person" xml:id="v1"><ttm:name type="full">Kai Vento</ttm:name></ttm:agent>' +

@@ -40,7 +40,7 @@ export type TtmlDoc = {
   /** Abschnitte aus itunes:songPart, Lücken als Intro/Instrumental/Outro ergänzt; leer, wenn keine Angaben */
   sections: Section[];
   durationMs?: number;
-  /** Sänger-Kennung → Name (nur Personen, in Reihenfolge des ersten Auftretens) */
+  /** einzelne Sänger (person/character) mit Name, in Reihenfolge des ersten Auftretens */
   agents: Array<{ id: string; name?: string }>;
 };
 
@@ -55,9 +55,13 @@ export function parseTtml(ttml: string, songDurationMs?: number): TtmlDoc {
   const durationMs = ttmlTime(/<body[^>]*\sdur="([^"]+)"/.exec(ttml)?.[1]) ?? songDurationMs;
 
   const personAgents = new Map<string, string | undefined>();
-  for (const m of ttml.matchAll(/<ttm:agent\b([^>]*)>([\s\S]*?)<\/ttm:agent>/g)) {
+  // Einzelne Sänger: type „person“ oder „character“. „group“ (z. B. v1000, alle zusammen), „organization“ und
+  // „other“ (z. B. v2000) bekommen keine Zuordnung. Agenten auch selbstschließend: <ttm:agent … />
+  for (const m of ttml.matchAll(/<ttm:agent\b([^>]*?)(?:\/>|>([\s\S]*?)<\/ttm:agent>)/g)) {
     const id = attr(m[1]!, "xml:id");
-    if (id && attr(m[1]!, "type") !== "group") personAgents.set(id, /<ttm:name[^>]*>([^<]*)</.exec(m[2]!)?.[1]?.trim());
+    const type = attr(m[1]!, "type") ?? "person";
+    if (id && (type === "person" || type === "character"))
+      personAgents.set(id, /<ttm:name[^>]*>([^<]*)</.exec(m[2] ?? "")?.[1]?.trim() || undefined);
   }
 
   const lines: LyricLine[] = [];
