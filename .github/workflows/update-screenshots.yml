@@ -42,7 +42,12 @@ jobs:
             echo "Keine Änderungen an den Screenshots."
           else
             git commit -m "test: Referenz-Screenshots aktualisiert"
-            git push
+            # Kamen inzwischen neue Commits auf den Branch, vor dem Push darauf aufsetzen (bis zu 3 Versuche)
+            for i in 1 2 3; do
+              git push && break
+              [ "$i" = 3 ] && exit 1
+              git pull --rebase origin "$GITHUB_REF_NAME"
+            done
           fi
       - name: E2E auf dem neuen Stand starten
         env:
