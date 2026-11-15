@@ -1,6 +1,6 @@
 "use client";
 
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
 import { PerformanceMonitor } from "@react-three/drei";
 import { Bloom, EffectComposer } from "@react-three/postprocessing";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
@@ -10,6 +10,7 @@ import type { SongStatic } from "@/lib/song-context/schema";
 import { useSongContext } from "@/lib/song-context/store";
 import type { LightFrame } from "@/lib/stage/lights";
 import { PRESETS, stepQuality, type Quality } from "@/lib/stage/quality";
+import { fpsFrom, perf } from "@/lib/stage/perf";
 import { ErrorBoundary } from "../ErrorBoundary";
 import { Avatar } from "./Avatar";
 import { Director } from "./Director";
@@ -28,6 +29,20 @@ function hasWebGL() {
   } catch {
     return false;
   }
+}
+
+/** Misst die Bildrate (alle 2 s) für Debug-Panel und Leistungsproben. */
+function FpsMeter({ quality }: { quality: Quality }) {
+  const times = useRef<number[]>([]);
+  const last = useRef(0);
+  useFrame((state, dt) => {
+    times.current.push(dt);
+    if (state.clock.elapsedTime - last.current < 2) return;
+    last.current = state.clock.elapsedTime;
+    perf.setState({ fps: fpsFrom(times.current), quality });
+    times.current = [];
+  });
+  return null;
 }
 
 /** Ersatz ohne 3D (kein WebGL, Grafikfehler): ruhiger Farbverlauf aus der Cover-Palette. */
@@ -118,6 +133,7 @@ function Scene({ forceQuality, onContextLost }: { forceQuality?: Quality; onCont
             flipflops={3}
           />
         )}
+        {!frozen && <FpsMeter quality={quality} />}
         <StageSet preset={preset} dark={dark} lightsRef={lights} />
         <MovingHeads
           key={`h${preset.heads}${preset.realLights}`}

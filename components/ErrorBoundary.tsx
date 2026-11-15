@@ -1,6 +1,7 @@
 "use client";
 
 import { Component, type ReactNode } from "react";
+import { report } from "@/lib/live/telemetry";
 
 type Props = { fallback: ReactNode; children: ReactNode; onError?: (e: Error) => void; label?: string };
 
@@ -17,6 +18,7 @@ export class ErrorBoundary extends Component<Props, { failed: boolean }> {
 
   componentDidCatch(error: Error) {
     console.error(`Fehler in ${this.props.label ?? "Komponente"}:`, error.message);
+    report("fehler", this.props.label ?? "Komponente", error.message);
     this.props.onError?.(error);
   }
 

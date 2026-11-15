@@ -20,6 +20,8 @@ import { useUserLoader } from "./personal/useUserLoader";
 import { ConcertOverlay } from "./concerts/ConcertOverlay";
 import { useConcertLoader } from "./concerts/useConcertLoader";
 import { useTempoLoader } from "./audio/useTempoLoader";
+import { installTelemetry, report } from "@/lib/live/telemetry";
+import { perf } from "@/lib/stage/perf";
 import { useLyricsLoader } from "./lyrics/useLyricsLoader";
 import { useMicAnalysis } from "./audio/useMicAnalysis";
 import type { LyricsMode } from "@/lib/lyrics/director";
@@ -57,6 +59,21 @@ export function Dashboard({ demo, t, debug, loginError, mic, lyricsMode, quality
   useTempoLoader(demo === undefined);
   // Mikrofon: im Live-Betrieb; in Demos nur mit ?mic=1 (Screenshots bleiben reproduzierbar)
   const micCtl = useMicAnalysis(demo === undefined || !!mic);
+
+  // Fehler und Leistungsproben an den Server melden (nur Live-Betrieb, nicht in Demos/Tests)
+  useEffect(() => {
+    if (demo !== undefined) return;
+    const uninstall = installTelemetry();
+    const sample = setInterval(() => {
+      const { fps, quality } = perf.getState();
+      if (fps !== null && songContext.getState().playback.isPlaying)
+        report("info", "leistung", `${fps} fps, Qualität ${quality}, ${window.innerWidth}×${window.innerHeight}`);
+    }, 5 * 60_000);
+    return () => {
+      uninstall();
+      clearInterval(sample);
+    };
+  }, [demo]);
 
   // Geräte-Einstellungen (Qualität, Strobe) einmalig aus dem Browser laden
   useEffect(() => settings.getState().hydrate(), []);
