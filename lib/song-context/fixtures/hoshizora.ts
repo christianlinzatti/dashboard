@@ -52,9 +52,10 @@ export const hoshizora: SongStatic = {
     ],
   },
   cast: [
-    { avatarId: "luna-flow", artistId: "demo-yume", role: "lead", position: 0 },
-    { avatarId: "festival-nova", role: "backup", position: -1 },
-    { avatarId: "aurora-synth", role: "backup", position: 1 },
+    // Outfit „Eis“ für die ganze Crew (zeigt die Farbvarianten der Avatare)
+    { avatarId: "luna-flow", artistId: "demo-yume", role: "lead", position: 0, outfit: "eis", trim: "#ffd23f" },
+    { avatarId: "festival-nova", role: "backup", position: -1, outfit: "eis", trim: "#ffd23f" },
+    { avatarId: "aurora-synth", role: "backup", position: 1, outfit: "eis", trim: "#ffd23f" },
   ],
   status: {
     spotify: { state: "ok", provider: "demo" },

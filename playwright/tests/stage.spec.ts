@@ -71,6 +71,20 @@ test.describe("Bühne & Licht", () => {
     });
   }
 
+  test("Outfits: die Crew trägt den Look des Leads", async ({ page }) => {
+    const errors: string[] = [];
+    page.on("pageerror", (e) => errors.push(e.message));
+    await page.goto("/?demo=hoshizora&t=12000&qualitaet=hoch");
+    await ready(page);
+    await expect(page.locator("[data-outfits]")).toHaveAttribute("data-outfits", "eis,eis,eis");
+    await expect(page).toHaveScreenshot("outfit-eis.png");
+    // ohne Outfit bleibt das Original der Modelle
+    await page.goto("/?demo=neonlicht&t=12000");
+    await ready(page);
+    await expect(page.locator("[data-outfits]")).toHaveAttribute("data-outfits", "original,original,original");
+    expect(errors).toEqual([]);
+  });
+
   test("Bühne lässt sich umschalten und bleibt gespeichert", async ({ page }) => {
     await page.goto("/?demo=neonlicht&t=46000");
     await expect(page.locator("[data-theme=festival]")).toBeVisible();

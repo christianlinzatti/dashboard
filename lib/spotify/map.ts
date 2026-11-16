@@ -1,3 +1,4 @@
+import { dressCast } from "@/lib/avatars/outfits";
 import { SCHEMA_VERSION, type SongStatic } from "@/lib/song-context/schema";
 import { avatarForArtist, buildCast } from "@/lib/avatars/casting";
 import type { SpotifyTrack } from "./types";
@@ -60,7 +61,8 @@ export function songFromTrack(track: SpotifyTrack, opts: { genres?: Record<strin
     artists,
     album: { name: track.album.name, coverUrl: pickCover(track.album.images), palette: defaultPalette },
     music: { genres },
-    cast: buildCast({ trackKey, genres, artists }),
+    // eingekleidet: Outfit je Künstler, Leuchtstreifen in der Künstlerfarbe, Crew im Look des Leads
+    cast: dressCast(buildCast({ trackKey, genres, artists }), artists),
     status: {
       spotify: { state: "ok", provider: "spotify", updatedAt: Date.now() },
       lyrics: { state: "idle" },

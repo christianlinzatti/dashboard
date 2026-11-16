@@ -3,9 +3,20 @@
 import { useFrame } from "@react-three/fiber";
 import { Html, useGLTF } from "@react-three/drei";
 import { useEffect, useMemo, useRef } from "react";
-import { AnimationMixer, Box3, Object3D, Vector3, type AnimationAction, type Group } from "three";
+import {
+  AnimationMixer,
+  Box3,
+  Object3D,
+  Vector3,
+  type AnimationAction,
+  type Group,
+  type Material,
+  type Mesh,
+  type MeshStandardMaterial,
+} from "three";
 import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js";
 import { avatarById } from "@/lib/avatars/catalog";
+import { materialRole, outfitById } from "@/lib/avatars/outfits";
 import { IDLE_CLIP } from "@/lib/dance/clips";
 import { fallbackFor } from "@/lib/dance/mixamo";
 import { loadedMixamo } from "@/lib/dance/mixamo-loader";
@@ -33,8 +44,29 @@ function AvatarModel({ url, member, song, choreo, frameRef }: AvatarProps & { ur
   const group = useRef<Group>(null);
   const ledsTouched = useRef(false);
 
-  const { root, mixer, leds } = useMemo(() => {
+  const { root, mixer, leds, dyed } = useMemo(() => {
     const model = cloneSkinned(scene) as Group;
+    // Outfit: Anzug, Rüstung und Leuchtstreifen umfärben (Materialien sind zwischen Kopien geteilt → erst kopieren)
+    const outfit = member.outfit ? outfitById.get(member.outfit) : undefined;
+    const dyed: Material[] = [];
+    if (outfit || member.trim) {
+      model.traverse((o) => {
+        const mesh = o as Mesh;
+        if (!mesh.isMesh) return;
+        const recolor = (m: Material) => {
+          const role = materialRole(m.name);
+          const color = role === "trim" ? member.trim : role && outfit ? outfit[role] : undefined;
+          if (!color || !("color" in m)) return m;
+          const copy = m.clone() as MeshStandardMaterial;
+          copy.color.set(color);
+          // Leuchtstreifen leuchten in ihrer Farbe (Stärke wie im Original)
+          if (role === "trim" && copy.emissive) copy.emissive.set(color);
+          dyed.push(copy);
+          return copy;
+        };
+        mesh.material = Array.isArray(mesh.material) ? mesh.material.map(recolor) : recolor(mesh.material);
+      });
+    }
     model.updateMatrixWorld(true); // Bone-Matrizen aktualisieren, sonst ist die Skinned-Bounding-Box falsch
     const box = new Box3().setFromObject(model, true);
     const size = box.getSize(new Vector3());
@@ -46,8 +78,9 @@ function AvatarModel({ url, member, song, choreo, frameRef }: AvatarProps & { ur
       bars: [0, 1, 2, 3, 4].map((i) => model.getObjectByName(`FaceLedBar${i}`)).filter((b): b is Object3D => !!b),
       eyes: ["FaceLedEyeLeft", "FaceLedEyeRight"].map((n) => model.getObjectByName(n)).filter((b): b is Object3D => !!b),
     };
-    return { root: model, mixer: new AnimationMixer(model), leds };
-  }, [scene]);
+    return { root: model, mixer: new AnimationMixer(model), leds, dyed };
+  }, [scene, member.outfit, member.trim]);
+  useEffect(() => () => dyed.forEach((m) => m.dispose()), [dyed]);
   const clipSet = useMemo(() => new Set(animations.map((a) => a.name)), [animations]);
 
   const actions = useRef(new Map<string, AnimationAction>());

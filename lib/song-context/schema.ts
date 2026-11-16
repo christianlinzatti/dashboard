@@ -104,6 +104,9 @@ export const castMemberSchema = z.object({
   artistId: z.string().optional(),
   role: z.enum(["lead", "feature", "backup"]),
   position: z.number(),
+  /** Outfit (lib/avatars/outfits.ts) und Farbe der Leuchtstreifen; ohne Angabe das Original des Modells */
+  outfit: z.string().optional(),
+  trim: z.string().optional(),
 });
 export type CastMember = z.infer<typeof castMemberSchema>;
 

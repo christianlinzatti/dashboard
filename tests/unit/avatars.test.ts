@@ -72,3 +72,52 @@ describe("Casting", () => {
     expect(buildCast(input)).toEqual(buildCast(input));
   });
 });
+
+describe("Outfits", () => {
+  it("Materialrollen aus den Modellnamen; jedes Modell hat Anzug und Leuchtstreifen", async () => {
+    const { materialRole } = await import("@/lib/avatars/outfits");
+    const { readdirSync, readFileSync } = await import("node:fs");
+    expect(materialRole("Midnight stage suit.007")).toBe("suit");
+    expect(materialRole("Pearl armor.004")).toBe("armor");
+    expect(materialRole("Signature luminous trim.006")).toBe("trim");
+    expect(materialRole("Warm porcelain.003")).toBeUndefined(); // Haut bleibt
+    expect(materialRole("Lime LED display.001")).toBeUndefined();
+    for (const f of readdirSync("avatars").filter((n) => n.endsWith(".glb"))) {
+      const b = readFileSync(`avatars/${f}`);
+      const json = JSON.parse(b.subarray(20, 20 + b.readUInt32LE(12)).toString("utf8")) as { materials: Array<{ name: string }> };
+      const roles = new Set(json.materials.map((m) => materialRole(m.name)));
+      expect(roles.has("suit"), f).toBe(true);
+      expect(roles.has("trim"), f).toBe(true);
+    }
+  });
+
+  it("Künstler behalten ihr Outfit, die Crew trägt Look und Farbe des Leads", async () => {
+    const { dressCast, outfitById, outfitForArtist, OUTFITS } = await import("@/lib/avatars/outfits");
+    expect(outfitForArtist("a1")).toBe(outfitForArtist("a1"));
+    const ids = Array.from({ length: 200 }, (_, i) => outfitForArtist(`artist-${i}`));
+    expect(new Set(ids.filter(Boolean)).size).toBe(OUTFITS.length); // alle Outfits kommen vor
+    expect(ids.filter((o) => o === undefined).length).toBeGreaterThan(20); // manche treten im Original auf
+    for (const o of ids) if (o) expect(outfitById.has(o)).toBe(true);
+
+    const cast = dressCast(
+      [
+        { avatarId: "luna-flow", artistId: "a1", role: "lead" as const, position: 0 },
+        { avatarId: "atlas-prism", artistId: "a2", role: "feature" as const, position: -1 },
+        { avatarId: "neon-pulse", role: "backup" as const, position: 1 },
+      ],
+      [
+        { spotifyId: "a1", color: "#ff4fd8" },
+        { spotifyId: "a2", color: "#3ee6ff" },
+      ],
+    );
+    expect(cast[0]).toMatchObject({ trim: "#ff4fd8" });
+    expect(cast[0]!.outfit).toBe(outfitForArtist("a1"));
+    expect(cast[1]).toMatchObject({ trim: "#3ee6ff" });
+    expect(cast[1]!.outfit).toBe(outfitForArtist("a2"));
+    expect(cast[2]!.trim).toBe("#ff4fd8"); // Crew in der Farbe des Leads
+    expect(cast[2]!.outfit).toBe(cast[0]!.outfit);
+    expect(dressCast([{ avatarId: "x", role: "backup" as const, position: 0 }], [])).toEqual([
+      { avatarId: "x", role: "backup", position: 0 },
+    ]);
+  });
+});

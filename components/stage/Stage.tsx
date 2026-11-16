@@ -148,6 +148,7 @@ function Scene({
       className="absolute inset-0"
       data-quality={quality}
       data-theme={theme.id}
+      data-outfits={song.cast.map((c) => c.outfit ?? "original").join(",")}
       data-wall-logo={logo && theme.wall === "led" ? displayUrl(logo, 640) : undefined}
     >
       <Canvas
