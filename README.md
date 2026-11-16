@@ -35,7 +35,8 @@ oder aus. Demo: `/?demo=hoshizora`.
 **Stand: Stufe 5c** – Mehr Bilder und Trivia:
 - **TheAudioDB** (ohne eigenen Key nutzbar): Bühnenbilder im 16:9-Format für die LED-Wand, Band-Logos auf der
   Infokarte, deutsche Biografie als Ersatz, wenn es keinen Wikipedia-Artikel gibt, sowie Stil, Mitgliederzahl und Herkunft.
-- **Flickr** (`FLICKR_API_KEY`): Konzertfotos aller Lizenzen, immer mit Fotograf und Lizenz (auch „Alle Rechte
+- **Flickr** (`FLICKR_API_KEY`, optional; neue Keys gibt es nur noch für Pro-Konten – ohne Key kommen die Fotos
+  von Wikimedia Commons und TheAudioDB): Konzertfotos aller Lizenzen, immer mit Fotograf und Lizenz (auch „Alle Rechte
   vorbehalten“). Das passt für ein privates Dashboard, für eine öffentliche Seite bitte wieder auf freie Lizenzen beschränken.
 - **Show-Regie** (`ANTHROPIC_API_KEY` oder `OPENAI_API_KEY`, optional): Claude bzw. ein OpenAI-Modell schreibt je Song eine Regieanweisung – Bühne, Stimmung und
   je Abschnitt Energie, Schrift-Effekt, Publikum und Effekte. Ein Aufruf je Song, 30 Tage gecacht. Ohne Key läuft
