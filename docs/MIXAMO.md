@@ -111,6 +111,28 @@ git add public/animations lib/dance/mixamo-clips.json
 Für einen **neuen Tanz** einen Eintrag mit `id` (`Mixamo_…`), `source`, `search`, `energy`, `genres`
 und `fallback` ergänzen. Danach das Skript erneut ausführen.
 
+## Mesh2Motion-Tänze (GLB)
+
+[Mesh2Motion](https://github.com/Mesh2Motion/mesh2motion-app) ist eine Open-Source-Alternative zu Mixamo.
+Seine Animationen stehen unter **CC0**. Sie sind also frei nutzbar, ohne Konto und ohne Einschränkung bei der
+Weitergabe.
+
+```bash
+npm run mesh2motion        # lädt die 5 Tänze nach mesh2motion/
+npm run mixamo             # wandelt Mixamo-FBX und Mesh2Motion-GLB gemeinsam um
+```
+
+- Weitere Animationen aus `static/assets/human/animations` im Mesh2Motion-Repo lädt man über ihren Namen:
+  `npm run mesh2motion -- clapping greeting`. Eigene GLB-Exporte aus der Mesh2Motion-App (menschliches Skelett) kann
+  man auch direkt nach `mesh2motion/` legen.
+- Das Skelett benennt die Knochen im Unreal-Stil (`pelvis`, `spine_01–03`, `upperarm_l`, `calf_r` …). Die Umwandlung
+  übersetzt diese Namen in die Mixamo-Namen (`sourceBoneName` in `lib/dance/retarget.ts`). Die Dateien sind
+  meshopt-komprimiert, der Decoder gehört zu three.js.
+- Die Mesh2Motion-Tänze sind kurze, nahtlose Schleifen von 1–3 s, oft kürzer als ein Takt. Die Umwandlung wiederholt
+  sie deshalb. Das Tempo wird so gewählt, dass ein Durchlauf ganze Schläge dauert und die Schleife ganze Takte lang ist.
+- IDs beginnen mit `M2M_` (z. B. `M2M_DanceCharleston`). Ansonsten verhalten sich die Einträge im Katalog wie
+  automatisch aufgenommene Mixamo-Tänze: Stil aus dem Namen, Energie aus der Bewegung.
+
 ## Wie es zur Laufzeit funktioniert
 
 - Die Choreografie plant Mixamo-Tänze wie eingebaute Clips: nach Energie des Songteils,

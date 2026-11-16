@@ -17,3 +17,4 @@ bridge/config.json
 
 # Mixamo-Rohdateien (Lizenz: nur umgewandelte Clips ins Repo)
 /mixamo/
+/mesh2motion/

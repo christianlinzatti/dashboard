@@ -45,24 +45,36 @@ export function skipReason(name: string): "Übergang" | "kein Tanz" | undefined 
   return undefined;
 }
 
-/** Basisname ohne Endung und ohne Browser-Nummer: „Hip Hop Dancing (2).fbx“ → „Hip Hop Dancing“ */
+/** Mesh2Motion-Animation (GLB) statt Mixamo-FBX? */
+export const isGlb = (file: string) => /\.glb$/i.test(file);
+
+/**
+ * Basisname ohne Endung und ohne Browser-Nummer: „Hip Hop Dancing (2).fbx“ → „Hip Hop Dancing“,
+ * Mesh2Motion „dance-body-roll.glb“ → „Dance Body Roll“
+ */
 export function baseName(file: string): string {
-  return file
-    .replace(/\.fbx$/i, "")
+  const name = file
+    .replace(/\.(fbx|glb)$/i, "")
     .replace(/\s*\(\d+\)\s*$/, "")
     .trim();
+  if (!isGlb(file)) return name;
+  return name
+    .split(/[-_\s]+/)
+    .filter(Boolean)
+    .map((w) => w[0]!.toUpperCase() + w.slice(1))
+    .join(" ");
 }
 
-/** „Hip Hop Dancing (2).fbx“ → „Mixamo_HipHopDancing_2“ */
+/** „Hip Hop Dancing (2).fbx“ → „Mixamo_HipHopDancing_2“, „dance-simple.glb“ → „M2M_DanceSimple“ */
 export function idFromFile(file: string): string {
-  const n = file.match(/\((\d+)\)\s*\.fbx$/i)?.[1];
+  const n = file.match(/\((\d+)\)\s*\.(fbx|glb)$/i)?.[1];
   const words = baseName(file)
     .normalize("NFKD")
     .replace(/[^A-Za-z0-9 ]/g, " ")
     .split(/\s+/)
     .filter(Boolean)
     .map((w) => w[0]!.toUpperCase() + w.slice(1));
-  return `Mixamo_${words.join("") || "Tanz"}${n ? `_${n}` : ""}`;
+  return `${isGlb(file) ? "M2M" : "Mixamo"}_${words.join("") || "Tanz"}${n ? `_${n}` : ""}`;
 }
 
 export function styleFromName(name: string): { genres: string[]; fallback: string } {

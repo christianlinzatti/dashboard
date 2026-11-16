@@ -144,7 +144,8 @@ Die Demo-Songs haben frei erfundene Texte.
 | `npm run e2e` | Playwright-Tests inkl. Screenshot-Vergleich (vorher `npm run build`) |
 | `npm run e2e:update` | Referenz-Screenshots neu erzeugen |
 | `npm run test:live` | echte Lyrics-Provider prüfen (Netzwerk) |
-| `npm run mixamo` | heruntergeladene Mixamo-Tänze (`mixamo/*.fbx`) für die Avatare umwandeln – siehe [docs/MIXAMO.md](docs/MIXAMO.md) |
+| `npm run mixamo` | heruntergeladene Mixamo-Tänze (`mixamo/*.fbx`) und Mesh2Motion-Tänze (`mesh2motion/*.glb`) für die Avatare umwandeln – siehe [docs/MIXAMO.md](docs/MIXAMO.md) |
+| `npm run mesh2motion` | Tanz-Animationen von Mesh2Motion (CC0) nach `mesh2motion/` laden |
 
 ## Architektur in Kürze
 

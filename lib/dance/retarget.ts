@@ -35,6 +35,40 @@ export function stripPrefix(name: string): string {
   return name.replace(/^mixamorig\d*:?/, "");
 }
 
+/**
+ * Skelette im Unreal-Stil (Mesh2Motion, Quaternius, UE-Mannequin) → Mixamo-Namen.
+ * Mesh2Motion: root › pelvis › spine_01–03 › neck_01 › head, clavicle/upperarm/lowerarm/hand_l|r, thigh/calf/foot_l|r
+ */
+const UNREAL: Record<string, string> = (() => {
+  const m: Record<string, string> = {
+    pelvis: "Hips",
+    spine_01: "Spine",
+    spine_02: "Spine1",
+    spine_03: "Spine2",
+    neck_01: "Neck",
+    head: "Head",
+  };
+  for (const [s, side] of [
+    ["l", "Left"],
+    ["r", "Right"],
+  ] as const) {
+    m[`clavicle_${s}`] = `${side}Shoulder`;
+    m[`upperarm_${s}`] = `${side}Arm`;
+    m[`lowerarm_${s}`] = `${side}ForeArm`;
+    m[`hand_${s}`] = `${side}Hand`;
+    m[`middle_01_${s}`] = `${side}HandMiddle1`;
+    m[`thigh_${s}`] = `${side}UpLeg`;
+    m[`calf_${s}`] = `${side}Leg`;
+    m[`foot_${s}`] = `${side}Foot`;
+  }
+  return m;
+})();
+
+/** Knochenname der Quelle (Mixamo oder Unreal-Stil) → Mixamo-Name ohne Präfix */
+export function sourceBoneName(name: string): string {
+  return UNREAL[name.toLowerCase()] ?? stripPrefix(name);
+}
+
 /** Kind, an dem die Richtung eines Knochens gemessen wird (Ziel-Skelett); ohne Eintrag: Richtung des Elternknochens. */
 const AIM: Record<string, string> = {
   Hips: "Spine",
@@ -93,7 +127,7 @@ export type Sampled = {
 
 /**
  * Tastet die Quell-Animation ab und überträgt sie Frame für Frame aufs Ziel-Skelett.
- * `source` enthält die Mixamo-Knochen (z. B. die Gruppe aus dem FBXLoader), `clip` deren Animation.
+ * `source` enthält die Knochen (Mixamo-FBX oder Mesh2Motion-GLB), `clip` deren Animation.
  */
 export function retargetSamples(opts: {
   source: Object3D;
@@ -114,10 +148,10 @@ export function retargetSamples(opts: {
   // Quelle: Knochen nach Mixamo-Namen, Grundpose vor dem Abspielen merken
   const src = new Map<string, Object3D>();
   opts.source.traverse((o) => {
-    const n = stripPrefix(o.name);
+    const n = sourceBoneName(o.name);
     if ((BONE_MAP[n] || Object.values(AIM_ONLY).includes(n)) && !src.has(n)) src.set(n, o);
   });
-  if (!src.has("Hips")) throw new Error("Keine Mixamo-Hüfte (Hips) in der Quelle gefunden");
+  if (!src.has("Hips")) throw new Error("Keine Hüfte (Mixamo „Hips“ oder „pelvis“) in der Quelle gefunden");
   opts.source.updateMatrixWorld(true);
   const restQs = new Map([...src].map(([n, o]) => [n, worldQ(o)]));
   const restPs = new Map([...src].map(([n, o]) => [n, worldP(o)]));

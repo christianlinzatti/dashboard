@@ -10,6 +10,7 @@ import {
   makeLoop,
   restFromGltf,
   retargetSamples,
+  sourceBoneName,
   stripPrefix,
   type RestBone,
 } from "@/lib/dance/retarget";
@@ -171,6 +172,45 @@ describe("Mixamo-Retargeting", () => {
     expect(y(5) - y(0)).toBeCloseTo((2 / 92) * hipHeight, 3);
     expect(y(10)).toBeCloseTo(y(0), 5);
     expect(s.hips[5 * 3]).toBeCloseTo(s.hips[0]!, 5);
+  });
+
+  it("Skelette im Unreal-Stil (Mesh2Motion) ergeben dieselbe Bewegung wie Mixamo", () => {
+    expect(sourceBoneName("pelvis")).toBe("Hips");
+    expect(sourceBoneName("spine_03")).toBe("Spine2");
+    expect(sourceBoneName("upperarm_l")).toBe("LeftArm");
+    expect(sourceBoneName("calf_r")).toBe("RightLeg");
+    expect(sourceBoneName("mixamorig:LeftHand")).toBe("LeftHand");
+
+    const ue: Record<string, string> = { Hips: "pelvis", Spine: "spine_01", Spine1: "spine_02", Spine2: "spine_03" };
+    Object.assign(ue, { Neck: "neck_01", Head: "head" });
+    for (const [s, side] of [
+      ["l", "Left"],
+      ["r", "Right"],
+    ])
+      Object.assign(ue, {
+        [`${side}Shoulder`]: `clavicle_${s}`,
+        [`${side}Arm`]: `upperarm_${s}`,
+        [`${side}ForeArm`]: `lowerarm_${s}`,
+        [`${side}Hand`]: `hand_${s}`,
+        [`${side}HandMiddle1`]: `middle_01_${s}`,
+        [`${side}UpLeg`]: `thigh_${s}`,
+        [`${side}Leg`]: `calf_${s}`,
+        [`${side}Foot`]: `foot_${s}`,
+      });
+    const mix = mixamoSource();
+    const unreal = mixamoSource();
+    unreal.root.traverse((o) => (o.name = ue[stripPrefix(o.name)] ?? o.name));
+    const tracks = unreal.clip.tracks.map((t) => {
+      const c = t.clone();
+      const [bone, prop] = t.name.split(".");
+      c.name = `${ue[stripPrefix(bone!)]}.${prop}`;
+      return c;
+    });
+    const a = retargetSamples({ source: mix.root, clip: mix.clip, target, fps: 10 });
+    const b = retargetSamples({ source: unreal.root, clip: new AnimationClip("ue", 1, tracks), target, fps: 10 });
+    expect([...b.rotations.keys()]).toEqual([...a.rotations.keys()]);
+    for (const [k, v] of a.rotations) expect(Array.from(b.rotations.get(k)!)).toEqual(Array.from(v));
+    expect(Array.from(b.hips)).toEqual(Array.from(a.hips));
   });
 
   it("ohne Mixamo-Hüfte: verständlicher Fehler", () => {
@@ -348,6 +388,22 @@ describe("Schleifenlänge", () => {
     expect(loopLength(72, beat)).toEqual({ beats: 4, blend: 4 }); // Rumba: 2,4 s reichen nur mit kurzer Blende
     expect(loopLength(60, beat).beats).toBe(0); // kürzer als ein Takt
   });
+
+  it("kurze Mesh2Motion-Schleifen: ganze Schläge je Durchlauf, ganze Takte insgesamt", async () => {
+    const { cycleTempo, repeatClip } = await import("@/scripts/mixamo/convert");
+    // 1,2 s bei geschätzten ~100 BPM = 2 Schläge → 2 Durchläufe für einen Takt
+    expect(cycleTempo(1.2, 99)).toEqual({ bpm: 100, beatsPerCycle: 2, repeats: 2 });
+    expect(cycleTempo(1.92, 120)).toEqual({ bpm: 125, beatsPerCycle: 4, repeats: 1 });
+    expect(cycleTempo(2.51, 106)).toMatchObject({ beatsPerCycle: 4, repeats: 1 });
+    expect(cycleTempo(1, 170)).toMatchObject({ beatsPerCycle: 3, repeats: 4 });
+
+    const clip = new AnimationClip("x", 1, [new VectorKeyframeTrack("Hips.position", [0, 0.5, 1], [0, 0, 0, 0, 1, 0, 0, 0, 0])]);
+    const r = repeatClip(clip, 3);
+    expect(r.duration).toBe(3);
+    expect(Array.from(r.tracks[0]!.times)).toEqual([0, 0.5, 1, 1.5, 2, 2.5, 3]);
+    expect(Array.from(r.tracks[0]!.values).filter((_, i) => i % 3 === 1)).toEqual([0, 1, 0, 1, 0, 1, 0]);
+    expect(r.tracks[0]).toBeInstanceOf(VectorKeyframeTrack);
+  });
 });
 
 describe("Automatisch aufgenommene Tänze", () => {
@@ -357,6 +413,10 @@ describe("Automatisch aufgenommene Tänze", () => {
     expect(idFromFile("Hip Hop Dancing (2).fbx")).toBe("Mixamo_HipHopDancing_2");
     expect(idFromFile("Hip Hop Dancing.fbx")).toBe("Mixamo_HipHopDancing");
     expect(idFromFile("Bachata Ö-Step.FBX")).toBe("Mixamo_BachataOStep");
+    // Mesh2Motion: Dateinamen mit Bindestrichen
+    expect(baseName("dance-body-roll.glb")).toBe("Dance Body Roll");
+    expect(idFromFile("dance-charleston.glb")).toBe("M2M_DanceCharleston");
+    expect(styleFromName(baseName("dance-charleston.glb")).fallback).toBe("Dance_JazzSwing");
     expect(styleFromName("Wave Hip Hop Dance").fallback).toBe("Dance_Robot");
     expect(styleFromName("Hip Hop Dancing").genres).toContain("hip hop");
     expect(styleFromName("Breakdance Freeze Var 4").fallback).toBe("Dance_PowerHit");

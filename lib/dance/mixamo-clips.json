@@ -4677,6 +4677,66 @@
       "beats": 4,
       "detectedBpm": 100,
       "preserved": true
+    },
+    {
+      "id": "M2M_DanceArmPump",
+      "source": "dance-arm-pump.glb",
+      "search": "Dance Arm Pump",
+      "energy": 1,
+      "genres": ["pop", "dance"],
+      "fallback": "Dance_Groove",
+      "auto": true,
+      "file": "/animations/M2M_DanceArmPump.json?v=dfbde78c4b4d",
+      "beats": 4,
+      "detectedBpm": 120
+    },
+    {
+      "id": "M2M_DanceBodyRoll",
+      "source": "dance-body-roll.glb",
+      "search": "Dance Body Roll",
+      "energy": 1,
+      "genres": ["pop", "dance"],
+      "fallback": "Dance_Groove",
+      "auto": true,
+      "file": "/animations/M2M_DanceBodyRoll.json?v=b7fc40deece9",
+      "beats": 8,
+      "detectedBpm": 100
+    },
+    {
+      "id": "M2M_DanceCharleston",
+      "source": "dance-charleston.glb",
+      "search": "Dance Charleston",
+      "energy": 2,
+      "genres": ["swing", "jazz", "soul"],
+      "fallback": "Dance_JazzSwing",
+      "auto": true,
+      "file": "/animations/M2M_DanceCharleston.json?v=3a37b332d41d",
+      "beats": 4,
+      "detectedBpm": 100
+    },
+    {
+      "id": "M2M_DanceReachHip",
+      "source": "dance-reach-hip.glb",
+      "search": "Dance Reach Hip",
+      "energy": 2,
+      "genres": ["pop", "dance"],
+      "fallback": "Dance_Groove",
+      "auto": true,
+      "file": "/animations/M2M_DanceReachHip.json?v=7282559fba21",
+      "beats": 4,
+      "detectedBpm": 100
+    },
+    {
+      "id": "M2M_DanceSimple",
+      "source": "dance-simple.glb",
+      "search": "Dance Simple",
+      "energy": 1,
+      "genres": ["pop", "dance"],
+      "fallback": "Dance_Groove",
+      "auto": true,
+      "file": "/animations/M2M_DanceSimple.json?v=6c5177bea298",
+      "beats": 4,
+      "detectedBpm": 100
     }
   ]
 }

@@ -1,7 +1,8 @@
 /**
- * Mixamo-FBX → kompakte Tanz-Clips für die Avatare.
+ * Mixamo-FBX und Mesh2Motion-GLB → kompakte Tanz-Clips für die Avatare.
  *
- *   1. FBX von mixamo.com laden (siehe docs/MIXAMO.md) und nach ./mixamo legen (nicht im Repo).
+ *   1. FBX von mixamo.com nach ./mixamo legen, GLB-Animationen von Mesh2Motion nach ./mesh2motion
+ *      (`npm run mesh2motion` lädt die Tänze; beide Ordner nicht im Repo, siehe docs/MIXAMO.md).
  *   2. npm run mixamo            (alle gefundenen)   ·   npm run mixamo -- --only Mixamo_Samba
  *
  * Schreibt public/animations/<id>.json und ergänzt lib/dance/mixamo-clips.json (Datei, Tempo, Länge).
@@ -9,14 +10,17 @@
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { AnimationClip } from "three";
+import { AnimationClip, type Object3D } from "three";
 import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
 import { packClip, unpackClip, type PackedClip } from "../../lib/dance/clip-pack";
 import type { MixamoEntry } from "../../lib/dance/mixamo";
 import { estimateBpm, makeLoop, restFromGltf, retargetSamples, type RestBone } from "../../lib/dance/retarget";
 import {
   autoEntry,
   DUPLICATE_DISTANCE,
+  isGlb,
   energyFromMotion,
   motionSignature,
   preservedId,
@@ -29,6 +33,7 @@ import { format, resolveConfig } from "prettier";
 
 const ROOT = process.cwd();
 const SRC_DIR = join(ROOT, "mixamo");
+const M2M_DIR = join(ROOT, "mesh2motion");
 const OUT_DIR = join(ROOT, "public/animations");
 const CATALOG = join(ROOT, "lib/dance/mixamo-clips.json");
 const FPS = 30;
@@ -45,12 +50,12 @@ function readGltfJson(file: string) {
 const norm = (s: string) =>
   s
     .toLowerCase()
-    .replace(/\.fbx$/, "")
+    .replace(/\.(fbx|glb)$/, "")
     .replace(/[^a-z0-9]/g, "");
 
 function findSource(entry: MixamoEntry, files: string[]): string | undefined {
   if (entry.preserved) return undefined; // gesicherter früherer Tanz – gehört zu keiner FBX mehr
-  const wanted = [norm(entry.source), norm(entry.search), norm(entry.id.replace(/^Mixamo_/, ""))];
+  const wanted = [norm(entry.source), norm(entry.search), norm(entry.id.replace(/^(Mixamo|M2M)_/, ""))];
   return files.find((f) => wanted.includes(norm(f)));
 }
 
@@ -60,9 +65,11 @@ async function main() {
   // alle Avatare teilen dasselbe Skelett (geprüft im Test „gemeinsame Grundpose“); Quelldateien statt Build-Ausgabe
   const first = readdirSync(join(ROOT, "avatars")).find((f) => f.endsWith(".glb"))!;
   const rest = restFromGltf(readGltfJson(join(ROOT, "avatars", first)));
-  const files = existsSync(SRC_DIR) ? readdirSync(SRC_DIR).filter((f) => f.toLowerCase().endsWith(".fbx")) : [];
+  const list = (dir: string, ext: string) =>
+    existsSync(dir) ? readdirSync(dir).filter((f) => f.toLowerCase().endsWith(ext)) : [];
+  const files = [...list(SRC_DIR, ".fbx"), ...list(M2M_DIR, ".glb")];
   if (!files.length) {
-    console.log(`Keine FBX-Dateien in ${SRC_DIR}. Anleitung: docs/MIXAMO.md`);
+    console.log(`Keine FBX-Dateien in ${SRC_DIR} und keine GLB in ${M2M_DIR}. Anleitung: docs/MIXAMO.md`);
     return;
   }
   mkdirSync(OUT_DIR, { recursive: true });
@@ -91,7 +98,7 @@ async function main() {
       // bisherigen Clip merken: enthält die FBX inzwischen einen anderen Tanz (z. B. neu nummerierte Downloads),
       // bleibt der alte Tanz als eigener Eintrag erhalten statt überschrieben zu werden
       const before = storedClip(entry);
-      const { line, signature } = convertOne(entry, file, rest);
+      const { line, signature } = await convertOne(entry, file, rest);
       signatures.set(entry.id, signature);
       if (before && signatureDistance(before.signature, signature) >= DUPLICATE_DISTANCE) {
         const kept = preserve(entry, before, ids);
@@ -203,34 +210,99 @@ function markDuplicate(drop: MixamoEntry, keep: MixamoEntry) {
   drop.skip = true;
 }
 
-/** Eine FBX-Datei umwandeln; liefert die Erfolgszeile oder wirft mit verständlicher Meldung. */
-function convertOne(entry: MixamoEntry, file: string, rest: RestBone[]): { line: string; signature: number[] } {
-  const buf = readFileSync(join(SRC_DIR, file));
-  const group = new FBXLoader().parse(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength), "");
-  const clip = [...group.animations].sort((a, b) => b.duration - a.duration)[0] as AnimationClip | undefined;
+/**
+ * Tempo für eine kurze, nahtlose Schleife: ein Durchlauf = ganze Schläge (nahe am geschätzten Tempo), und so viele
+ * Durchläufe, dass die Schleife ganze Takte (Vielfaches von 4 Schlägen) lang ist.
+ */
+export function cycleTempo(durationSec: number, bpm: number): { bpm: number; beatsPerCycle: number; repeats: number } {
+  const beatsPerCycle = Math.max(1, Math.round((durationSec * bpm) / 60));
+  const gcd = (a: number, b: number): number => (b ? gcd(b, a % b) : a);
+  return {
+    bpm: Math.round(((beatsPerCycle * 60) / durationSec) * 10) / 10,
+    beatsPerCycle,
+    repeats: 4 / gcd(beatsPerCycle, 4),
+  };
+}
+
+/** Clip n-mal hintereinander (Schlüssel bei t = 0 der Folgedurchläufe entfallen – sie gleichen dem Ende davor). */
+export function repeatClip(clip: AnimationClip, n: number): AnimationClip {
+  const d = clip.duration;
+  const tracks = clip.tracks.map((t) => {
+    const size = t.getValueSize();
+    const times: number[] = [];
+    const values: number[] = [];
+    for (let k = 0; k < n; k++)
+      t.times.forEach((time, i) => {
+        if (k > 0 && time <= 1e-6) return;
+        times.push(time + k * d);
+        for (let c = 0; c < size; c++) values.push(t.values[i * size + c]!);
+      });
+    const Track = t.constructor as new (name: string, times: number[], values: number[]) => typeof t;
+    return new Track(t.name, times, values);
+  });
+  return new AnimationClip(`${clip.name}×${n}`, d * n, tracks);
+}
+
+/** Skelett und Animationen einer Quelldatei: Mixamo-FBX oder Mesh2Motion-GLB. */
+async function loadSource(file: string): Promise<{ group: Object3D; animations: AnimationClip[] }> {
+  const buf = readFileSync(join(isGlb(file) ? M2M_DIR : SRC_DIR, file));
+  const data = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer;
+  if (!isGlb(file)) {
+    const group = new FBXLoader().parse(data, "");
+    return { group, animations: group.animations };
+  }
+  // Mesh2Motion speichert Animationen meshopt-komprimiert
+  const gltf = await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).parseAsync(data, "");
+  return { group: gltf.scene, animations: gltf.animations };
+}
+
+/** Eine Quelldatei umwandeln; liefert die Erfolgszeile oder wirft mit verständlicher Meldung. */
+async function convertOne(entry: MixamoEntry, file: string, rest: RestBone[]): Promise<{ line: string; signature: number[] }> {
+  const { group, animations } = await loadSource(file);
+  const clip = [...animations].sort((a, b) => b.duration - a.duration)[0] as AnimationClip | undefined;
   if (!clip || clip.duration < 1) {
     throw new Error("keine Animation in der Datei");
   }
   const start = entry.start ?? 0;
   const end = Math.min(entry.end ?? clip.duration, clip.duration);
 
+  // kurze Schleife (unter 4 s, ganz verwendet): zum Schätzen mehrfach hintereinander
+  const short = clip.duration < 4 && start === 0 && end === clip.duration;
+  const probeClip = short ? repeatClip(clip, Math.ceil(8 / clip.duration)) : clip;
+
   // 1. Tempo: aus dem Wippen der Hüfte schätzen (oder Katalogwert)
-  const probe = retargetSamples({ source: group, clip, target: rest, fps: FPS, from: start, to: end });
+  const probe = retargetSamples({
+    source: group,
+    clip: probeClip,
+    target: rest,
+    fps: FPS,
+    from: start,
+    to: short ? probeClip.duration : end,
+  });
   const ys = Array.from({ length: probe.frames }, (_, f) => probe.hips[f * 3 + 1]!);
   const detected = estimateBpm(ys, FPS);
-  const bpm = entry.bpm ?? detected ?? 120;
+  let bpm = entry.bpm ?? detected ?? 120;
+
+  // Kurze, nahtlose Schleifen (Mesh2Motion: 1–2 s) wiederholen; Tempo so, dass ein Durchlauf ganze Schläge dauert
+  let source = clip;
+  if (short && loopLength((end - start) * FPS, (60 / bpm) * FPS).beats < 4) {
+    const cycle = cycleTempo(clip.duration, bpm);
+    if (!entry.bpm) bpm = cycle.bpm;
+    source = repeatClip(clip, cycle.repeats + 1);
+  }
   const beatSec = 60 / bpm;
+  const span = source === clip ? end - start : source.duration;
 
   // 2. ganze Takte als Schleife, bis zu eine halbe Schlaglänge Überblendung
   //    (bei sehr kurzen Aufnahmen kürzer, damit wenigstens ein Takt hineinpasst)
-  const { beats, blend } = loopLength((end - start) * FPS, beatSec * FPS);
+  const { beats, blend } = loopLength(span * FPS, beatSec * FPS);
   if (beats < 4) {
     throw new Error(`zu kurz für einen Takt (${(end - start).toFixed(1)} s bei ${bpm} BPM)`);
   }
   const loopFrames = Math.round(beats * beatSec * FPS);
   const sampled = retargetSamples({
     source: group,
-    clip,
+    clip: source,
     target: rest,
     fps: FPS,
     from: start,
