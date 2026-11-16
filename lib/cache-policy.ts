@@ -22,6 +22,12 @@ export const CACHE_TTL = {
   /** Tempo-Startwert (Deezer): gefunden / unbekannt */
   tempoFound: 180 * DAY,
   tempoMissing: 30 * DAY,
+  /** Genres/Stimmung (TheAudioDB, Last.fm) und KI-Regieanweisung je Song */
+  showTags: 30 * DAY,
+  showTagsPartial: 3600,
+  showBrief: 30 * DAY,
+  /** KI hat abgelehnt oder Unbrauchbares geliefert: nicht bei jedem Abspielen neu fragen */
+  showBriefMissing: 3 * DAY,
   /** Koordinaten von Konzertorten (Nominatim): Städte bewegen sich nicht */
   geoFound: 365 * DAY,
   geoMissing: 30 * DAY,

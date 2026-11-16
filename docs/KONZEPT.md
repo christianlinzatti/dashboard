@@ -24,6 +24,7 @@ Legende: ✅ umgesetzt · ◐ teilweise · ○ offen
 | extra | Better Lyrics (Apple-TTML, Silben-Timing, echte Songabschnitte, Duette), Umschrift/Übersetzung | ✅ |
 | extra | Alexa kennt Konzerte, Hörstatistik, Likes, Band-Infos, Erscheinungsjahr | ✅ |
 | extra | Fünf Bühnen (Club, Festival, Synthwave, Jazz-Keller, Weltraum) mit Spezialeffekten | ✅ |
+| 10 | Konzert-Erlebnis: Publikum, Flammen, Schrift-Effekte, Songstruktur, Show-Regie mit KI | ✅ (KI braucht `ANTHROPIC_API_KEY`) |
 | extra | Mixamo-Tänze: Retargeting-Pipeline, 16 vorgeschlagene Tänze im Katalog, Laden zur Laufzeit | ✅ (Clips nach Download, docs/MIXAMO.md) |
 
 **Festgelegt:** Raspberry Pi (noch nicht gekauft) mit Chromium im Kiosk-Modus · Spotify-Developer-App und Premium ·
@@ -379,6 +380,47 @@ Aufwand: S = bis ½ Tag, M = 1–2 Tage, L = mehrere Tage.
 | ✅ Band-Logo als Bühnenprojektion, Avatar winkt bei gefolgten Künstlern | S |
 | 3D-Lyrics in der Szene für Refrain-Highlights (nur ab Qualität „mittel“) | M |
 | Leerlauf-Bildschirm: Wochen-Statistik, ähnliche Künstler, nächstes Konzert der Lieblingskünstler | M |
+
+### Stufe 10 – Konzert-Erlebnis *(Architektur: `docs/ARCHITEKTUR.md`, Abschnitt 5)*
+
+| Baustein | Aufwand |
+|---|---|
+| ✅ Publikum mit Handylichtern und LED-Armbändern, Totale mit Tele-Optik, Flammen | L |
+| ✅ Schrift-Effekte der Lyrics, Songstruktur-Leiste | M |
+| ✅ Show-Regie: Genres/Stimmung aus TheAudioDB und Last.fm, Regieanweisung der KI (Claude), Tagesform | L |
+
+### Stufe 11 – Songanalyse live
+
+| Baustein | Aufwand |
+|---|---|
+| Instrumente aus dem Mikrofon trennen (Kick, Snare, Hi-Hat, Gesang über Frequenzbänder und Einsätze): Kick → Lichtringe/Strobe, Snare → Flammen, Hi-Hat → Laser | M |
+| Song-Gedächtnis: gemessener Energieverlauf und Drops je Track im Cache, beim nächsten Abspielen vorab bekannt (Effekte punktgenau statt nachträglich) | M |
+| Abschnitte ohne Lyrics aus dem Energieverlauf erkennen (Instrumentals, Techno) | M |
+
+### Stufe 12 – Avatare
+
+| Baustein | Aufwand |
+|---|---|
+| Outfits: Farbvarianten der vorhandenen Modelle (Anzug, Rüstung, Leuchtstreifen), Crew trägt die Farben des Leads | S |
+| Requisiten: Mikrofon für den Sänger, Gitarre/Schlagzeug-Gesten passend zum Genre | M |
+| Neue Grundmodelle (brauchen Modelldateien mit demselben Skelett; Import-Pipeline wie bei den Mixamo-Tänzen) | L |
+
+### Stufe 13 – Mehr Bühne
+
+| Baustein | Aufwand |
+|---|---|
+| LED-Wand-Visuals je Genre als Shader (Tunnel, Plasma, Equalizer-Varianten), Lyrics-Schlagworte auf der Wand | M |
+| Weitere Bühnen (Stadion, Strand, Kathedrale) und Wetter (Regen, Schnee) | M |
+| Kamerakran und Handkamera-Wackeln, Schnitt auf den Beat im Refrain | S |
+| Bildrate auf dem Pi je Qualitätsstufe messen und Partikel/Publikum danach einstellen (hängt an Stufe 6) | S |
+
+### Stufe 14 – KI erweitert
+
+| Baustein | Aufwand |
+|---|---|
+| Motto der Show anzeigen (Songstart) und per Alexa abfragen | S |
+| Dramaturgie über mehrere Songs: die Regie kennt die letzten Songs und steigert oder beruhigt (Zugabe-Modus) | M |
+| KI-generierte Wandbilder zum Songthema (Bildmodell, gecacht je Song) | L |
 
 **Empfohlene Reihenfolge:** Stufe 6 sobald Hardware da ist. Bis dahin aus Stufe 7 die kleinen Bausteine
 (Lyrics-Cache, BPM-Startwert, Geocoding) und aus Stufe 8 „Song liken“, weil sie ohne Gerät testbar sind.

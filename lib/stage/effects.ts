@@ -44,20 +44,26 @@ export function planEffects(c: Choreography, theme: Theme): Cue[] {
     const first = i === 0 || c.phrases[i - 1]!.section !== p.section;
     const len = p.endMs - p.startMs;
 
-    if (first && (p.section === "chorus" || (p.section === "instrumental" && p.energy >= 2))) {
-      // Knall zum Refrain: eine Hauptattraktion, dazu evtl. Funken
-      const hits = theme.effects.filter((k) => k === "pyro" || k === "co2" || k === "funken");
-      const main = hits.length ? r.pick(hits) : undefined;
+    // Regieanweisung (KI): leere Liste = ausdrücklich nichts für diesen Abschnitt
+    const quiet = p.effects !== undefined && p.effects.length === 0;
+    const hits = theme.effects.filter((k) => k === "pyro" || k === "co2" || k === "funken");
+    const wanted = hits.filter((k) => p.effects?.includes(k));
+
+    if (first && !quiet && (p.section === "chorus" || (p.section === "instrumental" && p.energy >= 2) || wanted.length)) {
+      // Knall zum Einsatz: eine Hauptattraktion (Wunsch der Regie zuerst), dazu evtl. Funken
+      const main = wanted.length ? r.pick(wanted) : hits.length ? r.pick(hits) : undefined;
       if (main) add(main, p.startMs, main === "co2" ? 1000 : 2 * c.barMs, 1);
       if (main !== "funken" && r.next() < 0.6) add("funken", p.startMs + 4 * c.barMs, c.barMs, 0.8);
     }
+    if (first && !quiet && p !== lastChorus && p.effects?.includes("konfetti")) add("konfetti", p.startMs, 6000, 0.7);
     if (p === lastChorus) {
       add("konfetti", p.startMs, 8000, 1);
       add("feuerwerk", p.startMs + c.barMs, Math.min(len, 16 * c.barMs), 1);
     }
     if (p.energy >= 2) add("ringe", p.startMs, len, p.energy >= 3 ? 1 : 0.6);
     // Flammen auf jeden Taktanfang, solange die Energie am Anschlag ist
-    if (p.energy >= 3) for (let b = 0; b * c.barMs < len - c.beatMs; b++) add("flammen", p.startMs + b * c.barMs, 320, 1);
+    if (p.energy >= 3 && !quiet)
+      for (let b = 0; b * c.barMs < len - c.beatMs; b++) add("flammen", p.startMs + b * c.barMs, 320, 1);
     if (p.energy >= 3) for (let b = 2; b * c.barMs < len - c.barMs; b += 4) add("funken", p.startMs + b * c.barMs, c.barMs, 0.6);
     if (p.section === "intro" || p.section === "bridge" || p.section === "outro" || p.energy <= 0)
       add("sternschnuppen", p.startMs, len, 0.7);

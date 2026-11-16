@@ -50,7 +50,7 @@ export function LyricsLayer({
   const effects = useMemo(
     () => (song ? planLyricsEffects(song, themeId === "jazz" ? "warm" : themeId === "synthwave" ? "neon" : "normal") : []),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- nur bei inhaltlicher Änderung neu planen
-    [song?.trackKey, song?.lyrics?.provider, sectionsKey, themeId],
+    [song?.trackKey, song?.lyrics?.provider, sectionsKey, themeId, song?.show],
   );
 
   // Während Info- oder Konzertkarte den unteren Bereich nutzt, macht die Lyrics-Anzeige Platz

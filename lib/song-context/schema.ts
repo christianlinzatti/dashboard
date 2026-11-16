@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { showBriefSchema } from "@/lib/show/brief";
 
 /**
  * Song-Kontext: der eine Ort mit allen Informationen zum aktuellen Song.
@@ -8,7 +9,7 @@ import { z } from "zod";
 
 export const SCHEMA_VERSION = 1 as const;
 
-export const sourceNames = ["spotify", "lyrics", "music", "info", "palette", "user", "concerts"] as const;
+export const sourceNames = ["spotify", "lyrics", "music", "info", "palette", "user", "concerts", "show"] as const;
 export type SourceName = (typeof sourceNames)[number];
 
 export const sourceStatusSchema = z.object({
@@ -206,6 +207,10 @@ export const songStaticSchema = z.object({
     genres: z.array(z.string()),
     mood: z.enum(["ruhig", "mittel", "energetisch"]).optional(),
   }),
+  /** Regieanweisung der KI für diesen Song (lib/show) */
+  show: showBriefSchema.optional(),
+  /** Tagesform: gleiche Regeln, anderer Zufall – derselbe Song sieht jeden Tag etwas anders aus (nur Live-Betrieb) */
+  variant: z.string().optional(),
   info: infoSchema.optional(),
   user: userSchema.optional(),
   concerts: z.array(concertSchema).optional(),

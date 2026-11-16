@@ -28,8 +28,16 @@ export type CrowdInput = { dropMs?: number | null };
 
 const QUIET: CrowdFrame = { hands: 0.05, jump: 0, phones: 0.8, bands: 0.15, bandMode: 0, sway: 1 };
 
-/** Zielzustand für eine Phrase */
-export function crowdProfile(p: Pick<Phrase, "section" | "energy">): CrowdFrame {
+const DIRECTED: Record<NonNullable<Phrase["crowd"]>, CrowdFrame> = {
+  handys: { ...QUIET, phones: 0.9 },
+  wiegen: { hands: 0.1, jump: 0, phones: 0.15, bands: 0.45, bandMode: 0, sway: 1 },
+  haende: { hands: 0.85, jump: 0.2, phones: 0, bands: 0.9, bandMode: 2, sway: 0.4 },
+  springen: { hands: 0.85, jump: 1, phones: 0, bands: 1, bandMode: 1, sway: 0.2 },
+};
+
+/** Zielzustand für eine Phrase – eine Regieanweisung (KI) geht vor */
+export function crowdProfile(p: Pick<Phrase, "section" | "energy" | "crowd">): CrowdFrame {
+  if (p.crowd) return DIRECTED[p.crowd];
   if (p.section === "bridge" && p.energy <= 2) return { ...QUIET, phones: 0.9 };
   if (p.energy <= 0) return QUIET;
   if (p.section === "chorus" || p.energy >= 3)

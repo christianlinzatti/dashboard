@@ -91,12 +91,16 @@ export function planLyricsEffects(song: SongStatic, style: "normal" | "warm" | "
   let lastChorus: LyricsEffect | undefined;
   const sectionEffect = sections.map((sec): LyricsEffect => {
     const secLines = lines.filter((l) => l.startMs >= sec.startMs && l.startMs < sec.endMs);
+    // Regieanweisung (KI) für diese Abschnittsart; Refrains wechseln trotzdem zwischen Anweisung und Alternativen
+    const directed = song.show?.sections.find((d) => d.kind === sec.kind)?.lyrics;
     if (sec.kind === "chorus") {
-      // erster Refrain: der Leit-Effekt der Bühne, danach abwechselnd
-      const options = chorusPool.filter((e) => e !== lastChorus);
-      lastChorus = lastChorus === undefined ? chorusPool[0]! : r.pick(options);
+      // erster Refrain: der Leit-Effekt (Regie, sonst Bühne), danach abwechselnd
+      const pool = directed ? [directed, ...chorusPool.filter((e) => e !== directed)] : chorusPool;
+      const options = pool.filter((e) => e !== lastChorus);
+      lastChorus = lastChorus === undefined ? pool[0]! : r.pick(options);
       return lastChorus;
     }
+    if (directed) return directed;
     if (electronic && !calm && wordsPerSecond(secLines) > 3.2) return "glitch";
     if (sec.kind === "prechorus") return "welle";
     if (sec.kind === "bridge") return "echo";

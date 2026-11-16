@@ -104,3 +104,51 @@ Die priorisierten nächsten Ausbaustufen stehen im Konzept (`docs/KONZEPT.md`, A
 2. **Kleine Verbesserungen ohne Gerät:** Lyrics-Cache-Schlüssel (#14), BPM-Startwert, Geocoding für Konzerte,
    Song liken per Touch.
 3. **Production:** Upstash verbinden, `ALLOWED_SPOTIFY_USERS` setzen, Branch-Schutz für `main` in GitHub einschalten.
+
+## 5. Show-Architektur (Konzert-Erlebnis, Stand 2026-11-16)
+
+Für das Konzert-Erlebnis wurde die Bühne in vier Schichten gegliedert. Jede Schicht kennt nur die darüber.
+
+```
+1 FAKTEN        Song-Kontext: Titel, Künstler, Lyrics, Abschnitte, Tempo, Mikrofon-Analyse
+                + Genres/Stimmung aus offenen Quellen (TheAudioDB, Last.fm)        lib/show/tags.ts
+2 REGIE         Regeln (Genre → Bühne, Abschnitt → Energie …)                      lib/stage/themes.ts u. a.
+                + Tagesform (anderer Zufall je Tag, nur live)                      song.variant
+                + Regieanweisung der KI („Brief“, optional)                        lib/show/brief.ts, director.ts
+3 PLÄNE         reine Funktionen von (Song, Regie, Songzeit) – deterministisch
+                Choreografie: Tanz, Formation, Kamera, Drehbühne                   lib/dance/plan.ts
+                Effekt-Einsätze: Pyro, Flammen, CO₂, Konfetti …                    lib/stage/effects.ts
+                Publikums-Regie: Hände, Springen, Handys, Armbänder                lib/stage/crowd.ts
+                Licht: Moving Heads, Laser, Wand, Lampen-Signal                    lib/stage/lights.ts
+                Lyrics: Darstellung und Schrift-Effekt je Abschnitt                lib/lyrics/director.ts
+4 DARSTELLER    setzen nur um, ohne eigene Entscheidungen                          components/stage, components/lyrics
+                Avatare, Kamera, Partikel (Vertex-Shader), Publikum (ein Draw-Call), Licht, DOM-Lyrics
+```
+
+**Regeln für neue Features**
+
+- **Entscheidungen fallen in Schicht 2 und 3, nie im Darsteller.** Ein neuer Effekt ist: ein Eintrag in
+  `effectKinds`, eine Regel in `planEffects`, ein Emitter in `Effects.tsx`. Gleiche Songzeit ergibt das gleiche
+  Bild, deshalb bleiben Screenshots reproduzierbar und die Regeln per Unit-Test prüfbar.
+- **Die KI gibt nur die Richtung vor, nie den Takt.** Der Brief wählt Bühne, Stimmung und je Abschnittsart
+  Energie, Schrift-Effekt, Publikumsverhalten und Wunsch-Effekte. Wann genau etwas zündet, bestimmen die Pläne
+  aus Abschnitten und Beat-Raster. Der Brief ist ein zod-Schema aus Aufzählungen: die KI kann nichts verlangen,
+  was die Bühne nicht kann, und eine unbrauchbare Antwort wird verworfen.
+- **Alles ist optional.** Ohne `ANTHROPIC_API_KEY` läuft die Show mit Regeln und Tagesform; ohne Tags wechselt
+  die Bühne je Song und Tag; ohne Lyrics werden Abschnitte aus der Dauer geschätzt.
+- **Nichts stellt mitten im Song um.** Regie-Daten, die später als 25 s nach Songbeginn eintreffen, werden nicht
+  mehr angewendet. Sie liegen dann im Cache für das nächste Abspielen.
+- **Kosten sind gedeckelt.** Ein KI-Aufruf je Song und Modell, 30 Tage gecacht; Ablehnungen 3 Tage; Störungen
+  gar nicht (nächster Song versucht es neu). Die Abwechslung von Tag zu Tag kommt aus der Tagesform, nicht aus
+  neuen KI-Aufrufen.
+- **Leistung skaliert über die Qualitätsstufe:** Partikelanteil, Publikumsgröße, Moving Heads, Bloom.
+
+**Server**
+
+```
+/api/show   Session → Tags (TheAudioDB, Last.fm; Cache 30 d) → KI-Brief (Claude, strukturierte Ausgabe;
+            liest Aufbau und Textauszug aus dem Lyrics-Cache; Cache 30 d) → { genres, mood, brief, source }
+```
+
+**Nächste Ausbaustufen** stehen im Konzept, Abschnitt 13 (Stufen 10–14).
+

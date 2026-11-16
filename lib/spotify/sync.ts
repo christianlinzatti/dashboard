@@ -21,7 +21,8 @@ export function applyNowPlaying(store: SongContextStore, np: NowPlaying, rttMs: 
   const device = { device: np.device, volume: np.volume };
 
   if (s.song?.trackKey !== trackKeyOf(np.track)) {
-    s.setSong(songFromTrack(np.track));
+    // Tagesform: derselbe Song bekommt jeden Tag eine etwas andere Show
+    s.setSong({ ...songFromTrack(np.track), variant: new Date(now).toISOString().slice(0, 10) });
     s.setPlayback({ isPlaying, positionMs: measured, updatedAt: now, ...device });
     return { newTrack: true };
   }

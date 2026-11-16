@@ -116,10 +116,12 @@ function Scene({
     .filter(([, a]) => a.following)
     .map(([id]) => id)
     .join();
+  // Regie (Genres, Stimmung, KI-Brief, Tagesform) kommt kurz nach dem Songwechsel
+  const showKey = `${raw?.variant}|${raw?.music.mood}|${raw?.music.genres.join()}|${raw?.show?.motto}`;
   const choreo = useMemo(
     () => (raw ? planChoreography(raw, bpm) : null),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst nur bei inhaltlichen Änderungen
-    [raw?.trackKey, sectionsKey, bpm, raw?.cast, followKey],
+    [raw?.trackKey, sectionsKey, bpm, raw?.cast, followKey, showKey],
   );
   const mixamoIds = useMemo(() => (choreo ? mixamoIdsIn(choreo) : []), [choreo]);
   const cues = useMemo(() => (choreo && theme ? planEffects(choreo, theme) : []), [choreo, theme]);

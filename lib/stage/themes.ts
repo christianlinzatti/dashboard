@@ -140,12 +140,18 @@ const GENRE_THEME: Array<[RegExp, ThemeId]> = [
 ];
 
 /** Bühne für einen Song: feste Wahl, sonst Genre, sonst wechselnd nach Track. */
-export function themeFor(song: Pick<SongStatic, "trackKey" | "music" | "artists">, choice: ThemeChoice = "auto"): ThemeId {
+export function themeFor(
+  song: Pick<SongStatic, "trackKey" | "music" | "artists"> & Partial<Pick<SongStatic, "show" | "variant">>,
+  choice: ThemeChoice = "auto",
+): ThemeId {
   if (choice !== "auto") return choice;
+  // die Regie (KI) kennt den Song
+  if (song.show) return song.show.stage;
   const genres = [...song.music.genres, ...song.artists.flatMap((a) => a.genres ?? [])];
   for (const [re, id] of GENRE_THEME) if (genres.some((g) => re.test(g))) return id;
   const pool: ThemeId[] = ["club", "festival", "synthwave", "weltraum"];
-  return pool[hash(song.trackKey) % pool.length]!;
+  // ohne Genre: wechselnd je Song – und mit der Tagesform jeden Tag anders
+  return pool[hash(`${song.trackKey}${song.variant ?? ""}`) % pool.length]!;
 }
 
 export function isThemeChoice(v: unknown): v is ThemeChoice {

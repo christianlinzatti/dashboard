@@ -67,6 +67,7 @@ export function songFromTrack(track: SpotifyTrack, opts: { genres?: Record<strin
       palette: { state: "loading" },
       music: { state: genres.length ? "ok" : "missing", provider: "spotify" },
       info: { state: "idle" },
+      show: { state: "idle" },
     },
   };
 }

@@ -5,6 +5,8 @@ import { contiguous } from "@/lib/song-context/sections";
 export { contiguous };
 import { ENERGY_CLIPS, IDLE_CLIP, WAVE_CLIP, genreBias, type Energy } from "./clips";
 import { mixamoClips, mixamoForEnergy, mixamoGenreBias, mixamoOffStyle } from "./mixamo";
+import { briefFor, energyLevel, type CrowdMode } from "@/lib/show/brief";
+import type { EffectKind } from "@/lib/stage/themes";
 import { slots, type Formation, type Vec2 } from "./formations";
 import { rng } from "./rng";
 
@@ -39,6 +41,9 @@ export type Phrase = {
   sync: boolean;
   formation: Formation;
   camera: CameraPreset;
+  /** Regieanweisung (KI): was das Publikum tut und welche Effekte beim Einsatz zünden */
+  crowd?: CrowdMode;
+  effects?: EffectKind[];
   /** Drehbühne: Podest mit Tänzern dreht sich während der Phrase einmal um 360° */
   turn: boolean;
   moves: Record<string, Move>;
@@ -107,6 +112,9 @@ export function fallbackSections(durationMs: number, barMs: number): Section[] {
 }
 
 function energyFor(kind: SectionKind, song: SongStatic): Energy {
+  // die Regie (KI) kennt den Song: ihre Energie je Abschnitt geht vor
+  const directed = briefFor(song.show, kind);
+  if (directed) return energyLevel(directed.energy);
   let e = BASE_ENERGY[kind] as number;
   if (song.music.mood === "energetisch" && kind !== "intro" && kind !== "outro") e++;
   if (song.music.mood === "ruhig") e--;
@@ -122,9 +130,11 @@ export function planChoreography(song: SongStatic, bpm: number): Choreography {
   const timeScale = timeScaleFor(bpm);
   const beatMs = 500 / timeScale; // ein Tanz-Schlag (Clips: 1 Schlag = 0,5 s bei 120 BPM)
   const barMs = beatMs * 4;
-  const r = rng(`${song.trackKey}:${Math.round(bpm)}`);
+  // Tagesform (variant): gleicher Song, an einem anderen Tag andere Auswahl
+  const variant = song.variant ? `:${song.variant}` : "";
+  const r = rng(`${song.trackKey}:${Math.round(bpm)}${variant}`);
   // eigener Zufall für die Drehbühne – ändert die übrige Choreografie nicht
-  const rTurn = rng(`${song.trackKey}:drehbuehne`);
+  const rTurn = rng(`${song.trackKey}:drehbuehne${variant}`);
   const genres = song.music.genres.length ? song.music.genres : song.artists.flatMap((a) => a.genres);
   const bias = genreBias(genres);
   mixamoGenreBias(genres).forEach((c) => bias.add(c));
@@ -205,6 +215,7 @@ export function planChoreography(song: SongStatic, bpm: number): Choreography {
         formation,
         camera,
         turn,
+        ...directives(song, sec.kind),
         moves: Object.fromEntries(
           order.map((id, i) => {
             const clip = moves[id]!;
@@ -226,6 +237,11 @@ export function planChoreography(song: SongStatic, bpm: number): Choreography {
   }
 
   return { trackKey: song.trackKey, bpm, beatMs, barMs, timeScale, phrases, order };
+}
+
+function directives(song: SongStatic, kind: SectionKind): Pick<Phrase, "crowd" | "effects"> {
+  const d = briefFor(song.show, kind);
+  return d ? { crowd: d.crowd, effects: d.effects } : {};
 }
 
 function rankOf(c: CastMember) {
