@@ -1,6 +1,6 @@
 "use client";
 
-import { useFrame, useThree } from "@react-three/fiber";
+import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import { Object3D, type PointLight, type SpotLight } from "three";
 import { cameraAt, focusTimeline, phraseIndexAt, positionsAt, rotateOnStage, stageAngleAt } from "@/lib/dance/evaluate";
@@ -25,7 +25,6 @@ type DirectorProps = {
 };
 
 export function Director({ song, choreo, frameRef, lightsRef, heads, strobeRef, theme }: DirectorProps) {
-  const camera = useThree((s) => s.camera);
   const spot = useRef<SpotLight>(null);
   const back = useRef<PointLight>(null);
   const target = useMemo(() => new Object3D(), []);
@@ -38,7 +37,7 @@ export function Director({ song, choreo, frameRef, lightsRef, heads, strobeRef, 
     song.artists.find((a) => a.spotifyId === artistId)?.color ?? song.album.palette.accent;
 
   const shot = useRef("");
-  useFrame(({ gl }) => {
+  useFrame(({ gl, camera }) => {
     const { positionMs, playback, frozen, derived, live } = songContext.getState();
     const t = positionMs;
     // Drehbühne: Formation dreht sich mit dem Podest um die Bühnenmitte
@@ -83,6 +82,10 @@ export function Director({ song, choreo, frameRef, lightsRef, heads, strobeRef, 
 
     const cam = cameraAt(choreo, t, focus ? positions[focus] : undefined);
     camera.position.set(...cam.pos);
+    if ("fov" in camera && Math.abs(camera.fov - cam.fov) > 0.01) {
+      camera.fov = cam.fov;
+      camera.updateProjectionMatrix();
+    }
     camera.lookAt(...cam.target);
     // für Tests und Debug: aktuelle Kameraeinstellung und Drehbühne am Canvas
     const phrase = choreo.phrases[phraseIndexAt(choreo, t)];

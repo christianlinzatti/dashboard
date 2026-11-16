@@ -59,6 +59,52 @@ export function planLyricsModes(song: SongStatic): LyricsMode[] {
   });
 }
 
+/** Schrift-Effekte – unabhängig von der Darstellung (Karaoke, Stapel …) */
+export const lyricsEffects = ["gluehen", "neon", "feuer", "welle", "echo", "glitch"] as const;
+export type LyricsEffect = (typeof lyricsEffects)[number];
+
+const ELECTRONIC = /techno|house|edm|electro|trance|drum|bass|dubstep|hip ?hop|rap|trap|synth/i;
+
+/**
+ * Schrift-Effekt je Zeile: Strophen ruhig (Glühen), Refrains wechselnd auffällig (Feuer, Neon, Echo),
+ * Pre-Chorus als Welle, Bridge mit Echo, schnelle Parts elektronischer Songs als Glitch.
+ * `style` kommt von der Bühne: „warm“ (Jazz) ohne Feuer/Glitch, „neon“ (Synthwave) bevorzugt Neon.
+ */
+export function planLyricsEffects(song: SongStatic, style: "normal" | "warm" | "neon" = "normal"): LyricsEffect[] {
+  const lyrics = song.lyrics;
+  if (!lyrics || lyrics.quality === "plain") return [];
+  const lines = lyrics.lines;
+  const r = rng(`lyrics-fx:${song.trackKey}`);
+  const sections = contiguous(
+    lyrics.sections.length ? lyrics.sections : [{ kind: "verse", startMs: 0, endMs: song.track.durationMs }],
+    song.track.durationMs,
+  );
+  const genres = song.music.genres.length ? song.music.genres : song.artists.flatMap((a) => a.genres);
+  const electronic = genres.some((g) => ELECTRONIC.test(g));
+  const calm = song.music.mood === "ruhig" || style === "warm";
+  const chorusPool: LyricsEffect[] = calm
+    ? ["echo", "welle", "neon"]
+    : style === "neon"
+      ? ["neon", "echo", "feuer"]
+      : ["feuer", "neon", "echo"];
+
+  let lastChorus: LyricsEffect | undefined;
+  const sectionEffect = sections.map((sec): LyricsEffect => {
+    const secLines = lines.filter((l) => l.startMs >= sec.startMs && l.startMs < sec.endMs);
+    if (sec.kind === "chorus") {
+      // erster Refrain: der Leit-Effekt der Bühne, danach abwechselnd
+      const options = chorusPool.filter((e) => e !== lastChorus);
+      lastChorus = lastChorus === undefined ? chorusPool[0]! : r.pick(options);
+      return lastChorus;
+    }
+    if (electronic && !calm && wordsPerSecond(secLines) > 3.2) return "glitch";
+    if (sec.kind === "prechorus") return "welle";
+    if (sec.kind === "bridge") return "echo";
+    return "gluehen";
+  });
+  return lines.map((l) => sectionEffect[Math.max(lastStartedIndex(sections, l.startMs), 0)] ?? "gluehen");
+}
+
 /** Background-Vocals stehen in Klammern: „(oh-oh)“ – kleiner und kursiv darstellen. */
 export function markBackground<T extends { text: string }>(words: T[]): Array<T & { bg: boolean }> {
   let depth = 0;

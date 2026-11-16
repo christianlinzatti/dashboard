@@ -9,6 +9,7 @@ export type Cue = { kind: EffectKind; startMs: number; durationMs: number; inten
 export const LINGER_MS: Record<EffectKind, number> = {
   pyro: 1600,
   funken: 1300,
+  flammen: 500,
   co2: 1800,
   konfetti: 0,
   feuerwerk: 2600,
@@ -55,6 +56,8 @@ export function planEffects(c: Choreography, theme: Theme): Cue[] {
       add("feuerwerk", p.startMs + c.barMs, Math.min(len, 16 * c.barMs), 1);
     }
     if (p.energy >= 2) add("ringe", p.startMs, len, p.energy >= 3 ? 1 : 0.6);
+    // Flammen auf jeden Taktanfang, solange die Energie am Anschlag ist
+    if (p.energy >= 3) for (let b = 0; b * c.barMs < len - c.beatMs; b++) add("flammen", p.startMs + b * c.barMs, 320, 1);
     if (p.energy >= 3) for (let b = 2; b * c.barMs < len - c.barMs; b += 4) add("funken", p.startMs + b * c.barMs, c.barMs, 0.6);
     if (p.section === "intro" || p.section === "bridge" || p.section === "outro" || p.energy <= 0)
       add("sternschnuppen", p.startMs, len, 0.7);
@@ -65,7 +68,7 @@ export function planEffects(c: Choreography, theme: Theme): Cue[] {
 
 /** Bei einem (per Mikrofon erkannten) Drop: alles, was die Bühne hergibt. */
 export function dropCues(dropMs: number, c: Choreography, theme: Theme): Cue[] {
-  const kinds: EffectKind[] = ["co2", "pyro", "funken"];
+  const kinds: EffectKind[] = ["co2", "pyro", "funken", "flammen"];
   return kinds
     .filter((k) => theme.effects.includes(k))
     .map((kind) => ({

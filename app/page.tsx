@@ -1,5 +1,5 @@
 import { Dashboard } from "@/components/Dashboard";
-import { lyricsModes, type LyricsMode } from "@/lib/lyrics/director";
+import { lyricsEffects, lyricsModes, type LyricsEffect, type LyricsMode } from "@/lib/lyrics/director";
 import { qualities, type Quality } from "@/lib/stage/quality";
 import { themeIds, type ThemeId } from "@/lib/stage/themes";
 
@@ -18,6 +18,7 @@ export default async function Page({ searchParams }: { searchParams: Search }) {
       mic={one(sp.mic) === "1"}
       quality={qualities.includes(one(sp.qualitaet) as Quality) ? (one(sp.qualitaet) as Quality) : undefined}
       theme={themeIds.includes(one(sp.buehne) as ThemeId) ? (one(sp.buehne) as ThemeId) : undefined}
+      lyricsEffect={lyricsEffects.includes(one(sp.effekt) as LyricsEffect) ? (one(sp.effekt) as LyricsEffect) : undefined}
       lyricsMode={lyricsModes.includes(one(sp.lyrics) as LyricsMode) ? (one(sp.lyrics) as LyricsMode) : undefined}
     />
   );

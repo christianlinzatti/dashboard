@@ -106,17 +106,21 @@ export function positionsAt(
   return Object.fromEntries(c.order.map((id) => [id, lerp2(before[id]!, cur[id]!, fw)]));
 }
 
-export type Cam = { pos: readonly [number, number, number]; target: readonly [number, number, number] };
+/** Kamera: Position, Blickziel und Bildwinkel (vertikal, Grad) */
+export type Cam = { pos: readonly [number, number, number]; target: readonly [number, number, number]; fov: number };
+
+const FOV = 36;
 type V3 = readonly [number, number, number];
 
 const CAMERA: Record<"totale" | "halbnah" | "untersicht" | "seite" | "vogel", Cam> = {
-  totale: { pos: [0, 1.3, 6.6], target: [0, 0.45, 0] },
-  halbnah: { pos: [0, 1.45, 5.3], target: [0, 0.95, 0] },
-  untersicht: { pos: [0, 0.55, 5.4], target: [0, 1.0, 0] },
-  seite: { pos: [2.6, 1.3, 5.6], target: [0, 0.6, 0] },
-  vogel: { pos: [0, 7.6, 3.4], target: [0, 0.3, -0.3] },
+  // Totale vom Mischpult-Turm: weit hinten, leicht erhöht, Tele – die ersten Reihen des Publikums stehen unten im Bild
+  totale: { pos: [0, 2.2, 10.2], target: [0, 0.62, 0], fov: 24 },
+  halbnah: { pos: [0, 1.45, 5.3], target: [0, 0.95, 0], fov: FOV },
+  untersicht: { pos: [0, 0.55, 5.4], target: [0, 1.0, 0], fov: FOV },
+  seite: { pos: [2.6, 1.3, 5.6], target: [0, 0.6, 0], fov: FOV },
+  vogel: { pos: [0, 7.6, 3.4], target: [0, 0.3, -0.3], fov: FOV },
 };
-const ZOOM_END: Cam = { pos: [0, 1.35, 3.9], target: [0, 1.0, 0] };
+const ZOOM_END: Cam = { pos: [0, 1.35, 3.9], target: [0, 1.0, 0], fov: FOV };
 
 const mix3 = (x: V3, y: V3, w: number): [number, number, number] => [
   x[0] + (y[0] - x[0]) * w,
@@ -132,15 +136,19 @@ function presetAt(preset: CameraPreset, p: Phrase, t: number, focus: Vec2 | unde
   switch (preset) {
     case "nah": {
       const [x, z] = focus ?? [0, 0];
-      return { pos: [x * 0.6, 1.55, z + 2.3], target: [x, 1.42, z] };
+      return { pos: [x * 0.6, 1.55, z + 2.3], target: [x, 1.42, z], fov: FOV };
     }
     case "kreisfahrt": {
       const a = 2 * Math.PI * phraseProgress(p, t);
-      return { pos: [Math.sin(a) * 6.2, 1.7, Math.cos(a) * 6.2], target: [0, 0.8, 0] };
+      return { pos: [Math.sin(a) * 6.2, 1.7, Math.cos(a) * 6.2], target: [0, 0.8, 0], fov: FOV };
     }
     case "zoom": {
       const w = phraseProgress(p, t);
-      return { pos: mix3(CAMERA.totale.pos, ZOOM_END.pos, w), target: mix3(CAMERA.totale.target, ZOOM_END.target, w) };
+      return {
+        pos: mix3(CAMERA.totale.pos, ZOOM_END.pos, w),
+        target: mix3(CAMERA.totale.target, ZOOM_END.target, w),
+        fov: CAMERA.totale.fov + (ZOOM_END.fov - CAMERA.totale.fov) * w,
+      };
     }
     default:
       return CAMERA[preset];
@@ -161,7 +169,7 @@ export function cameraAt(c: Choreography, t: number, focus?: Vec2): Cam {
   const w = easeInOut((t - p.startMs) / Math.min(c.barMs * 1.5, 3000));
   const sway = Math.sin(t / 4000) * (p.camera === "nah" ? 0.08 : 0.25);
   const pos = mix3(a.pos, b.pos, w);
-  return { pos: [pos[0] + sway, pos[1], pos[2]], target: mix3(a.target, b.target, w) };
+  return { pos: [pos[0] + sway, pos[1], pos[2]], target: mix3(a.target, b.target, w), fov: a.fov + (b.fov - a.fov) * w };
 }
 
 /** Drehbühne: Drehwinkel (Rad, um die Hochachse) – eine volle Umdrehung über die Phrase, sonst 0. */

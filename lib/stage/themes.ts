@@ -10,7 +10,17 @@ export const themeIds = ["club", "festival", "synthwave", "jazz", "weltraum"] as
 export type ThemeId = (typeof themeIds)[number];
 export type ThemeChoice = ThemeId | "auto";
 
-export const effectKinds = ["pyro", "funken", "co2", "konfetti", "feuerwerk", "ringe", "sternschnuppen", "glitzer"] as const;
+export const effectKinds = [
+  "pyro",
+  "funken",
+  "flammen",
+  "co2",
+  "konfetti",
+  "feuerwerk",
+  "ringe",
+  "sternschnuppen",
+  "glitzer",
+] as const;
 export type EffectKind = (typeof effectKinds)[number];
 
 export type Theme = {
@@ -33,6 +43,8 @@ export type Theme = {
   fire: [string, string];
   /** Nebelabstand (Szene-Fog) – weiter draußen bei Open Air */
   fogFar: number;
+  /** Publikum vor der Bühne: Dichte 0..1 (0 = keines) */
+  crowd: number;
 };
 
 export const THEMES: Record<ThemeId, Theme> = {
@@ -47,9 +59,10 @@ export const THEMES: Record<ThemeId, Theme> = {
     colors: { accent: "#ff4fd8", dominant: "#7b2cff", dark: "#0b0712" },
     lasers: true,
     headLevel: 1,
-    effects: ["co2", "funken", "ringe", "konfetti"],
+    effects: ["co2", "funken", "flammen", "ringe", "konfetti"],
     fire: ["#ffffff", "#9fd8ff"],
     fogFar: 20,
+    crowd: 0.75,
   },
   festival: {
     id: "festival",
@@ -62,9 +75,10 @@ export const THEMES: Record<ThemeId, Theme> = {
     colors: { accent: "#ffb347", dominant: "#ff5e3a", dark: "#140a1e" },
     lasers: true,
     headLevel: 1,
-    effects: ["pyro", "funken", "co2", "konfetti", "feuerwerk"],
+    effects: ["pyro", "funken", "flammen", "co2", "konfetti", "feuerwerk"],
     fire: ["#ffd27a", "#ff5a1f"],
     fogFar: 34,
+    crowd: 1,
   },
   synthwave: {
     id: "synthwave",
@@ -77,9 +91,10 @@ export const THEMES: Record<ThemeId, Theme> = {
     colors: { accent: "#ff2bd6", dominant: "#22e6ff", dark: "#12021f" },
     lasers: true,
     headLevel: 0.85,
-    effects: ["ringe", "funken", "co2", "sternschnuppen"],
+    effects: ["ringe", "funken", "flammen", "co2", "sternschnuppen"],
     fire: ["#ff7ae8", "#3ff0ff"],
     fogFar: 40,
+    crowd: 0.6,
   },
   jazz: {
     id: "jazz",
@@ -95,6 +110,7 @@ export const THEMES: Record<ThemeId, Theme> = {
     effects: ["glitzer", "funken"],
     fire: ["#fff1c9", "#ffbf69"],
     fogFar: 18,
+    crowd: 0.3,
   },
   weltraum: {
     id: "weltraum",
@@ -110,6 +126,7 @@ export const THEMES: Record<ThemeId, Theme> = {
     effects: ["sternschnuppen", "ringe", "co2", "pyro"],
     fire: ["#b9a4ff", "#46e8ff"],
     fogFar: 60,
+    crowd: 0.45,
   },
 };
 

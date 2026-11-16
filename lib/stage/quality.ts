@@ -15,12 +15,34 @@ export type QualityPreset = {
   dpr: [number, number];
   /** Anteil der Partikel bei Spezialeffekten (Pyro, Konfetti, Feuerwerk …) */
   particles: number;
+  /** Publikum: höchste Zahl an Silhouetten (× Dichte der Bühne) */
+  crowd: number;
 };
 
 export const PRESETS: Record<Quality, QualityPreset> = {
-  niedrig: { heads: 2, realLights: 0, bloom: false, reflector: false, fog: false, lasers: 4, dpr: [1, 1], particles: 0.35 },
-  mittel: { heads: 4, realLights: 2, bloom: true, reflector: false, fog: true, lasers: 6, dpr: [1, 1.25], particles: 0.65 },
-  hoch: { heads: 6, realLights: 4, bloom: true, reflector: true, fog: true, lasers: 10, dpr: [1, 1.5], particles: 1 },
+  niedrig: {
+    heads: 2,
+    realLights: 0,
+    bloom: false,
+    reflector: false,
+    fog: false,
+    lasers: 4,
+    dpr: [1, 1],
+    particles: 0.35,
+    crowd: 140,
+  },
+  mittel: {
+    heads: 4,
+    realLights: 2,
+    bloom: true,
+    reflector: false,
+    fog: true,
+    lasers: 6,
+    dpr: [1, 1.25],
+    particles: 0.65,
+    crowd: 300,
+  },
+  hoch: { heads: 6, realLights: 4, bloom: true, reflector: true, fog: true, lasers: 10, dpr: [1, 1.5], particles: 1, crowd: 520 },
 };
 
 export function stepQuality(q: Quality, dir: 1 | -1): Quality {

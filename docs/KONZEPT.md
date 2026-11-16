@@ -213,6 +213,17 @@ Stroboskop nur bei Drops und abschaltbar.
 **Vogelperspektive**, **Zoom** (Fahrt von der Totale heran); Wechsel weich über 1,5 Takte. Die **Drehbühne** dreht
 Podest und Formation in Refrain/Instrumental/Bridge zufällig (pro Song fest) einmal um 360° – nie zusammen mit
 Kreisfahrt oder Nahaufnahme; Leuchtmarken am Podestrand zeigen die Drehung.
+✅ **Publikum** (`lib/stage/crowd.ts`, `components/stage/Crowd.tsx`): Silhouetten vor der Bühne in einem Draw-Call
+(Bewegung im Vertex-Shader, zustandslos aus der Songzeit), dicht an der Bühnenkante, bis 520 Personen je nach
+Qualitätsstufe und Bühne. Die Publikums-Regie folgt dem Song: ruhige Teile → Handylichter-Meer und Wiegen,
+Strophen → einzelne Hände und funkelnde LED-Armbänder, Refrain → Hände oben, Springen im Takt, Armbänder
+pulsieren in den Lichtfarben, Drop → alles auf Anschlag. Die **Totale** steht dafür wie am Mischpult-Turm
+(weit hinten, erhöht, Tele-Optik 24°): Tänzer gleich groß, unten im Bild die ersten Reihen.
+✅ **Flammen**: Flammenwerfer auf jeden Taktanfang bei höchster Energie (nicht im Jazz-Keller).
+✅ **Schrift-Effekte der Lyrics** (zusätzlich zur Darstellung): Glühen, Neon, Feuer, Welle, Echo, Glitch –
+Strophen ruhig, Refrains wechselnd auffällig, die Bühne gibt die Richtung vor (`?effekt=` erzwingt einen).
+✅ **Songstruktur-Leiste**: die erkannten Abschnitte (Intro, Strophe, Refrain, Bridge …) als Segmente über dem
+Fortschrittsbalken, Refrains hervorgehoben.
 ✅ **Bühnen-Themen** (`lib/stage/themes.ts`): Club (LED-Wand, Spiegelboden), Festival (Abendhimmel, Dach mit PA,
 kleinere Wand), Synthwave (Retro-Sonne, Berge, Neonraster im Takt), Jazz-Keller (Vorhang, Holzdielen, Spiegelkugel,
 keine Laser, gedämpftes Licht), Weltraum (Sternenhimmel mit Nebel, Ringplanet, Mondboden). Auswahl: URL `?buehne=` >

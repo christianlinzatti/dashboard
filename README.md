@@ -123,6 +123,7 @@ Dann im Browser öffnen:
 | `…&lyrics=stapel` | Darstellung erzwingen (`karaoke`, `wortpop`, `stapel`, `schreibmaschine`, `duett`) |
 | `…&qualitaet=hoch` | Qualitätsstufe der Bühne erzwingen (`niedrig`, `mittel`, `hoch`) |
 | `…&buehne=weltraum` | Bühne erzwingen (`club`, `festival`, `synthwave`, `jazz`, `weltraum`) |
+| `…&effekt=neon` | Schrift-Effekt der Lyrics erzwingen (`gluehen`, `neon`, `feuer`, `welle`, `echo`, `glitch`) |
 | `…&mic=1` | Mikrofon-Analyse auch in der Demo (sonst nur im Live-Betrieb) |
 
 Die Demo-Songs haben frei erfundene Texte.

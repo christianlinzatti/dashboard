@@ -2,7 +2,8 @@
 
 import { useMemo } from "react";
 import { cardShownAt } from "@/lib/info/display";
-import { planLyricsModes, type LyricsMode } from "@/lib/lyrics/director";
+import { planLyricsEffects, planLyricsModes, type LyricsEffect, type LyricsMode } from "@/lib/lyrics/director";
+import { themeFor, type ThemeId } from "@/lib/stage/themes";
 import { secondLineFor } from "@/lib/lyrics/second-line";
 import { useSettings } from "@/lib/settings";
 import type { LyricLine, SongStatic } from "@/lib/song-context/schema";
@@ -19,7 +20,15 @@ import { Context, Dots, singerColor } from "./shared";
  * Lyrics-Anzeige. Der LyricsDirector wählt pro Abschnitt eine Darstellung
  * (Karaoke, Wort-Pop, Stapel, Schreibmaschine, Duett); mit `forceMode` fest (Tests/Screenshots).
  */
-export function LyricsLayer({ forceMode }: { forceMode?: LyricsMode }) {
+export function LyricsLayer({
+  forceMode,
+  forceEffect,
+  forceTheme,
+}: {
+  forceMode?: LyricsMode;
+  forceEffect?: LyricsEffect;
+  forceTheme?: ThemeId;
+}) {
   const song = useSongContext((s) => s.song);
   const lineIdx = useSongContext((s) => s.derived.lineIdx);
   const lineActive = useSongContext((s) => s.derived.lineActive);
@@ -33,6 +42,15 @@ export function LyricsLayer({ forceMode }: { forceMode?: LyricsMode }) {
     () => (song ? planLyricsModes(song) : []),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- nur bei inhaltlicher Änderung neu planen
     [song?.trackKey, song?.lyrics?.provider, sectionsKey],
+  );
+
+  // Schrift-Effekt je Abschnitt; die Bühne gibt die Richtung vor (Jazz ruhig, Synthwave Neon)
+  const stageChoice = useSettings((s) => s.stage);
+  const themeId = forceTheme ?? (song ? themeFor(song, stageChoice) : "club");
+  const effects = useMemo(
+    () => (song ? planLyricsEffects(song, themeId === "jazz" ? "warm" : themeId === "synthwave" ? "neon" : "normal") : []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- nur bei inhaltlicher Änderung neu planen
+    [song?.trackKey, song?.lyrics?.provider, sectionsKey, themeId],
   );
 
   // Während Info- oder Konzertkarte den unteren Bereich nutzt, macht die Lyrics-Anzeige Platz
@@ -65,6 +83,7 @@ export function LyricsLayer({ forceMode }: { forceMode?: LyricsMode }) {
       className="lyrics-mode pointer-events-none absolute inset-x-0 bottom-[12vmin] flex flex-col items-center gap-[2vmin] px-[4vmin] text-center"
       data-testid="lyrics"
       data-mode={mode}
+      data-effect={forceEffect ?? effects[lineActive ? lineIdx : lineIdx + 1] ?? "gluehen"}
       aria-live="off"
     >
       {mode === "duett" ? (

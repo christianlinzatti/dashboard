@@ -40,6 +40,8 @@ type Emitter = {
   drag: number;
   size: number;
   grow: number;
+  /** Helligkeit (viele überlagerte, große Partikel würden sonst weiß ausbrennen) */
+  gain?: number;
   additive: boolean;
 };
 
@@ -96,6 +98,26 @@ const EMITTERS: Record<Exclude<EffectKind, "ringe" | "glitzer">, Emitter> = {
     drag: 2.6,
     size: 0.55,
     grow: 2.2,
+    additive: true,
+  },
+  // Flammenwerfer: kurze, breite Feuersäulen hinter den Tänzern
+  flammen: {
+    mode: 0,
+    count: 420,
+    origins: [
+      [-3.9, 0, -1.9],
+      [3.9, 0, -1.9],
+      [-2.0, 0, -2.3],
+      [2.0, 0, -2.3],
+    ],
+    life: 0.42,
+    speed: 9.5,
+    spread: 0.06,
+    gravity: 3,
+    drag: 1.6,
+    size: 0.3,
+    grow: 0.9,
+    gain: 0.3,
     additive: true,
   },
   konfetti: {
@@ -278,7 +300,14 @@ function ParticleFx({
   const geometry = useMemo(() => randomGeometry(e.count, kind), [e.count, kind]);
   const uniforms = useMemo(() => {
     const o = (i: number) => new Vector3(...(e.origins[i] ?? e.origins[0]!));
-    const fire = kind === "co2" ? (["#ffffff", "#cfe6ff"] as const) : theme.fire;
+    // echte Flammen sind orange – nur Synthwave/Weltraum behalten ihre Neon-/Plasmafarben
+    const warm = theme.id === "club" || theme.id === "festival" || theme.id === "jazz";
+    const fire =
+      kind === "co2"
+        ? (["#ffffff", "#cfe6ff"] as const)
+        : kind === "flammen" && warm
+          ? (["#ffe9a8", "#ff3c0a"] as const)
+          : theme.fire;
     return {
       uAge: { value: 0 },
       uDur: { value: 1 },
@@ -324,7 +353,7 @@ function ParticleFx({
     m.uniforms.uAge!.value = cue.ageMs / 1000;
     m.uniforms.uDur!.value = cue.durationMs / 1000;
     m.uniforms.uSpawn!.value = Math.min(cue.durationMs / 1000, e.spawn ?? Infinity, e.life);
-    m.uniforms.uIntensity!.value = cue.intensity;
+    m.uniforms.uIntensity!.value = cue.intensity * (e.gain ?? 1);
     m.uniforms.uSeed!.value = (cue.seed % 997) / 997;
   });
 

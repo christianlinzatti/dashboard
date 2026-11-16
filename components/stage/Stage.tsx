@@ -24,6 +24,7 @@ import { LogoWall } from "./LogoWall";
 import { wallPhotoAt } from "@/lib/info/display";
 import { displayUrl } from "@/lib/info/photos";
 import { Fog, StageSet, TurntableMarks, WallFrame, wallScale } from "./StageSet";
+import { Crowd } from "./Crowd";
 import { Effects } from "./Effects";
 import { initialFrame, type Frame } from "./types";
 
@@ -137,6 +138,7 @@ function Scene({
   useEffect(() => () => document.body.removeAttribute("data-stage-ready"), []);
 
   if (!song || !choreo || !theme) return null;
+  const crowdCount = Math.round(preset.crowd * theme.crowd);
   const logo = song.info?.artists[song.artists[0]?.spotifyId ?? ""]?.logo;
 
   return (
@@ -150,7 +152,7 @@ function Scene({
         data-testid="stage"
         dpr={preset.dpr}
         frameloop={frozen ? "demand" : "always"}
-        camera={{ position: [0, 1.3, 6.6], fov: 36 }}
+        camera={{ position: [0, 2.2, 10.2], fov: 24 }}
         gl={{ antialias: true, powerPreference: "high-performance" }}
         onCreated={({ gl }) =>
           gl.domElement.addEventListener("webglcontextlost", (e) => {
@@ -180,6 +182,18 @@ function Scene({
           lightsRef={lights}
         />
         <TurntableMarks frameRef={frame} color={song.album.palette.accent} />
+        {crowdCount > 0 && (
+          <Crowd
+            key={theme.id}
+            count={crowdCount}
+            choreo={choreo}
+            theme={theme}
+            dark={dark}
+            accent={song.album.palette.accent}
+            frameRef={frame}
+            lightsRef={lights}
+          />
+        )}
         <MovingHeads
           key={`h${preset.heads}${preset.realLights}`}
           count={preset.heads}

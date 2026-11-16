@@ -42,3 +42,37 @@ test.describe("Darstellungsmodi", () => {
     await expect(duet.getByTestId("lyrics-current")).toHaveText("wir drehen auf, wir geben Gas");
   });
 });
+
+test.describe("Schrift-Effekte und Songstruktur", () => {
+  test("Refrain bekommt einen auffälligen Effekt, die Strophe glüht nur", async ({ page }) => {
+    await page.goto("/?demo=neonlicht&t=46000&buehne=festival");
+    await ready(page);
+    await expect(page.getByTestId("lyrics")).toHaveAttribute("data-effect", "feuer");
+    await page.goto("/?demo=neonlicht&t=20000&buehne=festival");
+    await ready(page);
+    await expect(page.getByTestId("lyrics")).toHaveAttribute("data-effect", "gluehen");
+  });
+
+  for (const effect of ["neon", "echo", "glitch"] as const) {
+    test(`Effekt ${effect}`, async ({ page }) => {
+      await page.goto(`/?demo=neonlicht&t=46000&lyrics=karaoke&effekt=${effect}&buehne=synthwave`);
+      await ready(page);
+      await expect(page.getByTestId("lyrics")).toHaveAttribute("data-effect", effect);
+      await expect(page.getByTestId("lyrics-current")).toHaveText("bis der Morgen uns zerbricht");
+      await expect(page).toHaveScreenshot(`effekt-${effect}.png`);
+    });
+  }
+
+  test("Fortschrittsleiste zeigt die Abschnitte des Songs, Refrains hervorgehoben", async ({ page }) => {
+    await page.goto("/?demo=neonlicht&t=46000");
+    await ready(page);
+    const bar = page.getByTestId("structure");
+    await expect(bar).toBeVisible();
+    await expect(bar.locator("[data-kind=chorus]")).toHaveCount(3);
+    await expect(bar.locator("[data-kind=bridge]")).toHaveCount(1);
+    // ohne Lyrics keine Struktur
+    await page.goto("/?demo=instrumental&t=46000");
+    await ready(page);
+    await expect(page.getByTestId("structure")).toHaveCount(0);
+  });
+});

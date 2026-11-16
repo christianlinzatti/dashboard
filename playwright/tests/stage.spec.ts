@@ -54,6 +54,23 @@ test.describe("Bühne & Licht", () => {
     });
   }
 
+  // Publikum: Handylichter im ruhigen Outro, Springen mit Armbändern im Refrain
+  const crowd = [
+    { name: "publikum-handys", q: "demo=neonlicht&t=180000&buehne=festival", state: "handys" },
+    { name: "publikum-refrain", q: "demo=neonlicht&t=52000&lyrics=karaoke&buehne=festival", state: "springen" },
+  ] as const;
+  for (const { name, q, state } of crowd) {
+    test(`Publikum ${name}`, async ({ page }) => {
+      const errors: string[] = [];
+      page.on("pageerror", (e) => errors.push(e.message));
+      await page.goto(`/?${q}&qualitaet=hoch`);
+      await ready(page);
+      await expect(page.locator("[data-testid=stage] canvas")).toHaveAttribute("data-crowd", state);
+      await expect(page).toHaveScreenshot(`${name}.png`);
+      expect(errors).toEqual([]);
+    });
+  }
+
   test("Bühne lässt sich umschalten und bleibt gespeichert", async ({ page }) => {
     await page.goto("/?demo=neonlicht&t=46000");
     await expect(page.locator("[data-theme=festival]")).toBeVisible();

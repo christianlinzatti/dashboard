@@ -25,7 +25,7 @@ import { perf } from "@/lib/stage/perf";
 import { markFrame } from "@/lib/live/frame-clock";
 import { useLyricsLoader } from "./lyrics/useLyricsLoader";
 import { useMicAnalysis } from "./audio/useMicAnalysis";
-import type { LyricsMode } from "@/lib/lyrics/director";
+import type { LyricsEffect, LyricsMode } from "@/lib/lyrics/director";
 import type { Quality } from "@/lib/stage/quality";
 import type { ThemeId } from "@/lib/stage/themes";
 
@@ -38,12 +38,14 @@ type Props = {
   loginError?: string;
   mic?: boolean;
   lyricsMode?: LyricsMode;
+  /** Schrift-Effekt der Lyrics fest vorgeben (URL ?effekt=…) */
+  lyricsEffect?: LyricsEffect;
   quality?: Quality;
   /** Bühnen-Thema fest vorgeben (URL ?buehne=…, z. B. für Screenshots) */
   theme?: ThemeId;
 };
 
-export function Dashboard({ demo, t, debug, loginError, mic, lyricsMode, quality, theme }: Props) {
+export function Dashboard({ demo, t, debug, loginError, mic, lyricsMode, lyricsEffect, quality, theme }: Props) {
   const song = useSongContext((s) => s.song);
   const frozen = useSongContext((s) => s.frozen);
   const unknownDemo = demo !== undefined && !fixtures[demo];
@@ -132,7 +134,7 @@ export function Dashboard({ demo, t, debug, loginError, mic, lyricsMode, quality
           <NowPlayingBar />
           <InfoOverlay />
           <ConcertOverlay />
-          <LyricsLayer forceMode={lyricsMode} />
+          <LyricsLayer forceMode={lyricsMode} forceEffect={lyricsEffect} forceTheme={theme} />
           <Progress />
           <Controls live={demo === undefined} mic={demo === undefined || mic ? micCtl : undefined} />
         </>

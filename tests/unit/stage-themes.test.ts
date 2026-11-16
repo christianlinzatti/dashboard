@@ -105,7 +105,7 @@ describe("Effekt-Regie", () => {
     expect(effectsAt(q, 3000 + LINGER_MS.pyro - 1).map((c) => c.kind)).toContain("pyro");
     expect(effectsAt(q, 3000 + LINGER_MS.pyro + 1).map((c) => c.kind)).not.toContain("pyro");
     const extra = dropCues(2600, plan, THEMES.festival);
-    expect(extra.map((c) => c.kind).sort()).toEqual(["co2", "funken", "pyro"]);
+    expect(extra.map((c) => c.kind).sort()).toEqual(["co2", "flammen", "funken", "pyro"]);
     expect(dropCues(0, plan, THEMES.jazz).map((c) => c.kind)).toEqual(["funken"]);
     expect(effectsAt(q, 2700, extra)[0]!.startMs).toBe(2600);
   });
