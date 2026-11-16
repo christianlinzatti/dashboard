@@ -67,6 +67,10 @@ describe("Bildrate", () => {
     expect(fpsFrom(Array(60).fill(1 / 60))).toBe(60);
     expect(fpsFrom([...Array(57).fill(1 / 30), 0.5, 0.5, 0.5])).toBe(30);
     expect(fpsFrom([0.016])).toBeNull();
+    // ruckelnder Pi: wenige, lange Bilder werden trotzdem gemeldet
+    expect(fpsFrom([0.4, 0.5, 0.6])).toBe(2);
+    expect(fpsFrom([0.25, 0.25, 0.25, 0.25, 0.25])).toBe(4);
+    expect(fpsFrom([3, 3, 3])).toBe(1);
   });
 });
 

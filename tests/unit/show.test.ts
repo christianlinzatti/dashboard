@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 import { describe, expect, it, vi } from "vitest";
 import { showPatch, showUrl, type ShowPayload } from "@/components/show/useShowLoader";
 import { planChoreography } from "@/lib/dance/plan";
@@ -7,7 +8,8 @@ import { planLyricsEffects } from "@/lib/lyrics/director";
 import { foundKey } from "@/lib/lyrics/service";
 import { briefFor, energyLevel, sanitizeBrief, type ShowBrief } from "@/lib/show/brief";
 import { createShowDirector, DEFAULT_SHOW_MODEL, describeSong, SHOW_SYSTEM_PROMPT, type SongFacts } from "@/lib/show/director";
-import { createShowService, lyricsExcerpt } from "@/lib/show/service";
+import { createShowService, lyricsExcerpt, showAi } from "@/lib/show/service";
+import { createOpenAiShowDirector, DEFAULT_OPENAI_SHOW_MODEL } from "@/lib/show/director-openai";
 import { audioDbTags, cleanTags, collectTags, lastfmTags, moodFrom } from "@/lib/show/tags";
 import { neonlicht } from "@/lib/song-context/fixtures/neonlicht";
 import { songStaticSchema } from "@/lib/song-context/schema";
@@ -359,5 +361,73 @@ describe("Regie im Dashboard", () => {
       show: { state: "missing", provider: "regeln" },
       music: { state: "missing" },
     });
+  });
+});
+
+describe("KI-Regie über OpenAI", () => {
+  const facts = { title: "Neonlicht", artists: ["Mira Sol"], durationMs: 200_000, tags: [], sections: [] };
+  const fakeOpenAi = (result: unknown) => {
+    const parse = vi.fn<(args: Record<string, unknown>) => Promise<unknown>>(async () => result);
+    return { client: { chat: { completions: { parse } } } as unknown as OpenAI, parse };
+  };
+
+  it("gleicher Auftrag und gleiches Schema wie bei Claude, strikte Ausgabe, niedriger Aufwand", async () => {
+    const { client, parse } = fakeOpenAi({ choices: [{ message: { parsed: brief, refusal: null } }] });
+    expect(await createOpenAiShowDirector({ client })(facts)).toEqual({ brief });
+    const args = parse.mock.calls[0]![0] as {
+      model: string;
+      reasoning_effort: string;
+      messages: Array<{ role: string; content: string }>;
+      response_format: { type: string; json_schema: { name: string; strict: boolean } };
+    };
+    expect(args.model).toBe(DEFAULT_OPENAI_SHOW_MODEL);
+    expect(args.reasoning_effort).toBe("low");
+    expect(args.messages).toEqual([
+      { role: "system", content: SHOW_SYSTEM_PROMPT },
+      { role: "user", content: describeSong(facts) },
+    ]);
+    expect(args.response_format.type).toBe("json_schema");
+    expect(args.response_format.json_schema).toMatchObject({ name: "show_brief", strict: true });
+    const custom = fakeOpenAi({ choices: [{ message: { parsed: brief } }] });
+    await createOpenAiShowDirector({ client: custom.client, model: "gpt-5.5" })(facts);
+    expect((custom.parse.mock.calls[0]![0] as { model: string }).model).toBe("gpt-5.5");
+  });
+
+  it("Ablehnung, unbrauchbare Antwort und API-Fehler", async () => {
+    expect(
+      await createOpenAiShowDirector(fakeOpenAi({ choices: [{ message: { parsed: null, refusal: "Nein." } }] }))(facts),
+    ).toEqual({
+      brief: null,
+      reason: "abgelehnt",
+    });
+    expect(await createOpenAiShowDirector(fakeOpenAi({ choices: [{ message: { parsed: { stage: "mond" } } }] }))(facts)).toEqual({
+      brief: null,
+      reason: "ungültig",
+    });
+    expect(await createOpenAiShowDirector(fakeOpenAi({ choices: [] }))(facts)).toEqual({ brief: null, reason: "ungültig" });
+    const failing = (status: number) => {
+      const parse = vi.fn(async () => {
+        throw OpenAI.APIError.generate(status, { error: { message: "m" } }, "m", new Headers());
+      });
+      return createOpenAiShowDirector({ client: { chat: { completions: { parse } } } as unknown as OpenAI })(facts);
+    };
+    expect(await failing(401)).toEqual({ brief: null, reason: "konfiguration" });
+    expect(await failing(403)).toEqual({ brief: null, reason: "konfiguration" });
+    expect(await failing(429)).toEqual({ brief: null, reason: "vorübergehend" });
+    expect(await failing(500)).toEqual({ brief: null, reason: "vorübergehend" });
+    const broken = {
+      chat: { completions: { parse: async () => Promise.reject(new TypeError("Programmfehler")) } },
+    } as unknown as OpenAI;
+    await expect(createOpenAiShowDirector({ client: broken })(facts)).rejects.toThrow("Programmfehler");
+  });
+
+  it("Anbieter-Wahl: Claude zuerst, OpenAI als Alternative, fest per SHOW_AI_PROVIDER, ohne Schlüssel keine KI", () => {
+    expect(showAi({})).toBeNull();
+    expect(showAi({ ANTHROPIC_API_KEY: "a" })).toEqual({ provider: "anthropic", model: DEFAULT_SHOW_MODEL });
+    expect(showAi({ OPENAI_API_KEY: "o" })).toEqual({ provider: "openai", model: DEFAULT_OPENAI_SHOW_MODEL });
+    expect(showAi({ ANTHROPIC_API_KEY: "a", OPENAI_API_KEY: "o" })!.provider).toBe("anthropic");
+    expect(showAi({ ANTHROPIC_API_KEY: "a", OPENAI_API_KEY: "o", SHOW_AI_PROVIDER: "OpenAI" })!.provider).toBe("openai");
+    expect(showAi({ OPENAI_API_KEY: "o", SHOW_AI_PROVIDER: "anthropic" })).toBeNull(); // gewählt, aber kein Schlüssel
+    expect(showAi({ OPENAI_API_KEY: "o", SHOW_AI_MODEL: "gpt-5.5" })).toEqual({ provider: "openai", model: "gpt-5.5" });
   });
 });

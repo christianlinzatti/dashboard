@@ -24,7 +24,7 @@ Legende: ✅ umgesetzt · ◐ teilweise · ○ offen
 | extra | Better Lyrics (Apple-TTML, Silben-Timing, echte Songabschnitte, Duette), Umschrift/Übersetzung | ✅ |
 | extra | Alexa kennt Konzerte, Hörstatistik, Likes, Band-Infos, Erscheinungsjahr | ✅ |
 | extra | Fünf Bühnen (Club, Festival, Synthwave, Jazz-Keller, Weltraum) mit Spezialeffekten | ✅ |
-| 10 | Konzert-Erlebnis: Publikum, Flammen, Schrift-Effekte, Songstruktur, Show-Regie mit KI | ✅ (KI braucht `ANTHROPIC_API_KEY`) |
+| 10 | Konzert-Erlebnis: Publikum, Flammen, Schrift-Effekte, Songstruktur, Show-Regie mit KI | ✅ (KI braucht `ANTHROPIC_API_KEY` oder `OPENAI_API_KEY`) |
 | extra | Mixamo-Tänze: Retargeting-Pipeline, 16 vorgeschlagene Tänze im Katalog, Laden zur Laufzeit | ✅ (Clips nach Download, docs/MIXAMO.md) |
 
 **Festgelegt:** Raspberry Pi (noch nicht gekauft) mit Chromium im Kiosk-Modus · Spotify-Developer-App und Premium ·
@@ -387,7 +387,7 @@ Aufwand: S = bis ½ Tag, M = 1–2 Tage, L = mehrere Tage.
 |---|---|
 | ✅ Publikum mit Handylichtern und LED-Armbändern, Totale mit Tele-Optik, Flammen | L |
 | ✅ Schrift-Effekte der Lyrics, Songstruktur-Leiste | M |
-| ✅ Show-Regie: Genres/Stimmung aus TheAudioDB und Last.fm, Regieanweisung der KI (Claude), Tagesform | L |
+| ✅ Show-Regie: Genres/Stimmung aus TheAudioDB und Last.fm, Regieanweisung der KI (Claude oder OpenAI), Tagesform | L |
 
 ### Stufe 11 – Songanalyse live
 

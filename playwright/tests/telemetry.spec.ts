@@ -28,9 +28,11 @@ test("Live: Fehler werden gemeldet, Debug-Panel zeigt Bildrate und Protokoll", a
       },
     });
   });
+  // Live-Bühne hängt von der Tagesform ab – für einen stabilen Test fest auf Club/niedrig
+  await page.addInitScript(() => localStorage.setItem("ss_settings", JSON.stringify({ stage: "club", quality: "niedrig" })));
   await page.goto("/?debug=1");
   await expect(page.getByTestId("debug-log")).toContainText("3D-Bühne: Avatar konnte nicht laden (×3)");
-  await expect(page.getByTestId("debug-fps")).toHaveText(/Bildrate: \d+ fps · Qualität (niedrig|mittel|hoch)/, {
+  await expect(page.getByTestId("debug-fps")).toHaveText(/Bildrate: \d+ fps · Qualität niedrig/, {
     timeout: 30_000,
   });
 

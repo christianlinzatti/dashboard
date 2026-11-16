@@ -134,7 +134,10 @@ Für das Konzert-Erlebnis wurde die Bühne in vier Schichten gegliedert. Jede Sc
   Energie, Schrift-Effekt, Publikumsverhalten und Wunsch-Effekte. Wann genau etwas zündet, bestimmen die Pläne
   aus Abschnitten und Beat-Raster. Der Brief ist ein zod-Schema aus Aufzählungen: die KI kann nichts verlangen,
   was die Bühne nicht kann, und eine unbrauchbare Antwort wird verworfen.
-- **Alles ist optional.** Ohne `ANTHROPIC_API_KEY` läuft die Show mit Regeln und Tagesform; ohne Tags wechselt
+- **Anbieter austauschbar.** Claude (`lib/show/director.ts`) und OpenAI (`director-openai.ts`) bekommen dieselbe
+  Anweisung, dieselbe Songbeschreibung und dasselbe Schema; gewählt wird per Umgebung (`showAi()`), Claude zuerst.
+  Ein weiterer Anbieter braucht nur eine Funktion `(SongFacts) → DirectorResult`.
+- **Alles ist optional.** Ohne KI-Schlüssel läuft die Show mit Regeln und Tagesform; ohne Tags wechselt
   die Bühne je Song und Tag; ohne Lyrics werden Abschnitte aus der Dauer geschätzt.
 - **Nichts stellt mitten im Song um.** Regie-Daten, die später als 25 s nach Songbeginn eintreffen, werden nicht
   mehr angewendet. Sie liegen dann im Cache für das nächste Abspielen.
@@ -146,7 +149,7 @@ Für das Konzert-Erlebnis wurde die Bühne in vier Schichten gegliedert. Jede Sc
 **Server**
 
 ```
-/api/show   Session → Tags (TheAudioDB, Last.fm; Cache 30 d) → KI-Brief (Claude, strukturierte Ausgabe;
+/api/show   Session → Tags (TheAudioDB, Last.fm; Cache 30 d) → KI-Brief (Claude oder OpenAI, strukturierte Ausgabe;
             liest Aufbau und Textauszug aus dem Lyrics-Cache; Cache 30 d) → { genres, mood, brief, source }
 ```
 

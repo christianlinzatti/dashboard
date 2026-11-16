@@ -30,6 +30,7 @@
     "@react-three/fiber": "^9.8.2",
     "@react-three/postprocessing": "^3.2.2",
     "next": "^16.4.6",
+    "openai": "^7.57.0",
     "postprocessing": "^6.39.6",
     "qrcode": "^1.5.4",
     "react": "^19.3.1",

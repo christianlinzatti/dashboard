@@ -37,7 +37,7 @@ oder aus. Demo: `/?demo=hoshizora`.
   Infokarte, deutsche Biografie als Ersatz, wenn es keinen Wikipedia-Artikel gibt, sowie Stil, Mitgliederzahl und Herkunft.
 - **Flickr** (`FLICKR_API_KEY`): Konzertfotos aller Lizenzen, immer mit Fotograf und Lizenz (auch „Alle Rechte
   vorbehalten“). Das passt für ein privates Dashboard, für eine öffentliche Seite bitte wieder auf freie Lizenzen beschränken.
-- **Show-Regie** (`ANTHROPIC_API_KEY`, optional): Claude schreibt je Song eine Regieanweisung – Bühne, Stimmung und
+- **Show-Regie** (`ANTHROPIC_API_KEY` oder `OPENAI_API_KEY`, optional): Claude bzw. ein OpenAI-Modell schreibt je Song eine Regieanweisung – Bühne, Stimmung und
   je Abschnitt Energie, Schrift-Effekt, Publikum und Effekte. Ein Aufruf je Song, 30 Tage gecacht. Ohne Key läuft
   die Show mit den eingebauten Regeln; Genres und Stimmung kommen dann aus TheAudioDB und Last.fm.
 - **Genius** (`GENIUS_ACCESS_TOKEN`): Song-Trivia im Fakten-Ticker (Produzenten, Songwriter, Samples).

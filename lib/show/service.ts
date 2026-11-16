@@ -8,6 +8,8 @@ import type { Lyrics } from "@/lib/song-context/schema";
 import { contiguous } from "@/lib/song-context/sections";
 import type { ShowBrief } from "./brief";
 import { createShowDirector, DEFAULT_SHOW_MODEL, type DirectorResult, type SongFacts } from "./director";
+import OpenAI from "openai";
+import { createOpenAiShowDirector, DEFAULT_OPENAI_SHOW_MODEL } from "./director-openai";
 import { collectTags, type MusicTags } from "./tags";
 
 export type ShowQuery = { trackKey: string; title: string; artists: string[]; album?: string; year?: number; durationMs: number };
@@ -91,22 +93,40 @@ function merge(tags: MusicTags, brief: ShowBrief | null): MusicTags {
   return { genres: tags.genres.length ? tags.genres : (brief?.genres ?? []), mood: tags.mood ?? brief?.mood };
 }
 
+export type ShowAi = { provider: "anthropic" | "openai"; model: string } | null;
+
+/**
+ * Welcher KI-Anbieter die Regie schreibt: SHOW_AI_PROVIDER legt fest, sonst der, dessen Schlüssel gesetzt ist
+ * (Claude zuerst). Ohne Schlüssel keine KI – die Show läuft dann mit den eingebauten Regeln.
+ */
+export function showAi(env: Record<string, string | undefined>): ShowAi {
+  const wanted = env.SHOW_AI_PROVIDER?.trim().toLowerCase();
+  const anthropic = !!env.ANTHROPIC_API_KEY && (!wanted || wanted === "anthropic" || wanted === "claude");
+  const openai = !!env.OPENAI_API_KEY && (!wanted || wanted === "openai");
+  if (anthropic) return { provider: "anthropic", model: env.SHOW_AI_MODEL || DEFAULT_SHOW_MODEL };
+  if (openai) return { provider: "openai", model: env.SHOW_AI_MODEL || DEFAULT_OPENAI_SHOW_MODEL };
+  return null;
+}
+
 let shared: ReturnType<typeof createShowService> | undefined;
 export function showFor(q: ShowQuery) {
   if (!shared) {
     const env = process.env;
-    const model = env.SHOW_AI_MODEL || undefined;
-    // Schlüssel aus der Umgebung (ANTHROPIC_API_KEY); 45 s reichen für einen kurzen Brief, ein Neuversuch
-    const direct = env.ANTHROPIC_API_KEY
-      ? createShowDirector({ client: new Anthropic({ timeout: 45_000, maxRetries: 1 }), model })
-      : undefined;
+    const ai = showAi(env);
+    // Schlüssel kommen aus der Umgebung; 45 s reichen für einen kurzen Brief, ein Neuversuch
+    const direct =
+      ai?.provider === "anthropic"
+        ? createShowDirector({ client: new Anthropic({ timeout: 45_000, maxRetries: 1 }), model: ai.model })
+        : ai?.provider === "openai"
+          ? createOpenAiShowDirector({ client: new OpenAI({ timeout: 45_000, maxRetries: 1 }), model: ai.model })
+          : undefined;
     shared = createShowService({
       cache: getCache(),
       http: (url, signal) => fetch(url, { signal, headers: { "User-Agent": "sonic-stage/1.0" } }),
       audioDbKey: env.THEAUDIODB_API_KEY || AUDIODB_TEST_KEY,
       lastfmKey: env.LASTFM_API_KEY || undefined,
       direct,
-      model,
+      model: ai?.model,
     });
   }
   return shared(q);
