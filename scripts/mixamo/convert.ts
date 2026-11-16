@@ -10,8 +10,9 @@
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { AnimationClip, type Object3D } from "three";
+import { AnimationClip, AnimationMixer, Group, Quaternion, Vector3, type Object3D } from "three";
 import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js";
+import { BVHLoader } from "three/examples/jsm/loaders/BVHLoader.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
 import { packClip, unpackClip, type PackedClip } from "../../lib/dance/clip-pack";
@@ -20,6 +21,7 @@ import { estimateBpm, makeLoop, restFromGltf, retargetSamples, type RestBone } f
 import {
   autoEntry,
   DUPLICATE_DISTANCE,
+  isBvh,
   isGlb,
   energyFromMotion,
   motionSignature,
@@ -34,6 +36,7 @@ import { format, resolveConfig } from "prettier";
 const ROOT = process.cwd();
 const SRC_DIR = join(ROOT, "mixamo");
 const M2M_DIR = join(ROOT, "mesh2motion");
+const CMU_DIR = join(ROOT, "cmu");
 const OUT_DIR = join(ROOT, "public/animations");
 const CATALOG = join(ROOT, "lib/dance/mixamo-clips.json");
 const FPS = 30;
@@ -50,12 +53,12 @@ function readGltfJson(file: string) {
 const norm = (s: string) =>
   s
     .toLowerCase()
-    .replace(/\.(fbx|glb)$/, "")
+    .replace(/\.(fbx|glb|bvh)$/, "")
     .replace(/[^a-z0-9]/g, "");
 
 function findSource(entry: MixamoEntry, files: string[]): string | undefined {
   if (entry.preserved) return undefined; // gesicherter früherer Tanz – gehört zu keiner FBX mehr
-  const wanted = [norm(entry.source), norm(entry.search), norm(entry.id.replace(/^(Mixamo|M2M)_/, ""))];
+  const wanted = [norm(entry.source), norm(entry.search), norm(entry.id.replace(/^(Mixamo|M2M|CMU)_/, ""))];
   return files.find((f) => wanted.includes(norm(f)));
 }
 
@@ -67,9 +70,9 @@ async function main() {
   const rest = restFromGltf(readGltfJson(join(ROOT, "avatars", first)));
   const list = (dir: string, ext: string) =>
     existsSync(dir) ? readdirSync(dir).filter((f) => f.toLowerCase().endsWith(ext)) : [];
-  const files = [...list(SRC_DIR, ".fbx"), ...list(M2M_DIR, ".glb")];
+  const files = [...list(SRC_DIR, ".fbx"), ...list(M2M_DIR, ".glb"), ...list(CMU_DIR, ".bvh")];
   if (!files.length) {
-    console.log(`Keine FBX-Dateien in ${SRC_DIR} und keine GLB in ${M2M_DIR}. Anleitung: docs/MIXAMO.md`);
+    console.log(`Keine Quelldateien in ${SRC_DIR}, ${M2M_DIR} oder ${CMU_DIR}. Anleitung: docs/MIXAMO.md`);
     return;
   }
   mkdirSync(OUT_DIR, { recursive: true });
@@ -243,8 +246,85 @@ export function repeatClip(clip: AnimationClip, n: number): AnimationClip {
   return new AnimationClip(`${clip.name}×${n}`, d * n, tracks);
 }
 
+/**
+ * CMU-Rücken heißt anders als bei Mixamo: LowerBack › Spine › Spine1 (Brust) statt Spine › Spine1 › Spine2.
+ * Alle übrigen Knochen (Hips, LeftArm, RightUpLeg …) tragen schon Mixamo-Namen.
+ */
+export const CMU_BONES: Record<string, string> = { LowerBack: "Spine", Spine: "Spine1", Spine1: "Spine2" };
+
+/** BVH (CMU) laden und die Rückenknochen umbenennen – samt der Spuren, die sie animieren. */
+export function loadBvh(text: string): { group: Object3D; animations: AnimationClip[] } {
+  const { skeleton, clip } = new BVHLoader().parse(text);
+  const rename = (n: string) => CMU_BONES[n] ?? n;
+  for (const b of skeleton.bones) b.name = rename(b.name);
+  for (const t of clip.tracks) {
+    const dot = t.name.lastIndexOf(".");
+    t.name = rename(t.name.slice(0, dot)) + t.name.slice(dot);
+  }
+  const group = new Group();
+  group.add(skeleton.bones[0]!);
+  group.updateMatrixWorld(true);
+  return { group, animations: [clip] };
+}
+
+/** Blickrichtung (horizontal) aus der Hüftbreite: senkrecht zu „links − rechts“. */
+function facing(byName: Map<string, Object3D>): Vector3 {
+  const l = byName.get("LeftUpLeg")!.getWorldPosition(new Vector3());
+  const r = byName.get("RightUpLeg")!.getWorldPosition(new Vector3());
+  const side = l.sub(r).setY(0).normalize();
+  return new Vector3(0, 1, 0).cross(side);
+}
+
+/**
+ * Motion-Capture-Tänzer stehen im Aufnahmeraum irgendwie (CMU: oft seitlich oder mit dem Rücken zur Kamera).
+ * Dreht die ganze Bewegung um die Hochachse, sodass der Tänzer im Mittel des Ausschnitts so schaut wie in der
+ * Grundpose – also wie die Avatare nach vorn. Drehungen innerhalb des Tanzes bleiben erhalten.
+ */
+export function faceForward(group: Object3D, clip: AnimationClip, from = 0, to = clip.duration): number {
+  const byName = new Map<string, Object3D>();
+  group.traverse((o) => byName.set(o.name, o));
+  const hips = byName.get("Hips");
+  if (!hips || !byName.has("LeftUpLeg") || !byName.has("RightUpLeg")) return 0;
+  const saved = [...byName.values()].map((o) => [o, o.position.clone(), o.quaternion.clone()] as const);
+  group.updateMatrixWorld(true);
+  const rest = facing(byName);
+  const mixer = new AnimationMixer(group);
+  mixer.clipAction(clip).play();
+  const sum = new Vector3();
+  for (let i = 0; i < 48; i++) {
+    mixer.setTime(from + ((to - from) * i) / 48);
+    group.updateMatrixWorld(true);
+    sum.add(facing(byName));
+  }
+  mixer.stopAllAction();
+  mixer.uncacheRoot(group);
+  // Grundpose wiederherstellen (der Mixer hat die Knochen bewegt; das Retargeting liest sie als Ruhepose)
+  for (const [o, p, r] of saved) {
+    o.position.copy(p);
+    o.quaternion.copy(r);
+  }
+  group.updateMatrixWorld(true);
+  const mean = Math.atan2(sum.x, sum.z);
+  // auf (−180°, 180°] bringen: kürzeste Drehung
+  const yaw = Math.atan2(Math.sin(Math.atan2(rest.x, rest.z) - mean), Math.cos(Math.atan2(rest.x, rest.z) - mean));
+  const q = new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), yaw);
+  const v = new Vector3();
+  const k = new Quaternion();
+  for (const t of clip.tracks) {
+    if (t.name === `${hips.name}.quaternion`)
+      for (let i = 0; i < t.values.length; i += 4) {
+        // Hüfte hängt in der Gruppe ohne eigene Drehung: Weltdrehung = q · lokale Drehung
+        k.fromArray(t.values, i).premultiply(q).toArray(t.values, i);
+      }
+    if (t.name === `${hips.name}.position`)
+      for (let i = 0; i < t.values.length; i += 3) v.fromArray(t.values, i).applyQuaternion(q).toArray(t.values, i);
+  }
+  return (yaw * 180) / Math.PI;
+}
+
 /** Skelett und Animationen einer Quelldatei: Mixamo-FBX oder Mesh2Motion-GLB. */
 async function loadSource(file: string): Promise<{ group: Object3D; animations: AnimationClip[] }> {
+  if (isBvh(file)) return loadBvh(readFileSync(join(CMU_DIR, file), "utf8"));
   const buf = readFileSync(join(isGlb(file) ? M2M_DIR : SRC_DIR, file));
   const data = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer;
   if (!isGlb(file)) {
@@ -265,6 +345,8 @@ async function convertOne(entry: MixamoEntry, file: string, rest: RestBone[]): P
   }
   const start = entry.start ?? 0;
   const end = Math.min(entry.end ?? clip.duration, clip.duration);
+  // Motion-Capture (CMU): Tänzer zur Kamera drehen
+  if (isBvh(file)) faceForward(group, clip, start, end);
 
   // kurze Schleife (unter 4 s, ganz verwendet): zum Schätzen mehrfach hintereinander
   const short = clip.duration < 4 && start === 0 && end === clip.duration;

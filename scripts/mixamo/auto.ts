@@ -23,7 +23,7 @@ const STYLES: Array<[RegExp, string[], string]> = [
   [/break|uprock|flair|windmill|footwork|freeze|power ?move/i, ["hip hop", "breakbeat"], "Dance_PowerHit"],
   [/robot|tut|popping|locking|wave hip|animation/i, ["electro", "hip hop", "synth"], "Dance_Robot"],
   [/hip ?hop|rap|krump|twerk/i, ["hip hop", "rap", "r&b"], "Dance_HipHop"],
-  [/samba|salsa|rumba|tango|bachata|merengue|cha ?cha|latin|cumbia|capoeira/i, ["latin"], "Dance_LatinSway"],
+  [/samba|salsa|rumba|tango|bachata|merengue|cha ?cha|latin|cumbia|capoeira|lambada/i, ["latin"], "Dance_LatinSway"],
   [/swing|charleston|lindy|jazz|tap/i, ["swing", "jazz", "soul"], "Dance_JazzSwing"],
   [/shuffle|house|techno|rave|club|jumpstyle/i, ["techno", "house", "edm"], "Dance_Shuffle"],
   [/twist|rock|guitar|headbang|punk/i, ["rock", "oldies"], "Dance_RockDrive"],
@@ -47,6 +47,9 @@ export function skipReason(name: string): "Übergang" | "kein Tanz" | undefined 
 
 /** Mesh2Motion-Animation (GLB) statt Mixamo-FBX? */
 export const isGlb = (file: string) => /\.glb$/i.test(file);
+/** CMU-Motion-Capture (BVH), Dateiname „salsa_60_01.bvh“ = Beschreibung + Aufnahme */
+export const isBvh = (file: string) => /\.bvh$/i.test(file);
+const cmuTake = (file: string) => file.match(/(\d+_\d+)\.bvh$/i)?.[1];
 
 /**
  * Basisname ohne Endung und ohne Browser-Nummer: „Hip Hop Dancing (2).fbx“ → „Hip Hop Dancing“,
@@ -54,27 +57,31 @@ export const isGlb = (file: string) => /\.glb$/i.test(file);
  */
 export function baseName(file: string): string {
   const name = file
-    .replace(/\.(fbx|glb)$/i, "")
+    .replace(/\.(fbx|glb|bvh)$/i, "")
     .replace(/\s*\(\d+\)\s*$/, "")
     .trim();
-  if (!isGlb(file)) return name;
+  if (!isGlb(file) && !isBvh(file)) return name;
   return name
     .split(/[-_\s]+/)
-    .filter(Boolean)
+    .filter((w) => w && !(isBvh(file) && /^\d+$/.test(w)))
     .map((w) => w[0]!.toUpperCase() + w.slice(1))
     .join(" ");
 }
 
-/** „Hip Hop Dancing (2).fbx“ → „Mixamo_HipHopDancing_2“, „dance-simple.glb“ → „M2M_DanceSimple“ */
+/**
+ * „Hip Hop Dancing (2).fbx“ → „Mixamo_HipHopDancing_2“, „dance-simple.glb“ → „M2M_DanceSimple“,
+ * „salsa_60_01.bvh“ → „CMU_Salsa_60_01“
+ */
 export function idFromFile(file: string): string {
-  const n = file.match(/\((\d+)\)\s*\.(fbx|glb)$/i)?.[1];
+  const n = isBvh(file) ? cmuTake(file) : file.match(/\((\d+)\)\s*\.(fbx|glb)$/i)?.[1];
   const words = baseName(file)
     .normalize("NFKD")
     .replace(/[^A-Za-z0-9 ]/g, " ")
     .split(/\s+/)
     .filter(Boolean)
     .map((w) => w[0]!.toUpperCase() + w.slice(1));
-  return `${isGlb(file) ? "M2M" : "Mixamo"}_${words.join("") || "Tanz"}${n ? `_${n}` : ""}`;
+  const prefix = isGlb(file) ? "M2M" : isBvh(file) ? "CMU" : "Mixamo";
+  return `${prefix}_${words.join("") || "Tanz"}${n ? `_${n}` : ""}`;
 }
 
 export function styleFromName(name: string): { genres: string[]; fallback: string } {
@@ -131,6 +138,8 @@ export function autoEntry(file: string): MixamoEntry {
     energy: 1,
     ...styleFromName(name),
     auto: true,
+    // Motion-Capture: erstes Bild ist die Kalibrierpose, Aufnahmen bis 60 s – ein 16-s-Ausschnitt reicht als Schleife
+    ...(isBvh(file) ? { start: 0.1, end: 16.1 } : {}),
     ...skipFields(name),
   };
 }

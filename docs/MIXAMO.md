@@ -133,6 +133,31 @@ npm run mixamo             # wandelt Mixamo-FBX und Mesh2Motion-GLB gemeinsam um
 - IDs beginnen mit `M2M_` (z. B. `M2M_DanceCharleston`). Ansonsten verhalten sich die Einträge im Katalog wie
   automatisch aufgenommene Mixamo-Tänze: Stil aus dem Namen, Energie aus der Bewegung.
 
+## CMU-Motion-Capture (BVH)
+
+Die [CMU Graphics Lab Motion Capture Database](http://mocap.cs.cmu.edu) enthält echte Tanzaufnahmen: Salsa,
+Lambada, Charleston, Twist, Macarena, Breakdance, russischer und indischer Tanz. Die Daten sind frei verwendbar,
+auch kommerziell. Geladen wird die BVH-Umwandlung von Bruce Hahne (cgspeed) über einen GitHub-Spiegel.
+
+```bash
+npm run cmu                  # lädt die Auswahl nach cmu/ (z. B. salsa_60_01.bvh)
+npm run cmu -- 60_02 61_05   # weitere Aufnahmen nach Nummer aus dem CMU-Index
+npm run mixamo               # wandelt alles gemeinsam um
+```
+
+- Der Dateiname beschreibt den Tanz, daraus entstehen ID (`CMU_Salsa_60_01`), Stil und Ersatz-Clip. Aufnahmen, die
+  über die Nummer geladen werden, heißen `cmu_60_02.bvh`. Wer sie umbenennt (z. B. `salsa_60_02.bvh`), bekommt
+  den passenden Stil.
+- Der CMU-Rücken heißt `LowerBack › Spine › Spine1`. Beim Laden wird er auf `Spine › Spine1 › Spine2` umbenannt,
+  alle anderen Knochen tragen schon Mixamo-Namen.
+- **Blickrichtung:** Im Aufnahmeraum stehen die Tänzer oft seitlich oder mit dem Rücken zur Kamera. Die
+  Umwandlung dreht die ganze Bewegung so, dass sie im Mittel nach vorn schauen. Drehungen im Tanz bleiben erhalten.
+- Das erste Bild ist eine Kalibrierpose, und die Aufnahmen dauern bis zu 60 s. Automatische Einträge nehmen deshalb
+  den Ausschnitt 0,1–16,1 s (`start`/`end` im Katalog, anpassbar).
+
+Quelle: *The data used in this project was obtained from mocap.cs.cmu.edu. The database was created with funding
+from NSF EIA-0196217.*
+
 ## Wie es zur Laufzeit funktioniert
 
 - Die Choreografie plant Mixamo-Tänze wie eingebaute Clips: nach Energie des Songteils,

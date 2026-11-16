@@ -406,6 +406,66 @@ describe("Schleifenlänge", () => {
   });
 });
 
+describe("CMU-Motion-Capture (BVH)", () => {
+  /** Mini-BVH im CMU-Aufbau; Tänzer steht die ganze Zeit um 90° gedreht (seitlich zur Kamera). */
+  const joint = (name: string, offset: string, inner: string) =>
+    `JOINT ${name}\n{\nOFFSET ${offset}\nCHANNELS 3 Zrotation Yrotation Xrotation\n${inner}}\n`;
+  const end = (offset: string) => `End Site\n{\nOFFSET ${offset}\n}\n`;
+  const bvh = (yaw: number) => `HIERARCHY
+ROOT Hips
+{
+OFFSET 0 0 0
+CHANNELS 6 Xposition Yposition Zposition Zrotation Yrotation Xrotation
+${joint("LeftUpLeg", "1 -1 0", end("0 -8 0"))}${joint("RightUpLeg", "-1 -1 0", end("0 -8 0"))}${joint(
+    "LowerBack",
+    "0 1 0",
+    joint("Spine", "0 2 0", joint("Spine1", "0 2 0", end("0 2 0"))),
+  )}}
+MOTION
+Frames: 3
+Frame Time: 0.5
+0 17 0 0 ${yaw} 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+1 17 0 0 ${yaw} 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+2 17 0 0 ${yaw} 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+`;
+
+  it("benennt den CMU-Rücken auf Mixamo-Namen um – Knochen und Spuren", async () => {
+    const { loadBvh } = await import("@/scripts/mixamo/convert");
+    const { group, animations } = loadBvh(bvh(0));
+    const names: string[] = [];
+    group.traverse((o) => names.push(o.name));
+    expect(names).toEqual(expect.arrayContaining(["Hips", "Spine", "Spine1", "Spine2", "LeftUpLeg"]));
+    expect(names).not.toContain("LowerBack");
+    expect(animations[0]!.tracks.map((t) => t.name)).toContain("Spine2.quaternion");
+  });
+
+  it("dreht seitlich aufgenommene Tänzer zur Kamera, Wege um die Hochachse mit", async () => {
+    const { faceForward, loadBvh } = await import("@/scripts/mixamo/convert");
+    const { group, animations } = loadBvh(bvh(90));
+    const clip = animations[0]!;
+    expect(faceForward(group, clip)).toBeCloseTo(-90, 0);
+    // danach: Hüfte ohne Drehung, Weg (x 0 → 2) zeigt jetzt in z-Richtung
+    const q = clip.tracks.find((t) => t.name === "Hips.quaternion")!;
+    expect(new Quaternion().fromArray(q.values, 0).angleTo(new Quaternion())).toBeLessThan(1e-4);
+    const p = clip.tracks.find((t) => t.name === "Hips.position")!;
+    expect(Math.abs(p.values[6]!)).toBeLessThan(1e-4);
+    expect(Math.abs(p.values[8]!)).toBeCloseTo(2, 4);
+    // Ruhepose bleibt unangetastet (das Retargeting liest sie)
+    const hips = group.getObjectByName("Hips")!;
+    expect(hips.quaternion.angleTo(new Quaternion())).toBeLessThan(1e-6);
+    // schon nach vorn: keine Drehung
+    const straight = loadBvh(bvh(0));
+    expect(faceForward(straight.group, straight.animations[0]!)).toBeCloseTo(0, 3);
+  });
+
+  it("Name, ID und Ausschnitt aus dem Dateinamen", async () => {
+    const { autoEntry, baseName, idFromFile } = await import("@/scripts/mixamo/auto");
+    expect(baseName("charleston-fancy_93_08.bvh")).toBe("Charleston Fancy");
+    expect(idFromFile("salsa_60_01.bvh")).toBe("CMU_Salsa_60_01");
+    expect(autoEntry("lambada_55_02.bvh")).toMatchObject({ genres: ["latin"], start: 0.1, end: 16.1 });
+  });
+});
+
 describe("Automatisch aufgenommene Tänze", () => {
   it("Name, ID und Stil aus dem Dateinamen – auch für Browser-Nummern", async () => {
     const { autoEntry, baseName, idFromFile, styleFromName } = await import("@/scripts/mixamo/auto");
