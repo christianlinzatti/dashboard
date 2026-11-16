@@ -50,7 +50,7 @@ Stufe 5b – Konzerte: In den letzten 15 Sekunden eines Songs zeigt eine **Konze
 Termine der Artists. Termine im Umkreis von Wien (`CONCERT_RADIUS_KM`, Standard 200 km) stehen zuerst. Die Karte
 zeigt Countdown („in 21 Tagen“), **ausverkauft** und einen **QR-Code zum Ticket**. Dazu kommt „Zuletzt live …
 – dieser Song war dabei“ aus setlist.fm. Quellen sind **oeticket** und **Eventim Deutschland** (inoffizielle Eventim-Suche, ohne Key; `OETICKET=0`
-bzw. `EVENTIM_DE=0` schaltet ab), Ticketmaster (`TICKETMASTER_API_KEY`) und Bandsintown (`BANDSINTOWN_APP_ID`). Ticket-Links kommen
+bzw. `EVENTIM_DE=0` schaltet ab), Ticketmaster (`TICKETMASTER_API_KEY`) und Bandsintown (`BANDSINTOWN_APP_ID`; App-IDs gibt es nur noch für Künstler und Partner – ohne ID bleibt die Quelle aus). Ticket-Links kommen
 bevorzugt von oeticket. Gezählt wird ein Termin nur, wenn der Künstler wirklich auftritt; Tribute-Shows und
 unscharfe Suchtreffer fallen weg. Doppelte Termine werden zusammengeführt, die Daten 12 Stunden gecacht. setlist.fm braucht
 `SETLISTFM_API_KEY`. Ohne Schlüssel bleibt die Karte einfach weg. Orte ohne Koordinaten werden über
@@ -219,7 +219,10 @@ Alle Werte stehen in `lib/cache-policy.ts`.
    - `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET` (aus der App)
    - `SESSION_SECRET` – zufällig, mind. 32 Zeichen, z. B. `openssl rand -base64 48`
    - `ALLOWED_SPOTIFY_USERS` – deine Spotify-User-ID (schützt das Dashboard vor fremden Konten)
-   - optional `SPOTIFY_REDIRECT_URI`, falls Preview-URLs auf die Production-Callback-URL zeigen sollen
+   - optional `SPOTIFY_REDIRECT_URI`, falls Preview-URLs auf die Production-Callback-URL zeigen sollen.
+     Die Adresse muss zu einer Domain **dieses** Vercel-Projekts gehören, und das Dashboard muss über genau
+     diese Domain geöffnet werden – sonst landet die Anmeldung auf einer anderen Seite oder scheitert am
+     Sicherheits-Cookie. Im Zweifel leer lassen: dann gilt die Domain, über die du das Dashboard öffnest.
 4. Dashboard öffnen → **Mit Spotify anmelden**. Die Anmeldung bleibt ein Jahr gültig (Refresh-Token im verschlüsselten Cookie).
 
 Hinweis: Seit Februar 2026 schränkt Spotify Apps im Entwicklungsmodus ein. Pflicht für das Dashboard ist nur
