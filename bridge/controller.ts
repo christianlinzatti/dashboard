@@ -15,12 +15,16 @@ export class LampController {
   private lastSendAt = new Map<string, number>();
   private commandsSent = 0;
   lastSignalAt = 0;
+  // keine Parameter-Properties: Node führt TypeScript nur „type-stripped“ aus
+  private lamps: Lamp[];
+  private send: Sender;
+  private opts: { minIntervalMs: number };
 
-  constructor(
-    private lamps: Lamp[],
-    private send: Sender,
-    private opts = { minIntervalMs: 100 },
-  ) {}
+  constructor(lamps: Lamp[], send: Sender, opts = { minIntervalMs: 100 }) {
+    this.lamps = lamps;
+    this.send = send;
+    this.opts = opts;
+  }
 
   setLamps(lamps: Lamp[]) {
     this.lamps = lamps;

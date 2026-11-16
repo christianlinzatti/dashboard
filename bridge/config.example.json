@@ -4,6 +4,7 @@
   "lamps": [
     {
       "name": "LED-Strip",
+      "id": "1F:80:C5:32:32:36:72:4E",
       "sku": "H61A2",
       "role": "puls"
     },

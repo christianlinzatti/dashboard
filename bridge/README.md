@@ -1,6 +1,6 @@
 # Pi-Bridge
 
-Kleiner Dienst auf dem Raspberry Pi. Er verbindet das Dashboard im Browser mit Geräten im Heimnetz.
+Kleiner Dienst auf dem Raspberry Pi oder einem Windows-, Linux- oder Mac-Rechner. Er verbindet das Dashboard im Browser mit Geräten im Heimnetz.
 Aktuell steuert er die **Govee-Lampen über die LAN-API**, im Takt des LightDirectors.
 
 ```
@@ -11,28 +11,61 @@ Dashboard (Chromium, Vercel-Seite) ──WebSocket ws://127.0.0.1:8787──► 
 ## Einrichtung
 
 1. In der **Govee-Home-App** bei jeder Lampe die Firmware aktualisieren und **„LAN-Steuerung“** einschalten.
-2. Auf dem Pi (Node ≥ 22.18, führt TypeScript direkt aus):
+2. Node ≥ 22.18 installieren (führt TypeScript direkt aus), dann im Projektordner:
 
    ```bash
-   cd ~/dashboard && npm ci --omit=dev
-   cp bridge/config.example.json bridge/config.json
+   npm ci --omit=dev --ignore-scripts
+   node bridge/setup.ts
    ```
 
-3. In `bridge/config.json` eintragen:
-   - `allowedOrigins`: die Adresse des Dashboards, z. B. `https://dein-projekt.vercel.app`. Nur diese
-     Seite darf die Lampen steuern, fremde Webseiten werden abgewiesen.
-   - `lamps`: Name, Modell (`sku`) und Rolle je Lampe. Findet die Suche ein Gerät nicht, statt `sku`
-     eine feste `ip` eintragen (IP in der Router-Oberfläche nachsehen und dort fest vergeben).
+   Das Setup **sucht alle Govee-Lampen im Netz**, lässt jede kurz pink/türkis **blinken** (danach ist sie wieder wie
+   vorher) und fragt Name und Rolle ab. Den Namen aus der Govee-App (z. B. „hinten“, „wand“, „l1“) kennt die LAN-API
+   nicht, darum das Blinken. Eine Rolle wird nach Modell vorgeschlagen, mit Enter übernimmt man sie. Mit `-` bleibt
+   eine Lampe außen vor. Außerdem fragt es die Adresse des Dashboards ab, z. B. `https://dein-projekt.vercel.app`.
+   Nur diese Seite darf die Lampen steuern.
 
-4. Testen und als Dienst einrichten:
+   Das Ergebnis steht in `bridge/config.json`. Jede Lampe ist über ihre **Geräte-ID** zugeordnet. Das klappt auch,
+   wenn zwei Lampen dasselbe Modell haben oder der Router neue IPs vergibt. Das Setup lässt sich jederzeit neu
+   starten, z. B. für eine neue Lampe: Bekannte Lampen behalten Name und Rolle, und Watchdog und Port bleiben erhalten.
+   Ohne Fragen geht es so: `node bridge/setup.ts --origin https://dein-projekt.vercel.app --yes`.
 
-   ```bash
-   node bridge/main.ts bridge/config.json
-   sudo cp bridge/sonic-bridge.service /etc/systemd/system/
-   sudo systemctl enable --now sonic-bridge
-   ```
+3. Starten: `node bridge/main.ts` (oder `npm run bridge`).
+4. Status prüfen: `http://127.0.0.1:8787/status` im Browser.
 
-5. Status prüfen: `http://127.0.0.1:8787/status` im Browser auf dem Pi.
+Findet die Suche eine Lampe nicht, kann sie in `config.json` statt `id` eine feste `ip` bekommen. Die IP steht in der
+Router-Oberfläche und wird dort am besten fest vergeben.
+
+### Raspberry Pi / Linux als Dienst
+
+```bash
+sudo cp bridge/sonic-bridge.service /etc/systemd/system/
+sudo systemctl enable --now sonic-bridge
+```
+
+### Windows
+
+1. **Node.js LTS** installieren: [nodejs.org](https://nodejs.org) oder `winget install OpenJS.NodeJS.LTS`.
+2. Projekt herunterladen (`git clone …` oder ZIP von GitHub) und **`bridge\start-windows.cmd` doppelklicken**.
+   Das Skript prüft die Node-Version, installiert beim ersten Mal die Abhängigkeiten, startet ohne
+   `config.json` das Setup und dann die Bridge. Das Fenster offen lassen, Strg+C beendet die Bridge.
+3. **Firewall:** Beim ersten Start fragt Windows nach Netzwerkzugriff für „Node.js“. Dort **„Private Netzwerke“**
+   erlauben. Die Antworten der Lampen kommen per UDP an Port 4002 und werden sonst blockiert.
+   - Das WLAN muss in Windows als **„Privates Netzwerk“** eingestuft sein (Einstellungen → Netzwerk → WLAN →
+     Netzwerkprofiltyp).
+   - Wurde die Frage weggeklickt, einmal in einer Admin-PowerShell freigeben:
+
+     ```powershell
+     New-NetFirewallRule -DisplayName "Sonic Bridge (Govee)" -Direction Inbound -Protocol UDP -LocalPort 4002 -Action Allow -Profile Private
+     ```
+
+4. Mehrere Netzwerkadapter (WSL, Hyper-V, VirtualBox, VPN) stören nicht: Die Suche geht über jeden Adapter einzeln.
+   Ein aktives VPN kann aber das Heimnetz abschneiden, dann das VPN zum Testen trennen.
+5. Das Dashboard läuft in **Chrome oder Edge** auf demselben Rechner. Die Bridge hört nur auf `127.0.0.1`.
+   Fragt der Browser nach „Zugriff auf lokales Netzwerk“, einmal erlauben.
+6. Autostart (optional): Mit Win+R `shell:startup` öffnen und dort eine Verknüpfung auf `start-windows.cmd` ablegen.
+
+Der Watchdog funktioniert auch unter Windows. `command` läuft dort in `cmd.exe`, z. B. so:
+`"command": "taskkill /IM msedge.exe /F & start \"\" msedge --kiosk https://dein-projekt.vercel.app --edge-kiosk-type=fullscreen"`.
 
 ## Rollen
 
@@ -42,8 +75,9 @@ Dashboard (Chromium, Vercel-Seite) ──WebSocket ws://127.0.0.1:8787──► 
 | `akzent` | Akzentfarbe, folgt der Gesamthelligkeit, leichter Puls | Wand-/Panel-Leuchten |
 | `grund` | ruhige Grundfarbe des Covers, gedimmt | Tisch-/Stehlampen |
 
-Die Zuordnung in `config.example.json` für H61A2, H610B, H6063 und H6051 ist ein **Vorschlag**.
-Bitte nach Aufstellung im Raum anpassen.
+Das Setup schlägt die Rolle nach Modell vor: Strips (H61…) → `puls`, Light Bars und Wandleuchten
+(H604…, H6056/57, H606…) → `akzent`, alles andere → `grund`. Das ist nur ein **Vorschlag**, bitte nach
+Aufstellung im Raum anpassen.
 
 ## Watchdog (Kiosk neu starten, wenn das Dashboard hängt)
 

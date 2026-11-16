@@ -1,9 +1,12 @@
 /**
- * Pi-Bridge: verbindet das Dashboard (Browser) mit Geräten im Heimnetz.
+ * Pi-Bridge: verbindet das Dashboard (Browser) mit Geräten im Heimnetz. Läuft auf Raspberry Pi, Linux,
+ * macOS und Windows.
  * Start:  node bridge/main.ts [pfad/zur/config.json]   (Node ≥ 22.18, führt TypeScript direkt aus)
+ * Einrichten (Lampen suchen, config.json schreiben):  node bridge/setup.ts
  */
-import { execFile } from "node:child_process";
+import { exec } from "node:child_process";
 import dgram from "node:dgram";
+import { existsSync } from "node:fs";
 import path from "node:path";
 import { loadConfig, resolveLamps } from "./config.ts";
 import { LampController } from "./controller.ts";
@@ -12,6 +15,10 @@ import { createBridgeServer } from "./server.ts";
 import { createWatchdog } from "./watchdog.ts";
 
 const configPath = process.argv[2] ?? path.join(import.meta.dirname, "config.json");
+if (!existsSync(configPath)) {
+  console.error(`Keine Konfiguration unter ${configPath}.\nZuerst einrichten:  node bridge/setup.ts`);
+  process.exit(1);
+}
 const cfg = await loadConfig(configPath);
 
 const udp = dgram.createSocket("udp4");
@@ -41,14 +48,16 @@ const watchdog = wd
       cooldownMs: wd.cooldownS * 1000,
       onStall: (reason) => {
         console.warn(`Watchdog: ${reason} – führe aus: ${wd.command}`);
-        execFile("/bin/sh", ["-c", wd.command], (err) => err && console.error("Watchdog-Befehl fehlgeschlagen:", err.message));
+        // über die System-Shell: /bin/sh auf Linux/macOS, cmd.exe unter Windows
+        exec(wd.command, (err) => err && console.error("Watchdog-Befehl fehlgeschlagen:", err.message));
       },
     })
   : undefined;
 if (watchdog) setInterval(() => watchdog.check(), 5000);
 
 const server = await createBridgeServer({ port: cfg.port, allowedOrigins: cfg.allowedOrigins, controller, watchdog });
-console.log(`Pi-Bridge läuft auf ws://127.0.0.1:${server.port} (Status: http://127.0.0.1:${server.port}/status)`);
+console.log(`Bridge läuft auf ws://127.0.0.1:${server.port} (Status: http://127.0.0.1:${server.port}/status)`);
+console.log(`Erlaubtes Dashboard: ${cfg.allowedOrigins.join(", ")} – beenden mit Strg+C`);
 
 const stop = async () => {
   await server.close();

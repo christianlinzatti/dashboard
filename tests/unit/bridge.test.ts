@@ -1,10 +1,11 @@
 import dgram from "node:dgram";
+import { spawnSync } from "node:child_process";
 import { afterEach, describe, expect, it } from "vitest";
 import WebSocket from "ws";
 import { commands, hexToRgb, parseScanResponse } from "../../bridge/govee.ts";
 import { deviceStateFor, diffCommands, type LightSignal } from "../../bridge/mapping.ts";
 import { LampController } from "../../bridge/controller.ts";
-import { resolveLamps, type BridgeConfig } from "../../bridge/config.ts";
+import { buildConfig, resolveLamps, suggestRole, type BridgeConfig } from "../../bridge/config.ts";
 import { createBridgeServer } from "../../bridge/server.ts";
 import { createWatchdog } from "../../bridge/watchdog.ts";
 import { discover } from "../../bridge/discovery.ts";
@@ -93,6 +94,70 @@ describe("Konfiguration", () => {
       ["Fest", "10.0.0.9"],
     ]);
     expect(r.missing).toEqual(["Fehlt"]);
+  });
+
+  it("unterscheidet gleiche Modelle über die Geräte-ID", () => {
+    const cfg: BridgeConfig = {
+      allowedOrigins: ["https://x.vercel.app"],
+      port: 8787,
+      lamps: [
+        { name: "Modell egal", sku: "H6051", role: "grund" },
+        { name: "l2", id: "bb", sku: "H6051", role: "grund" },
+        { name: "l1", id: "AA", sku: "H6051", role: "grund" },
+      ],
+    };
+    const found = [
+      { ip: "10.0.0.1", id: "aa", sku: "H6051" },
+      { ip: "10.0.0.2", id: "bb", sku: "H6051" },
+      { ip: "10.0.0.3", id: "cc", sku: "H6051" },
+    ];
+    // "Modell egal" greift sich keine Lampe, die per ID fest vergeben ist
+    expect(resolveLamps(cfg, found).lamps.map((l) => [l.name, l.ip])).toEqual([
+      ["Modell egal", "10.0.0.3"],
+      ["l2", "10.0.0.2"],
+      ["l1", "10.0.0.1"],
+    ]);
+  });
+
+  it("schlägt Rollen nach Modell vor", () => {
+    expect(suggestRole("H61A2")).toBe("puls");
+    expect(suggestRole("h6199")).toBe("puls");
+    expect(suggestRole("H6047")).toBe("akzent");
+    expect(suggestRole("H6066")).toBe("akzent");
+    expect(suggestRole("H6051")).toBe("grund");
+    expect(suggestRole("H6076")).toBe("grund");
+  });
+
+  it("baut die Konfiguration aus der Suche und behält bekannte Lampen", () => {
+    const existing: BridgeConfig = {
+      allowedOrigins: ["https://alt.vercel.app"],
+      port: 9000,
+      lamps: [
+        { name: "hinten", id: "AA", sku: "H61A2", role: "akzent" },
+        { name: "Fest", ip: "10.0.0.9", role: "grund" },
+      ],
+      watchdog: { command: "x", timeoutS: 60, frameStallS: 30, cooldownS: 300 },
+    };
+    const found = [
+      { ip: "10.0.0.1", id: "aa", sku: "H61A2" },
+      { ip: "10.0.0.2", id: "bb", sku: "H6051" },
+      { ip: "10.0.0.3", id: "cc", sku: "H6051" },
+      { ip: "10.0.0.4", id: "dd", sku: "H6604" },
+    ];
+    const cfg = buildConfig(found, {
+      origin: "https://neu.vercel.app",
+      existing,
+      answers: { bb: { name: "l1" }, cc: { name: "l1" }, dd: { skip: true } },
+    });
+    expect(cfg.allowedOrigins).toEqual(["https://neu.vercel.app", "https://alt.vercel.app"]);
+    expect(cfg.port).toBe(9000);
+    expect(cfg.watchdog?.command).toBe("x");
+    expect(cfg.lamps).toEqual([
+      { name: "hinten", role: "akzent", id: "aa", sku: "H61A2" },
+      { name: "l1", role: "grund", id: "bb", sku: "H6051" },
+      { name: "l1 2", role: "grund", id: "cc", sku: "H6051" },
+      { name: "Fest", ip: "10.0.0.9", role: "grund" },
+    ]);
   });
 });
 
@@ -248,5 +313,23 @@ describe("Watchdog", () => {
       frameStallS: 30,
       cooldownS: 300,
     });
+  });
+});
+
+describe("Start mit Node (ohne Build)", () => {
+  // Node führt TypeScript nur „type-stripped“ aus: keine Parameter-Properties, Enums, Namespaces …
+  const run = (...args: string[]) => spawnSync(process.execPath, args, { encoding: "utf8", timeout: 15000 });
+
+  it("main.ts lädt alle Module und erklärt eine fehlende Konfiguration", () => {
+    const r = run("bridge/main.ts", "bridge/gibt-es-nicht.json");
+    expect(r.stderr).not.toMatch(/SyntaxError|ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX/);
+    expect(r.stderr).toContain("node bridge/setup.ts");
+    expect(r.status).toBe(1);
+  });
+
+  it("setup.ts lädt alle Module", () => {
+    const r = run("bridge/setup.ts", "--unbekannt");
+    expect(r.stderr).not.toMatch(/SyntaxError|ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX/);
+    expect(r.stderr).toContain("ERR_PARSE_ARGS_UNKNOWN_OPTION");
   });
 });

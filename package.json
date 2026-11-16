@@ -21,7 +21,9 @@
     "mixamo": "tsx --no-deprecation scripts/mixamo/convert.ts",
     "test:live": "vitest run --config vitest.live.config.mts",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "bridge": "node bridge/main.ts",
+    "bridge:setup": "node bridge/setup.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.8.0",
