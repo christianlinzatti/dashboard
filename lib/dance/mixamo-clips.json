@@ -4748,7 +4748,7 @@
       "auto": true,
       "start": 0.1,
       "end": 16.1,
-      "file": "/animations/CMU_Breakdance_90_28.json?v=1b50f8e2d4d0",
+      "file": "/animations/CMU_Breakdance_90_28.json?v=9fd2fcfd0816",
       "beats": 8,
       "detectedBpm": 100
     },
@@ -4762,7 +4762,7 @@
       "auto": true,
       "start": 0.1,
       "end": 16.1,
-      "file": "/animations/CMU_CharlestonFancy_93_08.json?v=7175a5140aff",
+      "file": "/animations/CMU_CharlestonFancy_93_08.json?v=25c60e06c5d1",
       "beats": 4,
       "detectedBpm": 100
     },
@@ -4776,7 +4776,7 @@
       "auto": true,
       "start": 0.1,
       "end": 16.1,
-      "file": "/animations/CMU_Charleston_93_03.json?v=29361ddd53ef",
+      "file": "/animations/CMU_Charleston_93_03.json?v=163bb1277efd",
       "beats": 4,
       "detectedBpm": 90
     },
@@ -4790,7 +4790,7 @@
       "auto": true,
       "start": 0.1,
       "end": 16.1,
-      "file": "/animations/CMU_Dance_111_05.json?v=594ad67c4cfd",
+      "file": "/animations/CMU_Dance_111_05.json?v=cd701f43910f",
       "beats": 12,
       "detectedBpm": 128.6
     },
@@ -4804,7 +4804,7 @@
       "auto": true,
       "start": 0.1,
       "end": 16.1,
-      "file": "/animations/CMU_IndianDance_94_01.json?v=0dbe4ba1f5bf",
+      "file": "/animations/CMU_IndianDance_94_01.json?v=3e1d79c24615",
       "beats": 20,
       "detectedBpm": 90
     },
@@ -4818,7 +4818,7 @@
       "auto": true,
       "start": 0.1,
       "end": 16.1,
-      "file": "/animations/CMU_Lambada_55_02.json?v=b988e6e9aaf8",
+      "file": "/animations/CMU_Lambada_55_02.json?v=bd3bcdaf4e40",
       "beats": 24,
       "detectedBpm": 100
     },
@@ -4832,7 +4832,7 @@
       "auto": true,
       "start": 0.1,
       "end": 16.1,
-      "file": "/animations/CMU_Macarena_143_35.json?v=2339a0e9d0cd",
+      "file": "/animations/CMU_Macarena_143_35.json?v=141ab2b2c33f",
       "beats": 20
     },
     {
@@ -4845,7 +4845,7 @@
       "auto": true,
       "start": 0.1,
       "end": 16.1,
-      "file": "/animations/CMU_MickeyDance_120_05.json?v=b769e9776a31",
+      "file": "/animations/CMU_MickeyDance_120_05.json?v=8bb4a79bead2",
       "beats": 16,
       "detectedBpm": 105.9
     },
@@ -4859,7 +4859,7 @@
       "auto": true,
       "start": 0.1,
       "end": 16.1,
-      "file": "/animations/CMU_RussianDance_90_30.json?v=0e088f6344fe",
+      "file": "/animations/CMU_RussianDance_90_30.json?v=382332523f85",
       "beats": 16,
       "detectedBpm": 100
     },
@@ -4873,7 +4873,7 @@
       "auto": true,
       "start": 0.1,
       "end": 16.1,
-      "file": "/animations/CMU_Salsa_60_01.json?v=73a09c18557f",
+      "file": "/animations/CMU_Salsa_60_01.json?v=c4d66cce4ba1",
       "beats": 24,
       "detectedBpm": 100
     },
@@ -4887,7 +4887,7 @@
       "auto": true,
       "start": 0.1,
       "end": 16.1,
-      "file": "/animations/CMU_Twist_141_12.json?v=5342d10069c1",
+      "file": "/animations/CMU_Twist_141_12.json?v=60ad2b3ed25d",
       "beats": 4,
       "detectedBpm": 100
     }

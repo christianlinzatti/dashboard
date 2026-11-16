@@ -261,8 +261,16 @@ export function loadBvh(text: string): { group: Object3D; animations: AnimationC
     const dot = t.name.lastIndexOf(".");
     t.name = rename(t.name.slice(0, dot)) + t.name.slice(dot);
   }
+  // BVH-Grundpose hat die Hüfte im Ursprung, die Aufnahme trägt die echte Hüfthöhe (Position-Kanal).
+  // Ruhehöhe = mittlere Hüfthöhe der Aufnahme – sonst deutet das Retargeting den ganzen Abstand als Sprung.
+  const root = skeleton.bones[0]!;
+  const pos = clip.tracks.find((t) => t.name === `${root.name}.position`);
+  if (pos) {
+    const ys = Array.from({ length: pos.values.length / 3 }, (_, i) => pos.values[i * 3 + 1]!).sort((x, y) => x - y);
+    root.position.set(pos.values[0]!, ys[Math.floor(ys.length / 2)]!, pos.values[2]!);
+  }
   const group = new Group();
-  group.add(skeleton.bones[0]!);
+  group.add(root);
   group.updateMatrixWorld(true);
   return { group, animations: [clip] };
 }

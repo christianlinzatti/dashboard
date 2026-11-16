@@ -437,6 +437,8 @@ Frame Time: 0.5
     expect(names).toEqual(expect.arrayContaining(["Hips", "Spine", "Spine1", "Spine2", "LeftUpLeg"]));
     expect(names).not.toContain("LowerBack");
     expect(animations[0]!.tracks.map((t) => t.name)).toContain("Spine2.quaternion");
+    // Ruhehöhe der Hüfte aus der Aufnahme (17), nicht der Ursprung – sonst „springt“ der Avatar 17 Einheiten hoch
+    expect(group.getObjectByName("Hips")!.position.y).toBe(17);
   });
 
   it("dreht seitlich aufgenommene Tänzer zur Kamera, Wege um die Hochachse mit", async () => {
