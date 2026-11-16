@@ -182,6 +182,10 @@ in `e2e.yml` passen und wird deshalb gemeinsam von Hand aktualisiert.
 2. `main` wird zu Production, jeder Branch/PR bekommt eine Preview-URL.
 3. Umgebungsvariablen setzen (Settings → Environment Variables), siehe `.env.example`.
 
+Das Framework ist zusätzlich in `vercel.json` festgelegt. Wurde das Vercel-Projekt angelegt, bevor die App im
+Repository lag, steht das Preset dort auf „Other“: Vercel liefert dann nur `public/` aus, und die Startseite
+sowie alle `/api`-Routen antworten mit 404 (`NOT_FOUND`), obwohl das Deployment „Ready“ meldet.
+
 ## Cache (Upstash Redis)
 
 Lyrics, Band-Infos und der Dashboard-Stand für Alexa werden serverseitig gecacht. Ohne Redis nur im
