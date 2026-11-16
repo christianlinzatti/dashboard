@@ -7,6 +7,15 @@ import { z } from "zod";
 const BASE = "https://ws.audioscrobbler.com/2.0/";
 type Http = (url: string, signal?: AbortSignal) => Promise<Response>;
 
+/** Last.fm liefert für Titel ohne Cover einen grauen Stern (immer dieselbe Datei) – dann lieber gar kein Bild */
+const LASTFM_PLACEHOLDER = "2a96cbd8b46e442fc41c2b86b821562f";
+
+/** Größtes vorhandenes Cover */
+export function coverOf(images: Array<{ "#text": string }>): string | undefined {
+  const url = [...images].reverse().find((i) => i["#text"])?.["#text"];
+  return url && !url.includes(LASTFM_PLACEHOLDER) ? url : undefined;
+}
+
 export class LastfmError extends Error {
   constructor(
     public code: number,
@@ -79,7 +88,7 @@ export function createLastfm(cfg: { apiKey: string; user: string }, http: Http) 
         title: t.name,
         artist: t.artist.name ?? t.artist["#text"] ?? "",
         album: t.album?.["#text"] || undefined,
-        imageUrl: [...t.image].reverse().find((i) => i["#text"])?.["#text"],
+        imageUrl: coverOf(t.image),
         playedAt: t.date?.uts,
         nowPlaying: t["@attr"]?.nowplaying === "true",
         loved: t.loved === "1",

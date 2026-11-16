@@ -117,3 +117,18 @@ test("Live: Band-Logo erscheint auf der Bühne und in der Infokarte", async ({ p
   await expect(page.locator("[data-wall-logo]")).toHaveAttribute("data-wall-logo", "/demo/test-logo.svg");
   await expect(page.getByTestId("artist-logo")).toHaveAttribute("src", "/demo/test-logo.svg");
 });
+
+test("Bildoptimierer liefert genau die Breiten, die das Dashboard anfragt", async ({ request }) => {
+  // 1280 fehlte in der Konfiguration: Wandfotos von TheAudioDB/Flickr kamen im Live-Betrieb nie an
+  for (const w of [128, 640, 1280]) {
+    const res = await request.get(`/_next/image?url=${encodeURIComponent("/avatars/atlas-prism.png")}&w=${w}&q=75`);
+    expect(res.status(), `Breite ${w}`).toBe(200);
+    expect(res.headers()["content-type"]).toMatch(/^image\//);
+  }
+  expect((await request.get(`/_next/image?url=${encodeURIComponent("/avatars/atlas-prism.png")}&w=1000&q=75`)).status()).toBe(
+    400,
+  );
+  // fremde Hosts bleiben gesperrt
+  const foreign = await request.get(`/_next/image?url=${encodeURIComponent("https://example.org/x.jpg")}&w=640&q=75`);
+  expect(foreign.status()).toBe(400);
+});

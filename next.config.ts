@@ -29,7 +29,11 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "r2.theaudiodb.com", pathname: "/images/**" },
       { protocol: "https", hostname: "www.theaudiodb.com", pathname: "/images/**" },
       { protocol: "https", hostname: "live.staticflickr.com" },
+      { protocol: "https", hostname: "lastfm.freetls.fastly.net", pathname: "/i/u/**" },
     ],
+    // genau die Breiten, die displayUrl() anfragt (lib/info/photos.ts) – andere lehnt der Optimierer ab
+    deviceSizes: [640, 1280],
+    imageSizes: [128],
     minimumCacheTTL: 2592000, // 30 Tage, wie die Band-Infos
   },
   async headers() {

@@ -298,3 +298,25 @@ describe("Info-Service mit allen Quellen", () => {
     expect((await broken([{ id: "sp", name: "Coldplay" }], undefined, { title: "Yellow" })).complete).toBe(false);
   });
 });
+
+describe("Bild-Proxy", () => {
+  it("jede angefragte Breite und jeder Proxy-Host ist in next.config.ts erlaubt", async () => {
+    const { default: config } = await import("@/next.config");
+    const { PROXIED_IMAGE_HOSTS, PROXY_WIDTHS } = await import("@/lib/info/photos");
+    const widths = [...(config.images?.deviceSizes ?? []), ...(config.images?.imageSizes ?? [])];
+    for (const w of PROXY_WIDTHS) expect(widths, `Breite ${w}`).toContain(w);
+    const hosts = (config.images?.remotePatterns ?? []).map((p) => ("hostname" in p ? p.hostname : ""));
+    for (const h of PROXIED_IMAGE_HOSTS) expect(hosts, h).toContain(h);
+  });
+
+  it("Last.fm-Cover laufen über den Proxy; der graue Platzhalter-Stern wird weggelassen", async () => {
+    const { coverOf } = await import("@/lib/personal/lastfm");
+    const url = "https://lastfm.freetls.fastly.net/i/u/300x300/abc123.jpg";
+    expect(displayUrl(url, 128)).toBe(`/_next/image?url=${encodeURIComponent(url)}&w=128&q=75`);
+    expect(coverOf([{ "#text": "klein.jpg" }, { "#text": url }, { "#text": "" }])).toBe(url);
+    expect(
+      coverOf([{ "#text": "https://lastfm.freetls.fastly.net/i/u/300x300/2a96cbd8b46e442fc41c2b86b821562f.png" }]),
+    ).toBeUndefined();
+    expect(coverOf([])).toBeUndefined();
+  });
+});

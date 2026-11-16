@@ -1,5 +1,6 @@
 "use client";
 
+import { displayUrl } from "@/lib/info/photos";
 import { useEffect, useState } from "react";
 import type { RecentTrack } from "@/lib/personal/lastfm";
 
@@ -44,7 +45,13 @@ export function RecentList() {
           <li key={`${t.title}-${i}`} className="flex items-center gap-[1.5vmin] rounded-xl bg-white/5 p-[1vmin]">
             {t.imageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element -- Cover von Last.fm/Spotify
-              <img src={t.imageUrl} alt="" className="size-[clamp(36px,6vmin,56px)] rounded-md object-cover" />
+              <img
+                src={displayUrl(t.imageUrl, 128)}
+                alt=""
+                className="size-[clamp(36px,6vmin,56px)] rounded-md bg-white/10 object-cover"
+                // lädt ein Cover nicht, bleibt die graue Fläche statt eines kaputten Bildsymbols
+                onError={(e) => (e.currentTarget.style.visibility = "hidden")}
+              />
             ) : (
               <div className="size-[clamp(36px,6vmin,56px)] rounded-md bg-white/10" />
             )}

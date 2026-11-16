@@ -1,10 +1,17 @@
 import type { Photo } from "@/lib/song-context/schema";
 
 /** Hosts, deren Bilder über den Next.js-Bildoptimierer laufen (eigene Domain: kein CORS-Problem, kleinere Dateien). */
-export const PROXIED_IMAGE_HOSTS = ["r2.theaudiodb.com", "www.theaudiodb.com", "live.staticflickr.com"];
+export const PROXIED_IMAGE_HOSTS = [
+  "r2.theaudiodb.com",
+  "www.theaudiodb.com",
+  "live.staticflickr.com",
+  "lastfm.freetls.fastly.net",
+];
+/** Breiten, die der Bildoptimierer ausliefert – müssen in next.config.ts (deviceSizes/imageSizes) stehen */
+export const PROXY_WIDTHS = [128, 640, 1280] as const;
 
 /** Bild-URL für Anzeige und WebGL-Textur; Fremd-Hosts ohne CORS über /_next/image. */
-export function displayUrl(url: string, width: 640 | 1280 = 1280): string {
+export function displayUrl(url: string, width: (typeof PROXY_WIDTHS)[number] = 1280): string {
   try {
     const u = new URL(url);
     if (u.protocol === "https:" && PROXIED_IMAGE_HOSTS.includes(u.hostname)) {
