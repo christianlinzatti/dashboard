@@ -4,7 +4,7 @@
  * Danach `npm run mixamo` – das Skript wandelt Mixamo-FBX, Mesh2Motion-GLB und CMU-BVH gemeinsam um.
  *
  *   npm run cmu                 die Auswahl unten
- *   npm run cmu -- 60_02 61_01  weitere Aufnahmen (Nummer aus dem CMU-Index), Dateiname „cmu_60_02.bvh“
+ *   npm run cmu -- 60_02 61_01  weitere Aufnahmen (Nummer aus dem CMU-Index), z. B. „salsa_60_02.bvh“
  *
  * Der Dateiname beschreibt den Tanz („salsa_60_01.bvh“) – daraus entstehen ID, Stil und Ersatz-Clip.
  */
@@ -28,6 +28,21 @@ export const CMU_DANCES: Record<string, string> = {
   "111_05": "dance",
 };
 
+/** Proband → Tanz (für Aufnahmen, die über die Nummer geladen werden) */
+export const CMU_SUBJECTS: Record<string, string> = {
+  "55": "dance",
+  "60": "salsa",
+  "61": "salsa",
+  "93": "charleston",
+  "94": "indian-dance",
+  "103": "charleston",
+};
+
+/** Dateiname für eine Aufnahme: „salsa_60_02.bvh“ – Name aus der Auswahl, sonst nach Proband */
+export function cmuFileName(take: string): string {
+  return `${CMU_DANCES[take] ?? CMU_SUBJECTS[take.split("_")[0]!] ?? "cmu"}_${take}.bvh`;
+}
+
 async function main() {
   const wanted = process.argv.slice(2).filter((a) => /^\d+_\d+$/.test(a));
   const takes = wanted.length ? wanted : Object.keys(CMU_DANCES);
@@ -35,7 +50,7 @@ async function main() {
   mkdirSync(dir, { recursive: true });
   let failed = 0;
   for (const take of takes) {
-    const file = `${CMU_DANCES[take] ?? "cmu"}_${take}.bvh`;
+    const file = cmuFileName(take);
     if (existsSync(join(dir, file))) {
       console.log(`· ${file} schon da`);
       continue;

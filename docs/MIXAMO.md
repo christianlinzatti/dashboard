@@ -141,13 +141,15 @@ auch kommerziell. Geladen wird die BVH-Umwandlung von Bruce Hahne (cgspeed) übe
 
 ```bash
 npm run cmu                  # lädt die Auswahl nach cmu/ (z. B. salsa_60_01.bvh)
-npm run cmu -- 60_02 61_05   # weitere Aufnahmen nach Nummer aus dem CMU-Index
+npm run cmu -- 60_02 61_05   # weitere Aufnahmen nach Nummer aus dem CMU-Index (60/61 = Salsa)
 npm run mixamo               # wandelt alles gemeinsam um
 ```
 
 - Der Dateiname beschreibt den Tanz, daraus entstehen ID (`CMU_Salsa_60_01`), Stil und Ersatz-Clip. Aufnahmen, die
-  über die Nummer geladen werden, heißen `cmu_60_02.bvh`. Wer sie umbenennt (z. B. `salsa_60_02.bvh`), bekommt
-  den passenden Stil.
+  über die Nummer geladen werden, heißen nach dem Probanden (60/61 → `salsa_60_02.bvh`, 93/103 → Charleston),
+  sonst `cmu_….bvh`. Wer sie umbenennt, bekommt den passenden Stil.
+- Salsa ist ein Paartanz: Aufnahmen mit Dips oder fast nur Drehungen wirken allein seltsam. Sie stehen im Katalog
+  mit `skip` und `skipReason: "Paartanz-Figur: …"` (ohne `auto`, damit die Umwandlung das nicht überschreibt).
 - Der CMU-Rücken heißt `LowerBack › Spine › Spine1`. Beim Laden wird er auf `Spine › Spine1 › Spine2` umbenannt,
   alle anderen Knochen tragen schon Mixamo-Namen.
 - **Blickrichtung:** Im Aufnahmeraum stehen die Tänzer oft seitlich oder mit dem Rücken zur Kamera. Die
