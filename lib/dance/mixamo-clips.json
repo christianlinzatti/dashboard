@@ -5860,22 +5860,21 @@
       "auto": true,
       "start": 0.1,
       "end": 16.1,
-      "file": "/animations/CMU_ChickenDance_143_34.json?v=480442ba6776",
-      "beats": 12
+      "duplicateOf": "Mixamo_ChickenDance",
+      "skip": true
     },
     {
       "id": "CMU_ChickenDance_18_15",
       "source": "chicken-dance_18_15.bvh",
       "search": "Chicken Dance",
-      "energy": 1,
+      "energy": 2,
       "genres": ["pop", "dance", "party"],
       "fallback": "Dance_FestivalBounce",
       "auto": true,
       "start": 0.1,
       "end": 16.1,
-      "file": "/animations/CMU_ChickenDance_18_15.json?v=fc0ddef37e5d",
-      "beats": 20,
-      "detectedBpm": 100
+      "duplicateOf": "Mixamo_ChickenDance",
+      "skip": true
     },
     {
       "id": "CMU_Dance_113_04",
@@ -6280,6 +6279,204 @@
       "file": "/animations/BN_DanceShort_04.json?v=793f351626ea",
       "beats": 28,
       "detectedBpm": 138.5
+    },
+    {
+      "id": "Mixamo_BracedHangHopLeft",
+      "source": "Braced Hang Hop Left.fbx",
+      "search": "Braced Hang Hop Left",
+      "energy": 3,
+      "genres": ["pop", "dance"],
+      "fallback": "Dance_Groove",
+      "auto": true,
+      "file": "/animations/Mixamo_BracedHangHopLeft.json?v=a541f5345777",
+      "beats": 12,
+      "detectedBpm": 100
+    },
+    {
+      "id": "Mixamo_BracedHangHopUp",
+      "source": "Braced Hang Hop Up.fbx",
+      "search": "Braced Hang Hop Up",
+      "energy": 3,
+      "genres": ["pop", "dance"],
+      "fallback": "Dance_Groove",
+      "auto": true,
+      "file": "/animations/Mixamo_BracedHangHopUp.json?v=da44cdae0be2",
+      "beats": 12,
+      "detectedBpm": 100
+    },
+    {
+      "id": "Mixamo_DancingMaraschinoStep_2",
+      "source": "Dancing Maraschino Step (2).fbx",
+      "search": "Dancing Maraschino Step",
+      "energy": 2,
+      "genres": ["pop", "dance"],
+      "fallback": "Dance_Groove",
+      "auto": true,
+      "duplicateOf": "Mixamo_DancingMaraschinoStep",
+      "skip": true
+    },
+    {
+      "id": "Mixamo_HipHopDancing_19",
+      "source": "Hip Hop Dancing (19).fbx",
+      "search": "Hip Hop Dancing",
+      "energy": 1,
+      "genres": ["hip hop", "rap", "r&b"],
+      "fallback": "Dance_HipHop",
+      "auto": true,
+      "duplicateOf": "Mixamo_HipHopDancing_13",
+      "skip": true
+    },
+    {
+      "id": "Mixamo_HipHopDancing_20",
+      "source": "Hip Hop Dancing (20).fbx",
+      "search": "Hip Hop Dancing",
+      "energy": 3,
+      "genres": ["hip hop", "rap", "r&b"],
+      "fallback": "Dance_HipHop",
+      "auto": true,
+      "duplicateOf": "Mixamo_HipHopDancing_12",
+      "skip": true
+    },
+    {
+      "id": "Mixamo_HipHopDancing_21",
+      "source": "Hip Hop Dancing (21).fbx",
+      "search": "Hip Hop Dancing",
+      "energy": 1,
+      "genres": ["hip hop", "rap", "r&b"],
+      "fallback": "Dance_HipHop",
+      "auto": true,
+      "file": "/animations/Mixamo_HipHopDancing_21.json?v=981cb2a698b7",
+      "beats": 24,
+      "detectedBpm": 100
+    },
+    {
+      "id": "Mixamo_HipHopDancing_22",
+      "source": "Hip Hop Dancing (22).fbx",
+      "search": "Hip Hop Dancing",
+      "energy": 1,
+      "genres": ["hip hop", "rap", "r&b"],
+      "fallback": "Dance_HipHop",
+      "auto": true,
+      "duplicateOf": "Mixamo_HipHopDancing_21",
+      "skip": true
+    },
+    {
+      "id": "Mixamo_HouseDancing_7",
+      "source": "House Dancing (7).fbx",
+      "search": "House Dancing",
+      "energy": 2,
+      "genres": ["techno", "house", "edm"],
+      "fallback": "Dance_Shuffle",
+      "auto": true,
+      "duplicateOf": "Mixamo_HouseDancing_2",
+      "skip": true
+    },
+    {
+      "id": "Mixamo_HouseDancing_8",
+      "source": "House Dancing (8).fbx",
+      "search": "House Dancing",
+      "energy": 2,
+      "genres": ["techno", "house", "edm"],
+      "fallback": "Dance_Shuffle",
+      "auto": true,
+      "duplicateOf": "Mixamo_HouseDancing_1",
+      "skip": true
+    },
+    {
+      "id": "Mixamo_HouseDancing_9",
+      "source": "House Dancing (9).fbx",
+      "search": "House Dancing",
+      "energy": 2,
+      "genres": ["techno", "house", "edm"],
+      "fallback": "Dance_Shuffle",
+      "auto": true,
+      "duplicateOf": "Mixamo_HouseDancing_1",
+      "skip": true
+    },
+    {
+      "id": "Mixamo_JumpDown",
+      "source": "Jump Down.fbx",
+      "search": "Jump Down",
+      "energy": 2,
+      "genres": ["pop", "dance", "party"],
+      "fallback": "Dance_FestivalBounce",
+      "auto": true,
+      "file": "/animations/Mixamo_JumpDown.json?v=b88c059c4979",
+      "beats": 4,
+      "detectedBpm": 100
+    },
+    {
+      "id": "Mixamo_Jumping_1",
+      "source": "Jumping (1).fbx",
+      "search": "Jumping",
+      "energy": 3,
+      "genres": ["pop", "dance", "party"],
+      "fallback": "Dance_FestivalBounce",
+      "auto": true,
+      "file": "/animations/Mixamo_Jumping_1.json?v=7953272654ce",
+      "beats": 4,
+      "detectedBpm": 100
+    },
+    {
+      "id": "Mixamo_RobotHipHopDance_4",
+      "source": "Robot Hip Hop Dance (4).fbx",
+      "search": "Robot Hip Hop Dance",
+      "energy": 1,
+      "genres": ["electro", "hip hop", "synth"],
+      "fallback": "Dance_Robot",
+      "auto": true,
+      "duplicateOf": "Mixamo_Robot",
+      "skip": true
+    },
+    {
+      "id": "Mixamo_Shuffling_2",
+      "source": "Shuffling (2).fbx",
+      "search": "Shuffling",
+      "energy": 3,
+      "genres": ["pop", "dance"],
+      "fallback": "Dance_Groove",
+      "auto": true,
+      "duplicateOf": "Mixamo_Shuffle",
+      "skip": true
+    },
+    {
+      "id": "M2M_HipHopDancing_neu",
+      "source": "hip_hop_dancing.glb",
+      "search": "Hip Hop Dancing",
+      "energy": 2,
+      "genres": ["hip hop", "rap", "r&b"],
+      "fallback": "Dance_HipHop",
+      "auto": true,
+      "duplicateOf": "Mixamo_HipHop",
+      "skip": true
+    },
+    {
+      "id": "CMU_ChickenDance_143_34_alt",
+      "source": "chicken-dance_143_34.bvh",
+      "search": "Chicken Dance",
+      "energy": 2,
+      "genres": ["pop", "dance", "party"],
+      "fallback": "Dance_FestivalBounce",
+      "start": 0.1,
+      "end": 16.1,
+      "file": "/animations/CMU_ChickenDance_143_34_alt.json?v=f7ba7bd9de19",
+      "beats": 4,
+      "detectedBpm": 100,
+      "preserved": true
+    },
+    {
+      "id": "CMU_ChickenDance_18_15_alt",
+      "source": "chicken-dance_18_15.bvh",
+      "search": "Chicken Dance",
+      "energy": 2,
+      "genres": ["pop", "dance", "party"],
+      "fallback": "Dance_FestivalBounce",
+      "start": 0.1,
+      "end": 16.1,
+      "file": "/animations/CMU_ChickenDance_18_15_alt.json?v=58b4e27c5cf2",
+      "beats": 4,
+      "detectedBpm": 100,
+      "preserved": true
     }
   ]
 }
