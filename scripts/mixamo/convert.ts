@@ -58,10 +58,14 @@ const norm = (s: string) =>
     .replace(/\.(fbx|glb|bvh)$/, "")
     .replace(/[^a-z0-9]/g, "");
 
-function findSource(entry: MixamoEntry, files: string[]): string | undefined {
+export function findSource(entry: MixamoEntry, files: string[]): string | undefined {
   if (entry.preserved) return undefined; // gesicherter früherer Tanz – gehört zu keiner FBX mehr
+  // nur Dateien derselben Quelle (Endung): sonst greift sich z. B. der CMU-Eintrag „Chicken Dance“ über den
+  // Suchnamen die Mixamo-Datei „Chicken Dance.fbx“
+  const ext = (f: string) => f.match(/\.(fbx|glb|bvh)$/i)?.[1]?.toLowerCase();
+  const kind = ext(entry.source) ?? "fbx";
   const wanted = [norm(entry.source), norm(entry.search), norm(entry.id.replace(/^(Mixamo|M2M|CMU|BN)_/, ""))];
-  return files.find((f) => wanted.includes(norm(f)));
+  return files.find((f) => ext(f) === kind && wanted.includes(norm(f)));
 }
 
 async function main() {

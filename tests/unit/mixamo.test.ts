@@ -510,6 +510,23 @@ Frame Time: 0.0333333
   });
 });
 
+describe("Quelldateien zuordnen", () => {
+  it("nur Dateien derselben Quelle – CMU-„Chicken Dance“ greift nicht die Mixamo-FBX", async () => {
+    const { findSource } = await import("@/scripts/mixamo/convert");
+    const files = ["Chicken Dance.fbx", "chicken-dance_143_34.bvh", "dance-simple.glb"];
+    const base = { energy: 1 as const, genres: [], fallback: "Dance_Groove" };
+    expect(
+      findSource({ ...base, id: "CMU_ChickenDance_143_34", source: "chicken-dance_143_34.bvh", search: "Chicken Dance" }, files),
+    ).toBe("chicken-dance_143_34.bvh");
+    expect(
+      findSource({ ...base, id: "CMU_ChickenDance_18_15", source: "chicken-dance_18_15.bvh", search: "Chicken Dance" }, files),
+    ).toBe(undefined);
+    expect(findSource({ ...base, id: "Mixamo_ChickenDance", source: "Chicken Dance.fbx", search: "Chicken Dance" }, files)).toBe(
+      "Chicken Dance.fbx",
+    );
+  });
+});
+
 describe("Automatisch aufgenommene Tänze", () => {
   it("Name, ID und Stil aus dem Dateinamen – auch für Browser-Nummern", async () => {
     const { autoEntry, baseName, idFromFile, styleFromName } = await import("@/scripts/mixamo/auto");
