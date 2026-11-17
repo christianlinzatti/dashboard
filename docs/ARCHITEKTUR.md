@@ -119,6 +119,7 @@ Für das Konzert-Erlebnis wurde die Bühne in vier Schichten gegliedert. Jede Sc
 3 PLÄNE         reine Funktionen von (Song, Regie, Songzeit) – deterministisch
                 Choreografie: Tanz, Moment, Formation, Kamera, Drehbühne           lib/dance/plan.ts
                 Höhepunkte: Countdown, Blackout, Zeitlupe, Kameraflug im Finale    lib/stage/climax.ts
+                Band nach Genre: DJ, Gitarre + Schlagzeug, Keyboard                lib/stage/band.ts
                 Effekt-Einsätze: Pyro, Flammen, CO₂, Konfetti …                    lib/stage/effects.ts
                 Publikums-Regie: Hände, Springen, Handys, Armbänder                lib/stage/crowd.ts
                 Licht: Moving Heads, Laser, Wand, Lampen-Signal                    lib/stage/lights.ts
@@ -149,6 +150,10 @@ Für das Konzert-Erlebnis wurde die Bühne in vier Schichten gegliedert. Jede Sc
   Govee-Lampen (`signal.chase`, je Lampe nach Reihenfolge in `config.json`). Im Finale läuft der Tanz zwei Takte in
   Zeitlupe (`danceTime`: erst langsamer, dann aufholen – danach wieder im Takt), die Kamera fliegt von hinter dem
   Publikum auf die Bühne.
+- **Band nach Genre.** `planBand` stellt hinter die Tänzer auf ein Podest: DJ am Pult (Techno/House/EDM), Gitarrist
+  und Schlagzeuger (Rock/Metal/Punk) oder Keyboarder (Jazz/Soul/Klassik/Ballade). Musiker sind zusätzliche Avatare,
+  die nicht tanzen (passende Typen bevorzugt, Look der Crew), und spielen ihre Animation im Songtakt; Instrumente
+  sind einfache Formen mit Leuchtakzenten (`components/stage/Band.tsx`). Nicht auf Qualitätsstufe „niedrig“.
 - **Ein Abend, nicht lauter Einzelsongs.** `setlistStore` merkt sich Bühne und Tänze der gespielten Songs. Der
   nächste Song meidet die Bühne des vorigen (verwandte statt gleiche: Club → Synthwave/Weltraum/Festival, Jazz
   bleibt Jazz) und wählt Tänze der letzten zwei Songs seltener. Nur im Speicher: Neuladen beginnt einen neuen

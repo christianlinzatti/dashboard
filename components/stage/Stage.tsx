@@ -13,6 +13,9 @@ import type { LightFrame } from "@/lib/stage/lights";
 import { PRESETS, stepQuality, type Quality } from "@/lib/stage/quality";
 import { planEffects } from "@/lib/stage/effects";
 import { SceneLights } from "./SceneLights";
+import { Band } from "./Band";
+import { planBand } from "@/lib/stage/band";
+import { avatars } from "@/lib/avatars/catalog";
 import { setlistStore, usePreviousTheme, useRecentClipsKey } from "@/lib/stage/setlist";
 import { THEMES, themedPalette, themeFor, type Theme, type ThemeId } from "@/lib/stage/themes";
 import { fpsFrom, perf } from "@/lib/stage/perf";
@@ -134,7 +137,21 @@ function Scene({
     const clips = [...new Set(choreo.phrases.flatMap((p) => Object.values(p.moves).map((m) => m.clip)))];
     setlistStore.getState().record({ trackKey: choreo.trackKey, theme: theme.id, clips });
   }, [choreo, theme]);
-  const mixamoIds = useMemo(() => (choreo ? mixamoIdsIn(choreo) : []), [choreo]);
+  // Band hinten (DJ / Rock / Keys nach Genre) – nicht auf der niedrigsten Qualitätsstufe
+  const band = useMemo(
+    () => (raw ? planBand(raw, avatars.map((a) => a.id)) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- nur bei Song, Besetzung oder Regie neu
+    [raw?.trackKey, raw?.cast, showKey],
+  );
+  const mixamoIds = useMemo(
+    () => [
+      ...new Set([
+        ...(choreo ? mixamoIdsIn(choreo) : []),
+        ...(band?.members.map((m) => m.clip).filter((c) => c.startsWith("Mixamo_")) ?? []),
+      ]),
+    ],
+    [choreo, band],
+  );
   const cues = useMemo(() => (choreo && theme ? planEffects(choreo, theme) : []), [choreo, theme]);
   const frame = useRef<Frame>(initialFrame);
   const lights = useRef<LightFrame | null>(null);
@@ -261,6 +278,9 @@ function Scene({
           {song.cast.map((c) => (
             <Avatar key={c.avatarId} member={c} song={song} choreo={choreo} frameRef={frame} />
           ))}
+          {band && quality !== "niedrig" && (
+            <Band band={band} song={song} choreo={choreo} frameRef={frame} accent={song.album.palette.accent} />
+          )}
           <MixamoClips ids={mixamoIds} />
           <ReadySignal />
         </Suspense>

@@ -25,8 +25,19 @@ import type { Choreography } from "@/lib/dance/plan";
 import type { CastMember, SongStatic } from "@/lib/song-context/schema";
 import { ErrorBoundary } from "../ErrorBoundary";
 import { TARGET_HEIGHT, type Frame } from "./types";
+import type { Vec2 } from "@/lib/dance/formations";
+import { Guitar } from "./Band";
 
-type AvatarProps = { member: CastMember; song: SongStatic; choreo: Choreography; frameRef: React.RefObject<Frame> };
+/** Bandmitglied: fester Platz hinten, eine Animation im Songtakt, ggf. Instrument in der Hand */
+export type BandPart = { clip: string; position: Vec2; lift?: number; guitar?: boolean };
+
+type AvatarProps = {
+  member: CastMember;
+  song: SongStatic;
+  choreo: Choreography;
+  frameRef: React.RefObject<Frame>;
+  band?: BandPart;
+};
 
 /** Ein Avatar; scheitert das Laden (z. B. Netzwerk), fehlt nur dieser Tänzer – die Bühne läuft weiter. */
 export function Avatar(props: AvatarProps) {
@@ -39,7 +50,7 @@ export function Avatar(props: AvatarProps) {
   );
 }
 
-function AvatarModel({ url, member, song, choreo, frameRef }: AvatarProps & { url: string }) {
+function AvatarModel({ url, member, song, choreo, frameRef, band }: AvatarProps & { url: string }) {
   const { scene, animations } = useGLTF(url);
   const group = useRef<Group>(null);
   const ledsTouched = useRef(false);
@@ -111,9 +122,12 @@ function AvatarModel({ url, member, song, choreo, frameRef }: AvatarProps & { ur
   // Clip-Ebenen aus dem Plan setzen (zustandslos: gleiche Songzeit → gleiche Pose)
   useFrame(() => {
     const f = frameRef.current;
-    const layers: Layer[] = f.playing
-      ? layersAt(choreo, member.avatarId, f.t, { anchorMs: f.anchorMs, dropMs: f.dropMs, clipsOf: () => clipSet })
-      : [{ clip: IDLE_CLIP, time: performance.now() / 1000, weight: 1 }];
+    const layers: Layer[] = !f.playing
+      ? [{ clip: IDLE_CLIP, time: performance.now() / 1000, weight: 1 }]
+      : band
+        ? // Band: spielt durchgehend im Songtakt (Clips sind auf 120 BPM normiert)
+          [{ clip: band.clip, time: Math.max(0, (f.t / 1000) * choreo.timeScale), weight: 1 }]
+        : layersAt(choreo, member.avatarId, f.t, { anchorMs: f.anchorMs, dropMs: f.dropMs, clipsOf: () => clipSet });
     for (const a of actions.current.values()) a.setEffectiveWeight(0);
     for (const l of layers) {
       const a = action(l.clip) ?? action(IDLE_CLIP);
@@ -136,6 +150,11 @@ function AvatarModel({ url, member, song, choreo, frameRef }: AvatarProps & { ur
     }
     ledsTouched.current = f.micActive;
 
+    if (band) {
+      // Band steht fest hinten (dreht sich nicht mit der Drehbühne)
+      group.current?.position.set(band.position[0], band.lift ?? 0, band.position[1]);
+      return;
+    }
     const p = f.positions[member.avatarId];
     if (group.current && p) {
       group.current.position.set(p[0], 0, p[1]);
@@ -148,6 +167,7 @@ function AvatarModel({ url, member, song, choreo, frameRef }: AvatarProps & { ur
   return (
     <group ref={group}>
       <primitive object={root} />
+      {band?.guitar && <Guitar />}
       {artist && (
         <Html position={[0, TARGET_HEIGHT + 0.05, 0]} center zIndexRange={[10, 0]} pointerEvents="none">
           <span
