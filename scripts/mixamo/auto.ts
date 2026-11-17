@@ -21,15 +21,19 @@ const STYLES: Array<[RegExp, string[], string]> = [
   [/capoeira|macaco|rasteira|meia lua|ginga|\bau to\b/i, ["latin", "world", "brazil"], "Dance_LatinSway"],
   [/northern soul/i, ["soul", "funk", "disco"], "Dance_Disco"],
   [/break|uprock|flair|windmill|footwork|freeze|power ?move/i, ["hip hop", "breakbeat"], "Dance_PowerHit"],
-  [/robot|tut|popping|locking|wave hip|animation/i, ["electro", "hip hop", "synth"], "Dance_Robot"],
+  // Robot, Tut, Popping & Co. gehören auch in den Techno-Club
+  [/robot|tut|popping|locking|wave hip|animation/i, ["electro", "techno", "hip hop", "synth"], "Dance_Robot"],
   [/hip ?hop|rap|krump|twerk/i, ["hip hop", "rap", "r&b"], "Dance_HipHop"],
   [/samba|salsa|rumba|tango|bachata|merengue|cha ?cha|latin|cumbia|capoeira|lambada/i, ["latin"], "Dance_LatinSway"],
   [/swing|charleston|lindy|jazz|tap/i, ["swing", "jazz", "soul"], "Dance_JazzSwing"],
-  [/shuffle|house|techno|rave|club|jumpstyle/i, ["techno", "house", "edm"], "Dance_Shuffle"],
+  // Running Man = klassischer House-/Shuffle-Schritt, Arm Pump = Faust in die Luft
+  [/shuffl|house|techno|rave|club|jumpstyle|running man|arm pump/i, ["techno", "house", "edm"], "Dance_Shuffle"],
   [/twist|rock|guitar|headbang|punk/i, ["rock", "oldies"], "Dance_RockDrive"],
   [/belly|arab|bollywood|indian/i, ["world", "oriental"], "Dance_LiquidWave"],
   [/ballet|waltz|ballroom|slow|contemporary/i, ["klassik", "ballad"], "Dance_Waltz"],
   [/thriller|disco|funk|moonwalk|soul train/i, ["disco", "funk", "pop"], "Dance_Disco"],
+  // Springen: Rave
+  [/\bjump/i, ["edm", "techno", "party"], "Dance_FestivalBounce"],
   [/gangnam|k-?pop|macarena|chicken|ymca|silly|party|happy|joy|cheer|jump/i, ["pop", "dance", "party"], "Dance_FestivalBounce"],
 ];
 

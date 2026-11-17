@@ -526,6 +526,9 @@ describe("Automatisch aufgenommene Tänze", () => {
     expect(styleFromName("Breakdance Freeze Var 4").fallback).toBe("Dance_PowerHit");
     expect(styleFromName("Tango").genres).toEqual(["latin"]);
     expect(styleFromName("Irgendwas")).toEqual({ genres: ["pop", "dance"], fallback: "Dance_Groove" });
+    // Techno-Club: Shuffle, Running Man, Faust in die Luft, Sprünge, Robot & Co.
+    for (const n of ["Shuffling", "Dancing Running Man", "Dance Arm Pump", "Standing Jump", "Jumping", "Robot Hip Hop Dance"])
+      expect(styleFromName(n).genres, n).toContain(n.includes("Jump") ? "edm" : "techno");
     expect(autoEntry("Salsa Dancing (3).fbx")).toMatchObject({
       id: "Mixamo_SalsaDancing_3",
       source: "Salsa Dancing (3).fbx",
