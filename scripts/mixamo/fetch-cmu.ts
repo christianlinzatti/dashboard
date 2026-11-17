@@ -31,6 +31,12 @@ export const CMU_DANCES: Record<string, string> = {
   "103_05": "charleston-side-by-side",
   "103_06": "lindy-hop",
   "103_08": "charleston-fancy",
+  "120_06": "mickey-dance",
+  "120_07": "mickey-dance",
+  "90_31": "russian-dance",
+  "113_04": "dance",
+  "143_34": "chicken-dance",
+  "18_15": "chicken-dance",
 };
 
 /** Proband → Tanz (für Aufnahmen, die über die Nummer geladen werden) */
