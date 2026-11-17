@@ -64,6 +64,15 @@ test.describe("Bühne & Licht", () => {
     await expect(canvas).toHaveAttribute("data-moment", "frei");
   });
 
+  test("Countdown vor dem ersten Refrain: Blackout, Ziffer 1 auf dem letzten Schlag", async ({ page }) => {
+    await page.goto("/?demo=neonlicht&t=39700&qualitaet=niedrig");
+    await ready(page);
+    await expect(page.getByTestId("countdown")).toHaveText("1");
+    await page.goto("/?demo=neonlicht&t=30000&qualitaet=niedrig");
+    await ready(page);
+    await expect(page.getByTestId("countdown")).toHaveText("");
+  });
+
   // Publikum: Handylichter im ruhigen Outro, Springen mit Armbändern im Refrain
   const crowd = [
     { name: "publikum-handys", q: "demo=neonlicht&t=180000&buehne=festival", state: "handys" },

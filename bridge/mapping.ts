@@ -4,7 +4,17 @@ import { hexToRgb, type Rgb } from "./govee.ts";
 export type Role = "puls" | "akzent" | "grund";
 
 /** Lichtsignal vom Dashboard (LightDirector), siehe lib/stage/lights.ts → signal. */
-export type LightSignal = { base: string; accent: string; brightness: number; pulse: number };
+export type LightSignal = {
+  base: string;
+  accent: string;
+  brightness: number;
+  pulse: number;
+  /** Lauflicht beim großen Einsatz: Position 0..1 über alle Lampen (fehlt = aus) */
+  chase?: number;
+};
+
+/** Platz einer Lampe in der Reihenfolge aus config.json */
+export type LampSlot = { index: number; count: number };
 
 export type DeviceState = { on: boolean; color: Rgb; brightness: number };
 
@@ -19,8 +29,13 @@ const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v
  * - akzent: Akzentfarbe, folgt der Gesamthelligkeit, leichter Puls (z. B. Wand-/Panel-Leuchte)
  * - grund:  ruhige Grundfarbe des Covers, gedimmt (z. B. Tischlampe)
  */
-export function deviceStateFor(signal: LightSignal, role: Role, lampsOn: boolean): DeviceState {
+export function deviceStateFor(signal: LightSignal, role: Role, lampsOn: boolean, slot?: LampSlot): DeviceState {
   if (!lampsOn) return { on: false, color: { r: 0, g: 0, b: 0 }, brightness: 1 };
+  // Lauflicht: die Lampe an der aktuellen Position strahlt voll in der Akzentfarbe, die anderen glimmen
+  if (signal.chase !== undefined && slot && slot.count > 1) {
+    const lit = Math.min(slot.count - 1, Math.floor(signal.chase * slot.count)) === slot.index;
+    return { on: true, color: quantColor(hexToRgb(signal.accent)), brightness: lit ? 100 : 10 };
+  }
   const level = clamp(signal.brightness, 0, 1);
   switch (role) {
     case "puls":

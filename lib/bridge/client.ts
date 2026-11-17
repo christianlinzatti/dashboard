@@ -22,13 +22,24 @@ export type BridgeClientOptions = {
 const OPEN = 1;
 const BACKOFF_MS = [2000, 5000, 10_000, 30_000, 60_000];
 
+/** Lichtsignal fürs Senden; `chase` (Lauflicht) ist optional – ältere Bridges ignorieren es. */
+export type SignalFrame = { signal: Omit<LightFrame["signal"], "chase"> & { chase?: number } };
+
 /** Nachricht an die Pi-Bridge (Format: bridge/server.ts → lightMessage). */
-export function lightMessage(f: Pick<LightFrame, "signal">, lamps: boolean) {
+export function lightMessage(f: SignalFrame, lamps: boolean) {
   const r = (v: number) => Math.round(v * 100) / 100;
+  const chase = f.signal.chase ?? -1;
   return JSON.stringify({
     type: "light",
     lamps,
-    signal: { base: f.signal.base, accent: f.signal.accent, brightness: r(f.signal.brightness), pulse: r(f.signal.pulse) },
+    signal: {
+      base: f.signal.base,
+      accent: f.signal.accent,
+      brightness: r(f.signal.brightness),
+      pulse: r(f.signal.pulse),
+      // Lauflicht in Sechsteln (weniger Nachrichten, die Bridge schaltet ohnehin je Lampe)
+      ...(chase >= 0 ? { chase: Math.floor(chase * 6) / 6 } : {}),
+    },
   });
 }
 
@@ -91,7 +102,7 @@ export function createBridgeClient(opts: BridgeClientOptions) {
         ws.send(JSON.stringify({ type: "heartbeat", frameAgeMs: Math.round(frameAgeMs), visible }));
     },
     /** Neues Lichtsignal (pro Frame aufrufbar – wird gedrosselt). */
-    update(f: Pick<LightFrame, "signal">, lamps: boolean, now = Date.now()) {
+    update(f: SignalFrame, lamps: boolean, now = Date.now()) {
       pending = lightMessage(f, lamps);
       const wait = minInterval - (now - lastSentAt);
       if (wait <= 0) flush();

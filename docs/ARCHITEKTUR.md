@@ -118,6 +118,7 @@ Für das Konzert-Erlebnis wurde die Bühne in vier Schichten gegliedert. Jede Sc
                 + Regieanweisung der KI („Brief“, optional)                        lib/show/brief.ts, director.ts
 3 PLÄNE         reine Funktionen von (Song, Regie, Songzeit) – deterministisch
                 Choreografie: Tanz, Moment, Formation, Kamera, Drehbühne           lib/dance/plan.ts
+                Höhepunkte: Countdown, Blackout, Zeitlupe, Kameraflug im Finale    lib/stage/climax.ts
                 Effekt-Einsätze: Pyro, Flammen, CO₂, Konfetti …                    lib/stage/effects.ts
                 Publikums-Regie: Hände, Springen, Handys, Armbänder                lib/stage/crowd.ts
                 Licht: Moving Heads, Laser, Wand, Lampen-Signal                    lib/stage/lights.ts
@@ -142,6 +143,12 @@ Für das Konzert-Erlebnis wurde die Bühne in vier Schichten gegliedert. Jede Sc
   *kanon* (derselbe Tanz als Welle von links nach rechts, je Platz ein Schlag), *solo* (Lead im Spot, Crew hält
   still, Kamera nah) oder *frei*. Die Regeln wählen nach Abschnitt (`momentFor`), die KI kann je Abschnitt einen
   Moment vorgeben; spätere Phrasen eines Abschnitts variieren, damit nichts erstarrt.
+- **Höhepunkte werden inszeniert.** `planClimaxes` markiert Refrain-Einsätze; der erste und das Finale (letzter
+  Refrain) bekommen einen Takt vorher Blackout mit Countdown 4-3-2-1 (DOM-Ebene über der Bühne, unabhängig von der
+  Kamera), beim Einsatz zünden alle Effekte der Bühne, Blitz (nur mit Strobe-Erlaubnis) und ein Lauflicht über die
+  Govee-Lampen (`signal.chase`, je Lampe nach Reihenfolge in `config.json`). Im Finale läuft der Tanz zwei Takte in
+  Zeitlupe (`danceTime`: erst langsamer, dann aufholen – danach wieder im Takt), die Kamera fliegt von hinter dem
+  Publikum auf die Bühne.
 - **Ein Abend, nicht lauter Einzelsongs.** `setlistStore` merkt sich Bühne und Tänze der gespielten Songs. Der
   nächste Song meidet die Bühne des vorigen (verwandte statt gleiche: Club → Synthwave/Weltraum/Festival, Jazz
   bleibt Jazz) und wählt Tänze der letzten zwei Songs seltener. Nur im Speicher: Neuladen beginnt einen neuen

@@ -33,7 +33,10 @@ export class LampController {
 
   apply(signal: LightSignal, lampsOn: boolean, now = Date.now()) {
     this.lastSignalAt = now;
-    for (const lamp of this.lamps) this.pending.set(lamp.ip, deviceStateFor(signal, lamp.role, lampsOn));
+    // Position jeder Lampe in der Reihenfolge aus config.json – fürs Lauflicht
+    this.lamps.forEach((lamp, index) =>
+      this.pending.set(lamp.ip, deviceStateFor(signal, lamp.role, lampsOn, { index, count: this.lamps.length })),
+    );
     this.flush(now);
   }
 

@@ -2,6 +2,7 @@ import type { LyricLine, SongStatic } from "@/lib/song-context/schema";
 import { lastStartedIndex } from "@/lib/song-context/derive";
 import { easeInOut, lerp2, type Vec2 } from "./formations";
 import type { CameraPreset, Choreography, Phrase } from "./plan";
+import { danceTime, SLOWMO_BARS } from "@/lib/stage/climax";
 
 export type Layer = { clip: string; time: number; weight: number };
 
@@ -34,12 +35,14 @@ export function layersAt(c: Choreography, avatarId: string, t: number, live: Liv
   if (!p || !m) return [];
   const prev = c.phrases[i - 1]?.moves[avatarId];
   const w = Math.min(Math.max((t - p.startMs) / c.beatMs, 0), 1);
+  // Finale: Zeitlupe – die Tanz-Zeit läuft erst langsamer und holt dann auf (Phrasenwahl bleibt bei der Songzeit)
+  const tc = danceTime(c.climaxes ?? [], t, c.barMs);
   let layers: Layer[] =
     !prev || prev.clip === m.clip || w >= 1
-      ? [{ clip: m.clip, time: clipTime(c, m, t, anchor), weight: 1 }]
+      ? [{ clip: m.clip, time: clipTime(c, m, tc, anchor), weight: 1 }]
       : [
-          { clip: prev.clip, time: clipTime(c, prev, t, anchor), weight: 1 - w },
-          { clip: m.clip, time: clipTime(c, m, t, anchor), weight: w },
+          { clip: prev.clip, time: clipTime(c, prev, tc, anchor), weight: 1 - w },
+          { clip: m.clip, time: clipTime(c, m, tc, anchor), weight: w },
         ];
 
   const drop = live.dropMs;
@@ -169,7 +172,29 @@ export function cameraAt(c: Choreography, t: number, focus?: Vec2): Cam {
   const w = easeInOut((t - p.startMs) / Math.min(c.barMs * 1.5, 3000));
   const sway = Math.sin(t / 4000) * (p.camera === "nah" ? 0.08 : 0.25);
   const pos = mix3(a.pos, b.pos, w);
-  return { pos: [pos[0] + sway, pos[1], pos[2]], target: mix3(a.target, b.target, w), fov: a.fov + (b.fov - a.fov) * w };
+  const cam: Cam = {
+    pos: [pos[0] + sway, pos[1], pos[2]],
+    target: mix3(a.target, b.target, w),
+    fov: a.fov + (b.fov - a.fov) * w,
+  };
+  return finaleFlight(c, t, cam);
+}
+
+/** Start des Kameraflugs im Finale: hoch hinter dem Publikum, Blick über die Köpfe auf die Bühne */
+const FLIGHT_START: Cam = { pos: [0, 4.6, 16], target: [0, 1.2, 0], fov: 30 };
+
+/** Finale: über die Zeitlupe fliegt die Kamera von hinter dem Publikum auf ihre Einstellung zu. */
+function finaleFlight(c: Choreography, t: number, cam: Cam): Cam {
+  const f = c.climaxes?.find((x) => x.finale);
+  if (!f) return cam;
+  const u = (t - f.atMs) / (SLOWMO_BARS * c.barMs);
+  if (u < 0 || u >= 1) return cam;
+  const w = easeInOut(u);
+  return {
+    pos: mix3(FLIGHT_START.pos, cam.pos, w),
+    target: mix3(FLIGHT_START.target, cam.target, w),
+    fov: FLIGHT_START.fov + (cam.fov - FLIGHT_START.fov) * w,
+  };
 }
 
 /** Drehbühne: Drehwinkel (Rad, um die Hochachse) – eine volle Umdrehung über die Phrase, sonst 0. */

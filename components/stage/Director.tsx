@@ -21,10 +21,23 @@ type DirectorProps = {
   lightsRef: React.RefObject<LightFrame | null>;
   heads: number;
   strobeRef: React.RefObject<HTMLDivElement | null>;
+  /** Blackout-Ebene und Countdown-Ziffer über der Bühne */
+  blackoutRef: React.RefObject<HTMLDivElement | null>;
+  countdownRef: React.RefObject<HTMLDivElement | null>;
   theme: Theme;
 };
 
-export function Director({ song, choreo, frameRef, lightsRef, heads, strobeRef, theme }: DirectorProps) {
+export function Director({
+  song,
+  choreo,
+  frameRef,
+  lightsRef,
+  heads,
+  strobeRef,
+  blackoutRef,
+  countdownRef,
+  theme,
+}: DirectorProps) {
   const spot = useRef<SpotLight>(null);
   const back = useRef<PointLight>(null);
   const target = useMemo(() => new Object3D(), []);
@@ -79,6 +92,16 @@ export function Director({ song, choreo, frameRef, lightsRef, heads, strobeRef, 
     lightsRef.current = lf;
     lightBus.publish(lf);
     if (strobeRef.current) strobeRef.current.style.opacity = String(lf.strobe * 0.55);
+    if (blackoutRef.current) blackoutRef.current.style.opacity = String(lf.blackout);
+    const cd = countdownRef.current;
+    if (cd) {
+      const text = lf.countdown === null ? "" : String(lf.countdown);
+      if (cd.textContent !== text) cd.textContent = text;
+      // jede Ziffer leuchtet beim Schlag auf und klingt ab
+      const beat =
+        lf.countdown === null ? 1 : ((((t - (choreo.climaxes.find((k) => k.atMs > t)?.atMs ?? t)) / choreo.beatMs) % 1) + 1) % 1;
+      cd.style.opacity = lf.countdown === null ? "0" : String(0.55 + 0.45 * (1 - beat));
+    }
 
     const cam = cameraAt(choreo, t, focus ? positions[focus] : undefined);
     camera.position.set(...cam.pos);

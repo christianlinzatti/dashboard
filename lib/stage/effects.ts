@@ -69,6 +69,8 @@ export function planEffects(c: Choreography, theme: Theme): Cue[] {
       add("sternschnuppen", p.startMs, len, 0.7);
     add("glitzer", p.startMs, len, p.energy >= 2 ? 1 : 0.5);
   });
+  // Großer Einsatz nach dem Countdown: alles, was die Bühne hergibt, gleichzeitig
+  for (const k of c.climaxes ?? []) if (k.countdown) out.push(...dropCues(k.atMs, c, theme));
   return out.sort((a, b) => a.startMs - b.startMs);
 }
 

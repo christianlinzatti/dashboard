@@ -8,6 +8,7 @@ import { mixamoClips, mixamoForEnergy, mixamoGenreBias, mixamoOffStyle } from ".
 import { briefFor, energyLevel, type CrowdMode, type ShowMoment } from "@/lib/show/brief";
 import type { EffectKind } from "@/lib/stage/themes";
 import { slots, type Formation, type Vec2 } from "./formations";
+import { planClimaxes, type Climax } from "@/lib/stage/climax";
 import { rng } from "./rng";
 
 export type CameraPreset =
@@ -64,6 +65,8 @@ export type Choreography = {
   phrases: Phrase[];
   /** Avatar-IDs in Rangfolge (Lead zuerst) */
   order: string[];
+  /** Höhepunkte (Refrain-Einsätze, Finale) – siehe lib/stage/climax.ts */
+  climaxes: Climax[];
 };
 
 const BASE_ENERGY: Record<SectionKind, Energy> = {
@@ -278,7 +281,7 @@ export function planChoreography(
     }
   }
 
-  return { trackKey: song.trackKey, bpm, beatMs, barMs, timeScale, phrases, order };
+  return { trackKey: song.trackKey, bpm, beatMs, barMs, timeScale, phrases, order, climaxes: planClimaxes(phrases, barMs) };
 }
 
 /**

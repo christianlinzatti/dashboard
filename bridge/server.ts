@@ -13,6 +13,8 @@ export const lightMessage = z.object({
     accent: z.string().regex(/^#[0-9a-f]{6}$/i),
     brightness: z.number().min(0).max(2),
     pulse: z.number().min(0).max(1),
+    /** Lauflicht: Position 0..1 über alle Lampen (fehlt = aus) */
+    chase: z.number().min(0).max(1).optional(),
   }),
 });
 

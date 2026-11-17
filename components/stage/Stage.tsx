@@ -12,6 +12,7 @@ import { useSongContext } from "@/lib/song-context/store";
 import type { LightFrame } from "@/lib/stage/lights";
 import { PRESETS, stepQuality, type Quality } from "@/lib/stage/quality";
 import { planEffects } from "@/lib/stage/effects";
+import { SceneLights } from "./SceneLights";
 import { setlistStore, usePreviousTheme, useRecentClipsKey } from "@/lib/stage/setlist";
 import { THEMES, themedPalette, themeFor, type Theme, type ThemeId } from "@/lib/stage/themes";
 import { fpsFrom, perf } from "@/lib/stage/perf";
@@ -138,6 +139,8 @@ function Scene({
   const frame = useRef<Frame>(initialFrame);
   const lights = useRef<LightFrame | null>(null);
   const strobe = useRef<HTMLDivElement>(null);
+  const blackout = useRef<HTMLDivElement>(null);
+  const countdown = useRef<HTMLDivElement>(null);
 
   // Qualität: fest (Einstellung/URL) oder automatisch nach Bildrate; Demos fest „mittel“ (reproduzierbar)
   // Wandfoto wechselt mit jedem Abschnitt (Selektor liefert nur die URL → kein Rerender pro Frame)
@@ -176,8 +179,7 @@ function Scene({
       >
         <color attach="background" args={[dark]} />
         <fog attach="fog" args={[dark, 9, theme.fogFar]} />
-        <hemisphereLight args={["#ffffff", dark, 0.9]} />
-        <directionalLight position={[3, 5, 4]} intensity={1.5} />
+        <SceneLights lightsRef={lights} ground={dark} />
         {!frozen && chosen === "auto" && !forceQuality && (
           <PerformanceMonitor
             onDecline={() => setAutoQuality((q) => stepQuality(q, -1))}
@@ -222,6 +224,8 @@ function Scene({
           lightsRef={lights}
           heads={preset.heads}
           strobeRef={strobe}
+          blackoutRef={blackout}
+          countdownRef={countdown}
           theme={theme}
         />
         <Effects
@@ -268,6 +272,24 @@ function Scene({
       </Canvas>
       {/* Stroboskop (nur bei Drops, abschaltbar) */}
       <div ref={strobe} className="pointer-events-none absolute inset-0 bg-white opacity-0" aria-hidden />
+      {/* Blackout vor einem großen Einsatz: Raum dunkel, Lichtkegel in der Mitte, Countdown 4-3-2-1 */}
+      <div
+        ref={blackout}
+        className="pointer-events-none absolute inset-0 opacity-0"
+        style={{ background: "radial-gradient(ellipse 38% 55% at 50% 52%, rgba(0,0,0,0.25), rgba(0,0,0,0.92) 75%)" }}
+        aria-hidden
+      />
+      <div
+        ref={countdown}
+        data-testid="countdown"
+        className="pointer-events-none absolute inset-x-0 top-[12%] text-center font-black leading-none opacity-0"
+        style={{
+          fontSize: "min(28vh, 22vw)",
+          color: song?.album.palette.accent ?? "#ff4fd8",
+          textShadow: `0 0 0.18em ${song?.album.palette.accent ?? "#ff4fd8"}`,
+        }}
+        aria-hidden
+      />
     </div>
   );
 }
