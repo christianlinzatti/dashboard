@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { planChoreography } from "@/lib/dance/plan";
-import { cameraAt } from "@/lib/dance/evaluate";
+import { cameraAt, type Cam } from "@/lib/dance/evaluate";
 import { neonlicht } from "@/lib/song-context/fixtures/neonlicht";
 import { climaxAt, danceTime, planClimaxes, SLOWMO_BARS } from "@/lib/stage/climax";
 import { lightsAt } from "@/lib/stage/lights";
@@ -97,5 +97,23 @@ describe("Lauflicht über die Govee-Lampen", () => {
   it("Dashboard sendet das Lauflicht nur, wenn es läuft", () => {
     expect(JSON.parse(lightMessage({ signal: { ...sig, chase: -1 } }, true)).signal.chase).toBeUndefined();
     expect(JSON.parse(lightMessage({ signal: { ...sig, chase: 0.55 } }, true)).signal.chase).toBe(0.5);
+  });
+});
+
+describe("Kamera auf schmalen Bildschirmen", () => {
+  it("hochkant: Kamera rückt zurück und öffnet, bis dieselbe Bühnenbreite zu sehen ist", async () => {
+    const { fitAspect, REF_ASPECT } = await import("@/lib/dance/evaluate");
+    const cam: Cam = { pos: [0, 1.55, 2.3], target: [0, 1.42, 0], fov: 36 };
+    expect(fitAspect(cam, REF_ASPECT)).toEqual({ cam, distance: 1 });
+    expect(fitAspect(cam, 2.2).distance).toBe(1); // breiter bleibt unverändert
+    const phone = 412 / 915;
+    const { cam: c, distance } = fitAspect(cam, phone);
+    expect(distance).toBeGreaterThan(2);
+    expect(c.target).toEqual(cam.target);
+    // sichtbare Breite am Blickziel: Abstand × tan(halber Bildwinkel) × Seitenverhältnis bleibt gleich
+    const width = (k: typeof cam, a: number) =>
+      Math.hypot(k.pos[0] - k.target[0], k.pos[1] - k.target[1], k.pos[2] - k.target[2]) * Math.tan((k.fov * Math.PI) / 360) * a;
+    expect(width(c, phone)).toBeCloseTo(width(cam, REF_ASPECT), 6);
+    expect(c.fov).toBeLessThan(60); // kein Fischauge
   });
 });

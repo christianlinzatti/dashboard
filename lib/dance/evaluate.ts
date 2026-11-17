@@ -210,3 +210,27 @@ export function rotateOnStage([x, z]: Vec2, angle: number): Vec2 {
   const s = Math.sin(angle);
   return [x * c + z * s, -x * s + z * c];
 }
+
+/** Bildformat, für das die Kameraeinstellungen gebaut sind (z. B. 1280×800) */
+export const REF_ASPECT = 1.6;
+
+/**
+ * Kamera an schmale Bildschirme anpassen (Handy hochkant): Bei gleicher Einstellung sähe man dort nur noch den Lead
+ * bzw. in der Nahaufnahme nur sein Gesicht. Die Kamera rückt zurück und öffnet etwas, bis dieselbe Bühnenbreite
+ * zu sehen ist wie im Querformat – zu ~70 % über Abstand, zu ~30 % über den Bildwinkel (weniger Verzerrung).
+ * Liefert dazu den Faktor, um den sich der Abstand vergrößert (für Nebel). Breitere Formate bleiben unverändert.
+ */
+export function fitAspect(cam: Cam, aspect: number): { cam: Cam; distance: number } {
+  const s = REF_ASPECT / Math.max(aspect, 0.2);
+  if (s <= 1) return { cam, distance: 1 };
+  const distance = Math.pow(s, 0.7);
+  const tanK = s / distance; // Abstand × Bildwinkel ergibt zusammen genau s
+  const [tx, ty, tz] = cam.target;
+  const pos: [number, number, number] = [
+    tx + (cam.pos[0] - tx) * distance,
+    ty + (cam.pos[1] - ty) * distance,
+    tz + (cam.pos[2] - tz) * distance,
+  ];
+  const fov = (2 * Math.atan(Math.tan((cam.fov * Math.PI) / 360) * tanK) * 180) / Math.PI;
+  return { cam: { pos, target: cam.target, fov }, distance };
+}

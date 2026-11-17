@@ -21,7 +21,7 @@ import { THEMES, themedPalette, themeFor, type Theme, type ThemeId } from "@/lib
 import { fpsFrom, perf } from "@/lib/stage/perf";
 import { ErrorBoundary } from "../ErrorBoundary";
 import { Avatar } from "./Avatar";
-import { Director } from "./Director";
+import { Director, FOG_NEAR } from "./Director";
 import { Lasers, MovingHeads } from "./Lights";
 import { ReadySignal } from "./ReadySignal";
 import { PhotoWall } from "./PhotoWall";
@@ -139,7 +139,13 @@ function Scene({
   }, [choreo, theme]);
   // Band hinten (DJ / Rock / Keys nach Genre) – nicht auf der niedrigsten Qualitätsstufe
   const band = useMemo(
-    () => (raw ? planBand(raw, avatars.map((a) => a.id)) : null),
+    () =>
+      raw
+        ? planBand(
+            raw,
+            avatars.map((a) => a.id),
+          )
+        : null,
     // eslint-disable-next-line react-hooks/exhaustive-deps -- nur bei Song, Besetzung oder Regie neu
     [raw?.trackKey, raw?.cast, showKey],
   );
@@ -195,7 +201,7 @@ function Scene({
         }
       >
         <color attach="background" args={[dark]} />
-        <fog attach="fog" args={[dark, 9, theme.fogFar]} />
+        <fog attach="fog" args={[dark, FOG_NEAR, theme.fogFar]} />
         <SceneLights lightsRef={lights} ground={dark} />
         {!frozen && chosen === "auto" && !forceQuality && (
           <PerformanceMonitor

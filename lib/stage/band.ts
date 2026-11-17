@@ -57,7 +57,8 @@ export function planBand(
   const members: BandMember[] = [];
   for (const r of ROLES[kind]) {
     const free = allAvatars.filter((a) => !taken.has(a));
-    const avatarId = r.prefer.find((p) => free.includes(p)) ?? free[hash(`${song.trackKey}:${r.role}`) % Math.max(free.length, 1)];
+    const avatarId =
+      r.prefer.find((p) => free.includes(p)) ?? free[hash(`${song.trackKey}:${r.role}`) % Math.max(free.length, 1)];
     if (!avatarId) break;
     taken.add(avatarId);
     members.push({ role: r.role, avatarId, clip: r.clip, position: r.position });

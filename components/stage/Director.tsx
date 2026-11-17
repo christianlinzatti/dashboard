@@ -3,7 +3,16 @@
 import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import { Object3D, type PointLight, type SpotLight } from "three";
-import { cameraAt, focusTimeline, phraseIndexAt, positionsAt, rotateOnStage, stageAngleAt } from "@/lib/dance/evaluate";
+import {
+  REF_ASPECT,
+  cameraAt,
+  fitAspect,
+  focusTimeline,
+  phraseIndexAt,
+  positionsAt,
+  rotateOnStage,
+  stageAngleAt,
+} from "@/lib/dance/evaluate";
 import type { Choreography } from "@/lib/dance/plan";
 import { settings } from "@/lib/settings";
 import type { SongStatic } from "@/lib/song-context/schema";
@@ -12,6 +21,9 @@ import { lightsAt, type LightFrame } from "@/lib/stage/lights";
 import { lightBus } from "@/lib/stage/light-bus";
 import type { Theme } from "@/lib/stage/themes";
 import type { Frame } from "./types";
+
+/** Nebelbeginn der Szene (siehe <fog> in Stage.tsx) */
+export const FOG_NEAR = 9;
 
 /** Berechnet pro Frame Songzeit, Positionen, Fokus (Sänger) und Kamera. Läuft vor den Avataren. */
 type DirectorProps = {
@@ -50,7 +62,7 @@ export function Director({
     song.artists.find((a) => a.spotifyId === artistId)?.color ?? song.album.palette.accent;
 
   const shot = useRef("");
-  useFrame(({ gl, camera }) => {
+  useFrame(({ gl, camera, scene }) => {
     const { positionMs, playback, frozen, derived, live } = songContext.getState();
     const t = positionMs;
     // Drehbühne: Formation dreht sich mit dem Podest um die Bühnenmitte
@@ -103,7 +115,13 @@ export function Director({
       cd.style.opacity = lf.countdown === null ? "0" : String(0.55 + 0.45 * (1 - beat));
     }
 
-    const cam = cameraAt(choreo, t, focus ? positions[focus] : undefined);
+    // Handy hochkant: zurücktreten, bis dieselbe Bühnenbreite im Bild ist; Nebel rückt mit
+    const aspect = "aspect" in camera ? (camera.aspect as number) : REF_ASPECT;
+    const { cam, distance } = fitAspect(cameraAt(choreo, t, focus ? positions[focus] : undefined), aspect);
+    if (scene.fog && "near" in scene.fog) {
+      scene.fog.near = FOG_NEAR * distance;
+      scene.fog.far = theme.fogFar * distance;
+    }
     camera.position.set(...cam.pos);
     if ("fov" in camera && Math.abs(camera.fov - cam.fov) > 0.01) {
       camera.fov = cam.fov;
