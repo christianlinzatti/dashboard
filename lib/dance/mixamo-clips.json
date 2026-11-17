@@ -5781,6 +5781,74 @@
       "file": "/animations/CMU_Salsa_61_15.json?v=b15d92fcab99",
       "beats": 24,
       "detectedBpm": 100
+    },
+    {
+      "id": "CMU_CharlestonFancy_103_08",
+      "source": "charleston-fancy_103_08.bvh",
+      "search": "Charleston Fancy",
+      "energy": 3,
+      "genres": ["swing", "jazz", "soul"],
+      "fallback": "Dance_JazzSwing",
+      "auto": true,
+      "start": 0.1,
+      "end": 16.1,
+      "duplicateOf": "CMU_CharlestonFancy_93_08",
+      "skip": true
+    },
+    {
+      "id": "CMU_CharlestonSideBySide_103_04",
+      "source": "charleston-side-by-side_103_04.bvh",
+      "search": "Charleston Side By Side",
+      "energy": 2,
+      "genres": ["swing", "jazz", "soul"],
+      "fallback": "Dance_JazzSwing",
+      "auto": true,
+      "start": 0.1,
+      "end": 16.1,
+      "file": "/animations/CMU_CharlestonSideBySide_103_04.json?v=ea57147cc4e5",
+      "beats": 4,
+      "detectedBpm": 90
+    },
+    {
+      "id": "CMU_CharlestonSideBySide_103_05",
+      "source": "charleston-side-by-side_103_05.bvh",
+      "search": "Charleston Side By Side",
+      "energy": 3,
+      "genres": ["swing", "jazz", "soul"],
+      "fallback": "Dance_JazzSwing",
+      "auto": true,
+      "start": 0.1,
+      "end": 16.1,
+      "file": "/animations/CMU_CharlestonSideBySide_103_05.json?v=9ef46117c928",
+      "beats": 8,
+      "detectedBpm": 128.6
+    },
+    {
+      "id": "CMU_Charleston_103_03",
+      "source": "charleston_103_03.bvh",
+      "search": "Charleston",
+      "energy": 2,
+      "genres": ["swing", "jazz", "soul"],
+      "fallback": "Dance_JazzSwing",
+      "auto": true,
+      "start": 0.1,
+      "end": 16.1,
+      "duplicateOf": "CMU_Charleston_93_03",
+      "skip": true
+    },
+    {
+      "id": "CMU_LindyHop_103_06",
+      "source": "lindy-hop_103_06.bvh",
+      "search": "Lindy Hop",
+      "energy": 2,
+      "genres": ["swing", "jazz", "soul"],
+      "fallback": "Dance_JazzSwing",
+      "auto": true,
+      "start": 0.1,
+      "end": 16.1,
+      "file": "/animations/CMU_LindyHop_103_06.json?v=49416fbb7d53",
+      "beats": 4,
+      "detectedBpm": 100
     }
   ]
 }
