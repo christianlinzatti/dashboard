@@ -50,6 +50,8 @@ export const isGlb = (file: string) => /\.glb$/i.test(file);
 /** CMU-Motion-Capture (BVH), Dateiname „salsa_60_01.bvh“ = Beschreibung + Aufnahme */
 export const isBvh = (file: string) => /\.bvh$/i.test(file);
 const cmuTake = (file: string) => file.match(/(\d+_\d+)\.bvh$/i)?.[1];
+/** Bandai-Namco-Ausschnitt (BVH), Dateiname „bandai_dance-long_03.bvh“ = Aufnahme + Ausschnitt */
+export const isBandai = (file: string) => /^bandai_.*\.bvh$/i.test(file);
 
 /**
  * Basisname ohne Endung und ohne Browser-Nummer: „Hip Hop Dancing (2).fbx“ → „Hip Hop Dancing“,
@@ -62,6 +64,7 @@ export function baseName(file: string): string {
     .trim();
   if (!isGlb(file) && !isBvh(file)) return name;
   return name
+    .replace(/^bandai_/i, "")
     .split(/[-_\s]+/)
     .filter((w) => w && !(isBvh(file) && /^\d+$/.test(w)))
     .map((w) => w[0]!.toUpperCase() + w.slice(1))
@@ -73,14 +76,18 @@ export function baseName(file: string): string {
  * „salsa_60_01.bvh“ → „CMU_Salsa_60_01“
  */
 export function idFromFile(file: string): string {
-  const n = isBvh(file) ? cmuTake(file) : file.match(/\((\d+)\)\s*\.(fbx|glb)$/i)?.[1];
+  const n = isBandai(file)
+    ? file.match(/_(\d+)\.bvh$/i)?.[1]
+    : isBvh(file)
+      ? cmuTake(file)
+      : file.match(/\((\d+)\)\s*\.(fbx|glb)$/i)?.[1];
   const words = baseName(file)
     .normalize("NFKD")
     .replace(/[^A-Za-z0-9 ]/g, " ")
     .split(/\s+/)
     .filter(Boolean)
     .map((w) => w[0]!.toUpperCase() + w.slice(1));
-  const prefix = isGlb(file) ? "M2M" : isBvh(file) ? "CMU" : "Mixamo";
+  const prefix = isGlb(file) ? "M2M" : isBandai(file) ? "BN" : isBvh(file) ? "CMU" : "Mixamo";
   return `${prefix}_${words.join("") || "Tanz"}${n ? `_${n}` : ""}`;
 }
 

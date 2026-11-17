@@ -460,11 +460,53 @@ Frame Time: 0.5
     expect(faceForward(straight.group, straight.animations[0]!)).toBeCloseTo(0, 3);
   });
 
+  it("Bandai Namco: Skelett auf Mixamo-Namen, erstes Bild als Ruhepose", async () => {
+    const { loadBvh } = await import("@/scripts/mixamo/convert");
+    const j = (name: string, offset: string, inner: string) =>
+      `JOINT ${name}\n{\nOFFSET ${offset}\nCHANNELS 6 Xposition Yposition Zposition Zrotation Xrotation Yrotation\n${inner}}\n`;
+    const end = `End Site\n{\nOFFSET 10 0 0\n}\n`;
+    const text = `HIERARCHY
+ROOT joint_Root
+{
+OFFSET 0 0 0
+CHANNELS 6 Xposition Yposition Zposition Zrotation Xrotation Yrotation
+${j("Hips", "0 90 0", j("Chest", "20 0 0", end) + j("UpperArm_L", "0 10 0", end) + j("UpperLeg_L", "0 -5 5", end))}}
+MOTION
+Frames: 2
+Frame Time: 0.0333333
+0 0 0 0 0 0 0 90 0 90 0 0 20 0 0 0 0 0 0 10 0 0 0 0 0 -5 5 0 0 0
+0 0 0 0 0 0 0 91 0 90 0 0 20 0 0 0 0 0 0 10 0 0 0 0 0 -5 5 0 0 0
+`;
+    const { group, animations } = loadBvh(text);
+    const names: string[] = [];
+    group.traverse((o) => names.push(o.name));
+    expect(names).toEqual(expect.arrayContaining(["Hips", "Spine2", "LeftArm", "LeftUpLeg"]));
+    // Ruhepose = erstes Bild: Hüfte um 90° gedreht (Knochen zeigen dort entlang X), nicht Nullwinkel
+    const hips = group.getObjectByName("Hips")!;
+    expect(hips.quaternion.angleTo(new Quaternion())).toBeCloseTo(Math.PI / 2, 4);
+    // Position aus dem ersten Bild (der BVH-Lader rechnet den Versatz dazu – bei Bandai gleichmäßig doppelt, das
+    // Retargeting gleicht Größen über die Hüfthöhe aus)
+    const pos = animations[0]!.tracks.find((t) => t.name === "Hips.position")!;
+    expect(hips.position.y).toBe(pos.values[1]);
+  });
+
+  it("Bandai Namco: lange Aufnahmen in Ausschnitte mit Ruhepose vorn", async () => {
+    const { splitBvh } = await import("@/scripts/mixamo/fetch-bandai");
+    const frames = Array.from({ length: 31 }, (_, i) => `${i} 0 0`);
+    const text = `HIERARCHY\nROOT x\nMOTION\nFrames: 31\nFrame Time: 0.5\n${frames.join("\n")}\n`;
+    const parts = splitBvh(text, 5, 3); // 10 Bilder je Ausschnitt, Rest unter 3 s fällt weg
+    expect(parts).toHaveLength(3);
+    expect(parts[1]).toContain("Frames: 11");
+    expect(parts[1]!.split("\n").slice(5, 7)).toEqual(["0 0 0", "11 0 0"]);
+  });
+
   it("Name, ID und Ausschnitt aus dem Dateinamen", async () => {
     const { autoEntry, baseName, idFromFile } = await import("@/scripts/mixamo/auto");
     expect(baseName("charleston-fancy_93_08.bvh")).toBe("Charleston Fancy");
     expect(idFromFile("salsa_60_01.bvh")).toBe("CMU_Salsa_60_01");
     expect(autoEntry("lambada_55_02.bvh")).toMatchObject({ genres: ["latin"], start: 0.1, end: 16.1 });
+    expect(idFromFile("bandai_dance-long_03.bvh")).toBe("BN_DanceLong_03");
+    expect(baseName("bandai_dance-short_01.bvh")).toBe("Dance Short");
   });
 });
 

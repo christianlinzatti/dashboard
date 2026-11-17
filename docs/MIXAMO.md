@@ -160,6 +160,31 @@ npm run mixamo               # wandelt alles gemeinsam um
 Quelle: *The data used in this project was obtained from mocap.cs.cmu.edu. The database was created with funding
 from NSF EIA-0196217.*
 
+## Bandai Namco Research Motiondataset (BVH)
+
+Das [Bandai Namco Research Motiondataset](https://github.com/BandaiNamcoResearchInc/Bandai-Namco-Research-Motiondataset)
+enthält zwei längere Tanzaufnahmen in Motion-Capture-Qualität (158 s und 63 s). Dazu kommen viele Alltagsbewegungen
+in verschiedenen Stimmungen, die hier nicht gebraucht werden.
+
+```bash
+npm run bandai               # lädt beide Tänze nach bandai/ und zerlegt sie in 16,5-s-Ausschnitte
+npm run mixamo               # wandelt alles gemeinsam um (IDs BN_DanceLong_01 …)
+```
+
+- Das Skelett heißt `joint_Root › Hips › Spine › Chest …` mit Seiten als `_L`/`_R`. Beim Laden wird es auf
+  Mixamo-Namen umbenannt (`BANDAI_BONES` in `scripts/mixamo/convert.ts`).
+- Die Knochen zeigen entlang ihrer lokalen X-Achse, mit Nullwinkeln ist das Skelett kein stehender Mensch. Als
+  Ruhepose dient deshalb das erste Bild der Aufnahme (stehende Ausgangshaltung). Das Lade-Skript stellt es jedem
+  Ausschnitt voran.
+
+**Lizenz: CC BY-NC 4.0.** Die Clips dürfen nur **nicht-kommerziell** verwendet werden. Für ein privates Dashboard
+ist das in Ordnung. Wird das Projekt kommerziell genutzt, müssen die `BN_*`-Clips raus (Katalog-Einträge und
+`public/animations/BN_*.json`).
+
+Quelle: *Bandai Namco Research Motiondataset © Bandai Namco Research Inc., lizenziert unter
+[CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/). Änderungen: in Ausschnitte zerlegt, auf die
+Avatar-Skelette übertragen, zur Kamera gedreht, auf 120 BPM normiert.*
+
 ## Wie es zur Laufzeit funktioniert
 
 - Die Choreografie plant Mixamo-Tänze wie eingebaute Clips: nach Energie des Songteils,

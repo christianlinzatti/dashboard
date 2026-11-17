@@ -21,6 +21,7 @@ import { estimateBpm, makeLoop, restFromGltf, retargetSamples, type RestBone } f
 import {
   autoEntry,
   DUPLICATE_DISTANCE,
+  isBandai,
   isBvh,
   isGlb,
   energyFromMotion,
@@ -37,6 +38,7 @@ const ROOT = process.cwd();
 const SRC_DIR = join(ROOT, "mixamo");
 const M2M_DIR = join(ROOT, "mesh2motion");
 const CMU_DIR = join(ROOT, "cmu");
+const BANDAI_DIR = join(ROOT, "bandai");
 const OUT_DIR = join(ROOT, "public/animations");
 const CATALOG = join(ROOT, "lib/dance/mixamo-clips.json");
 const FPS = 30;
@@ -58,7 +60,7 @@ const norm = (s: string) =>
 
 function findSource(entry: MixamoEntry, files: string[]): string | undefined {
   if (entry.preserved) return undefined; // gesicherter früherer Tanz – gehört zu keiner FBX mehr
-  const wanted = [norm(entry.source), norm(entry.search), norm(entry.id.replace(/^(Mixamo|M2M|CMU)_/, ""))];
+  const wanted = [norm(entry.source), norm(entry.search), norm(entry.id.replace(/^(Mixamo|M2M|CMU|BN)_/, ""))];
   return files.find((f) => wanted.includes(norm(f)));
 }
 
@@ -70,7 +72,7 @@ async function main() {
   const rest = restFromGltf(readGltfJson(join(ROOT, "avatars", first)));
   const list = (dir: string, ext: string) =>
     existsSync(dir) ? readdirSync(dir).filter((f) => f.toLowerCase().endsWith(ext)) : [];
-  const files = [...list(SRC_DIR, ".fbx"), ...list(M2M_DIR, ".glb"), ...list(CMU_DIR, ".bvh")];
+  const files = [...list(SRC_DIR, ".fbx"), ...list(M2M_DIR, ".glb"), ...list(CMU_DIR, ".bvh"), ...list(BANDAI_DIR, ".bvh")];
   if (!files.length) {
     console.log(`Keine Quelldateien in ${SRC_DIR}, ${M2M_DIR} oder ${CMU_DIR}. Anleitung: docs/MIXAMO.md`);
     return;
@@ -263,22 +265,60 @@ export function repeatClip(clip: AnimationClip, n: number): AnimationClip {
  */
 export const CMU_BONES: Record<string, string> = { LowerBack: "Spine", Spine: "Spine1", Spine1: "Spine2" };
 
-/** BVH (CMU) laden und die Rückenknochen umbenennen – samt der Spuren, die sie animieren. */
+/**
+ * Bandai-Namco-Skelett (joint_Root › Hips › Spine › Chest …, Seiten als _L/_R) → Mixamo-Namen.
+ * Die Knochen zeigen dort entlang ihrer lokalen X-Achse; mit Nullwinkeln ist es kein stehender Mensch.
+ */
+export const BANDAI_BONES: Record<string, string> = (() => {
+  const m: Record<string, string> = { Chest: "Spine2" };
+  for (const [s, side] of [
+    ["L", "Left"],
+    ["R", "Right"],
+  ] as const) {
+    m[`Shoulder_${s}`] = `${side}Shoulder`;
+    m[`UpperArm_${s}`] = `${side}Arm`;
+    m[`LowerArm_${s}`] = `${side}ForeArm`;
+    m[`Hand_${s}`] = `${side}Hand`;
+    m[`UpperLeg_${s}`] = `${side}UpLeg`;
+    m[`LowerLeg_${s}`] = `${side}Leg`;
+    m[`Foot_${s}`] = `${side}Foot`;
+    m[`Toes_${s}`] = `${side}ToeBase`;
+  }
+  return m;
+})();
+
+/**
+ * BVH laden (CMU oder Bandai Namco) und die Knochen auf Mixamo-Namen umbenennen – samt der Spuren.
+ * Ruhepose: CMU hat eine echte T-Pose (nur die Hüfthöhe fehlt), Bandai Namco nicht – dort gilt das erste Bild
+ * (stehende Ausgangshaltung) als Ruhepose.
+ */
 export function loadBvh(text: string): { group: Object3D; animations: AnimationClip[] } {
   const { skeleton, clip } = new BVHLoader().parse(text);
-  const rename = (n: string) => CMU_BONES[n] ?? n;
+  const bandai = skeleton.bones.some((b) => b.name === "UpperArm_L");
+  const map = bandai ? BANDAI_BONES : CMU_BONES;
+  const rename = (n: string) => map[n] ?? n;
   for (const b of skeleton.bones) b.name = rename(b.name);
   for (const t of clip.tracks) {
     const dot = t.name.lastIndexOf(".");
     t.name = rename(t.name.slice(0, dot)) + t.name.slice(dot);
   }
-  // BVH-Grundpose hat die Hüfte im Ursprung, die Aufnahme trägt die echte Hüfthöhe (Position-Kanal).
-  // Ruhehöhe = mittlere Hüfthöhe der Aufnahme – sonst deutet das Retargeting den ganzen Abstand als Sprung.
   const root = skeleton.bones[0]!;
-  const pos = clip.tracks.find((t) => t.name === `${root.name}.position`);
-  if (pos) {
-    const ys = Array.from({ length: pos.values.length / 3 }, (_, i) => pos.values[i * 3 + 1]!).sort((x, y) => x - y);
-    root.position.set(pos.values[0]!, ys[Math.floor(ys.length / 2)]!, pos.values[2]!);
+  if (bandai) {
+    const byName = new Map(skeleton.bones.map((b) => [b.name, b]));
+    for (const t of clip.tracks) {
+      const [bone, prop] = [t.name.slice(0, t.name.lastIndexOf(".")), t.name.slice(t.name.lastIndexOf(".") + 1)];
+      const b = byName.get(bone);
+      if (b && prop === "quaternion") b.quaternion.fromArray(t.values, 0);
+      if (b && prop === "position") b.position.fromArray(t.values, 0);
+    }
+  } else {
+    // BVH-Grundpose hat die Hüfte im Ursprung, die Aufnahme trägt die echte Hüfthöhe (Position-Kanal).
+    // Ruhehöhe = mittlere Hüfthöhe der Aufnahme – sonst deutet das Retargeting den ganzen Abstand als Sprung.
+    const pos = clip.tracks.find((t) => t.name === `${root.name}.position`);
+    if (pos) {
+      const ys = Array.from({ length: pos.values.length / 3 }, (_, i) => pos.values[i * 3 + 1]!).sort((x, y) => x - y);
+      root.position.set(pos.values[0]!, ys[Math.floor(ys.length / 2)]!, pos.values[2]!);
+    }
   }
   const group = new Group();
   group.add(root);
@@ -302,7 +342,8 @@ function facing(byName: Map<string, Object3D>): Vector3 {
 export function faceForward(group: Object3D, clip: AnimationClip, from = 0, to = clip.duration): number {
   const byName = new Map<string, Object3D>();
   group.traverse((o) => byName.set(o.name, o));
-  const hips = byName.get("Hips");
+  // oberster Knochen (CMU: Hips, Bandai Namco: joint_Root) – seine Drehung dreht den ganzen Tänzer
+  const hips = group.children[0];
   if (!hips || !byName.has("LeftUpLeg") || !byName.has("RightUpLeg")) return 0;
   const saved = [...byName.values()].map((o) => [o, o.position.clone(), o.quaternion.clone()] as const);
   group.updateMatrixWorld(true);
@@ -343,7 +384,7 @@ export function faceForward(group: Object3D, clip: AnimationClip, from = 0, to =
 
 /** Skelett und Animationen einer Quelldatei: Mixamo-FBX oder Mesh2Motion-GLB. */
 async function loadSource(file: string): Promise<{ group: Object3D; animations: AnimationClip[] }> {
-  if (isBvh(file)) return loadBvh(readFileSync(join(CMU_DIR, file), "utf8"));
+  if (isBvh(file)) return loadBvh(readFileSync(join(isBandai(file) ? BANDAI_DIR : CMU_DIR, file), "utf8"));
   const buf = readFileSync(join(isGlb(file) ? M2M_DIR : SRC_DIR, file));
   const data = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer;
   if (!isGlb(file)) {

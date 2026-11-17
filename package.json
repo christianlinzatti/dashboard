@@ -21,6 +21,7 @@
     "mixamo": "tsx --no-deprecation scripts/mixamo/convert.ts",
     "mesh2motion": "tsx --no-deprecation scripts/mixamo/fetch-mesh2motion.ts",
     "cmu": "tsx --no-deprecation scripts/mixamo/fetch-cmu.ts",
+    "bandai": "tsx --no-deprecation scripts/mixamo/fetch-bandai.ts",
     "test:live": "vitest run --config vitest.live.config.mts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
