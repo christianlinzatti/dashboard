@@ -5,7 +5,7 @@ import { contiguous } from "@/lib/song-context/sections";
 export { contiguous };
 import { ENERGY_CLIPS, IDLE_CLIP, WAVE_CLIP, genreBias, type Energy } from "./clips";
 import { mixamoClips, mixamoForEnergy, mixamoGenreBias, mixamoOffStyle } from "./mixamo";
-import { briefFor, energyLevel, type CrowdMode } from "@/lib/show/brief";
+import { briefFor, energyLevel, type CrowdMode, type ShowMoment } from "@/lib/show/brief";
 import type { EffectKind } from "@/lib/stage/themes";
 import { slots, type Formation, type Vec2 } from "./formations";
 import { rng } from "./rng";
@@ -24,6 +24,9 @@ export type CameraPreset =
   /** langsame Fahrt von der Totale auf die Tänzer zu */
   | "zoom";
 
+/** Choreografie-Moment: synchron, Kanon (gleicher Tanz als Welle), Solo (Lead im Spot), frei */
+export type Moment = ShowMoment;
+
 export type Move = {
   clip: string;
   /** Songzeit, ab der dieser Clip läuft (bleibt über Phrasen gleich, wenn der Clip weiterläuft) */
@@ -37,8 +40,10 @@ export type Phrase = {
   endMs: number;
   section: SectionKind;
   energy: Energy;
-  /** alle tanzen denselben Clip synchron */
+  /** alle tanzen denselben Clip synchron (moment „synchron“) */
   sync: boolean;
+  /** wie die Tänzer zusammen tanzen */
+  moment: Moment;
   formation: Formation;
   camera: CameraPreset;
   /** Regieanweisung (KI): was das Publikum tut und welche Effekte beim Einsatz zünden */
@@ -126,7 +131,14 @@ function energyFor(kind: SectionKind, song: SongStatic): Energy {
  * Clip pro Tänzer mit Wiederholungssperre, Refrains synchron, sonst Varianten mit Kanon,
  * wechselnde Formationen und Kameraeinstellungen. Deterministisch pro Track.
  */
-export function planChoreography(song: SongStatic, bpm: number): Choreography {
+export function planChoreography(
+  song: SongStatic,
+  bpm: number,
+  opts: {
+    /** Tänze der letzten Songs des Abends – werden seltener gewählt (Abwechslung über die Setlist) */
+    avoidClips?: ReadonlySet<string>;
+  } = {},
+): Choreography {
   const timeScale = timeScaleFor(bpm);
   const beatMs = 500 / timeScale; // ein Tanz-Schlag (Clips: 1 Schlag = 0,5 s bei 120 BPM)
   const barMs = beatMs * 4;
@@ -135,12 +147,15 @@ export function planChoreography(song: SongStatic, bpm: number): Choreography {
   const r = rng(`${song.trackKey}:${Math.round(bpm)}${variant}`);
   // eigener Zufall für die Drehbühne – ändert die übrige Choreografie nicht
   const rTurn = rng(`${song.trackKey}:drehbuehne${variant}`);
+  // eigener Zufall für die Momente (synchron/Kanon/Solo/frei)
+  const rMoment = rng(`${song.trackKey}:moment${variant}`);
+  const avoid = opts.avoidClips;
   const genres = song.music.genres.length ? song.music.genres : song.artists.flatMap((a) => a.genres);
   const bias = genreBias(genres);
   mixamoGenreBias(genres).forEach((c) => bias.add(c));
   // passender Stil doppelt so oft, fremder Stil (z. B. Breakdance bei Swing) seltener
   const offStyle = mixamoOffStyle(genres);
-  const weightOf = (c: string) => (bias.has(c) ? 2 : offStyle.has(c) ? 0.35 : 1);
+  const weightOf = (c: string) => (bias.has(c) ? 2 : offStyle.has(c) ? 0.35 : 1) * (avoid?.has(c) ? 0.25 : 1);
   // Mixamo-Tänze passen auf alle Avatare (gemeinsames Skelett) und kommen zu den eingebauten Clips dazu
   const clipsFor = (e: Energy) => [...ENERGY_CLIPS[e], ...mixamoForEnergy(e)];
 
@@ -159,6 +174,7 @@ export function planChoreography(song: SongStatic, bpm: number): Choreography {
 
   for (const sec of sections) {
     let t = sec.startMs;
+    let inSection = 0;
     while (t < sec.endMs - 1) {
       const bars = r.weighted([
         [8, 2],
@@ -167,14 +183,29 @@ export function planChoreography(song: SongStatic, bpm: number): Choreography {
       let end = Math.min(t + bars * barMs, sec.endMs);
       if (sec.endMs - end < 4 * barMs) end = sec.endMs; // kurze Reste anhängen
       const energy = energyFor(sec.kind, song);
-      const sync = sec.kind === "chorus" || (sec.kind === "instrumental" && energy >= 3);
+      const isFirst = phrases.length === 0;
+      const moment =
+        isFirst && sec.kind === "intro"
+          ? "frei"
+          : momentFor(sec.kind, energy, inSection, rMoment, briefFor(song.show, sec.kind)?.moment);
+      inSection++;
+      const sync = moment === "synchron";
       const formationOptions = FORMATIONS[sec.kind].filter((f) => f !== prevFormation || FORMATIONS[sec.kind].length === 1);
-      const formation = r.pick(formationOptions);
+      let formation = r.pick(formationOptions);
+      let camera = r.pick(CAMERAS[sec.kind]);
+      if (moment === "solo") {
+        // Solo: Lead vorne im Spot, Kamera bleibt nah dran
+        formation = "spotlight";
+        if (!["nah", "halbnah", "zoom"].includes(camera)) camera = rMoment.pick(["nah", "halbnah"] as const);
+      }
       prevFormation = formation;
-      const camera = r.pick(CAMERAS[sec.kind]);
       // nicht zusammen mit Kreisfahrt (hebt sich auf) oder Nahaufnahme (Sänger dreht sich weg)
       const turn =
-        rTurn.next() < (TURN_CHANCE[sec.kind] ?? 0) && camera !== "kreisfahrt" && camera !== "nah" && end - t >= 4 * barMs;
+        moment !== "solo" &&
+        rTurn.next() < (TURN_CHANCE[sec.kind] ?? 0) &&
+        camera !== "kreisfahrt" &&
+        camera !== "nah" &&
+        end - t >= 4 * barMs;
 
       const pool = (id: string, avoid: string[]) => {
         const all = clipsFor(energy).filter((c) => available[id]!.has(c));
@@ -183,12 +214,19 @@ export function planChoreography(song: SongStatic, bpm: number): Choreography {
       };
 
       const moves: Record<string, string> = {};
-      if (sync) {
+      if (moment === "synchron" || moment === "kanon") {
         const common = clipsFor(energy).filter((c) => order.every((id) => available[id]!.has(c)));
         const lead = order[0]!;
         const fresh = common.filter((c) => !recent[lead]!.includes(c));
         const clip = r.weighted((fresh.length ? fresh : common).map((c) => [c, weightOf(c)] as const));
         order.forEach((id) => (moves[id] = clip));
+      } else if (moment === "solo") {
+        // Lead tanzt, die Crew hält still (atmet nur)
+        order.forEach((id, i) => {
+          if (i > 0) return (moves[id] = available[id]!.has(IDLE_CLIP) ? IDLE_CLIP : (pool(id, [])[0]?.[0] ?? IDLE_CLIP));
+          const opts = pool(id, recent[id]!);
+          moves[id] = opts.length ? r.weighted(opts) : IDLE_CLIP;
+        });
       } else {
         const used = new Set<string>();
         order.forEach((id, i) => {
@@ -206,12 +244,16 @@ export function planChoreography(song: SongStatic, bpm: number): Choreography {
 
       const prev = phrases.at(-1);
       const s = slots(formation, order.length);
+      // Kanon: Welle von links nach rechts – je Platz einen Schlag später
+      const leftToRight = order.map((_, i) => i).sort((a, b) => s[a]![0] - s[b]![0]);
+      const kanonBeats = (i: number) => leftToRight.indexOf(i);
       phrases.push({
         startMs: t,
         endMs: end,
         section: sec.kind,
         energy,
         sync,
+        moment,
         formation,
         camera,
         turn,
@@ -219,7 +261,7 @@ export function planChoreography(song: SongStatic, bpm: number): Choreography {
         moves: Object.fromEntries(
           order.map((id, i) => {
             const clip = moves[id]!;
-            const offsetBeats = sync || i === 0 ? 0 : r.pick([0, 2, 4]);
+            const offsetBeats = moment === "kanon" ? kanonBeats(i) : sync || moment === "solo" || i === 0 ? 0 : r.pick([0, 2, 4]);
             const continues = prev?.moves[id]?.clip === clip && prev.moves[id]!.offsetBeats === offsetBeats;
             return [id, { clip, offsetBeats, clipStartMs: continues ? prev.moves[id]!.clipStartMs : t }];
           }),
@@ -237,6 +279,41 @@ export function planChoreography(song: SongStatic, bpm: number): Choreography {
   }
 
   return { trackKey: song.trackKey, bpm, beatMs, barMs, timeScale, phrases, order };
+}
+
+/**
+ * Moment einer Phrase. Regie (KI) gilt für die erste Phrase des Abschnitts; spätere Phrasen variieren
+ * (synchron ↔ Kanon, nach einem Solo frei), damit lange Abschnitte nicht erstarren.
+ */
+export function momentFor(
+  kind: SectionKind,
+  energy: Energy,
+  inSection: number,
+  r: { next(): number },
+  directed?: Moment,
+): Moment {
+  const roll = r.next();
+  if (directed) {
+    if (inSection === 0) return directed;
+    if (directed === "synchron") return roll < 0.5 ? "kanon" : "synchron";
+    if (directed === "solo") return "frei";
+    return directed;
+  }
+  switch (kind) {
+    case "chorus":
+      return inSection === 0 ? "synchron" : roll < 0.5 ? "kanon" : "synchron";
+    case "instrumental":
+      if (energy >= 3) return inSection === 0 ? "synchron" : roll < 0.5 ? "kanon" : "synchron";
+      return roll < 0.35 ? "kanon" : "frei";
+    case "bridge":
+      return inSection === 0 ? (roll < 0.6 ? "solo" : "kanon") : "frei";
+    case "verse":
+      return inSection === 0 && roll < 0.2 ? "solo" : roll > 0.85 ? "kanon" : "frei";
+    case "prechorus":
+      return roll < 0.35 ? "kanon" : "frei";
+    default:
+      return "frei";
+  }
 }
 
 function directives(song: SongStatic, kind: SectionKind): Pick<Phrase, "crowd" | "effects"> {

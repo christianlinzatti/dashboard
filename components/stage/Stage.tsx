@@ -12,6 +12,7 @@ import { useSongContext } from "@/lib/song-context/store";
 import type { LightFrame } from "@/lib/stage/lights";
 import { PRESETS, stepQuality, type Quality } from "@/lib/stage/quality";
 import { planEffects } from "@/lib/stage/effects";
+import { setlistStore, usePreviousTheme, useRecentClipsKey } from "@/lib/stage/setlist";
 import { THEMES, themedPalette, themeFor, type Theme, type ThemeId } from "@/lib/stage/themes";
 import { fpsFrom, perf } from "@/lib/stage/perf";
 import { ErrorBoundary } from "../ErrorBoundary";
@@ -100,7 +101,10 @@ function Scene({
   const raw = useSongContext((s) => s.song);
   // Bühnen-Thema: URL > Einstellung > Genre/Track; die Cover-Palette wird in Richtung Thema verschoben
   const themeChoice = useSettings((s) => s.stage);
-  const theme: Theme | null = raw ? THEMES[forceTheme ?? themeFor(raw, themeChoice)] : null;
+  // Gedächtnis des Abends: Bühne des vorigen Songs meiden, Tänze der letzten Songs seltener
+  const prevTheme = usePreviousTheme(raw?.trackKey);
+  const recentKey = useRecentClipsKey(raw?.trackKey);
+  const theme: Theme | null = raw ? THEMES[forceTheme ?? themeFor(raw, themeChoice, prevTheme)] : null;
   const song = useMemo(
     () => (raw && theme?.tint ? { ...raw, album: { ...raw.album, palette: themedPalette(raw.album.palette, theme) } } : raw),
     [raw, theme],
@@ -119,10 +123,16 @@ function Scene({
   // Regie (Genres, Stimmung, KI-Brief, Tagesform) kommt kurz nach dem Songwechsel
   const showKey = `${raw?.variant}|${raw?.music.mood}|${raw?.music.genres.join()}|${raw?.show?.motto}`;
   const choreo = useMemo(
-    () => (raw ? planChoreography(raw, bpm) : null),
+    () => (raw ? planChoreography(raw, bpm, { avoidClips: new Set(recentKey ? recentKey.split(",") : []) }) : null),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst nur bei inhaltlichen Änderungen
-    [raw?.trackKey, sectionsKey, bpm, raw?.cast, followKey, showKey],
+    [raw?.trackKey, sectionsKey, bpm, raw?.cast, followKey, showKey, recentKey],
   );
+  // diesen Song fürs Gedächtnis des Abends festhalten (Bühne + getanzte Clips)
+  useEffect(() => {
+    if (!choreo || !theme) return;
+    const clips = [...new Set(choreo.phrases.flatMap((p) => Object.values(p.moves).map((m) => m.clip)))];
+    setlistStore.getState().record({ trackKey: choreo.trackKey, theme: theme.id, clips });
+  }, [choreo, theme]);
   const mixamoIds = useMemo(() => (choreo ? mixamoIdsIn(choreo) : []), [choreo]);
   const cues = useMemo(() => (choreo && theme ? planEffects(choreo, theme) : []), [choreo, theme]);
   const frame = useRef<Frame>(initialFrame);

@@ -54,6 +54,16 @@ test.describe("Bühne & Licht", () => {
     });
   }
 
+  test("Choreografie-Moment: Refrain synchron oder als Kanon, Intro frei", async ({ page }) => {
+    const canvas = page.locator("[data-testid=stage] canvas");
+    await page.goto("/?demo=neonlicht&t=52000&qualitaet=niedrig");
+    await ready(page);
+    await expect(canvas).toHaveAttribute("data-moment", /^(synchron|kanon)$/);
+    await page.goto("/?demo=neonlicht&t=1000&qualitaet=niedrig");
+    await ready(page);
+    await expect(canvas).toHaveAttribute("data-moment", "frei");
+  });
+
   // Publikum: Handylichter im ruhigen Outro, Springen mit Armbändern im Refrain
   const crowd = [
     { name: "publikum-handys", q: "demo=neonlicht&t=180000&buehne=festival", state: "handys" },

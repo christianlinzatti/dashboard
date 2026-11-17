@@ -12,25 +12,40 @@ export const briefEnergies = ["ruhig", "mittel", "hoch", "hoehepunkt"] as const;
 export const crowdModes = ["handys", "wiegen", "haende", "springen"] as const;
 export type CrowdMode = (typeof crowdModes)[number];
 export const moods = ["ruhig", "mittel", "energetisch"] as const;
+/**
+ * Choreografie-Moment eines Abschnitts: synchron (alle gleich), kanon (gleicher Tanz als Welle über die Bühne),
+ * solo (Lead im Spot, Crew hält still), frei (jeder tanzt anders).
+ */
+export const showMoments = ["synchron", "kanon", "solo", "frei"] as const;
+export type ShowMoment = (typeof showMoments)[number];
 export type Mood = (typeof moods)[number];
 
-export const showBriefSchema = z.object({
+const sectionCore = z.object({
+  kind: z.enum(briefSectionKinds),
+  energy: z.enum(briefEnergies),
+  lyrics: z.enum(lyricsEffects),
+  crowd: z.enum(crowdModes),
+  effects: z.array(z.enum(effectKinds)),
+});
+const briefCore = {
   stage: z.enum(themeIds),
   mood: z.enum(moods),
   genres: z.array(z.string()),
   /** ein kurzer Satz zur Idee der Show (Deutsch) */
   motto: z.string(),
-  sections: z.array(
-    z.object({
-      kind: z.enum(briefSectionKinds),
-      energy: z.enum(briefEnergies),
-      lyrics: z.enum(lyricsEffects),
-      crowd: z.enum(crowdModes),
-      effects: z.array(z.enum(effectKinds)),
-    }),
-  ),
+};
+
+/** Was die KI liefern muss (strukturierte Ausgabe: alle Felder Pflicht) */
+export const showBriefSchema = z.object({
+  ...briefCore,
+  sections: z.array(sectionCore.extend({ moment: z.enum(showMoments) })),
 });
-export type ShowBrief = z.infer<typeof showBriefSchema>;
+/** Was gespeichert/gelesen wird: ältere Briefs (Cache) haben noch keinen Moment – dann entscheiden die Regeln */
+export const storedBriefSchema = z.object({
+  ...briefCore,
+  sections: z.array(sectionCore.extend({ moment: z.enum(showMoments).optional() })),
+});
+export type ShowBrief = z.infer<typeof storedBriefSchema>;
 export type BriefSection = ShowBrief["sections"][number];
 
 export const energyLevel = (e: BriefSection["energy"]) => briefEnergies.indexOf(e) as 0 | 1 | 2 | 3;
@@ -42,7 +57,7 @@ export function briefFor(brief: ShowBrief | undefined, kind: BriefSection["kind"
 
 /** Brief von außen (Cache, KI) säubern: Grenzen setzen, doppelte Abschnitte entfernen */
 export function sanitizeBrief(raw: unknown): ShowBrief | null {
-  const p = showBriefSchema.safeParse(raw);
+  const p = storedBriefSchema.safeParse(raw);
   if (!p.success) return null;
   const seen = new Set<string>();
   return {

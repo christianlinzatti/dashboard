@@ -91,6 +91,7 @@ export function Director({ song, choreo, frameRef, lightsRef, heads, strobeRef, 
     const phrase = choreo.phrases[phraseIndexAt(choreo, t)];
     const label = `${phrase?.camera ?? "totale"}${phrase?.turn ? "+drehbuehne" : ""}`;
     if (label !== shot.current) gl.domElement.dataset.camera = shot.current = label;
+    if (phrase && gl.domElement.dataset.moment !== phrase.moment) gl.domElement.dataset.moment = phrase.moment;
 
     // Spotlight folgt dem aktiven Sänger (sonst dem Lead)
     const p = focus ? positions[focus] : undefined;

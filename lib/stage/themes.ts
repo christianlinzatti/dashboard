@@ -139,12 +139,34 @@ const GENRE_THEME: Array<[RegExp, ThemeId]> = [
   [/rock|metal|punk|indie|grunge|pop|schlager|hip ?hop|rap|reggae|ska|festival|latin|reggaeton/i, "festival"],
 ];
 
-/** Bühne für einen Song: feste Wahl, sonst Genre, sonst wechselnd nach Track. */
+/** Verwandte Bühnen: Ausweichziel, wenn der vorige Song schon auf dieser Bühne lief (Jazz bleibt Jazz). */
+const RELATED: Record<ThemeId, ThemeId[]> = {
+  club: ["synthwave", "weltraum", "festival"],
+  festival: ["club", "synthwave"],
+  synthwave: ["club", "weltraum"],
+  jazz: [],
+  weltraum: ["synthwave", "club"],
+};
+
+/**
+ * Bühne für einen Song: feste Wahl, sonst Regie (KI), Genre oder wechselnd nach Track.
+ * Lief der vorige Song des Abends schon auf derselben Bühne, wird auf eine verwandte gewechselt –
+ * so wird ein Techno-Set nicht zu einer einzigen langen Club-Nacht.
+ */
 export function themeFor(
   song: Pick<SongStatic, "trackKey" | "music" | "artists"> & Partial<Pick<SongStatic, "show" | "variant">>,
   choice: ThemeChoice = "auto",
+  previous?: ThemeId,
 ): ThemeId {
   if (choice !== "auto") return choice;
+  const id = baseTheme(song);
+  const alt = RELATED[id];
+  return id === previous && alt.length ? alt[hash(`${song.trackKey}:setlist`) % alt.length]! : id;
+}
+
+function baseTheme(
+  song: Pick<SongStatic, "trackKey" | "music" | "artists"> & Partial<Pick<SongStatic, "show" | "variant">>,
+): ThemeId {
   // die Regie (KI) kennt den Song
   if (song.show) return song.show.stage;
   const genres = [...song.music.genres, ...song.artists.flatMap((a) => a.genres ?? [])];

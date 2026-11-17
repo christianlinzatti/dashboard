@@ -39,6 +39,7 @@ Abschnitte (sections): genau ein Eintrag für jede Abschnittsart, die im Song vo
 - energy: ruhig, mittel, hoch oder hoehepunkt – wie wild Tanz, Licht und Kamera werden. Eine Show lebt vom Kontrast: Wenn alles hoehepunkt ist, ist nichts mehr einer. Ruhige Songs dürfen ganz ohne hoehepunkt bleiben.
 - lyrics: Schrift-Effekt – gluehen (ruhig), neon (Leuchtröhre), feuer (Flammen an der Schrift), welle (Wörter wippen), echo (versetzte Schatten), glitch (digitales Flackern)
 - crowd: was das Publikum tut – handys (Lichtermeer), wiegen, haende (Hände oben), springen
+- moment: wie die Tänzer zusammen tanzen – synchron (alle denselben Tanz, wirkt wie eine einstudierte Crew; typisch für den Refrain), kanon (derselbe Tanz als Welle von links nach rechts), solo (der Lead tanzt allein im Spot, die Crew hält still – stark für Bridge oder eine leise Strophe), frei (jeder tanzt anders, locker). Wechsle zwischen den Abschnitten, damit die Show Momente bekommt.
 - effects: was beim Einsatz des Abschnitts zündet, nur Effekte der gewählten Bühne. pyro = Funkenfontänen, flammen = Flammenwerfer, co2 = Nebelstöße, funken = kalte Funken, ringe = Lichtringe am Boden, sternschnuppen, glitzer = Spiegelkugel, konfetti und feuerwerk am besten nur im großen Finale. Eine leere Liste ist erlaubt und oft richtig.
 
 Außerdem: mood (Grundstimmung des Songs), genres (zwei bis vier englische Genre-Begriffe in Kleinbuchstaben, z. B. "indie rock"), motto (ein Satz auf Deutsch zur Idee dieser Show).

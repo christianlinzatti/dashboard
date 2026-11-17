@@ -114,9 +114,10 @@ Für das Konzert-Erlebnis wurde die Bühne in vier Schichten gegliedert. Jede Sc
                 + Genres/Stimmung aus offenen Quellen (TheAudioDB, Last.fm)        lib/show/tags.ts
 2 REGIE         Regeln (Genre → Bühne, Abschnitt → Energie …)                      lib/stage/themes.ts u. a.
                 + Tagesform (anderer Zufall je Tag, nur live)                      song.variant
+                + Gedächtnis des Abends (vorige Bühne, letzte Tänze; nur Speicher) lib/stage/setlist.ts
                 + Regieanweisung der KI („Brief“, optional)                        lib/show/brief.ts, director.ts
 3 PLÄNE         reine Funktionen von (Song, Regie, Songzeit) – deterministisch
-                Choreografie: Tanz, Formation, Kamera, Drehbühne                   lib/dance/plan.ts
+                Choreografie: Tanz, Moment, Formation, Kamera, Drehbühne           lib/dance/plan.ts
                 Effekt-Einsätze: Pyro, Flammen, CO₂, Konfetti …                    lib/stage/effects.ts
                 Publikums-Regie: Hände, Springen, Handys, Armbänder                lib/stage/crowd.ts
                 Licht: Moving Heads, Laser, Wand, Lampen-Signal                    lib/stage/lights.ts
@@ -131,12 +132,20 @@ Für das Konzert-Erlebnis wurde die Bühne in vier Schichten gegliedert. Jede Sc
   `effectKinds`, eine Regel in `planEffects`, ein Emitter in `Effects.tsx`. Gleiche Songzeit ergibt das gleiche
   Bild, deshalb bleiben Screenshots reproduzierbar und die Regeln per Unit-Test prüfbar.
 - **Die KI gibt nur die Richtung vor, nie den Takt.** Der Brief wählt Bühne, Stimmung und je Abschnittsart
-  Energie, Schrift-Effekt, Publikumsverhalten und Wunsch-Effekte. Wann genau etwas zündet, bestimmen die Pläne
+  Energie, Schrift-Effekt, Publikumsverhalten, Wunsch-Effekte und Choreografie-Moment. Wann genau etwas zündet, bestimmen die Pläne
   aus Abschnitten und Beat-Raster. Der Brief ist ein zod-Schema aus Aufzählungen: die KI kann nichts verlangen,
   was die Bühne nicht kann, und eine unbrauchbare Antwort wird verworfen.
 - **Anbieter austauschbar.** Claude (`lib/show/director.ts`) und OpenAI (`director-openai.ts`) bekommen dieselbe
   Anweisung, dieselbe Songbeschreibung und dasselbe Schema; gewählt wird per Umgebung (`showAi()`), Claude zuerst.
   Ein weiterer Anbieter braucht nur eine Funktion `(SongFacts) → DirectorResult`.
+- **Momente statt Nebeneinander.** Jede Phrase hat einen Moment: *synchron* (alle denselben Tanz; Refrain-Einsatz),
+  *kanon* (derselbe Tanz als Welle von links nach rechts, je Platz ein Schlag), *solo* (Lead im Spot, Crew hält
+  still, Kamera nah) oder *frei*. Die Regeln wählen nach Abschnitt (`momentFor`), die KI kann je Abschnitt einen
+  Moment vorgeben; spätere Phrasen eines Abschnitts variieren, damit nichts erstarrt.
+- **Ein Abend, nicht lauter Einzelsongs.** `setlistStore` merkt sich Bühne und Tänze der gespielten Songs. Der
+  nächste Song meidet die Bühne des vorigen (verwandte statt gleiche: Club → Synthwave/Weltraum/Festival, Jazz
+  bleibt Jazz) und wählt Tänze der letzten zwei Songs seltener. Nur im Speicher: Neuladen beginnt einen neuen
+  Abend, Demos und Screenshots bleiben reproduzierbar.
 - **Alles ist optional.** Ohne KI-Schlüssel läuft die Show mit Regeln und Tagesform; ohne Tags wechselt
   die Bühne je Song und Tag; ohne Lyrics werden Abschnitte aus der Dauer geschätzt.
 - **Nichts stellt mitten im Song um.** Regie-Daten, die später als 25 s nach Songbeginn eintreffen, werden nicht

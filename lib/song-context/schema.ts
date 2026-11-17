@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { showBriefSchema } from "@/lib/show/brief";
+import { storedBriefSchema } from "@/lib/show/brief";
 
 /**
  * Song-Kontext: der eine Ort mit allen Informationen zum aktuellen Song.
@@ -211,7 +211,7 @@ export const songStaticSchema = z.object({
     mood: z.enum(["ruhig", "mittel", "energetisch"]).optional(),
   }),
   /** Regieanweisung der KI für diesen Song (lib/show) */
-  show: showBriefSchema.optional(),
+  show: storedBriefSchema.optional(),
   /** Tagesform: gleiche Regeln, anderer Zufall – derselbe Song sieht jeden Tag etwas anders aus (nur Live-Betrieb) */
   variant: z.string().optional(),
   info: infoSchema.optional(),
