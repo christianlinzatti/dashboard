@@ -667,6 +667,29 @@ describe("Keine Tänze, Bühnengesten, gesicherte Tänze", () => {
     expect(preservedId("Mixamo_X", new Set(["Mixamo_X_alt", "Mixamo_X_alt2"]))).toBe("Mixamo_X_alt3");
   });
 
+  it("Bewegungen, Reaktionen und Posen sind kein Tanz – der Moonwalk schon", async () => {
+    const { skipReason } = await import("@/scripts/mixamo/auto");
+    for (const n of [
+      "Crawling",
+      "Headbutt",
+      "Header",
+      "Kettlebell Swing",
+      "Leg Sweep",
+      "Right Turn",
+      "left turn 90",
+      "Strafe",
+      "Stand To Cover",
+      "Standing React Small From Back",
+      "Drunk Run Forward",
+      "Female Standing Pose",
+      "Swing To Land",
+      "Pointing Gesture",
+    ])
+      expect(skipReason(n), n).toBe("kein Tanz");
+    for (const n of ["Moonwalk", "Swing Dancing", "Female Dance Pose", "Dancing Running Man", "Clapping", "Waving Gesture"])
+      expect(skipReason(n), n).toBeUndefined();
+  });
+
   it("Katalog im Repo: automatische Einträge folgen den Regeln, gesicherte Tänze haben eine Datei", async () => {
     const { default: catalog } = await import("@/lib/dance/mixamo-clips.json");
     const { skipReason } = await import("@/scripts/mixamo/auto");

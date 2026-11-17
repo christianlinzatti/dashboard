@@ -89,7 +89,9 @@ async function main() {
     catalog.clips.push(entry);
   }
 
-  for (const entry of catalog.clips) {
+  // über eine Kopie: entfernte Sicherungen (siehe unten) verschieben sonst die Schleife
+  for (const entry of [...catalog.clips]) {
+    if (!catalog.clips.includes(entry)) continue;
     if (only && entry.id !== only) continue;
     if (entry.preserved) continue;
     const file = findSource(entry, files);
@@ -113,8 +115,17 @@ async function main() {
       const twin = findTwin(entry, catalog.clips, signatures);
       if (twin) {
         const [keep, drop] = catalog.clips.indexOf(twin) < catalog.clips.indexOf(entry) ? [twin, entry] : [entry, twin];
-        markDuplicate(drop, keep);
-        console.log(`= ${drop.id}: ${drop.source} ist derselbe Tanz wie ${keep.id} (${keep.source}) – übersprungen`);
+        if (drop.preserved) {
+          // gesicherter früherer Tanz ist doch derselbe wie ein aktueller: Sicherung samt Datei ganz entfernen
+          // (eine Sicherung ohne Datei wäre nutzlos – sie hängt an keiner FBX mehr)
+          rmSync(join(OUT_DIR, `${drop.id}.json`), { force: true });
+          catalog.clips.splice(catalog.clips.indexOf(drop), 1);
+          signatures.delete(drop.id);
+          console.log(`= ${drop.id}: gesicherter Tanz ist derselbe wie ${keep.id} – Sicherung entfernt`);
+        } else {
+          markDuplicate(drop, keep);
+          console.log(`= ${drop.id}: ${drop.source} ist derselbe Tanz wie ${keep.id} (${keep.source}) – übersprungen`);
+        }
         if (drop === entry) continue;
       }
       delete entry.duplicateOf;

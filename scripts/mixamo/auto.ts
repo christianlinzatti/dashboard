@@ -35,13 +35,13 @@ const STYLES: Array<[RegExp, string[], string]> = [
 
 /** Mixamo hat neben Tänzen auch Kampf, Waffen, Gehen, Alltag – auf der Bühne fehl am Platz */
 const NON_DANCE =
-  /rifle|reload|gun|pistol|sword|fight|punch|kick|takedown|disarm|shov|block|uppercut|hit (on|to)|stab|zombie|walk|jog|running|rummag|texting|phone|talking|look|nervous|petting|kiss|stretch|surprised|laugh|thoughtful|wobbl|floating|opening|^entry$|^standing$|jumping down|sitting|crouch|dying|death|injur|sleep|drink|eat/i;
+  /rifle|reload|gun|pistol|sword|fight|punch|kick|takedown|disarm|shov|block|uppercut|hit (on|to)|stab|zombie|walk|jog|running|rummag|texting|phone|talking|look|nervous|petting|kiss|stretch|surprised|laugh|thoughtful|wobbl|floating|opening|^entry$|^standing$|jumping down|sitting|crouch|dying|death|injur|sleep|drink|eat|crawl|dodg|headbutt|^header$|kettlebell|sweep|pointing|dismiss|\bturn\b|cover|react|strafe|to land|change direction|\brun\b|\bpose\b|skinning/i;
 
 /** Warum ein Clip nicht eingeplant wird (Übergang, kein Tanz) – oder undefined */
 export function skipReason(name: string): "Übergang" | "kein Tanz" | undefined {
   if (isTransition(name)) return "Übergang";
-  // „Dancing Running Man“ ist ein Tanz, „Running“ nicht
-  if (!/danc/i.test(name) && NON_DANCE.test(name)) return "kein Tanz";
+  // „Dancing Running Man“ ist ein Tanz, „Running“ nicht – und der Moonwalk ist trotz „walk“ einer
+  if (!/danc|moonwalk/i.test(name) && NON_DANCE.test(name)) return "kein Tanz";
   return undefined;
 }
 
