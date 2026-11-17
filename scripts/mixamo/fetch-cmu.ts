@@ -41,6 +41,8 @@ export const CMU_DANCES: Record<string, string> = {
 
 /** Proband → Tanz (für Aufnahmen, die über die Nummer geladen werden) */
 export const CMU_SUBJECTS: Record<string, string> = {
+  "05": "ballet",
+  "49": "ballet",
   "55": "dance",
   "60": "salsa",
   "61": "salsa",

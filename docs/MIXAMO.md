@@ -146,7 +146,7 @@ npm run mixamo               # wandelt alles gemeinsam um
 ```
 
 - Der Dateiname beschreibt den Tanz, daraus entstehen ID (`CMU_Salsa_60_01`), Stil und Ersatz-Clip. Aufnahmen, die
-  über die Nummer geladen werden, heißen nach dem Probanden (60/61 → `salsa_60_02.bvh`, 93/103 → Charleston),
+  über die Nummer geladen werden, heißen nach dem Probanden (60/61 → `salsa_60_02.bvh`, 93/103 → Charleston, 5/49 → Ballett),
   sonst `cmu_….bvh`. Wer sie umbenennt, bekommt den passenden Stil.
 - Salsa ist ein Paartanz: Aufnahmen mit Dips oder fast nur Drehungen wirken allein seltsam. Sie stehen im Katalog
   mit `skip` und `skipReason: "Paartanz-Figur: …"` (ohne `auto`, damit die Umwandlung das nicht überschreibt).
