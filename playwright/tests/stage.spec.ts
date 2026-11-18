@@ -100,13 +100,17 @@ test.describe("Bühne & Licht", () => {
     await expect(page.locator("[data-weather=kein]")).toHaveCount(1);
   });
 
-  test("Übergang zwischen Songs: Umbau und Zugabe (erzwungen), Motto zum Songstart", async ({ page }) => {
-    for (const kind of ["umbau", "zugabe"] as const) {
+  // Übergang zwischen Songs – je Art ein eigener Test (bei 1920×1200 ohne GPU sprengen mehrere Seiten das Zeitlimit)
+  for (const kind of ["umbau", "zugabe"] as const) {
+    test(`Übergang zwischen Songs: ${kind} (erzwungen)`, async ({ page }) => {
       await page.goto(`/?demo=neonlicht&t=2000&uebergang=${kind}&qualitaet=niedrig`);
       await ready(page);
       await expect(page.getByTestId("song-transition")).toHaveAttribute("data-kind", kind);
       await expect(page).toHaveScreenshot(`uebergang-${kind}.png`);
-    }
+    });
+  }
+
+  test("Motto läuft zum Songstart ein und blendet wieder aus", async ({ page }) => {
     await page.goto("/?demo=neonlicht&t=3000&qualitaet=niedrig");
     await ready(page);
     await expect(page.getByTestId("motto")).toHaveAttribute("data-visible", "true");
