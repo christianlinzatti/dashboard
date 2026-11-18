@@ -42,7 +42,13 @@
         {
           "name": "MottoIntent",
           "slots": [],
-          "samples": ["wie heißt das Motto", "was ist das Motto", "wie lautet das Motto", "was ist das Motto der Show", "unter welchem Motto steht der Song"]
+          "samples": [
+            "wie heißt das Motto",
+            "was ist das Motto",
+            "wie lautet das Motto",
+            "was ist das Motto der Show",
+            "unter welchem Motto steht der Song"
+          ]
         },
         {
           "name": "LampenIntent",
