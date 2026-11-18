@@ -31,7 +31,7 @@ const briefCore = {
   stage: z.enum(themeIds),
   mood: z.enum(moods),
   genres: z.array(z.string()),
-  /** ein kurzer Satz zur Idee der Show (Deutsch) */
+  /** Motto der Show (Deutsch, kurz) – Einblendung zum Songstart, Alexa */
   motto: z.string(),
 };
 

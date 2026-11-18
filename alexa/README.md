@@ -7,6 +7,7 @@ und Bühnenqualität des Dashboards.
 |---|---|
 | „Alexa, frag Sonic Stage, welcher Song läuft“ | Titel und Artists aus dem Dashboard |
 | „Alexa, frag Sonic Stage, wer singt gerade“ | aktiver Sänger (bei Feature-Songs) |
+| „Alexa, frag Sonic Stage, wie heißt das Motto“ | Motto der Show zum laufenden Song (KI-Regie, sonst aus Stimmung und Titel) |
 | „Alexa, frag Sonic Stage, wann ist der Song erschienen“ | Erscheinungsjahr und Album (laut Spotify) |
 | „Alexa, frag Sonic Stage, erzähl mir was über den Song“ | Produzenten, Songwriter, Samples (Genius, braucht `GENIUS_ACCESS_TOKEN`) |
 | „Alexa, frag Sonic Stage, was ist das für ein Sample“ | nur Samples, Zitate und Coverversionen |

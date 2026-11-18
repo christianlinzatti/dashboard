@@ -1,5 +1,7 @@
 "use client";
 
+import { MottoBanner } from "./hud/MottoBanner";
+import { SongTransition, type TransitionKind } from "./hud/SongTransition";
 import dynamic from "next/dynamic";
 import { useEffect, type CSSProperties } from "react";
 import { fixtures } from "@/lib/song-context/fixtures";
@@ -46,9 +48,23 @@ type Props = {
   theme?: ThemeId;
   /** Wetter erzwingen (URL `?wetter=`): Demos und Tests */
   weather?: "regen" | "schnee" | "aus";
+  /** Übergang zwischen Songs dauerhaft zeigen (URL `?uebergang=`): Demos und Tests */
+  transition?: TransitionKind;
 };
 
-export function Dashboard({ demo, t, debug, loginError, mic, lyricsMode, lyricsEffect, quality, theme, weather }: Props) {
+export function Dashboard({
+  demo,
+  t,
+  debug,
+  loginError,
+  mic,
+  lyricsMode,
+  lyricsEffect,
+  quality,
+  theme,
+  weather,
+  transition,
+}: Props) {
   const song = useSongContext((s) => s.song);
   const frozen = useSongContext((s) => s.frozen);
   const unknownDemo = demo !== undefined && !fixtures[demo];
@@ -139,8 +155,10 @@ export function Dashboard({ demo, t, debug, loginError, mic, lyricsMode, lyricsE
           <NowPlayingBar />
           <InfoOverlay />
           <ConcertOverlay />
+          <MottoBanner />
           <LyricsLayer forceMode={lyricsMode} forceEffect={lyricsEffect} forceTheme={theme} />
           <Progress />
+          <SongTransition force={transition} />
           <Controls live={demo === undefined} mic={demo === undefined || mic ? micCtl : undefined} />
         </>
       ) : (

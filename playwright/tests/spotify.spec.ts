@@ -89,6 +89,48 @@ test.describe("Spotify-Anbindung", () => {
     expect(calls).toBeGreaterThan(0);
   });
 
+  test("Songwechsel: Umbau mit dem nächsten Song, nach einem ausgespielten Lieblingssong Zugabe-Rufe", async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem("ss_settings", JSON.stringify({ quality: "niedrig", strobe: true })));
+    let state: "a" | "b" | "c" = "a";
+    let progressMs = 1000;
+    const names = { a: "Testlied", b: "Zweites Lied", c: "Drittes Lied" };
+    await page.route("**/api/now-playing", (route) =>
+      route.fulfill({
+        json: { state: "playing", progressMs, fetchedAt: 0, track: { ...track, id: state, name: names[state] } },
+      }),
+    );
+    // alle Songs sind Lieblingssongs
+    await page.route("**/api/personal?*", (r) => r.fulfill({ json: { user: { trackSaved: true, artists: {} } } }));
+    const poll = () => page.evaluate(() => window.dispatchEvent(new Event("ss:poll-now")));
+    const transition = page.getByTestId("song-transition");
+    await page.goto("/");
+    await expect(page.getByTestId("now-playing")).toContainText("Testlied");
+    // erster Song des Abends: kein Umbau
+    await expect(transition).toHaveCount(0);
+
+    // Wechsel mitten im Song (geskippt): normaler Umbau mit dem nächsten Song und seinem Motto
+    state = "b";
+    await poll();
+    await expect(transition).toHaveAttribute("data-visible", "true");
+    await expect(transition).toHaveAttribute("data-kind", "umbau");
+    await expect(transition).toContainText("Zweites Lied");
+    await expect(page.getByTestId("motto")).toContainText("Zweites Lied");
+    // sobald die neue Bühne steht, geht das Licht wieder an
+    await expect(transition).toHaveAttribute("data-visible", "false", { timeout: 15_000 });
+
+    // Lieblingssong bis zum Ende gespielt → das Publikum ruft nach einer Zugabe
+    progressMs = 195_000;
+    await poll();
+    await page.waitForTimeout(500);
+    state = "c";
+    progressMs = 1000;
+    await poll();
+    await expect(transition).toHaveAttribute("data-kind", "zugabe");
+    await expect(page.getByTestId("zugabe")).toHaveText("Zugabe! Zugabe!");
+    await expect(transition).toContainText("Drittes Lied");
+    await expect(page.locator("[data-evening=zugabe]")).toHaveCount(1);
+  });
+
   test("Songwechsel und Stille werden übernommen", async ({ page }) => {
     let state: "a" | "b" | "idle" = "a";
     await page.route("**/api/now-playing", (route) =>

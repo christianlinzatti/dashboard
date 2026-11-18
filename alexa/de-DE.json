@@ -40,6 +40,11 @@
           "samples": ["wer singt gerade", "wer singt", "wer ist das", "von wem ist das"]
         },
         {
+          "name": "MottoIntent",
+          "slots": [],
+          "samples": ["wie heißt das Motto", "was ist das Motto", "wie lautet das Motto", "was ist das Motto der Show", "unter welchem Motto steht der Song"]
+        },
+        {
           "name": "LampenIntent",
           "slots": [
             {

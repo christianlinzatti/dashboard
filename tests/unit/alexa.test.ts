@@ -194,6 +194,14 @@ describe("Alexa-Intents", () => {
     expect((await run("WelcherSongIntent", {}, null)).text).toBe("Das Dashboard ist gerade nicht aktiv.");
   });
 
+  it("liest das Motto der Show vor", async () => {
+    expect((await run("MottoIntent", {}, { ...snap, motto: "Neonnacht über der Stadt" })).text).toBe(
+      "Das Motto zu Neonlicht: Neonnacht über der Stadt",
+    );
+    expect((await run("MottoIntent")).text).toBe("Zu Neonlicht gibt es gerade kein Motto.");
+    expect((await run("MottoIntent", {}, null)).text).toBe("Das Dashboard ist gerade nicht aktiv.");
+  });
+
   it("legt Befehle für das Dashboard ab", async () => {
     expect((await run("LampenIntent", { zustand: { value: "aus" } })).cmds).toEqual([{ type: "lampen", on: false }]);
     expect((await run("StroboIntent", { zustand: { value: "an" } })).cmds).toEqual([{ type: "strobo", on: true }]);

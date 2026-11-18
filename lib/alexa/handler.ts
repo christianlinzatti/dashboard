@@ -228,6 +228,11 @@ export async function handleAlexa(req: AlexaRequest, deps: HandlerDeps) {
       if (s.activeSinger) return speak(`Gerade singt ${s.activeSinger}.`);
       return speak(`Das ist ${s.title} von ${artistsText(s)}.`);
     }
+    case "MottoIntent": {
+      const s = await live();
+      if (!s) return speak("Das Dashboard ist gerade nicht aktiv.");
+      return speak(s.motto ? `Das Motto zu ${s.title}: ${s.motto}` : `Zu ${s.title} gibt es gerade kein Motto.`);
+    }
     case "LampenIntent": {
       const on = onOff(slot(req, "zustand"));
       if (on === undefined) return speak("Soll ich die Lampen an- oder ausschalten?", false);

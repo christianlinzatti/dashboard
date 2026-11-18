@@ -427,8 +427,8 @@ Aufwand: S = bis ½ Tag, M = 1–2 Tage, L = mehrere Tage.
 
 | Baustein | Aufwand |
 |---|---|
-| Motto der Show anzeigen (Songstart) und per Alexa abfragen | S |
-| Dramaturgie über mehrere Songs: die Regie kennt die letzten Songs und steigert oder beruhigt (Zugabe-Modus) | M |
+| ✅ Motto der Show anzeigen (Songstart) und per Alexa abfragen | S |
+| ✅ Dramaturgie über mehrere Songs: Phasen aus der Setlist (Steigerung, Höhepunkt, Durchatmen, Zugabe), Umbau zwischen den Songs | M |
 | KI-generierte Wandbilder zum Songthema (Bildmodell, gecacht je Song) | L |
 
 **Empfohlene Reihenfolge:** Stufe 6 sobald Hardware da ist. Bis dahin aus Stufe 7 die kleinen Bausteine

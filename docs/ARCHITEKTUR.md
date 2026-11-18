@@ -181,6 +181,14 @@ Für das Konzert-Erlebnis wurde die Bühne in vier Schichten gegliedert. Jede Sc
   Künstler tragen immer denselben Look, die Crew wechselt je Song, die Band bleibt. `components/stage/Accessories.ts`
   misst die Kopfform in der Grundhaltung (Vertices über dem Hals) und hängt die Teile an Kopf- bzw. Handknochen;
   Sänger halten ein Handmikrofon in der rechten Hand.
+- **Ein Abend mit Spannungsbogen.** `eveningPhase` (lib/show/evening.ts) gibt jedem Song eine Phase aus der Setlist:
+  Auftakt, Steigerung, Höhepunkt (dritter energiegeladener Song in Folge: Feuerwerk und volles Konfetti schon beim
+  ersten großen Einsatz), Durchatmen (ruhiger Song nach wilden: Feuerzeuge) und Zugabe (nach einem ausgespielten
+  Höhepunkt oder Lieblingssong; nie zweimal hintereinander). Die Setlist merkt sich dazu Stimmung, Like, Phase und
+  ob ein Song bis kurz vor Schluss lief. Beim Songwechsel zeigt `SongTransition` den Umbau (Licht aus, Nebel,
+  suchende Lichtkegel, nächster Song mit Motto) bzw. Zugabe-Rufe mit Handylichtern und blendet aus, sobald die neue
+  Bühne steht. Das Motto (`mottoFor`: KI-Regie, sonst aus Stimmung und Titel) läuft zum Songstart ein und steht im
+  Schnappschuss für Alexa („Wie heißt das Motto?“). Erzwingbar für Demos: `?uebergang=umbau|zugabe`.
 - **Wetter.** `weatherFor` (lib/stage/weather.ts): auf Freiluftbühnen Schnee bei Winter-/Weihnachtssongs und im
   Dezember/Januar ab und zu, Regen bei Songs über Regen/Sturm/Tränen und gelegentlich bei ruhigen Songs; nie unter
   Dach, am Strand kein Schnee. Deterministisch aus Song, Bühne und Datum (Demos: festes Datum), erzwingbar mit

@@ -4,6 +4,7 @@ import type { SongContextState } from "./store";
 import type { LightFrame } from "@/lib/stage/lights";
 import { topConcerts } from "@/lib/concerts/display";
 import type { SongStatic } from "./schema";
+import { mottoFor } from "@/lib/show/motto";
 
 /**
  * Kompakter Stand des Song-Kontexts für den Server (Alexa, Pi-Bridge).
@@ -67,6 +68,8 @@ export const snapshotSchema = z.object({
   /** Kurzinfos zu den Artists (erster Satz aus Wikipedia, Fakten) */
   /** Bereich für „in der Nähe“ (Heimatort, Umkreis) */
   concertArea: z.object({ name: z.string().max(100), radiusKm: z.number().positive() }).optional(),
+  /** Motto der Show (KI-Regie oder Regel), wird zum Songstart eingeblendet */
+  motto: z.string().max(200).optional(),
   /** Song-Hintergründe (Genius): Produzenten, Songwriter, Samples */
   trivia: z.array(z.string().max(200)).max(5).optional(),
   about: z
@@ -120,6 +123,7 @@ export function buildSnapshot(
       ? { scene: light.scene, base: light.signal.base, accent: light.signal.accent, brightness: light.signal.brightness }
       : null,
     updatedAt: Date.now(),
+    motto: mottoFor(song).slice(0, 200),
     ...extras(song),
   };
 }

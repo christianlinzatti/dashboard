@@ -32,7 +32,7 @@ export const LINGER_MS: Record<EffectKind, number> = {
  * - Abschnitte mit hoher Energie: Beat-Ringe auf dem Boden, Funken auf jedem zweiten Takt
  * - ruhige Abschnitte: Sternschnuppen bzw. Spiegelkugel-Glitzer
  */
-export function planEffects(c: Choreography, theme: Theme): Cue[] {
+export function planEffects(c: Choreography, theme: Theme, opts: { bigNight?: boolean } = {}): Cue[] {
   const allowed = new Set(theme.effects);
   const r = rng(`${c.trackKey}:fx:${theme.id}`);
   const out: Cue[] = [];
@@ -82,7 +82,10 @@ export function planEffects(c: Choreography, theme: Theme): Cue[] {
     if (k.countdown) {
       out.push(...dropCues(k.atMs, c, theme));
       // erster großer Einsatz: kurzer Konfetti-Schuss (nicht zugleich mit Schaum; das Finale hat sein eigenes)
-      if (!k.finale && !out.some((q) => q.kind === "schaum" && q.startMs === k.atMs)) add("konfetti", k.atMs, 1000, 0.7);
+      if (!k.finale && !out.some((q) => q.kind === "schaum" && q.startMs === k.atMs))
+        add("konfetti", k.atMs, 1000, opts.bigNight ? 1 : 0.7);
+      // Höhepunkt des Abends / Zugabe: Feuerwerk schon beim ersten großen Einsatz
+      if (!k.finale && opts.bigNight) add("feuerwerk", k.atMs + c.barMs, 8 * c.barMs, 1);
     }
   return out.sort((a, b) => a.startMs - b.startMs);
 }
