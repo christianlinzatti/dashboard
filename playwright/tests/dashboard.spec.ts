@@ -78,7 +78,7 @@ test.describe("Dashboard", () => {
 
   test("Debug-Panel: scrollen, anhalten, kopieren, als Datei speichern", async ({ page, context }) => {
     await context.grantPermissions(["clipboard-read", "clipboard-write"]);
-    await page.goto("/?demo=neonlicht&debug=1&qualitaet=niedrig");
+    await page.goto("/?demo=neonlicht&t=46000&debug=1&qualitaet=niedrig");
     await ready(page);
     const panel = page.getByTestId("debug-panel");
     await expect(panel).toContainText("Song-Kontext");
@@ -108,7 +108,7 @@ test.describe("Dashboard", () => {
 
   test("Debug: Song-Kontext an den Server senden und auf einem anderen Gerät ansehen", async ({ page, browser }) => {
     // Demo ist nicht angemeldet: der Server antwortet ehrlich mit 401
-    await page.goto("/?demo=neonlicht&debug=1&qualitaet=niedrig");
+    await page.goto("/?demo=neonlicht&t=46000&debug=1&qualitaet=niedrig");
     await ready(page);
     await page.getByTestId("debug-send").click();
     await expect(page.getByRole("status")).toContainText("Nicht angemeldet");
