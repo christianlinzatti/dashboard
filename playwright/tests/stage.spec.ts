@@ -90,6 +90,16 @@ test.describe("Bühne & Licht", () => {
     await expect(page.locator("[data-testid=stage] canvas")).toHaveAttribute("data-screen", "saenger");
   });
 
+  test("Wetter: Regen über dem Stadion (erzwungen), sonst trocken", async ({ page }) => {
+    await page.goto("/?demo=neonlicht&t=46000&lyrics=karaoke&buehne=stadion&wetter=regen&qualitaet=hoch");
+    await ready(page);
+    await expect(page.locator("[data-weather=regen]")).toHaveCount(1);
+    await expect(page).toHaveScreenshot("wetter-regen.png");
+    await page.goto("/?demo=neonlicht&t=46000&buehne=stadion&qualitaet=niedrig");
+    await ready(page);
+    await expect(page.locator("[data-weather=kein]")).toHaveCount(1);
+  });
+
   test("Live-Bildschirme: auf niedriger Qualität aus", async ({ page }) => {
     await page.goto("/?demo=neonlicht&t=40150&qualitaet=niedrig");
     await ready(page);

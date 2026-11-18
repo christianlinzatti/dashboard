@@ -44,9 +44,11 @@ type Props = {
   quality?: Quality;
   /** Bühnen-Thema fest vorgeben (URL ?buehne=…, z. B. für Screenshots) */
   theme?: ThemeId;
+  /** Wetter erzwingen (URL `?wetter=`): Demos und Tests */
+  weather?: "regen" | "schnee" | "aus";
 };
 
-export function Dashboard({ demo, t, debug, loginError, mic, lyricsMode, lyricsEffect, quality, theme }: Props) {
+export function Dashboard({ demo, t, debug, loginError, mic, lyricsMode, lyricsEffect, quality, theme, weather }: Props) {
   const song = useSongContext((s) => s.song);
   const frozen = useSongContext((s) => s.frozen);
   const unknownDemo = demo !== undefined && !fixtures[demo];
@@ -129,7 +131,7 @@ export function Dashboard({ demo, t, debug, loginError, mic, lyricsMode, lyricsE
       {song ? (
         <>
           <div className="absolute inset-0">
-            <Stage forceQuality={quality} forceTheme={theme} />
+            <Stage forceQuality={quality} forceTheme={theme} forceWeather={weather} />
           </div>
           {/* Verlauf für Lesbarkeit der Lyrics vor der 3D-Szene */}
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,rgb(0_0_0/0.55)_100%)]" />

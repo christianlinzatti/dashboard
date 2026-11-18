@@ -176,6 +176,10 @@ Für das Konzert-Erlebnis wurde die Bühne in vier Schichten gegliedert. Jede Sc
   ab Qualität „mittel“, Render-Target). Das Publikum trägt unterschiedliche Kleidung, Haare und Kappen, die
   vorderen Reihen fängt das Bühnenlicht; es klatscht über dem Kopf im Takt (`clap`, auch als KI-Anweisung
   „klatschen“), auf dem Festival wehen Fahnen. Monitorboxen an der Bühnenkante, Schaumkanonen auf Stativen.
+- **Wetter.** `weatherFor` (lib/stage/weather.ts): auf Freiluftbühnen Schnee bei Winter-/Weihnachtssongs und im
+  Dezember/Januar ab und zu, Regen bei Songs über Regen/Sturm/Tränen und gelegentlich bei ruhigen Songs; nie unter
+  Dach, am Strand kein Schnee. Deterministisch aus Song, Bühne und Datum (Demos: festes Datum), erzwingbar mit
+  `?wetter=regen|schnee|aus`. Regen als Striche, Schnee als treibende Flocken, beides im Shader aus der Songzeit.
 - **Ein Abend, nicht lauter Einzelsongs.** `setlistStore` merkt sich Bühne und Tänze der gespielten Songs. Der
   nächste Song meidet die Bühne des vorigen (verwandte statt gleiche: Club → Synthwave/Weltraum/Festival, Jazz
   bleibt Jazz) und wählt Tänze der letzten zwei Songs seltener. Nur im Speicher: Neuladen beginnt einen neuen

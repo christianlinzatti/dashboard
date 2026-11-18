@@ -24,6 +24,10 @@ import { Avatar } from "./Avatar";
 import { Director, FOG_NEAR } from "./Director";
 import { Blinders, Lasers, MovingHeads } from "./Lights";
 import { LiveScreens } from "./LiveScreens";
+import { Weather } from "./Weather";
+import { weatherFor } from "@/lib/stage/weather";
+import { DEMO_TODAY } from "@/lib/song-context/fixtures";
+import { todayLocal } from "@/lib/concerts/display";
 import { ReadySignal } from "./ReadySignal";
 import { PhotoWall } from "./PhotoWall";
 import { LogoWall } from "./LogoWall";
@@ -76,7 +80,15 @@ function Backdrop({ song }: { song: SongStatic | null }) {
  * Robust: ohne WebGL oder bei Fehlern in der Szene erscheint ein 2D-Hintergrund; nach einem
  * Verlust des Grafikkontexts (z. B. GPU-Reset auf dem Pi) wird die Szene neu aufgebaut.
  */
-export function Stage({ forceQuality, forceTheme }: { forceQuality?: Quality; forceTheme?: ThemeId }) {
+export function Stage({
+  forceQuality,
+  forceTheme,
+  forceWeather,
+}: {
+  forceQuality?: Quality;
+  forceTheme?: ThemeId;
+  forceWeather?: "regen" | "schnee" | "aus";
+}) {
   const song = useSongContext((s) => s.song);
   const [webgl] = useState(() => (typeof document === "undefined" ? true : hasWebGL()));
   const [generation, setGeneration] = useState(0);
@@ -88,6 +100,7 @@ export function Stage({ forceQuality, forceTheme }: { forceQuality?: Quality; fo
       <Scene
         forceQuality={forceQuality}
         forceTheme={forceTheme}
+        forceWeather={forceWeather}
         onContextLost={() => setTimeout(() => setGeneration((g) => g + 1), 1500)}
       />
     </ErrorBoundary>
@@ -97,10 +110,12 @@ export function Stage({ forceQuality, forceTheme }: { forceQuality?: Quality; fo
 function Scene({
   forceQuality,
   forceTheme,
+  forceWeather,
   onContextLost,
 }: {
   forceQuality?: Quality;
   forceTheme?: ThemeId;
+  forceWeather?: "regen" | "schnee" | "aus";
   onContextLost: () => void;
 }) {
   const raw = useSongContext((s) => s.song);
@@ -160,6 +175,11 @@ function Scene({
     [choreo, band],
   );
   const cues = useMemo(() => (choreo && theme ? planEffects(choreo, theme) : []), [choreo, theme]);
+  // Wetter auf Freiluftbühnen (Regen, Schnee) – Demos rechnen mit festem Datum
+  const weather =
+    forceWeather === "aus"
+      ? null
+      : (forceWeather ?? (raw && theme ? weatherFor(raw, theme.id, frozen ? DEMO_TODAY : todayLocal()) : null));
   const frame = useRef<Frame>(initialFrame);
   const lights = useRef<LightFrame | null>(null);
   const strobe = useRef<HTMLDivElement>(null);
@@ -187,6 +207,7 @@ function Scene({
       data-quality={quality}
       data-theme={theme.id}
       data-outfits={song.cast.map((c) => c.outfit ?? "original").join(",")}
+      data-weather={weather ?? "kein"}
       data-wall-logo={logo && theme.wall === "led" ? displayUrl(logo, 640) : undefined}
     >
       <Canvas
@@ -259,6 +280,7 @@ function Scene({
           glareRef={hasBlinders(theme) ? glare : undefined}
           theme={theme}
         />
+        {weather && <Weather kind={weather} frameRef={frame} lightsRef={lights} scale={preset.particles} />}
         <Effects
           key={theme.id}
           cues={cues}

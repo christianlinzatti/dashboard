@@ -19,6 +19,7 @@ export default async function Page({ searchParams }: { searchParams: Search }) {
       quality={qualities.includes(one(sp.qualitaet) as Quality) ? (one(sp.qualitaet) as Quality) : undefined}
       theme={themeIds.includes(one(sp.buehne) as ThemeId) ? (one(sp.buehne) as ThemeId) : undefined}
       lyricsEffect={lyricsEffects.includes(one(sp.effekt) as LyricsEffect) ? (one(sp.effekt) as LyricsEffect) : undefined}
+      weather={(["regen", "schnee", "aus"] as const).find((w) => w === one(sp.wetter))}
       lyricsMode={lyricsModes.includes(one(sp.lyrics) as LyricsMode) ? (one(sp.lyrics) as LyricsMode) : undefined}
     />
   );
