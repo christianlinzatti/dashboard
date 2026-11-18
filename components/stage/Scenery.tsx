@@ -318,7 +318,7 @@ export function Planet({ color, ring }: { color: string; ring: string }) {
 /** Bodentextur aus einer Canvas-Zeichnung (Holzdielen, Mondgestein, Bühnenplatten). */
 export function useFloorTexture(kind: Theme["floor"]) {
   const tex = useMemo(() => {
-    if (kind !== "holz" && kind !== "mond" && kind !== "buehne") return null;
+    if (kind === "spiegel" || kind === "raster") return null;
     const c = document.createElement("canvas");
     c.width = c.height = 256;
     const g = c.getContext("2d")!;
@@ -356,6 +356,38 @@ export function useFloorTexture(kind: Theme["floor"]) {
         g.arc(x, y, rad, 0, Math.PI * 2);
         g.fill();
       }
+    } else if (kind === "sand") {
+      g.fillStyle = "#b08a5e";
+      g.fillRect(0, 0, 256, 256);
+      for (let i = 0; i < 2600; i++) {
+        const l = 45 + r.next() * 30;
+        g.fillStyle = `hsla(${30 + r.next() * 10}, 40%, ${l}%, 0.35)`;
+        g.fillRect(r.next() * 256, r.next() * 256, 1.5, 1.5);
+      }
+      // Windrippel
+      g.strokeStyle = "rgba(90,60,30,0.18)";
+      for (let i = 0; i < 18; i++) {
+        g.beginPath();
+        const y = i * 14 + r.next() * 6;
+        g.moveTo(0, y);
+        g.bezierCurveTo(80, y + 6, 170, y - 6, 256, y);
+        g.stroke();
+      }
+    } else if (kind === "beton" || kind === "stein") {
+      g.fillStyle = kind === "beton" ? "#3a3938" : "#4a4652";
+      g.fillRect(0, 0, 256, 256);
+      for (let i = 0; i < 1500; i++) {
+        const v = 30 + r.next() * 50;
+        g.fillStyle = `rgba(${v},${v},${v + (kind === "stein" ? 6 : 0)},${0.1 + r.next() * 0.2})`;
+        g.fillRect(r.next() * 256, r.next() * 256, 1 + r.next() * 3, 1 + r.next() * 3);
+      }
+      // Fugen: Betonplatten groß, Steinplatten im Verband
+      g.fillStyle = "rgba(0,0,0,0.45)";
+      const n = kind === "beton" ? 2 : 4;
+      for (let i = 0; i < n; i++) {
+        g.fillRect(0, (i * 256) / n, 256, 2);
+        for (let k = 0; k < n; k++) g.fillRect(((k + (i % 2) * 0.5) * 256) / n, (i * 256) / n, 2, 256 / n);
+      }
     } else {
       g.fillStyle = "#16161c";
       g.fillRect(0, 0, 256, 256);
@@ -367,7 +399,7 @@ export function useFloorTexture(kind: Theme["floor"]) {
     }
     const t = new CanvasTexture(c);
     t.wrapS = t.wrapT = RepeatWrapping;
-    t.repeat.set(kind === "holz" ? 6 : 8, kind === "holz" ? 10 : 8);
+    t.repeat.set(kind === "holz" ? 6 : kind === "sand" ? 14 : 8, kind === "holz" ? 10 : kind === "sand" ? 14 : 8);
     t.colorSpace = SRGBColorSpace;
     return t;
   }, [kind]);

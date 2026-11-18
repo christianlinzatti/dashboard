@@ -23,7 +23,7 @@ Legende: ✅ umgesetzt · ◐ teilweise · ○ offen
 | 5c | TheAudioDB, Flickr, Genius-Trivia, Fotoauswahl | ✅ |
 | extra | Better Lyrics (Apple-TTML, Silben-Timing, echte Songabschnitte, Duette), Umschrift/Übersetzung | ✅ |
 | extra | Alexa kennt Konzerte, Hörstatistik, Likes, Band-Infos, Erscheinungsjahr | ✅ |
-| extra | Fünf Bühnen (Club, Festival, Synthwave, Jazz-Keller, Weltraum) mit Spezialeffekten | ✅ |
+| extra | Neun Bühnen (Club, Festival, Synthwave, Jazz-Keller, Weltraum, Stadion, Strand, Lagerhalle, Kathedrale) mit Spezialeffekten | ✅ |
 | 10 | Konzert-Erlebnis: Publikum, Flammen, Schrift-Effekte, Songstruktur, Show-Regie mit KI | ✅ (KI braucht `ANTHROPIC_API_KEY` oder `OPENAI_API_KEY`) |
 | extra | Mixamo-Tänze: Retargeting-Pipeline, 16 vorgeschlagene Tänze im Katalog, Laden zur Laufzeit | ✅ (Clips nach Download, docs/MIXAMO.md) |
 
@@ -227,7 +227,11 @@ Strophen ruhig, Refrains wechselnd auffällig, die Bühne gibt die Richtung vor 
 Fortschrittsbalken, Refrains hervorgehoben.
 ✅ **Bühnen-Themen** (`lib/stage/themes.ts`): Club (LED-Wand, Spiegelboden), Festival (Abendhimmel, Dach mit PA,
 kleinere Wand), Synthwave (Retro-Sonne, Berge, Neonraster im Takt), Jazz-Keller (Vorhang, Holzdielen, Spiegelkugel,
-keine Laser, gedämpftes Licht), Weltraum (Sternenhimmel mit Nebel, Ringplanet, Mondboden). Auswahl: URL `?buehne=` >
+keine Laser, gedämpftes Licht), Weltraum (Sternenhimmel mit Nebel, Ringplanet, Mondboden), Stadion (Nacht,
+Tribünen mit Handylichtermeer, Flutlichtmasten, Dach mit doppelter PA), Strand (Sonnenuntergang über dem Meer mit
+Glitzerstreifen, Sand, Palmen, Lichterkette), Lagerhalle (Beton, Stahlträger, Leuchtröhren im Takt, viel Nebel; Techno),
+Kathedrale (Buntglas-Rosette, Orgelpfeifen, Säulen, Kerzen; Klassik, Chor, Gospel). Kulissen in
+`components/stage/Venues.tsx`. Auswahl: URL `?buehne=` >
 Einstellung (Steuerleiste, Alexa „Bühne Weltraum“) > Genre > wechselnd pro Song. Die Cover-Palette wird je Thema
 anteilig in Richtung der Themenfarben verschoben – Song bleibt erkennbar, Bühne bekommt ihren Look.
 ✅ **Mixamo-Tänze** (docs/MIXAMO.md): `npm run mixamo` überträgt heruntergeladene FBX-Tänze über Knochenrichtungen

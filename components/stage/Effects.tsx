@@ -268,7 +268,7 @@ function ParticleFx({
   const uniforms = useMemo(() => {
     const o = (i: number) => new Vector3(...(e.origins[i] ?? e.origins[0]!));
     // echte Flammen sind orange – nur Synthwave/Weltraum behalten ihre Neon-/Plasmafarben
-    const warm = theme.id === "club" || theme.id === "festival" || theme.id === "jazz";
+    const warm = ["club", "festival", "jazz", "stadion", "strand"].includes(theme.id);
     const fire =
       kind === "co2"
         ? (["#ffffff", "#cfe6ff"] as const)

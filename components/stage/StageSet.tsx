@@ -9,6 +9,7 @@ import type { QualityPreset } from "@/lib/stage/quality";
 import type { Theme } from "@/lib/stage/themes";
 import type { Frame } from "./types";
 import { Curtain, NeonGrid, Planet, RetroSun, SkyDome, Stars, useFloorTexture } from "./Scenery";
+import { Beach, Cathedral, Stadium, StadiumRoof, Warehouse } from "./Venues";
 import { songContext } from "@/lib/song-context/store";
 
 export const TRUSS_Y = 4.3;
@@ -75,6 +76,15 @@ export function StageSet({
       <MonitorWedges />
       {theme.truss === "club" && <Truss />}
       {theme.truss === "dach" && <FestivalRoof />}
+      {theme.truss === "stadion" && (
+        <>
+          <StadiumRoof />
+          <Stadium accent={accent} lightsRef={lightsRef} />
+        </>
+      )}
+      {theme.wall === "meer" && <Beach accent={theme.colors.accent} lightsRef={lightsRef} />}
+      {theme.wall === "beton" && <Warehouse accent={theme.colors.accent} lightsRef={lightsRef} />}
+      {theme.wall === "kirche" && <Cathedral accent={theme.colors.accent} lightsRef={lightsRef} />}
       {theme.wall === "led" && (
         <WallFrame scale={wallScale(theme)}>
           <LedWall lightsRef={lightsRef} />
@@ -102,6 +112,20 @@ function Sky({ theme, accent }: { theme: Theme; accent: string }) {
         <>
           <SkyDome top="#0d0220" horizon="#7a1a8c" />
           <Stars count={160} size={0.14} />
+        </>
+      );
+    case "nacht":
+      return (
+        <>
+          <SkyDome top="#020309" horizon="#151b36" />
+          <Stars count={120} size={0.12} />
+        </>
+      );
+    case "strand":
+      return (
+        <>
+          <SkyDome top="#2a1f5c" horizon="#ff7a4a" />
+          <Stars count={30} size={0.12} />
         </>
       );
     case "sterne":

@@ -23,6 +23,10 @@ test.describe("Bühne & Licht", () => {
     { theme: "synthwave", q: "demo=hoshizora&t=31000", fx: "ringe" },
     { theme: "jazz", q: "demo=abendrot&t=44000", fx: "glitzer" },
     { theme: "weltraum", q: "demo=neonlicht&t=5000&buehne=weltraum", fx: "sternschnuppen" },
+    { theme: "stadion", q: "demo=neonlicht&t=98000&lyrics=karaoke&buehne=stadion", fx: "flammen" },
+    { theme: "strand", q: "demo=neonlicht&t=46000&lyrics=karaoke&buehne=strand", fx: "konfetti" },
+    { theme: "lagerhalle", q: "demo=instrumental&t=44200&buehne=lagerhalle", fx: "co2" },
+    { theme: "kathedrale", q: "demo=abendrot&t=44000&buehne=kathedrale", fx: "funken" },
   ] as const;
   for (const { theme, q, fx } of themes) {
     test(`Bühne ${theme}`, async ({ page }) => {

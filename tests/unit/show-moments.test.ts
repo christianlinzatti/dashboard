@@ -94,7 +94,7 @@ describe("Gedächtnis des Abends", () => {
   });
 
   it("nicht zweimal hintereinander dieselbe Bühne – Jazz bleibt Jazz", () => {
-    const song = { trackKey: "t1", music: { genres: ["techno"] }, artists: [] } as unknown as Parameters<typeof themeFor>[0];
+    const song = { trackKey: "t1", music: { genres: ["house"] }, artists: [] } as unknown as Parameters<typeof themeFor>[0];
     expect(themeFor(song)).toBe("club");
     expect(["synthwave", "weltraum", "festival"]).toContain(themeFor(song, "auto", "club"));
     expect(themeFor(song, "auto", "festival")).toBe("club");

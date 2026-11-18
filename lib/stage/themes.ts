@@ -6,7 +6,17 @@ import type { Palette, SongStatic } from "@/lib/song-context/schema";
  * Auswahl nach Genre (oder fest in den Einstellungen); ohne passendes Genre wechselt die Bühne
  * von Song zu Song (deterministisch nach Track) – so bleibt es abwechslungsreich.
  */
-export const themeIds = ["club", "festival", "synthwave", "jazz", "weltraum"] as const;
+export const themeIds = [
+  "club",
+  "festival",
+  "synthwave",
+  "jazz",
+  "weltraum",
+  "stadion",
+  "strand",
+  "lagerhalle",
+  "kathedrale",
+] as const;
 export type ThemeId = (typeof themeIds)[number];
 export type ThemeChoice = ThemeId | "auto";
 
@@ -27,12 +37,12 @@ export type EffectKind = (typeof effectKinds)[number];
 export type Theme = {
   id: ThemeId;
   label: string;
-  /** Hintergrund: einfarbig (Club), Abendhimmel, Synthwave-Sonne, Vorhang, Sternenhimmel */
-  sky: "dunkel" | "abend" | "retro" | "vorhang" | "sterne";
-  floor: "spiegel" | "buehne" | "raster" | "holz" | "mond";
-  /** Rückwand: LED-Wand, Retro-Sonne, Vorhang (ohne Wand), Planet */
-  wall: "led" | "sonne" | "vorhang" | "planet";
-  truss: "club" | "dach" | "keine" | "bogen";
+  /** Hintergrund: einfarbig (Club), Abendhimmel, Synthwave-Sonne, Vorhang, Sternenhimmel, Stadionnacht, Sonnenuntergang am Meer */
+  sky: "dunkel" | "abend" | "retro" | "vorhang" | "sterne" | "nacht" | "strand";
+  floor: "spiegel" | "buehne" | "raster" | "holz" | "mond" | "sand" | "beton" | "stein";
+  /** Rückwand: LED-Wand, Retro-Sonne, Vorhang (ohne Wand), Planet, Meer, Betonwand mit Leuchtröhren, Kirchenfenster */
+  wall: "led" | "sonne" | "vorhang" | "planet" | "meer" | "beton" | "kirche";
+  truss: "club" | "dach" | "keine" | "bogen" | "stadion" | "stahl";
   /** Anteil, zu dem die Themenfarben die Cover-Palette überlagern (0 = nur Cover) */
   tint: number;
   colors: { accent: string; dominant: string; dark: string };
@@ -113,6 +123,70 @@ export const THEMES: Record<ThemeId, Theme> = {
     fogFar: 18,
     crowd: 0.3,
   },
+  stadion: {
+    id: "stadion",
+    label: "Stadion",
+    sky: "nacht",
+    floor: "buehne",
+    wall: "led",
+    truss: "stadion",
+    tint: 0.15,
+    colors: { accent: "#ffffff", dominant: "#3a7bff", dark: "#05070f" },
+    lasers: true,
+    headLevel: 1,
+    effects: ["pyro", "funken", "flammen", "co2", "konfetti", "feuerwerk"],
+    fire: ["#ffe2a0", "#ff6a1f"],
+    fogFar: 60,
+    crowd: 1,
+  },
+  strand: {
+    id: "strand",
+    label: "Strand",
+    sky: "strand",
+    floor: "sand",
+    wall: "meer",
+    truss: "keine",
+    tint: 0.3,
+    colors: { accent: "#ffcf5c", dominant: "#ff5e7a", dark: "#1a0f24" },
+    lasers: false,
+    headLevel: 0.8,
+    effects: ["schaum", "konfetti", "funken", "ringe", "feuerwerk"],
+    fire: ["#fff0b8", "#ff8a3d"],
+    fogFar: 55,
+    crowd: 0.7,
+  },
+  lagerhalle: {
+    id: "lagerhalle",
+    label: "Lagerhalle",
+    sky: "dunkel",
+    floor: "beton",
+    wall: "beton",
+    truss: "stahl",
+    tint: 0.5,
+    colors: { accent: "#ff2a2a", dominant: "#e8e8f0", dark: "#070606" },
+    lasers: true,
+    headLevel: 1,
+    effects: ["co2", "flammen", "funken", "ringe"],
+    fire: ["#ffffff", "#ff3020"],
+    fogFar: 18,
+    crowd: 0.85,
+  },
+  kathedrale: {
+    id: "kathedrale",
+    label: "Kathedrale",
+    sky: "dunkel",
+    floor: "stein",
+    wall: "kirche",
+    truss: "keine",
+    tint: 0.45,
+    colors: { accent: "#ffcf7a", dominant: "#3b4fb8", dark: "#07060c" },
+    lasers: false,
+    headLevel: 0.7,
+    effects: ["funken", "co2", "ringe"],
+    fire: ["#fff4d6", "#ffc46b"],
+    fogFar: 26,
+    crowd: 0.5,
+  },
   weltraum: {
     id: "weltraum",
     label: "Weltraum",
@@ -131,13 +205,20 @@ export const THEMES: Record<ThemeId, Theme> = {
   },
 };
 
+/** Bühnen mit Traverse/Dach, an dem Blinder hängen */
+export const hasBlinders = (t: Theme) => t.truss === "club" || t.truss === "dach" || t.truss === "stadion" || t.truss === "stahl";
+
 /** Genre → Bühne (erste passende Regel gewinnt). */
 const GENRE_THEME: Array<[RegExp, ThemeId]> = [
-  [/jazz|soul|blues|swing|bossa|klassik|classical|chanson|acoustic|folk|singer.?songwriter/i, "jazz"],
+  [/klassik|classical|orchest|choir|chor|gospel|sacred|requiem|gregorian|a cappella|symphonic|gothic|organ/i, "kathedrale"],
+  [/jazz|soul|blues|swing|bossa|chanson|acoustic|folk|singer.?songwriter/i, "jazz"],
+  [/reggae|reggaeton|dancehall|latin|salsa|samba|tropical|afrobeat|calypso|soca|surf|beach|island/i, "strand"],
+  [/techno|industrial|minimal|ebm|hard ?style|warehouse|acid/i, "lagerhalle"],
+  [/stadium|arena rock|anthem|schlager|britpop|pop rock/i, "stadion"],
   [/synthwave|retrowave|outrun|synth.?pop|new wave|italo|city pop|80s|vaporwave|j-?pop|k-?pop/i, "synthwave"],
   [/ambient|space|cosmic|chill|downtempo|lo-?fi|post-rock|shoegaze|trance|progressive/i, "weltraum"],
-  [/techno|house|edm|electro|minimal|drum|bass|dubstep|hardstyle/i, "club"],
-  [/rock|metal|punk|indie|grunge|pop|schlager|hip ?hop|rap|reggae|ska|festival|latin|reggaeton/i, "festival"],
+  [/house|edm|electro|drum|bass|dubstep|disco|trance/i, "club"],
+  [/rock|metal|punk|indie|grunge|pop|hip ?hop|rap|ska|festival/i, "festival"],
 ];
 
 /** Verwandte Bühnen: Ausweichziel, wenn der vorige Song schon auf dieser Bühne lief (Jazz bleibt Jazz). */
@@ -147,6 +228,10 @@ const RELATED: Record<ThemeId, ThemeId[]> = {
   synthwave: ["club", "weltraum"],
   jazz: [],
   weltraum: ["synthwave", "club"],
+  stadion: ["festival", "club"],
+  strand: ["festival", "synthwave"],
+  lagerhalle: ["club", "weltraum"],
+  kathedrale: [],
 };
 
 /**
@@ -172,7 +257,7 @@ function baseTheme(
   if (song.show) return song.show.stage;
   const genres = [...song.music.genres, ...song.artists.flatMap((a) => a.genres ?? [])];
   for (const [re, id] of GENRE_THEME) if (genres.some((g) => re.test(g))) return id;
-  const pool: ThemeId[] = ["club", "festival", "synthwave", "weltraum"];
+  const pool: ThemeId[] = ["club", "festival", "synthwave", "weltraum", "stadion", "strand", "lagerhalle"];
   // ohne Genre: wechselnd je Song – und mit der Tagesform jeden Tag anders
   return pool[hash(`${song.trackKey}${song.variant ?? ""}`) % pool.length]!;
 }

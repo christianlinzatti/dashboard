@@ -17,7 +17,7 @@ import { Band } from "./Band";
 import { planBand } from "@/lib/stage/band";
 import { avatars } from "@/lib/avatars/catalog";
 import { setlistStore, usePreviousTheme, useRecentClipsKey } from "@/lib/stage/setlist";
-import { THEMES, themedPalette, themeFor, type Theme, type ThemeId } from "@/lib/stage/themes";
+import { hasBlinders, THEMES, themedPalette, themeFor, type Theme, type ThemeId } from "@/lib/stage/themes";
 import { fpsFrom, perf } from "@/lib/stage/perf";
 import { ErrorBoundary } from "../ErrorBoundary";
 import { Avatar } from "./Avatar";
@@ -244,7 +244,7 @@ function Scene({
           dust={preset.fog}
           lightsRef={lights}
         />
-        {(theme.truss === "club" || theme.truss === "dach") && <Blinders lightsRef={lights} />}
+        {hasBlinders(theme) && <Blinders lightsRef={lights} />}
         {theme.lasers && <Lasers key={`l${preset.lasers}`} count={preset.lasers} lightsRef={lights} />}
         {preset.fog && <Fog lightsRef={lights} color={song.album.palette.accent} />}
         <Director
@@ -256,7 +256,7 @@ function Scene({
           strobeRef={strobe}
           blackoutRef={blackout}
           countdownRef={countdown}
-          glareRef={theme.truss === "club" || theme.truss === "dach" ? glare : undefined}
+          glareRef={hasBlinders(theme) ? glare : undefined}
           theme={theme}
         />
         <Effects

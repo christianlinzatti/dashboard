@@ -306,6 +306,34 @@
               }
             },
             {
+              "id": "stadion",
+              "name": {
+                "value": "Stadion",
+                "synonyms": ["Arena", "Stadionbühne", "Fußballstadion"]
+              }
+            },
+            {
+              "id": "strand",
+              "name": {
+                "value": "Strand",
+                "synonyms": ["Beach", "Meer", "Sonnenuntergang", "Strandbühne"]
+              }
+            },
+            {
+              "id": "lagerhalle",
+              "name": {
+                "value": "Lagerhalle",
+                "synonyms": ["Halle", "Warehouse", "Techno Halle", "Fabrik"]
+              }
+            },
+            {
+              "id": "kathedrale",
+              "name": {
+                "value": "Kathedrale",
+                "synonyms": ["Kirche", "Dom", "Münster"]
+              }
+            },
+            {
               "id": "auto",
               "name": {
                 "value": "automatisch",

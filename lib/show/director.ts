@@ -26,6 +26,12 @@ const STAGE_NOTES: Record<(typeof themeIds)[number], string> = {
   synthwave: "Retro-Sonne, Neonraster, Berge – Synthpop, 80er-Ästhetik, verträumt-treibend",
   jazz: "kleiner Keller mit rotem Vorhang, Holzboden, Spiegelkugel, wenig Publikum – Jazz, Soul, Akustik, Chanson, Leises",
   weltraum: "Sternenhimmel, Ringplanet, Mondboden – sphärisch, episch, Balladen mit Weite, Ambient",
+  stadion:
+    "Stadion bei Nacht, Tribünen voller Handylichter, Flutlicht, riesige Bühne – Stadion-Hymnen, Pop- und Rock-Hits, Mitsing-Refrains",
+  strand: "Sonnenuntergang am Meer, Sand, Palmen, Lichterketten – Reggae, Latin, Tropical, Sommerhits, Feelgood",
+  lagerhalle: "rohe Betonhalle mit Stahlträgern und Leuchtröhren, viel Nebel, Rot und Weiß – Techno, Industrial, dunkel und hart",
+  kathedrale:
+    "gotische Kirche mit Buntglas-Rosette, Orgelpfeifen, Säulen und Kerzen – Klassik, Chor, Gospel, Hymnen, große Gefühle",
 };
 
 export const SHOW_SYSTEM_PROMPT = `Du bist die Show-Regie von „Sonic Stage“. Das ist ein Lyric-Dashboard: Zu dem Song, der gerade läuft, tanzen 3D-Avatare auf einer virtuellen Konzertbühne – mit Lichtshow, Spezialeffekten, Publikum und den Lyrics als große Schrift im Bild.

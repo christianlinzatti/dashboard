@@ -18,9 +18,25 @@ describe("Bühnen-Themen", () => {
     expect(themeFor(song(["j-pop"]))).toBe("synthwave");
     expect(themeFor(song(["synthwave"]))).toBe("synthwave");
     expect(themeFor(song(["ambient"]))).toBe("weltraum");
-    expect(themeFor(song(["minimal techno"]))).toBe("club");
+    expect(themeFor(song(["deep house"]))).toBe("club");
     expect(themeFor(song(["german hip hop"]))).toBe("festival");
     expect(themeFor(song(["hard rock"]))).toBe("festival");
+  });
+
+  it("neue Bühnen: Lagerhalle, Strand, Kathedrale, Stadion", () => {
+    expect(themeFor(song(["minimal techno"]))).toBe("lagerhalle");
+    expect(themeFor(song(["industrial"]))).toBe("lagerhalle");
+    expect(themeFor(song(["reggae"]))).toBe("strand");
+    expect(themeFor(song(["reggaeton"]))).toBe("strand");
+    expect(themeFor(song(["tropical house"]))).toBe("strand");
+    expect(themeFor(song(["classical"]))).toBe("kathedrale");
+    expect(themeFor(song(["gospel"]))).toBe("kathedrale");
+    expect(themeFor(song(["symphonic metal"]))).toBe("kathedrale");
+    expect(themeFor(song(["schlager"]))).toBe("stadion");
+    expect(themeFor(song(["pop rock"]))).toBe("stadion");
+    // Kathedrale bleibt wie Jazz unter sich (kein Wechsel zwischen zwei Klassik-Stücken)
+    expect(themeFor(song(["classical"]), "auto", "kathedrale")).toBe("kathedrale");
+    expect(themeFor(song(["industrial"]), "auto", "lagerhalle")).not.toBe("lagerhalle");
   });
 
   it("Genres der Künstler zählen mit, feste Wahl schlägt alles", () => {
@@ -36,6 +52,7 @@ describe("Bühnen-Themen", () => {
     expect(new Set(picked).size).toBeGreaterThanOrEqual(3);
     expect(picked).toEqual(keys.map((k) => themeFor(plain(k))));
     expect(picked).not.toContain("jazz");
+    expect(picked).not.toContain("kathedrale");
   });
 
   it("Themenfarben färben die Cover-Palette ein", () => {

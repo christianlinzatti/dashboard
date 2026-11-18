@@ -252,7 +252,11 @@ export async function handleAlexa(req: AlexaRequest, deps: HandlerDeps) {
     case "BuehneIntent": {
       const v = slot(req, "buehne");
       const value = v === "automatisch" ? "auto" : v;
-      if (!isThemeChoice(value)) return speak("Welche Bühne? Club, Festival, Synthwave, Jazz oder Weltraum.", false);
+      if (!isThemeChoice(value))
+        return speak(
+          "Welche Bühne? Club, Festival, Synthwave, Jazz, Weltraum, Stadion, Strand, Lagerhalle oder Kathedrale.",
+          false,
+        );
       await deps.pushCommand({ type: "buehne", value });
       return speak(value === "auto" ? "Die Bühne passt sich wieder dem Song an." : `Bühne ${THEMES[value].label}.`);
     }

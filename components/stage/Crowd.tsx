@@ -220,7 +220,7 @@ export function Crowd({
       uBandMode: { value: 0 },
       uA: { value: new Color(accent) },
       uB: { value: new Color(accent) },
-      uPhoneColor: { value: new Color(theme.id === "jazz" ? "#ffcf8a" : "#f2f6ff") },
+      uPhoneColor: { value: new Color(theme.id === "jazz" || theme.id === "kathedrale" ? "#ffcf8a" : "#f2f6ff") },
       uLighter: { value: 0 },
       uPx: { value: 500 },
     }),
