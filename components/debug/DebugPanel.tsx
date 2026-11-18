@@ -5,15 +5,20 @@ import { useStore } from "zustand";
 import type { LogEntry } from "@/lib/live/log-schema";
 import { perf } from "@/lib/stage/perf";
 import { songContext } from "@/lib/song-context/store";
+import { sendDebugContext } from "@/lib/live/debug-upload";
 
-/** Song-Kontext als JSON: kompakt (Lyrics-Zeilen nur gezählt) oder vollständig */
-function contextJson(full: boolean) {
+/** Song-Kontext: kompakt (Lyrics-Zeilen nur gezählt) oder vollständig */
+function contextObject(full: boolean) {
   const { song, playback, live, derived, positionMs, frozen } = songContext.getState();
   const shown = full
     ? song
     : song && { ...song, lyrics: song.lyrics && { ...song.lyrics, lines: `${song.lyrics.lines.length} Zeilen` } };
-  return JSON.stringify({ positionMs: Math.round(positionMs), frozen, derived, playback, live, song: shown }, null, 2);
+  return { positionMs: Math.round(positionMs), frozen, derived, playback, live, song: shown };
 }
+const contextJson = (full: boolean) => JSON.stringify(contextObject(full), null, 2);
+
+/** Im Live-Modus so oft an den Server senden */
+const LIVE_SEND_MS = 10_000;
 
 function fileName() {
   const key = songContext.getState().song?.trackKey ?? "kein-song";
@@ -23,13 +28,15 @@ function fileName() {
 /**
  * Zeigt den kompletten Song-Kontext (mit ?debug=1). Scrollbar und markierbar; „Anhalten“ friert die Anzeige ein
  * (sonst geht beim Aktualisieren die Markierung verloren), dazu Kopieren, als Datei speichern, im eigenen Tab öffnen
- * (vollständig, mit allen Lyrics-Zeilen) und Vollbild.
+ * (vollständig, mit allen Lyrics-Zeilen), Vollbild und an den Server senden (einmal oder „Live“ alle 10 s) – ansehen
+ * dann auf jedem angemeldeten Gerät unter /debug.
  */
 export function DebugPanel() {
   const [snap, setSnap] = useState("");
   const [paused, setPaused] = useState(false);
   const [big, setBig] = useState(false);
   const [note, setNote] = useState("");
+  const [liveSend, setLiveSend] = useState(false);
   const pre = useRef<HTMLPreElement>(null);
   const fps = useStore(perf, (s) => s.fps);
   const quality = useStore(perf, (s) => s.quality);
@@ -58,6 +65,15 @@ export function DebugPanel() {
     const id = setInterval(read, 250);
     return () => clearInterval(id);
   }, [paused]);
+
+  // Live: alle 10 s an den Server (zum Mitlesen auf einem anderen Gerät unter /debug)
+  useEffect(() => {
+    if (!liveSend) return;
+    const send = () => void sendDebugContext(contextObject(true)).then((m) => setNote(m));
+    send();
+    const id = setInterval(send, LIVE_SEND_MS);
+    return () => clearInterval(id);
+  }, [liveSend]);
 
   const flash = (text: string) => {
     setNote(text);
@@ -123,6 +139,23 @@ export function DebugPanel() {
         </button>
         <button type="button" className={button} onClick={openTab} data-testid="debug-tab">
           Neuer Tab
+        </button>
+        <button
+          type="button"
+          className={button}
+          onClick={() => void sendDebugContext(contextObject(true)).then(flash)}
+          data-testid="debug-send"
+        >
+          An Server
+        </button>
+        <button
+          type="button"
+          className={`${button} ${liveSend ? "bg-emerald-500/60" : ""}`}
+          onClick={() => setLiveSend((l) => !l)}
+          aria-pressed={liveSend}
+          data-testid="debug-live"
+        >
+          {liveSend ? "Live an" : "Live"}
         </button>
         <button type="button" className={button} onClick={() => setBig((b) => !b)} data-testid="debug-size">
           {big ? "Klein" : "Groß"}

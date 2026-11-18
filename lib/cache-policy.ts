@@ -35,6 +35,8 @@ export const CACHE_TTL = {
   snapshot: 2 * 3600,
   /** nicht abgeholte Befehle verfallen */
   commands: 5 * 60,
+  /** Song-Kontext aus dem Debug-Panel (zum Ansehen auf einem anderen Gerät) – nur kurz aufheben */
+  debugContext: 3600,
 } as const;
 
 /** Wie oft das Dashboard seinen Stand meldet (Songwechsel, Abschnitt, Pause zusätzlich sofort). */

@@ -123,7 +123,8 @@ Dann im Browser öffnen:
 | `/?demo=abendrot` | Ein Artist, Zeilen-Sync |
 | `/?demo=instrumental` | Song ohne Lyrics |
 | `…&t=46000` | Songzeit einfrieren (ms) – für reproduzierbare Screenshots |
-| `…&debug=1` | Debug-Panel mit dem kompletten Song-Kontext |
+| `…&debug=1` | Debug-Panel mit dem kompletten Song-Kontext: scrollbar, Anhalten, Kopieren, als Datei, neuer Tab, Vollbild; „An Server“ / „Live“ schickt ihn an den Server |
+| `/debug` | Zuletzt gesendeten Song-Kontext auf einem anderen Gerät ansehen (gleiches Spotify-Konto, eine Stunde gespeichert), mit Kiosk-Protokoll |
 | `…&lyrics=stapel` | Darstellung erzwingen (`karaoke`, `wortpop`, `stapel`, `schreibmaschine`, `duett`) |
 | `…&qualitaet=hoch` | Qualitätsstufe der Bühne erzwingen (`niedrig`, `mittel`, `hoch`) |
 | `…&buehne=weltraum` | Bühne erzwingen (`club`, `festival`, `synthwave`, `jazz`, `weltraum`) |
