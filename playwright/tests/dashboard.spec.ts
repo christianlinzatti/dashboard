@@ -77,7 +77,8 @@ test.describe("Dashboard", () => {
   });
 
   test("laufende Wiedergabe bewegt den Fortschritt", async ({ page }) => {
-    await page.goto("/?demo=neonlicht");
+    // geprüft wird die Zeitanzeige, nicht die Bühne: niedrige Qualität, damit langsame CI-Rechner (ohne GPU) mithalten
+    await page.goto("/?demo=neonlicht&qualitaet=niedrig");
     // Sekunden aus „m:ss“ lesen – robust gegen langsame Rechner, die Anzeigen überspringen
     const seconds = async () => {
       const m = (await page.getByTestId("progress").innerText()).match(/(\d+):(\d\d)/);
