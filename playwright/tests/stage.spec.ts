@@ -18,6 +18,7 @@ test.describe("Bühne & Licht", () => {
   const themes = [
     { theme: "festival", q: "demo=neonlicht&t=41000&lyrics=karaoke", fx: "pyro" },
     { theme: "festival-finale", q: "demo=neonlicht&t=129000&lyrics=karaoke&buehne=festival", fx: "konfetti" },
+    { theme: "festival-schaum", q: "demo=neonlicht&t=98000&lyrics=karaoke", fx: "schaum" },
     { theme: "club", q: "demo=instrumental&t=44200", fx: "co2" },
     { theme: "synthwave", q: "demo=hoshizora&t=31000", fx: "ringe" },
     { theme: "jazz", q: "demo=abendrot&t=44000", fx: "glitzer" },

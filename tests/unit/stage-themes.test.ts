@@ -74,16 +74,40 @@ describe("Effekt-Regie", () => {
       expect(cues.some((c) => c.startMs === p.startMs && ["pyro", "co2", "funken"].includes(c.kind))).toBe(true);
   });
 
-  it("Finale im letzten Refrain: Konfetti und Feuerwerk", () => {
-    const last = chorusStarts.at(-1)!;
-    expect(cues.filter((c) => c.kind === "konfetti").map((c) => c.startMs)).toEqual([last.startMs]);
+  it("Konfetti: kurzer Schuss beim ersten großen Einsatz, große Kanonen im Finale, dazu Feuerwerk", () => {
+    const [first, last] = [chorusStarts[0]!, chorusStarts.at(-1)!];
+    const konfetti = cues.filter((c) => c.kind === "konfetti");
+    expect(konfetti.map((c) => c.startMs)).toEqual([first.startMs, last.startMs]);
+    expect(konfetti[0]!.intensity).toBeLessThan(konfetti[1]!.intensity);
     expect(cues.find((c) => c.kind === "feuerwerk")!.startMs).toBeGreaterThan(last.startMs);
+    // verschossenes Konfetti schwebt nach dem Ausstoß noch
+    expect(effectsAt(konfetti.slice(0, 1), first.startMs + 5000).map((c) => c.kind)).toEqual(["konfetti"]);
+  });
+
+  it("Schaumparty im vorletzten Refrain – nur auf Bühnen mit Schaumkanonen", () => {
+    const foam = cues.filter((c) => c.kind === "schaum");
+    expect(foam.map((c) => c.startMs)).toEqual([chorusStarts.at(-2)!.startMs]);
+    expect(foam[0]!.durationMs).toBe(4 * plan.barMs);
+    expect(planEffects(plan, THEMES.club).some((c) => c.kind === "schaum")).toBe(true);
+    expect(planEffects(plan, THEMES.weltraum).some((c) => c.kind === "schaum")).toBe(false);
+    // nicht zugleich mit dem Konfetti-Schuss
+    expect(cues.some((c) => c.kind === "konfetti" && c.startMs === foam[0]!.startMs)).toBe(false);
+  });
+
+  it("Schaum auf Wunsch der Regie und nie bei nur einem Refrain von selbst", () => {
+    const single = planChoreography(abendrot, 84);
+    expect(planEffects(single, THEMES.club).some((c) => c.kind === "schaum")).toBe(false);
+    const directed = {
+      ...single,
+      phrases: single.phrases.map((p) => (p.section === "chorus" ? { ...p, effects: ["schaum" as const] } : p)),
+    };
+    expect(planEffects(directed, THEMES.club).filter((c) => c.kind === "schaum")).toHaveLength(1);
   });
 
   it("ohne Refrain: Finale im letzten energiereichen Instrumentalteil", () => {
     const p = planChoreography(instrumental, 132);
     const club = planEffects(p, THEMES.club);
-    expect(club.filter((c) => c.kind === "konfetti")).toHaveLength(1);
+    expect(club.filter((c) => c.kind === "konfetti" && c.intensity === 1)).toHaveLength(1);
     expect(club.some((c) => c.kind === "ringe")).toBe(true);
   });
 

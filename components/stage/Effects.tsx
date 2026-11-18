@@ -25,10 +25,10 @@ type V3 = [number, number, number];
 /**
  * Partikel-Emitter. Alles wird im Vertex-Shader aus (Alter des Einsatzes, Zufallswerten) berechnet –
  * zustandslos: gleiche Songzeit → gleiches Bild (Screenshots, Vor-/Zurückspulen), kaum CPU-Last auf dem Pi.
- * mode: 0 Fontäne (Pyro, Funken), 1 Feuerwerk (Kugelbursts), 2 Konfetti, 3 CO₂-Jet, 4 Sternschnuppe
+ * mode: 0 Fontäne (Pyro, Funken), 1 Feuerwerk (Kugelbursts), 2 Konfetti, 3 CO₂-Jet, 4 Sternschnuppe, 5 Schaum
  */
 type Emitter = {
-  mode: 0 | 1 | 2 | 3 | 4;
+  mode: 0 | 1 | 2 | 3 | 4 | 5;
   count: number;
   origins: V3[];
   life: number;
@@ -138,6 +138,26 @@ const EMITTERS: Record<Exclude<EffectKind, "ringe" | "glitzer">, Emitter> = {
     grow: 0,
     additive: false,
   },
+  // Schaumkanonen: seitlich an der Bühnenkante und über der Bühnenfront, schießen Flocken ins Publikum,
+  // die langsam herabsinken und einen Schaumteppich bilden
+  schaum: {
+    mode: 5,
+    count: 2400,
+    origins: [
+      [-4.6, 3.3, 3.4],
+      [4.6, 3.3, 3.4],
+      [-1.7, 4.0, 0.8],
+      [1.7, 4.0, 0.8],
+    ],
+    life: 9,
+    speed: 5.5,
+    spread: 0.35,
+    gravity: 0,
+    drag: 1.1,
+    size: 0.24,
+    grow: 0.6,
+    additive: false,
+  },
   feuerwerk: {
     mode: 1,
     count: 1400,
@@ -196,7 +216,7 @@ const vertexShader = /* glsl */ `
       float z = r.y * 2.0 - 1.0; float th = r.z * 6.2831; float rr = sqrt(1.0 - z * z);
       dir = vec3(rr * cos(th), z, rr * sin(th)) * (0.85 + 0.15 * r.x);
       vPick = h(k * 7.7 + uSeed);
-    } else if (uMode > 3.5) {
+    } else if (uMode > 3.5 && uMode < 4.5) {
       // Sternschnuppe: 6 Bahnen, Partikel als Schweif hinter dem Kopf
       float s = floor(aRand.w * 6.0);
       float period = 2.2 + s * 0.55;
@@ -208,6 +228,25 @@ const vertexShader = /* glsl */ `
       origin = vec3(-8.0 + 16.0 * seed, 3.2 + 2.6 * h(seed * 7.3), -16.0 - 4.0 * h(seed * 2.1));
       dir = normalize(vec3(origin.x > 0.0 ? -1.0 : 1.0, -0.42, 0.0));
       vPick = aRand.x;
+    } else if (uMode > 4.5) {
+      // Schaum: Partikel fliegen in Klumpen (gemeinsamer Start und Richtung), damit es nach Schaum aussieht statt nach Staub
+      float cl = floor(aRand.x * 170.0);
+      float c1 = h(cl * 1.13 + uSeed); float c2 = h(cl * 2.71 + uSeed); float c3 = h(cl * 4.37 + uSeed);
+      origin = originOf(floor(h(cl * 5.9 + uSeed) * uOriginCount));
+      float phase = c1 * uSpawn;
+      float n = floor(max(uAge - phase, 0.0) / life);
+      float tb = phase + n * life;
+      age = uAge - tb;
+      alive = step(phase, uAge) * step(tb, uDur);
+      float th = c2 * 6.2831; float rad = uSpread * sqrt(c3);
+      // äußere Kanonen schießen nach vorn in die seitlichen Publikumsblöcke (an den Kameras vorbei),
+      // die beiden über der Bühne kurz vor die Füße der Tänzer
+      bool outer = abs(origin.x) > 3.0;
+      dir = outer
+        ? vec3(sign(origin.x) * 0.15 + cos(th) * rad, 0.35 + sin(th) * rad * 0.6, 1.0)
+        : vec3(-sign(origin.x) * 0.15 + cos(th) * rad, 0.15 + sin(th) * rad * 0.4, 0.8);
+      dir = normalize(dir) * (outer ? 1.0 : 0.5) * (0.75 + 0.25 * h(cl * 9.1 + uSeed));
+      vPick = cl;
     } else {
       // Fontäne / Jet / Konfetti: Partikel werden über das Ausstoß-Fenster verteilt und recyceln mit ihrer Lebensdauer
       float phase = r.x * uSpawn;
@@ -231,18 +270,34 @@ const vertexShader = /* glsl */ `
       p.x += sin(age * 1.9 + r.z * 6.28) * 0.35;
       p.z += cos(age * 1.6 + r.x * 6.28) * 0.25;
       vSpin = abs(sin(age * (4.0 + r.y * 7.0) + r.z * 6.28));
+    } else if (uMode > 4.5) {
+      // Schaum: sinkt langsam, schaukelt leicht und bleibt als Teppich liegen (auf der Bühne höher als im Publikum)
+      vec3 off = (aRand.yzw - 0.5) * (0.18 + 0.3 * min(age, 1.5));
+      p += off;
+      p.y -= 1.1 * age;
+      p.x += sin(age * 1.3 + h(vPick * 3.7) * 6.28) * 0.15;
+      float heap = (length(p.xz) < 4.3 ? 0.0 : -0.25) + 0.1 + 0.4 * h(vPick * 3.3 + uSeed) + off.y * 0.8;
+      p.y = max(p.y, heap);
+      vSpin = 1.0;
     } else {
       p.y -= 0.5 * uGravity * age * age;
       vSpin = 1.0;
     }
     float l01 = clamp(age / life, 0.0, 1.0);
     vHeat = l01;
-    float fade = uMode > 1.5 && uMode < 2.5 ? 1.0 - smoothstep(0.85, 1.0, l01) : uMode > 3.5 ? (1.0 - aRand.x) * (1.0 - l01) : 1.0 - l01;
+    float fade = uMode > 1.5 && uMode < 2.5 || uMode > 4.5 ? 1.0 - smoothstep(0.8, 1.0, l01) : uMode > 3.5 && uMode < 4.5 ? (1.0 - aRand.x) * (1.0 - l01) : 1.0 - l01;
     alive *= step(-0.25, p.y);
     vAlpha = alive * uIntensity * fade;
     vec4 mv = modelViewMatrix * vec4(p, 1.0);
     gl_Position = projectionMatrix * mv;
-    gl_PointSize = alive * max(uSize * (1.0 + uGrow * l01), 0.01) * uPx / max(-mv.z, 0.1);
+    float size = uSize * (1.0 + uGrow * l01);
+    if (uMode > 4.5) {
+      // Schaum fällt am Ende in sich zusammen; Flocken direkt vor der Linse blenden aus statt das Bild zu verdecken
+      size *= 1.0 - 0.6 * smoothstep(0.75, 1.0, l01);
+      vAlpha *= smoothstep(2.2, 4.0, -mv.z);
+    }
+    gl_PointSize = alive * max(size, 0.01) * uPx / max(-mv.z, 0.1);
+    if (uMode > 4.5) gl_PointSize = min(gl_PointSize, uPx * 0.05);
   }
 `;
 
@@ -261,10 +316,18 @@ const fragmentShader = /* glsl */ `
       return;
     }
     float d = length(q);
+    if (uMode > 4.5) {
+      // Schaumflocke: weiche, von oben angestrahlte Kugel, leicht im Bühnenlicht getönt
+      float a = smoothstep(0.5, 0.4, d);
+      if (a * vAlpha < 0.01) discard;
+      float shade = 0.95 + 0.35 * (0.1 - q.y) - 0.3 * d * d;
+      gl_FragColor = vec4(mix(vec3(1.0), uP3, 0.08) * shade, a * vAlpha);
+      return;
+    }
     float soft = uMode > 2.5 && uMode < 3.5 ? smoothstep(0.5, 0.0, d) * 0.22 : smoothstep(0.5, 0.1, d);
     vec3 c;
     if (uMode > 0.5 && uMode < 1.5) c = mix(vPick < 0.5 ? uP0 : uP1, vec3(1.0), (1.0 - vHeat) * 0.6);
-    else if (uMode > 3.5) c = mix(vec3(1.0), uColorB, vPick);
+    else if (uMode > 3.5 && uMode < 4.5) c = mix(vec3(1.0), uColorB, vPick);
     else c = mix(uColorA, uColorB, vHeat);
     gl_FragColor = vec4(c * soft * vAlpha, 1.0);
   }

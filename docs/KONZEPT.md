@@ -237,8 +237,9 @@ aus dem Hüftwippen, schneidet ganze Takte als nahtlose Schleife und normiert au
 (Lizenz), ins Repo kommen nur kompakte Clips (~100 KB, Int16/Base64). Die Choreografie plant sie wie eingebaute Clips
 (Energie, Genre-Bonus); geladen wird pro Song nur, was der Plan braucht, sonst Ersatz-Clip.
 ✅ **Effekt-Regie** (`lib/stage/effects.ts`): plant pro Song aus der Choreografie Pyro-Fontänen, Funken, CO₂-Jets,
-Konfetti, Feuerwerk, Beat-Ringe, Sternschnuppen und Spiegelkugel-Glitzer (Refrain-Beginn = Knall, letzter Refrain =
-Finale, hohe Energie = Ringe/Funken, ruhige Teile = Sternschnuppen); bei Mikro-Drops zusätzlich CO₂ + Pyro.
+Konfetti, Schaumkanonen, Feuerwerk, Beat-Ringe, Sternschnuppen und Spiegelkugel-Glitzer (Refrain-Beginn = Knall,
+erster großer Einsatz = Konfetti-Schuss, vorletzter Refrain = Schaumparty, letzter Refrain = Finale mit Konfetti und
+Feuerwerk, hohe Energie = Ringe/Funken, ruhige Teile = Sternschnuppen); bei Mikro-Drops zusätzlich CO₂ + Pyro.
 Partikel werden komplett im Vertex-Shader aus „Alter des Einsatzes + Zufallswert“ berechnet: zustandslos
 (gleiche Songzeit → gleiches Bild), kaum CPU-Last; Partikelanzahl je Qualitätsstufe (35 / 65 / 100 %).
 

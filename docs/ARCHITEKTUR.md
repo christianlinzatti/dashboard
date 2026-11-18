@@ -120,7 +120,7 @@ Für das Konzert-Erlebnis wurde die Bühne in vier Schichten gegliedert. Jede Sc
                 Choreografie: Tanz, Moment, Formation, Kamera, Drehbühne           lib/dance/plan.ts
                 Höhepunkte: Countdown, Blackout, Zeitlupe, Kameraflug im Finale    lib/stage/climax.ts
                 Band nach Genre: DJ, Gitarre + Schlagzeug, Keyboard                lib/stage/band.ts
-                Effekt-Einsätze: Pyro, Flammen, CO₂, Konfetti …                    lib/stage/effects.ts
+                Effekt-Einsätze: Pyro, Flammen, CO₂, Konfetti, Schaum …            lib/stage/effects.ts
                 Publikums-Regie: Hände, Springen, Handys, Armbänder                lib/stage/crowd.ts
                 Licht: Moving Heads, Laser, Wand, Lampen-Signal                    lib/stage/lights.ts
                 Lyrics: Darstellung und Schrift-Effekt je Abschnitt                lib/lyrics/director.ts
