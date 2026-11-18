@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { ready, tapControl } from "./helpers";
+import { collectErrors, ready, tapControl } from "./helpers";
 
 test.describe("Bühne & Licht", () => {
   for (const q of ["niedrig", "mittel", "hoch"] as const) {
@@ -99,6 +99,18 @@ test.describe("Bühne & Licht", () => {
     await ready(page);
     await expect(page.locator("[data-weather=kein]")).toHaveCount(1);
   });
+
+  // Live (Zeit läuft): Szenen werden laufend aktualisiert – Fehler zeigen sich erst dabei, nicht im Standbild
+  for (const q of ["demo=hoshizora", "demo=neonlicht&buehne=kathedrale", "demo=neonlicht&buehne=strand&wetter=regen"]) {
+    test(`Live ohne Fehler: ${q}`, async ({ page }) => {
+      const errors = collectErrors(page);
+      await page.goto(`/?${q}&qualitaet=niedrig`);
+      await ready(page);
+      await page.waitForTimeout(6000);
+      await expect(page.locator("[data-testid=stage] canvas")).toHaveCount(1);
+      expect(errors).toEqual([]);
+    });
+  }
 
   // Übergang zwischen Songs – je Art ein eigener Test (bei 1920×1200 ohne GPU sprengen mehrere Seiten das Zeitlimit)
   for (const kind of ["umbau", "zugabe"] as const) {

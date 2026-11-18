@@ -76,6 +76,36 @@ test.describe("Dashboard", () => {
     await expect(panel).toContainText('"activeSingerId": "demo-mira"');
   });
 
+  test("Debug-Panel: scrollen, anhalten, kopieren, als Datei speichern", async ({ page, context }) => {
+    await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+    await page.goto("/?demo=neonlicht&debug=1&qualitaet=niedrig");
+    await ready(page);
+    const panel = page.getByTestId("debug-panel");
+    await expect(panel).toContainText("Song-Kontext");
+    // scrollbar (fängt Mausrad und Berührung selbst ab)
+    await panel.hover();
+    await page.mouse.wheel(0, 600);
+    await expect.poll(() => panel.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+    // anhalten: Inhalt bleibt stehen, damit eine Markierung hält
+    await page.getByTestId("debug-pause").click();
+    await expect(panel).toHaveAttribute("data-paused", "true");
+    const frozen = await panel.locator("pre").innerText();
+    await page.waitForTimeout(800);
+    expect(await panel.locator("pre").innerText()).toBe(frozen);
+    // kopieren: vollständig (mit allen Lyrics-Zeilen)
+    await page.getByTestId("debug-copy").click();
+    await expect(page.getByRole("status")).toContainText("Kopiert");
+    const copied = JSON.parse(await page.evaluate(() => navigator.clipboard.readText())) as {
+      song: { trackKey: string; lyrics: { lines: unknown[] } };
+    };
+    expect(copied.song.trackKey).toBeTruthy();
+    expect(Array.isArray(copied.song.lyrics.lines)).toBe(true);
+    // als Datei
+    const download = page.waitForEvent("download");
+    await page.getByTestId("debug-download").click();
+    expect((await download).suggestedFilename()).toMatch(/^song-kontext-.+\.json$/);
+  });
+
   test("laufende Wiedergabe bewegt den Fortschritt", async ({ page }) => {
     // geprüft wird die Zeitanzeige, nicht die Bühne: niedrige Qualität, damit langsame CI-Rechner (ohne GPU) mithalten
     await page.goto("/?demo=neonlicht&qualitaet=niedrig");

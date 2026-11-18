@@ -1,6 +1,6 @@
 "use client";
 
-import { useFrame } from "@react-three/fiber";
+import { extend, useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import {
   AdditiveBlending,
@@ -10,6 +10,7 @@ import {
   CanvasTexture,
   Color,
   DoubleSide,
+  Line,
   RepeatWrapping,
   Shape,
   SRGBColorSpace,
@@ -20,6 +21,13 @@ import {
 import { rng } from "@/lib/dance/rng";
 import { songContext } from "@/lib/song-context/store";
 import type { Theme } from "@/lib/stage/themes";
+
+/**
+ * `<threeLine>` (THREE.Line; `<line>` wäre das SVG-Element) ausdrücklich registrieren: React Three Fiber findet den
+ * Namen beim ersten Anlegen, beim Neuaufbau nach einer Prop-Änderung aber nur über den Katalog („ThreeLine is not part
+ * of the THREE namespace“).
+ */
+extend({ ThreeLine: Line });
 
 const plainVertex = /* glsl */ `
   varying vec2 vUv; varying vec3 vPos;

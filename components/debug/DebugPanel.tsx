@@ -1,14 +1,36 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useStore } from "zustand";
 import type { LogEntry } from "@/lib/live/log-schema";
 import { perf } from "@/lib/stage/perf";
 import { songContext } from "@/lib/song-context/store";
 
-/** Zeigt den kompletten Song-Kontext (mit ?debug=1). */
+/** Song-Kontext als JSON: kompakt (Lyrics-Zeilen nur gezählt) oder vollständig */
+function contextJson(full: boolean) {
+  const { song, playback, live, derived, positionMs, frozen } = songContext.getState();
+  const shown = full
+    ? song
+    : song && { ...song, lyrics: song.lyrics && { ...song.lyrics, lines: `${song.lyrics.lines.length} Zeilen` } };
+  return JSON.stringify({ positionMs: Math.round(positionMs), frozen, derived, playback, live, song: shown }, null, 2);
+}
+
+function fileName() {
+  const key = songContext.getState().song?.trackKey ?? "kein-song";
+  return `song-kontext-${key.replace(/[^\w-]+/g, "_").slice(0, 60)}.json`;
+}
+
+/**
+ * Zeigt den kompletten Song-Kontext (mit ?debug=1). Scrollbar und markierbar; „Anhalten“ friert die Anzeige ein
+ * (sonst geht beim Aktualisieren die Markierung verloren), dazu Kopieren, als Datei speichern, im eigenen Tab öffnen
+ * (vollständig, mit allen Lyrics-Zeilen) und Vollbild.
+ */
 export function DebugPanel() {
   const [snap, setSnap] = useState("");
+  const [paused, setPaused] = useState(false);
+  const [big, setBig] = useState(false);
+  const [note, setNote] = useState("");
+  const pre = useRef<HTMLPreElement>(null);
   const fps = useStore(perf, (s) => s.fps);
   const quality = useStore(perf, (s) => s.quality);
   const [log, setLog] = useState<LogEntry[] | null>(null);
@@ -30,24 +52,87 @@ export function DebugPanel() {
   }, []);
 
   useEffect(() => {
-    const read = () => {
-      const { song, playback, live, derived, positionMs, frozen } = songContext.getState();
-      const compact = song && {
-        ...song,
-        lyrics: song.lyrics && { ...song.lyrics, lines: `${song.lyrics.lines.length} Zeilen` },
-      };
-      setSnap(JSON.stringify({ positionMs: Math.round(positionMs), frozen, derived, playback, live, song: compact }, null, 2));
-    };
+    if (paused) return;
+    const read = () => setSnap(contextJson(false));
     read();
     const id = setInterval(read, 250);
     return () => clearInterval(id);
-  }, []);
+  }, [paused]);
+
+  const flash = (text: string) => {
+    setNote(text);
+    setTimeout(() => setNote(""), 2500);
+  };
+
+  const copy = async () => {
+    const text = contextJson(true);
+    try {
+      await navigator.clipboard.writeText(text);
+      flash("Kopiert ✓");
+    } catch {
+      // ohne Zwischenablage-Recht (z. B. http im Heimnetz): Text markieren, dann Strg+C / lange drücken
+      setPaused(true);
+      const el = pre.current;
+      if (el) window.getSelection()?.selectAllChildren(el);
+      flash("Markiert – jetzt Strg+C bzw. „Kopieren“ im Menü");
+    }
+  };
+
+  const blobUrl = () => URL.createObjectURL(new Blob([contextJson(true)], { type: "application/json" }));
+
+  const download = () => {
+    const url = blobUrl();
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName();
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    flash("Datei gespeichert ✓");
+  };
+
+  const openTab = () => {
+    const url = blobUrl();
+    window.open(url, "_blank", "noopener");
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  };
+
+  const button =
+    "rounded-md bg-white/15 px-2 py-1 font-sans text-xs font-semibold text-white hover:bg-white/25 active:bg-white/35";
 
   return (
     <aside
-      className="pointer-events-none absolute right-2 top-2 z-50 max-h-[calc(100%-1rem)] w-[min(420px,45vw)] overflow-auto rounded-lg bg-black/85 p-3 font-mono text-[11px] leading-snug text-emerald-300"
+      className={`pointer-events-auto absolute z-50 select-text overflow-auto overscroll-contain rounded-lg bg-black/95 p-3 font-mono text-[11px] leading-snug text-emerald-300 ${
+        big ? "inset-2" : "right-2 top-2 max-h-[calc(100%-1rem)] w-[min(420px,45vw)]"
+      }`}
+      style={{ touchAction: "pan-y" }}
+      // Tippen ins Panel soll nicht die Steuerleiste des Dashboards auslösen
+      onClick={(e) => e.stopPropagation()}
+      onPointerDown={(e) => e.stopPropagation()}
       data-testid="debug-panel"
+      data-paused={paused}
     >
+      <div className="sticky top-0 -mx-3 -mt-3 mb-2 flex flex-wrap items-center gap-1.5 bg-black/95 px-3 py-2">
+        <button type="button" className={button} onClick={() => setPaused((p) => !p)} data-testid="debug-pause">
+          {paused ? "Weiter" : "Anhalten"}
+        </button>
+        <button type="button" className={button} onClick={() => void copy()} data-testid="debug-copy">
+          Kopieren
+        </button>
+        <button type="button" className={button} onClick={download} data-testid="debug-download">
+          Datei
+        </button>
+        <button type="button" className={button} onClick={openTab} data-testid="debug-tab">
+          Neuer Tab
+        </button>
+        <button type="button" className={button} onClick={() => setBig((b) => !b)} data-testid="debug-size">
+          {big ? "Klein" : "Groß"}
+        </button>
+        {note && (
+          <span className="font-sans text-xs text-white" role="status">
+            {note}
+          </span>
+        )}
+      </div>
       <p className="mb-2 font-sans text-sm text-white" data-testid="debug-fps">
         Bildrate: {fps === null ? "–" : `${fps} fps`}
         {quality ? ` · Qualität ${quality}` : ""}
@@ -70,7 +155,9 @@ export function DebugPanel() {
         </section>
       )}
       <h2 className="mb-2 font-sans text-sm font-bold text-white">Song-Kontext</h2>
-      <pre className="whitespace-pre-wrap break-all">{snap}</pre>
+      <pre ref={pre} className="whitespace-pre-wrap break-all">
+        {snap}
+      </pre>
     </aside>
   );
 }
