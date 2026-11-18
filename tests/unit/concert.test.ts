@@ -27,6 +27,16 @@ describe("Publikums-Regie", () => {
     expect(crowdProfile({ section: "verse", energy: 1 }).jump).toBe(0);
   });
 
+  it("Klatschen über dem Kopf: bei mittlerer Energie von selbst, auf Anweisung der Regie stärker", () => {
+    expect(crowdProfile({ section: "verse", energy: 2 }).clap).toBeGreaterThan(0.3);
+    expect(crowdProfile({ section: "verse", energy: 1 }).clap).toBe(0);
+    expect(crowdProfile({ section: "chorus", energy: 3 }).clap).toBe(0);
+    expect(crowdProfile({ section: "verse", energy: 1, crowd: "klatschen" }).clap).toBeGreaterThan(0.6);
+    // Klatscher und Hände-oben sind verschiedene Leute: zusammen nie mehr als alle
+    const k = crowdProfile({ section: "verse", energy: 1, crowd: "klatschen" });
+    expect(k.clap + k.hands).toBeLessThanOrEqual(1);
+  });
+
   it("folgt dem Song, deterministisch, mit weichem Übergang", () => {
     const chorus = phraseOf("chorus");
     expect(crowdAt(plan, mid(chorus)).jump).toBe(1);

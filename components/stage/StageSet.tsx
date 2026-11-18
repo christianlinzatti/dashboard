@@ -72,6 +72,7 @@ export function StageSet({
           toneMapped={false}
         />
       </mesh>
+      <MonitorWedges />
       {theme.truss === "club" && <Truss />}
       {theme.truss === "dach" && <FestivalRoof />}
       {theme.wall === "led" && (
@@ -323,6 +324,29 @@ export function TurntableMarks({ frameRef, color }: { frameRef: React.RefObject<
           </mesh>
         );
       })}
+    </group>
+  );
+}
+
+/** Monitorboxen (Wedges) an der Bühnenkante, schräg zu den Künstlern; die Mitte bleibt frei für die Untersicht. */
+const WEDGE_ANGLES = [-0.9, -0.45, 0.45, 0.9];
+export function MonitorWedges() {
+  return (
+    <group>
+      {WEDGE_ANGLES.map((a) => (
+        <group key={a} position={[Math.sin(a) * 3.85, 0, Math.cos(a) * 3.85]} rotation-y={a + Math.PI}>
+          {/* Gehäuse: nach hinten gekippt, Front zu den Tänzern */}
+          <mesh position={[0, 0.17, 0]} rotation-x={-0.55}>
+            <boxGeometry args={[0.62, 0.36, 0.42]} />
+            <meshStandardMaterial color="#121216" metalness={0.3} roughness={0.7} />
+          </mesh>
+          {/* Lautsprechergitter auf der Front (Front zeigt schräg nach oben zu den Tänzern) */}
+          <mesh position={[0, 0.17 + 0.52 * 0.212, 0.85 * 0.212]} rotation-x={-0.55}>
+            <planeGeometry args={[0.54, 0.3]} />
+            <meshStandardMaterial color="#2a2a30" metalness={0.6} roughness={0.5} />
+          </mesh>
+        </group>
+      ))}
     </group>
   );
 }

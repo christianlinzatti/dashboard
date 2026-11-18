@@ -8,6 +8,7 @@ import {
   BufferGeometry,
   Color,
   CylinderGeometry,
+  DoubleSide,
   IcosahedronGeometry,
   InstancedBufferAttribute,
   InstancedBufferGeometry,
@@ -30,7 +31,7 @@ const BASE_Y = -1.1;
 
 /** Gemeinsame Bewegungslogik für Silhouetten und Lichter (gleiche Person → gleiche Armhaltung). */
 const MOTION = /* glsl */ `
-  uniform float uBeats, uTime, uHands, uJump, uPhones, uSway, uBaseY, uMosh;
+  uniform float uBeats, uTime, uHands, uJump, uPhones, uSway, uBaseY, uMosh, uClap;
   uniform vec3 uCam;
   const float PI = 3.14159265;
   const float ARM = 0.58;
@@ -38,12 +39,30 @@ const MOTION = /* glsl */ `
 
   float handsUp(vec4 r) { return step(r.x, uHands); }
   float hasPhone(vec4 r) { return step(r.y, uPhones); }
+  /** Klatscher sind andere Leute als die mit erhobenen Händen (vom anderen Ende der Zufallswerte) */
+  float clapper(vec4 r) { return step(1.0 - uClap, r.x) * (1.0 - handsUp(r)); }
   /** Armwinkel: 0 = hängt, ~2,75 = gestreckt nach oben (leicht nach vorn) */
   float armAngle(vec4 r, float side) {
     float pump = 2.6 + 0.32 * sin(uBeats * 2.0 * PI + r.z * 1.7);
     float up = handsUp(r) * pump;
+    up = mix(up, 2.45, clapper(r));
     if (side > 0.0) up = mix(up, 2.78 + 0.06 * sin(uTime * 1.3 + r.z * 6.0), hasPhone(r));
     return max(up, 0.12);
+  }
+  /** Klatschen: beide Arme schwingen zur Mitte, die Hände treffen sich auf jedem Schlag */
+  float armRoll(vec4 r, float side) {
+    float hit = pow(1.0 - abs(sin(PI * uBeats)), 3.0);
+    return side * clapper(r) * (1.0 - hasPhone(r)) * (0.12 + 0.5 * hit);
+  }
+  /** Armpunkt (Grundhaltung: hängend) an die aktuelle Armhaltung: erst heben (um x), dann zur Mitte schwingen (um z) */
+  vec3 armXform(vec3 p, float side, vec4 r) {
+    float a = -armAngle(r, side);
+    vec3 pivot = vec3(side * SHOULDER.x, SHOULDER.y, 0.0);
+    vec3 q = p - pivot;
+    q = vec3(q.x, q.y * cos(a) - q.z * sin(a), q.y * sin(a) + q.z * cos(a));
+    float th = armRoll(r, side);
+    q = vec3(q.x * cos(th) - q.y * sin(th), q.x * sin(th) + q.y * cos(th), q.z);
+    return pivot + q;
   }
   /** Moshpit: nur vor der Bühnenmitte (vorne, nicht zu weit seitlich) */
   float pit(vec3 spot) {
@@ -175,6 +194,7 @@ export function Crowd({
       uPhones: { value: 0 },
       uSway: { value: 0 },
       uMosh: { value: 0 },
+      uClap: { value: 0 },
       uBaseY: { value: BASE_Y },
       uCam: { value: new Vector3() },
       uFogColor: { value: new Color(dark) },
@@ -188,6 +208,8 @@ export function Crowd({
       uColor: { value: new Color(dark).lerp(new Color(accent), 0.1) },
       uGlow: { value: new Color(accent) },
       uEnergy: { value: 0.5 },
+      uBlind: { value: 0 },
+      uCapColor: { value: new Color(accent) },
     }),
     [shared, dark, accent],
   );
@@ -209,7 +231,7 @@ export function Crowd({
     const f = frameRef.current;
     const c = f.playing
       ? crowdAt(choreo, f.t, { dropMs: f.dropMs })
-      : { hands: 0, jump: 0, phones: 0, bands: 0.1, bandMode: 0, sway: 0.3, mosh: 0, lighter: 0 };
+      : { hands: 0, jump: 0, phones: 0, bands: 0.1, bandMode: 0, sway: 0.3, mosh: 0, lighter: 0, clap: 0 };
     // gemeinsame Uniforms (beide Materialien teilen dieselben Objekte) über das Material setzen
     const u = people.current?.uniforms;
     if (!u) return;
@@ -220,6 +242,8 @@ export function Crowd({
     u.uPhones!.value = c.phones;
     u.uSway!.value = c.sway;
     u.uMosh!.value = c.mosh;
+    u.uClap!.value = c.clap;
+    u.uBlind!.value = lightsRef.current?.blinders ?? 0;
     (u.uCam!.value as Vector3).copy(camera.position);
     u.uEnergy!.value = f.energy;
     const l = lights.current?.uniforms;
@@ -245,9 +269,11 @@ export function Crowd({
             : "handys"
           : c.jump > 0.5
             ? "springen"
-            : c.hands > 0.5
-              ? "haende"
-              : "ruhig";
+            : c.clap > 0.4
+              ? "klatschen"
+              : c.hands > 0.5
+                ? "haende"
+                : "ruhig";
     if (gl.domElement.dataset.crowd !== label) gl.domElement.dataset.crowd = label;
   });
 
@@ -267,16 +293,31 @@ export function Crowd({
               vertexShader: /* glsl */ `
                 attribute vec3 aSpot; attribute vec4 aRand; attribute float aPart;
                 ${MOTION}
-                varying vec3 vN; varying vec3 vW;
+                varying vec3 vN; varying vec3 vW; varying vec3 vAlbedo;
+                float hv(float x) { return fract(sin(x) * 43758.5453); }
+                vec3 pick8(float k, vec3 a, vec3 b, vec3 c, vec3 d, vec3 e, vec3 f, vec3 g, vec3 i) {
+                  return k < 0.125 ? a : k < 0.25 ? b : k < 0.375 ? c : k < 0.5 ? d : k < 0.625 ? e : k < 0.75 ? f : k < 0.875 ? g : i;
+                }
+                uniform vec3 uCapColor;
                 void main() {
                   vec3 p = position; vec3 nrm = normal;
-                  if (aPart > 0.5) {
-                    float side = aPart < 1.5 ? -1.0 : 1.0;
-                    float a = -armAngle(aRand, side);
-                    vec3 pivot = vec3(side * SHOULDER.x, SHOULDER.y, 0.0);
-                    vec3 q = p - pivot;
-                    p = pivot + vec3(q.x, q.y * cos(a) - q.z * sin(a), q.y * sin(a) + q.z * cos(a));
+                  // Kleidung, Haut, Haare je Person (gedeckte Farben – im Dunkeln wirken sie erst im Licht).
+                  // Im Vertex-Shader gerechnet: dort ist die Genauigkeit hoch genug (sonst rauscht die Farbe pro Pixel).
+                  float k1 = hv(aRand.z * 91.7 + aRand.w * 13.1); float k2 = hv(aRand.w * 57.3 + aRand.x * 7.7);
+                  vec3 shirt = pick8(k1, vec3(0.08), vec3(0.14, 0.2, 0.32), vec3(0.36, 0.1, 0.12), vec3(0.22, 0.27, 0.16),
+                    vec3(0.55), vec3(0.2, 0.15, 0.3), vec3(0.38, 0.27, 0.17), vec3(0.1, 0.3, 0.34));
+                  vec3 skin = mix(vec3(0.62, 0.45, 0.35), vec3(0.24, 0.15, 0.1), k2);
+                  vec3 hair = k2 < 0.3 ? vec3(0.45, 0.34, 0.2) : k2 < 0.6 ? vec3(0.16, 0.1, 0.06) : vec3(0.04);
+                  bool cap = hv(aRand.x * 31.3) > 0.86;
+                  vAlbedo = shirt;
+                  if (aPart < 0.5 && position.y > 1.45) {
+                    // Kopf: Gesicht zur Bühne, sonst Haare (oder Kappe)
+                    bool face = normal.z > 0.35 && normal.y < 0.55;
+                    vAlbedo = face ? skin : cap ? mix(uCapColor, vec3(0.8), step(0.5, k1)) * 0.6 : hair;
+                  } else if (aPart > 0.5 && position.y < 1.12) {
+                    vAlbedo = skin; // Unterarme und Hände
                   }
+                  if (aPart > 0.5) p = armXform(p, aPart < 1.5 ? -1.0 : 1.0, aRand);
                   vec2 f = normalize(-aSpot.xy);
                   vN = vec3(nrm.x * f.y + nrm.z * f.x, nrm.y, -nrm.x * f.x + nrm.z * f.y);
                   vW = toWorld(p, aSpot, aRand);
@@ -284,16 +325,21 @@ export function Crowd({
                 }
               `,
               fragmentShader: /* glsl */ `
-                uniform vec3 uColor, uGlow, uFogColor, uCam; uniform float uEnergy, uFogFar;
-                varying vec3 vN; varying vec3 vW;
+                uniform vec3 uColor, uGlow, uFogColor, uCam; uniform float uEnergy, uFogFar, uBlind;
+                varying vec3 vN; varying vec3 vW; varying vec3 vAlbedo;
                 void main() {
                   vec3 n = normalize(vN);
-                  // Bühnenlicht trifft die Vorderseite, die Kamera sieht meist die Rücken → Silhouette mit Lichtkante
+                  vec3 albedo = mix(uColor, vAlbedo, 0.7);
+                  // Bühnenlicht trifft die Vorderseite der vorderen Reihen; die Kamera sieht meist die Rücken → Silhouette mit Lichtkante
+                  float front = smoothstep(12.0, 5.0, length(vW.xz));
                   float lit = max(dot(n, normalize(vec3(-vW.x, 1.2, -vW.z))), 0.0);
                   float rim = pow(1.0 - abs(dot(n, normalize(uCam - vW))), 2.5);
                   // Streiflicht von oben auf Köpfe und Schultern – sonst verschwinden die Rücken im dunklen Graben
                   float top = pow(max(n.y, 0.0), 1.5);
-                  vec3 col = uColor + uGlow * (lit * 0.07 * (0.4 + uEnergy) + rim * 0.1 + top * 0.3 * (0.5 + uEnergy));
+                  vec3 col = albedo * (0.18 + lit * front * 0.5 * (0.4 + uEnergy) + top * 0.45 * (0.5 + uEnergy))
+                    + uGlow * (rim * 0.1 + top * 0.12 * (0.5 + uEnergy))
+                    // Blinder strahlen warm über die Menge
+                    + vec3(1.0, 0.7, 0.4) * uBlind * (0.35 * lit * front + 0.25 * top) * (0.4 + albedo);
                   float fog = smoothstep(9.0, uFogFar, distance(uCam, vW));
                   gl_FragColor = vec4(mix(col, uFogColor, fog), 1.0);
                 }
@@ -321,10 +367,9 @@ export function Crowd({
                 float h(float x) { return fract(sin(x) * 43758.5453); }
                 void main() {
                   float side = aKind < 0.5 ? 1.0 : -1.0;
-                  float a = armAngle(aRand, side);
                   // Handy an der Hand, Armband am Handgelenk
                   float len = aKind < 0.5 ? ARM + 0.06 : ARM * 0.86;
-                  vec3 p = vec3(side * SHOULDER.x, SHOULDER.y - len * cos(a), len * sin(a));
+                  vec3 p = armXform(vec3(side * SHOULDER.x, SHOULDER.y - len, 0.0), side, aRand);
                   vec3 w = toWorld(p, aSpot, aRand);
                   float level; vec3 col; float size;
                   if (aKind < 0.5) {
@@ -359,6 +404,94 @@ export function Crowd({
           ]}
         />
       </points>
+    </group>
+  );
+}
+
+/** Plätze der Fahnen im Publikum (Mitte/hinten, nicht direkt vor der Kamera) */
+const FLAG_SPOTS: Array<[number, number]> = [
+  [-4.6, 8.2],
+  [3.4, 9.6],
+  [-1.6, 11.2],
+  [5.6, 7.4],
+  [1.2, 7.8],
+];
+
+const flagShader = {
+  vertexShader: /* glsl */ `
+    uniform float uTime, uPhase;
+    varying vec2 vUv; varying float vShade;
+    void main() {
+      vUv = uv;
+      // Stoff weht: Welle läuft vom Mast nach außen, außen stärker
+      float w = uv.x;
+      float wave = sin(uTime * 3.2 + uPhase - w * 5.0) * 0.12 * w + sin(uTime * 5.1 + uPhase * 2.0 - w * 9.0) * 0.03 * w;
+      vec3 p = position + vec3(0.0, sin(uTime * 2.0 + uPhase - w * 3.0) * 0.04 * w, wave);
+      vShade = 0.7 + 0.3 * cos(uTime * 3.2 + uPhase - w * 5.0);
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
+    }
+  `,
+  fragmentShader: /* glsl */ `
+    uniform vec3 uA, uB; uniform float uLight;
+    varying vec2 vUv; varying float vShade;
+    void main() {
+      // zwei Streifen in den Farben des Songs
+      vec3 c = vUv.y > 0.5 ? uA : uB;
+      gl_FragColor = vec4(c * vShade * uLight, 1.0);
+    }
+  `,
+};
+
+/** Festival: ein paar Fahnen ragen aus der Menge und wehen. */
+export function CrowdFlags({
+  colors,
+  frameRef,
+  lightsRef,
+}: {
+  colors: [string, string];
+  frameRef: React.RefObject<Frame>;
+  lightsRef: React.RefObject<LightFrame | null>;
+}) {
+  const mats = useRef<Array<ShaderMaterial | null>>([]);
+  const [a, b] = colors;
+  const uniforms = useMemo(
+    () =>
+      FLAG_SPOTS.map((_, i) => ({
+        uTime: { value: 0 },
+        uPhase: { value: i * 1.7 },
+        uLight: { value: 1 },
+        uA: { value: new Color(i % 2 ? b : a) },
+        uB: { value: new Color(i % 3 === 0 ? "#f4f4f4" : i % 2 ? a : b) },
+      })),
+    [a, b],
+  );
+  useFrame(() => {
+    const t = frameRef.current.t / 1000;
+    const light = 0.35 + 0.4 * (1 - (lightsRef.current?.blackout ?? 0));
+    mats.current.forEach((m) => {
+      if (!m) return;
+      m.uniforms.uTime!.value = t;
+      m.uniforms.uLight!.value = light;
+    });
+  });
+  return (
+    <group>
+      {FLAG_SPOTS.map(([x, z], i) => (
+        <group key={i} position={[x, 0, z]} rotation-y={(i % 2 ? 1 : -1) * 0.5}>
+          <mesh position-y={1.1}>
+            <cylinderGeometry args={[0.015, 0.015, 2.6, 6]} />
+            <meshStandardMaterial color="#888" metalness={0.6} roughness={0.4} />
+          </mesh>
+          <mesh position={[0.45, 2.1, 0]}>
+            <planeGeometry args={[0.9, 0.56, 16, 4]} />
+            <shaderMaterial
+              ref={(m) => void (mats.current[i] = m)}
+              args={[{ ...flagShader, uniforms: uniforms[i] }]}
+              side={DoubleSide}
+            />
+          </mesh>
+        </group>
+      ))}
     </group>
   );
 }

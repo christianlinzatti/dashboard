@@ -68,4 +68,10 @@ describe("Qualitätsstufen", () => {
     expect(stepQuality("niedrig", -1)).toBe("niedrig");
     expect(stepQuality("mittel", 1)).toBe("hoch");
   });
+
+  it("Live-Bildschirme erst ab mittlerer Qualität (zweite Kamera kostet einen zweiten Render)", () => {
+    expect(PRESETS.niedrig.liveScreens).toBeNull();
+    expect(PRESETS.mittel.liveScreens!.every).toBeGreaterThan(1);
+    expect(PRESETS.hoch.liveScreens!.width).toBeGreaterThan(PRESETS.mittel.liveScreens!.width);
+  });
 });

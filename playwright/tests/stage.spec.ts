@@ -80,6 +80,18 @@ test.describe("Bühne & Licht", () => {
     await expect(page.locator("[data-testid=stage] canvas")).toHaveAttribute("data-crowd", "feuerzeuge");
   });
 
+  test("Live-Bildschirme: eine zweite Kamera filmt die Sängerin", async ({ page }) => {
+    await page.goto("/?demo=neonlicht&t=40150&qualitaet=hoch");
+    await ready(page);
+    await expect(page.locator("[data-testid=stage] canvas")).toHaveAttribute("data-screen", "saenger");
+  });
+
+  test("Live-Bildschirme: auf niedriger Qualität aus", async ({ page }) => {
+    await page.goto("/?demo=neonlicht&t=40150&qualitaet=niedrig");
+    await ready(page);
+    await expect(page.locator("[data-testid=stage] canvas")).not.toHaveAttribute("data-screen", /.+/);
+  });
+
   // Publikum: Handylichter im ruhigen Outro, Springen mit Armbändern im Refrain
   const crowd = [
     { name: "publikum-handys", q: "demo=neonlicht&t=180000&buehne=festival", state: "handys" },

@@ -38,6 +38,8 @@ type DirectorProps = {
   /** Blackout-Ebene und Countdown-Ziffer über der Bühne */
   blackoutRef: React.RefObject<HTMLDivElement | null>;
   countdownRef: React.RefObject<HTMLDivElement | null>;
+  /** warmer Schein der Blinder über dem Bild (sie strahlen in die Kamera) */
+  glareRef?: React.RefObject<HTMLDivElement | null>;
   theme: Theme;
 };
 
@@ -50,6 +52,7 @@ export function Director({
   strobeRef,
   blackoutRef,
   countdownRef,
+  glareRef,
   theme,
 }: DirectorProps) {
   const spot = useRef<SpotLight>(null);
@@ -111,6 +114,7 @@ export function Director({
     lightBus.publish(lf);
     if (strobeRef.current) strobeRef.current.style.opacity = String(lf.strobe * 0.55);
     if (blackoutRef.current) blackoutRef.current.style.opacity = String(lf.blackout);
+    if (glareRef?.current) glareRef.current.style.opacity = String(lf.blinders * 0.5);
     const cd = countdownRef.current;
     if (cd) {
       const text = lf.countdown === null ? "" : String(lf.countdown);

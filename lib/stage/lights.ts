@@ -22,6 +22,8 @@ export type LightFrame = {
   strobe: number;
   wall: { colorA: string; colorB: string; level: number; mode: 0 | 1 | 2 };
   fog: number;
+  /** Blinder (warme Fluter ins Publikum) 0..1: blitzen beim Einsatz eines Höhepunkts und bei Drops auf und klingen ab */
+  blinders: number;
   /** Höhepunkt: 0..1 wie dunkel die Bühne ist (Blackout vor dem Einsatz) */
   blackout: number;
   /** Countdown auf der Wand (4, 3, 2, 1) oder null */
@@ -124,9 +126,20 @@ export function lightsAt(song: SongStatic, c: Choreography, heads: number, input
   const flashPhase = climax?.phase === "hit" ? climax.beats % 1 : beatPhase;
   const strobe = inDrop && input.strobeAllowed && flashBeat && flashPhase < 0.12 ? 1 - flashPhase / 0.12 : 0;
 
+  // Blinder: beim Einsatz voll an, klingen über den Schlag ab; mit Strobe-Erlaubnis auf jedem Schlag des Einsatztakts,
+  // sonst nur ein einziges Aufleuchten auf der „1“ (langsamer als ein Blitz, aber trotzdem schonend)
+  const sinceHit = climax?.phase === "hit" ? climax.beats : micDrop ? (t - input.dropMs!) / c.beatMs : -1;
+  const blinders =
+    sinceHit < 0 || sinceHit >= 4
+      ? 0
+      : input.strobeAllowed
+        ? Math.pow(1 - (sinceHit % 1), 1.6) * (1 - sinceHit / 6)
+        : Math.max(0, 1 - sinceHit / 1.5);
+
   return {
     scene,
     heads: out,
+    blinders,
     lasers: {
       on: prof.lasers && energy > 0.45 && input.lasers !== false && blackout === 0,
       spread: scene === "drop" ? 1.1 : 0.55 + 0.25 * Math.sin(beats / 8),

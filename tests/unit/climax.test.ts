@@ -53,6 +53,22 @@ describe("Höhepunkte", () => {
     expect(lightsAt(neonlicht, c, 8, { ...input, strobeAllowed: false, t: first.atMs + 5 }).strobe).toBe(0);
   });
 
+  it("Blinder: blitzen beim Einsatz auf und klingen ab; ohne Strobe-Erlaubnis nur einmal", () => {
+    const at = (beats: number, strobeAllowed = true) =>
+      lightsAt(neonlicht, c, 8, { ...input, strobeAllowed, t: first.atMs + beats * c.beatMs }).blinders;
+    expect(at(-2)).toBe(0);
+    expect(at(0.01)).toBeGreaterThan(0.9);
+    expect(at(0.9)).toBeLessThan(0.2);
+    // mit Erlaubnis auf jedem Schlag des Einsatztakts erneut, schwächer werdend
+    expect(at(1.01)).toBeGreaterThan(0.7);
+    expect(at(3.01)).toBeLessThan(at(1.01));
+    expect(at(4.5)).toBe(0);
+    // ohne: ein einziges, langsames Abklingen
+    expect(at(0.01, false)).toBeGreaterThan(0.9);
+    expect(at(1.01, false)).toBeLessThan(at(0.5, false));
+    expect(at(2, false)).toBe(0);
+  });
+
   it("Effekte: beim großen Einsatz zündet alles, was die Bühne hat", () => {
     const cues = planEffects(c, THEMES.festival)
       .filter((q) => q.startMs === first.atMs)

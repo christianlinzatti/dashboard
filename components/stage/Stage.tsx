@@ -22,14 +22,15 @@ import { fpsFrom, perf } from "@/lib/stage/perf";
 import { ErrorBoundary } from "../ErrorBoundary";
 import { Avatar } from "./Avatar";
 import { Director, FOG_NEAR } from "./Director";
-import { Lasers, MovingHeads } from "./Lights";
+import { Blinders, Lasers, MovingHeads } from "./Lights";
+import { LiveScreens } from "./LiveScreens";
 import { ReadySignal } from "./ReadySignal";
 import { PhotoWall } from "./PhotoWall";
 import { LogoWall } from "./LogoWall";
 import { wallPhotoAt } from "@/lib/info/display";
 import { displayUrl } from "@/lib/info/photos";
 import { Fog, StageSet, TurntableMarks, WallFrame, wallScale } from "./StageSet";
-import { Crowd } from "./Crowd";
+import { Crowd, CrowdFlags } from "./Crowd";
 import { Effects } from "./Effects";
 import { initialFrame, type Frame } from "./types";
 
@@ -164,6 +165,7 @@ function Scene({
   const strobe = useRef<HTMLDivElement>(null);
   const blackout = useRef<HTMLDivElement>(null);
   const countdown = useRef<HTMLDivElement>(null);
+  const glare = useRef<HTMLDivElement>(null);
 
   // Qualität: fest (Einstellung/URL) oder automatisch nach Bildrate; Demos fest „mittel“ (reproduzierbar)
   // Wandfoto wechselt mit jedem Abschnitt (Selektor liefert nur die URL → kein Rerender pro Frame)
@@ -232,12 +234,17 @@ function Scene({
             lightsRef={lights}
           />
         )}
+        {crowdCount > 0 && theme.id === "festival" && (
+          <CrowdFlags colors={[song.album.palette.accent, song.album.palette.dominant]} frameRef={frame} lightsRef={lights} />
+        )}
         <MovingHeads
           key={`h${preset.heads}${preset.realLights}`}
           count={preset.heads}
           realLights={preset.realLights}
+          dust={preset.fog}
           lightsRef={lights}
         />
+        {(theme.truss === "club" || theme.truss === "dach") && <Blinders lightsRef={lights} />}
         {theme.lasers && <Lasers key={`l${preset.lasers}`} count={preset.lasers} lightsRef={lights} />}
         {preset.fog && <Fog lightsRef={lights} color={song.album.palette.accent} />}
         <Director
@@ -249,6 +256,7 @@ function Scene({
           strobeRef={strobe}
           blackoutRef={blackout}
           countdownRef={countdown}
+          glareRef={theme.truss === "club" || theme.truss === "dach" ? glare : undefined}
           theme={theme}
         />
         <Effects
@@ -280,6 +288,16 @@ function Scene({
                   <LogoWall url={displayUrl(logo, 640)} accent={song.album.palette.accent} lightsRef={lights} />
                 </ErrorBoundary>
               )}
+              {preset.liveScreens && (
+                <LiveScreens
+                  choreo={choreo}
+                  frameRef={frame}
+                  lightsRef={lights}
+                  accent={song.album.palette.accent}
+                  width={preset.liveScreens.width}
+                  every={preset.liveScreens.every}
+                />
+              )}
             </WallFrame>
           )}
           {song.cast.map((c) => (
@@ -299,6 +317,16 @@ function Scene({
       </Canvas>
       {/* Stroboskop (nur bei Drops, abschaltbar) */}
       <div ref={strobe} className="pointer-events-none absolute inset-0 bg-white opacity-0" aria-hidden />
+      {/* Blinder strahlen beim Einsatz warm in die Kamera */}
+      <div
+        ref={glare}
+        className="pointer-events-none absolute inset-0 opacity-0 mix-blend-screen"
+        style={{
+          background:
+            "radial-gradient(ellipse 70% 45% at 50% 0%, rgba(255,190,110,0.85), rgba(255,150,70,0.25) 55%, rgba(0,0,0,0) 80%)",
+        }}
+        aria-hidden
+      />
       {/* Blackout vor einem großen Einsatz: Raum dunkel, Lichtkegel in der Mitte, Countdown 4-3-2-1 */}
       <div
         ref={blackout}

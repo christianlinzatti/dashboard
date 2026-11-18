@@ -168,6 +168,14 @@ Für das Konzert-Erlebnis wurde die Bühne in vier Schichten gegliedert. Jede Sc
   ihrem Sänger (Feature-Songs), im Refrain singt die Crew leiser mit. Comic-Gesichter bekommen einen Mund am Kopf
   (das gemalte Lächeln weicht), LED- und Visier-Gesichter bewegen ihre Balken. Mit Mikrofon moduliert die gemessene
   Gesangslautstärke die Öffnung; ohne Lyrics öffnet die Stimme allein.
+- **Bühne wie bei einem echten Konzert.** Lichtkegel mit Dunst, der durch den Kegel zieht (3D-Rauschen im
+  Shader), Staub im Licht, leuchtenden Linsen und Lichtflecken auf dem Boden; Blinder auf der Traverse
+  (`LightFrame.blinders`) blitzen beim Einsatz eines Höhepunkts warm ins Publikum und in die Kamera (ohne
+  Strobe-Erlaubnis nur einmal). Live-Bildschirme an der LED-Wand zeigen, was eine zweite Kamera filmt
+  (`lib/stage/screens.ts`: Nahaufnahme des Sängers, Crew, Publikum von der Bühne, Totale; Schnitt alle zwei Takte;
+  ab Qualität „mittel“, Render-Target). Das Publikum trägt unterschiedliche Kleidung, Haare und Kappen, die
+  vorderen Reihen fängt das Bühnenlicht; es klatscht über dem Kopf im Takt (`clap`, auch als KI-Anweisung
+  „klatschen“), auf dem Festival wehen Fahnen. Monitorboxen an der Bühnenkante, Schaumkanonen auf Stativen.
 - **Ein Abend, nicht lauter Einzelsongs.** `setlistStore` merkt sich Bühne und Tänze der gespielten Songs. Der
   nächste Song meidet die Bühne des vorigen (verwandte statt gleiche: Club → Synthwave/Weltraum/Festival, Jazz
   bleibt Jazz) und wählt Tänze der letzten zwei Songs seltener. Nur im Speicher: Neuladen beginnt einen neuen
