@@ -63,8 +63,7 @@ export function planEffects(c: Choreography, theme: Theme): Cue[] {
       if (main !== "funken" && r.next() < 0.6) add("funken", p.startMs + 4 * c.barMs, c.barMs, 0.8);
     }
     if (first && !quiet && p !== lastChorus && p.effects?.includes("konfetti")) add("konfetti", p.startMs, 6000, 0.7);
-    if (first && !quiet && (p === foam || p.effects?.includes("schaum")))
-      add("schaum", p.startMs, Math.min(len, 4 * c.barMs), 1);
+    if (first && !quiet && (p === foam || p.effects?.includes("schaum"))) add("schaum", p.startMs, Math.min(len, 4 * c.barMs), 1);
     if (p === lastChorus) {
       add("konfetti", p.startMs, 8000, 1);
       add("feuerwerk", p.startMs + c.barMs, Math.min(len, 16 * c.barMs), 1);
