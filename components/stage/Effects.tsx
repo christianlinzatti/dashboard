@@ -18,17 +18,20 @@ import { rng } from "@/lib/dance/rng";
 import type { Palette } from "@/lib/song-context/schema";
 import { dropCues, effectsAt, type ActiveCue, type Cue } from "@/lib/stage/effects";
 import type { EffectKind, Theme } from "@/lib/stage/themes";
+import { Confetti3D, Foam3D, FoamCannons } from "./Effects3D";
 import type { Frame } from "./types";
+import type { LightFrame } from "@/lib/stage/lights";
 
 type V3 = [number, number, number];
 
 /**
  * Partikel-Emitter. Alles wird im Vertex-Shader aus (Alter des Einsatzes, Zufallswerten) berechnet –
  * zustandslos: gleiche Songzeit → gleiches Bild (Screenshots, Vor-/Zurückspulen), kaum CPU-Last auf dem Pi.
- * mode: 0 Fontäne (Pyro, Funken), 1 Feuerwerk (Kugelbursts), 2 Konfetti, 3 CO₂-Jet, 4 Sternschnuppe, 5 Schaum
+ * mode: 0 Fontäne (Pyro, Funken), 1 Feuerwerk (Kugelbursts), 3 CO₂-Jet, 4 Sternschnuppe.
+ * Konfetti und Schaum sind echte 3D-Körper (Effects3D.tsx).
  */
 type Emitter = {
-  mode: 0 | 1 | 2 | 3 | 4 | 5;
+  mode: 0 | 1 | 3 | 4;
   count: number;
   origins: V3[];
   life: number;
@@ -45,7 +48,7 @@ type Emitter = {
   additive: boolean;
 };
 
-const EMITTERS: Record<Exclude<EffectKind, "ringe" | "glitzer">, Emitter> = {
+const EMITTERS: Record<Exclude<EffectKind, "ringe" | "glitzer" | "konfetti" | "schaum">, Emitter> = {
   pyro: {
     mode: 0,
     count: 1000,
@@ -120,44 +123,6 @@ const EMITTERS: Record<Exclude<EffectKind, "ringe" | "glitzer">, Emitter> = {
     gain: 0.3,
     additive: true,
   },
-  konfetti: {
-    mode: 2,
-    count: 700,
-    origins: [
-      [-3.0, 0.3, 1.0],
-      [3.0, 0.3, 1.0],
-      [0, 4.1, -2.4],
-    ],
-    life: 8,
-    spawn: 0.5,
-    speed: 9,
-    spread: 0.6,
-    gravity: 0,
-    drag: 2.8,
-    size: 0.06,
-    grow: 0,
-    additive: false,
-  },
-  // Schaumkanonen: seitlich an der Bühnenkante und über der Bühnenfront, schießen Flocken ins Publikum,
-  // die langsam herabsinken und einen Schaumteppich bilden
-  schaum: {
-    mode: 5,
-    count: 2400,
-    origins: [
-      [-4.6, 3.3, 3.4],
-      [4.6, 3.3, 3.4],
-      [-1.7, 4.0, 0.8],
-      [1.7, 4.0, 0.8],
-    ],
-    life: 9,
-    speed: 5.5,
-    spread: 0.35,
-    gravity: 0,
-    drag: 1.1,
-    size: 0.24,
-    grow: 0.6,
-    additive: false,
-  },
   feuerwerk: {
     mode: 1,
     count: 1400,
@@ -196,7 +161,7 @@ const vertexShader = /* glsl */ `
   attribute vec4 aRand;
   uniform float uAge, uDur, uSpawn, uLife, uSpeed, uSpread, uGravity, uDrag, uSize, uGrow, uPx, uMode, uIntensity, uSeed;
   uniform vec3 uO0, uO1, uO2, uO3; uniform float uOriginCount;
-  varying float vAlpha; varying float vHeat; varying float vPick; varying float vSpin;
+  varying float vAlpha; varying float vHeat; varying float vPick;
 
   float h(float n) { return fract(sin(n) * 43758.5453); }
   vec3 originOf(float e) { return e < 0.5 ? uO0 : e < 1.5 ? uO1 : e < 2.5 ? uO2 : uO3; }
@@ -216,7 +181,7 @@ const vertexShader = /* glsl */ `
       float z = r.y * 2.0 - 1.0; float th = r.z * 6.2831; float rr = sqrt(1.0 - z * z);
       dir = vec3(rr * cos(th), z, rr * sin(th)) * (0.85 + 0.15 * r.x);
       vPick = h(k * 7.7 + uSeed);
-    } else if (uMode > 3.5 && uMode < 4.5) {
+    } else if (uMode > 3.5) {
       // Sternschnuppe: 6 Bahnen, Partikel als Schweif hinter dem Kopf
       float s = floor(aRand.w * 6.0);
       float period = 2.2 + s * 0.55;
@@ -228,35 +193,15 @@ const vertexShader = /* glsl */ `
       origin = vec3(-8.0 + 16.0 * seed, 3.2 + 2.6 * h(seed * 7.3), -16.0 - 4.0 * h(seed * 2.1));
       dir = normalize(vec3(origin.x > 0.0 ? -1.0 : 1.0, -0.42, 0.0));
       vPick = aRand.x;
-    } else if (uMode > 4.5) {
-      // Schaum: Partikel fliegen in Klumpen (gemeinsamer Start und Richtung), damit es nach Schaum aussieht statt nach Staub
-      float cl = floor(aRand.x * 170.0);
-      float c1 = h(cl * 1.13 + uSeed); float c2 = h(cl * 2.71 + uSeed); float c3 = h(cl * 4.37 + uSeed);
-      origin = originOf(floor(h(cl * 5.9 + uSeed) * uOriginCount));
-      float phase = c1 * uSpawn;
-      float n = floor(max(uAge - phase, 0.0) / life);
-      float tb = phase + n * life;
-      age = uAge - tb;
-      alive = step(phase, uAge) * step(tb, uDur);
-      float th = c2 * 6.2831; float rad = uSpread * sqrt(c3);
-      // äußere Kanonen schießen nach vorn in die seitlichen Publikumsblöcke (an den Kameras vorbei),
-      // die beiden über der Bühne kurz vor die Füße der Tänzer
-      bool outer = abs(origin.x) > 3.0;
-      dir = outer
-        ? vec3(sign(origin.x) * 0.15 + cos(th) * rad, 0.35 + sin(th) * rad * 0.6, 1.0)
-        : vec3(-sign(origin.x) * 0.15 + cos(th) * rad, 0.15 + sin(th) * rad * 0.4, 0.8);
-      dir = normalize(dir) * (outer ? 1.0 : 0.5) * (0.75 + 0.25 * h(cl * 9.1 + uSeed));
-      vPick = cl;
     } else {
-      // Fontäne / Jet / Konfetti: Partikel werden über das Ausstoß-Fenster verteilt und recyceln mit ihrer Lebensdauer
+      // Fontäne / Jet: Partikel werden über das Ausstoß-Fenster verteilt und recyceln mit ihrer Lebensdauer
       float phase = r.x * uSpawn;
       float n = floor(max(uAge - phase, 0.0) / life);
       float tb = phase + n * life;
       age = uAge - tb;
       alive = step(phase, uAge) * step(tb, uDur);
       float th = r.z * 6.2831; float rad = uSpread * sqrt(r.y);
-      if (uMode > 1.5 && uMode < 2.5) dir = vec3(-sign(origin.x) * 0.3 + cos(th) * rad, 1.0, 0.3 + sin(th) * rad);
-      else dir = vec3(cos(th) * rad, 1.0, sin(th) * rad);
+      dir = vec3(cos(th) * rad, 1.0, sin(th) * rad);
       dir = normalize(dir) * (0.72 + 0.28 * h(r.x * 91.0 + r.y));
       vPick = r.y;
     }
@@ -264,70 +209,29 @@ const vertexShader = /* glsl */ `
     // Flug mit Luftwiderstand: x = v (1 - e^{-k t}) / k
     float k = max(uDrag, 0.001);
     vec3 p = origin + dir * uSpeed * (1.0 - exp(-k * age)) / k;
-    if (uMode > 1.5 && uMode < 2.5) {
-      // Konfetti: nach dem Schuss langsam taumelnd herab
-      p.y -= 0.65 * age;
-      p.x += sin(age * 1.9 + r.z * 6.28) * 0.35;
-      p.z += cos(age * 1.6 + r.x * 6.28) * 0.25;
-      vSpin = abs(sin(age * (4.0 + r.y * 7.0) + r.z * 6.28));
-    } else if (uMode > 4.5) {
-      // Schaum: sinkt langsam, schaukelt leicht und bleibt als Teppich liegen (auf der Bühne höher als im Publikum)
-      vec3 off = (aRand.yzw - 0.5) * (0.18 + 0.3 * min(age, 1.5));
-      p += off;
-      p.y -= 1.1 * age;
-      p.x += sin(age * 1.3 + h(vPick * 3.7) * 6.28) * 0.15;
-      float heap = (length(p.xz) < 4.3 ? 0.0 : -0.25) + 0.1 + 0.4 * h(vPick * 3.3 + uSeed) + off.y * 0.8;
-      p.y = max(p.y, heap);
-      vSpin = 1.0;
-    } else {
-      p.y -= 0.5 * uGravity * age * age;
-      vSpin = 1.0;
-    }
+    p.y -= 0.5 * uGravity * age * age;
     float l01 = clamp(age / life, 0.0, 1.0);
     vHeat = l01;
-    float fade = uMode > 1.5 && uMode < 2.5 || uMode > 4.5 ? 1.0 - smoothstep(0.8, 1.0, l01) : uMode > 3.5 && uMode < 4.5 ? (1.0 - aRand.x) * (1.0 - l01) : 1.0 - l01;
+    float fade = uMode > 3.5 ? (1.0 - aRand.x) * (1.0 - l01) : 1.0 - l01;
     alive *= step(-0.25, p.y);
     vAlpha = alive * uIntensity * fade;
     vec4 mv = modelViewMatrix * vec4(p, 1.0);
     gl_Position = projectionMatrix * mv;
-    float size = uSize * (1.0 + uGrow * l01);
-    if (uMode > 4.5) {
-      // Schaum fällt am Ende in sich zusammen; Flocken direkt vor der Linse blenden aus statt das Bild zu verdecken
-      size *= 1.0 - 0.6 * smoothstep(0.75, 1.0, l01);
-      vAlpha *= smoothstep(2.2, 4.0, -mv.z);
-    }
-    gl_PointSize = alive * max(size, 0.01) * uPx / max(-mv.z, 0.1);
-    if (uMode > 4.5) gl_PointSize = min(gl_PointSize, uPx * 0.05);
+    gl_PointSize = alive * max(uSize * (1.0 + uGrow * l01), 0.01) * uPx / max(-mv.z, 0.1);
   }
 `;
 
 const fragmentShader = /* glsl */ `
-  uniform vec3 uColorA, uColorB, uP0, uP1, uP2, uP3; uniform float uMode;
-  varying float vAlpha; varying float vHeat; varying float vPick; varying float vSpin;
+  uniform vec3 uColorA, uColorB, uP0, uP1; uniform float uMode;
+  varying float vAlpha; varying float vHeat; varying float vPick;
   void main() {
     if (vAlpha <= 0.001) discard;
     vec2 q = gl_PointCoord - 0.5;
-    if (uMode > 1.5 && uMode < 2.5) {
-      // Konfetti: kleines, sich drehendes Rechteck in Palettenfarben
-      float shape = step(abs(q.x), 0.45) * step(abs(q.y), 0.45 * max(vSpin, 0.12));
-      if (shape < 0.5) discard;
-      vec3 c = vPick < 0.25 ? uP0 : vPick < 0.5 ? uP1 : vPick < 0.75 ? uP2 : uP3;
-      gl_FragColor = vec4(c * (0.55 + 0.45 * vSpin), vAlpha);
-      return;
-    }
     float d = length(q);
-    if (uMode > 4.5) {
-      // Schaumflocke: weiche, von oben angestrahlte Kugel, leicht im Bühnenlicht getönt
-      float a = smoothstep(0.5, 0.4, d);
-      if (a * vAlpha < 0.01) discard;
-      float shade = 0.95 + 0.35 * (0.1 - q.y) - 0.3 * d * d;
-      gl_FragColor = vec4(mix(vec3(1.0), uP3, 0.08) * shade, a * vAlpha);
-      return;
-    }
     float soft = uMode > 2.5 && uMode < 3.5 ? smoothstep(0.5, 0.0, d) * 0.22 : smoothstep(0.5, 0.1, d);
     vec3 c;
     if (uMode > 0.5 && uMode < 1.5) c = mix(vPick < 0.5 ? uP0 : uP1, vec3(1.0), (1.0 - vHeat) * 0.6);
-    else if (uMode > 3.5 && uMode < 4.5) c = mix(vec3(1.0), uColorB, vPick);
+    else if (uMode > 3.5) c = mix(vec3(1.0), uColorB, vPick);
     else c = mix(uColorA, uColorB, vHeat);
     gl_FragColor = vec4(c * soft * vAlpha, 1.0);
   }
@@ -395,8 +299,6 @@ function ParticleFx({
       uColorB: { value: new Color(fire[1]) },
       uP0: { value: new Color(palette.accent) },
       uP1: { value: new Color(palette.dominant) },
-      uP2: { value: new Color(palette.light) },
-      uP3: { value: new Color(theme.colors.accent) },
     };
   }, [e, kind, theme, palette]);
 
@@ -575,6 +477,7 @@ export function Effects({
   theme,
   palette,
   frameRef,
+  lightsRef,
   scale,
 }: {
   cues: Cue[];
@@ -582,6 +485,7 @@ export function Effects({
   theme: Theme;
   palette: Palette;
   frameRef: React.RefObject<Frame>;
+  lightsRef?: React.RefObject<LightFrame | null>;
   scale: number;
 }) {
   const active = useRef<ActiveCue[]>([]);
@@ -608,6 +512,13 @@ export function Effects({
       {(Object.keys(EMITTERS) as Array<keyof typeof EMITTERS>).filter(has).map((k) => (
         <ParticleFx key={k} kind={k} activeRef={active} theme={theme} palette={palette} scale={scale} />
       ))}
+      {has("konfetti") && <Confetti3D activeRef={active} lightsRef={lightsRef} palette={palette} theme={theme} scale={scale} />}
+      {has("schaum") && (
+        <>
+          <Foam3D activeRef={active} lightsRef={lightsRef} palette={palette} scale={scale} />
+          <FoamCannons accent={theme.colors.accent} />
+        </>
+      )}
       {has("ringe") && <BeatRings activeRef={active} frameRef={frameRef} beatMs={choreo.beatMs} color={palette.accent} />}
       {has("glitzer") && <MirrorBall activeRef={active} frameRef={frameRef} color={theme.fire[0]} />}
     </group>

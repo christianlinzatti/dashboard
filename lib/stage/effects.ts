@@ -11,9 +11,9 @@ export const LINGER_MS: Record<EffectKind, number> = {
   funken: 1300,
   flammen: 500,
   co2: 1800,
-  // Konfetti wird in einer halben Sekunde verschossen und schwebt dann bis zu 8 s
-  konfetti: 8000,
-  // Schaumflocken leben 9 s (sinken und liegen als Teppich)
+  // Konfetti wird in einer halben Sekunde verschossen, schwebt herab und bleibt liegen (CONFETTI_LIFE in Effects3D)
+  konfetti: 16000,
+  // Schaumflocken leben 9 s: sinken und liegen als Teppich (FOAM_LIFE in Effects3D)
   schaum: 9000,
   feuerwerk: 2600,
   ringe: 1200,

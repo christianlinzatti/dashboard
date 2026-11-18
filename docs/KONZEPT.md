@@ -242,6 +242,10 @@ erster großer Einsatz = Konfetti-Schuss, vorletzter Refrain = Schaumparty, letz
 Feuerwerk, hohe Energie = Ringe/Funken, ruhige Teile = Sternschnuppen); bei Mikro-Drops zusätzlich CO₂ + Pyro.
 Partikel werden komplett im Vertex-Shader aus „Alter des Einsatzes + Zufallswert“ berechnet: zustandslos
 (gleiche Songzeit → gleiches Bild), kaum CPU-Last; Partikelanzahl je Qualitätsstufe (35 / 65 / 100 %).
+Konfetti und Schaum sind echte 3D-Körper (`components/stage/Effects3D.tsx`): instanzierte Papierschnipsel, die
+taumeln, als Folie im Licht aufblitzen und am Ende auf Bühne und Boden liegen bleiben; Schaum aus beleuchteten,
+klumpenden Kugeln aus sichtbaren Kanonen (Stative an der Bühnenkante, Traverse), der als Teppich liegen bleibt.
+Beide nach demselben Prinzip zustandslos im Vertex-Shader bewegt, vom Grundlicht und der Bühnenfarbe beleuchtet.
 
 ---
 

@@ -258,6 +258,7 @@ function Scene({
           theme={theme}
           palette={song.album.palette}
           frameRef={frame}
+          lightsRef={lights}
           scale={preset.particles}
         />
         <Suspense fallback={null}>
