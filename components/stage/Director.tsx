@@ -8,9 +8,11 @@ import {
   cameraAt,
   fitAspect,
   focusTimeline,
+  headingAt,
   phraseIndexAt,
   positionsAt,
   rotateOnStage,
+  shotAt,
   stageAngleAt,
 } from "@/lib/dance/evaluate";
 import type { Choreography } from "@/lib/dance/plan";
@@ -70,6 +72,9 @@ export function Director({
     const positions = Object.fromEntries(
       Object.entries(positionsAt(choreo, t, { timeline, avatarOf })).map(([id, p]) => [id, rotateOnStage(p, stageAngle)]),
     );
+    // Auftritt: in Gehrichtung schauen (Platz vor der Drehung der Drehbühne bestimmt die Seite)
+    const raw = positionsAt(choreo, t, { timeline, avatarOf });
+    const headings = Object.fromEntries(choreo.order.map((id) => [id, headingAt(choreo, id, t, raw[id]?.[0] ?? 0)]));
     const focus = avatarOf(derived.activeSingerId) ?? choreo.order[0];
     const mic = live.micActive;
     // Puls: kurz nach jedem Schlag hell, dann abklingend; ohne Mikro ruhig
@@ -86,6 +91,7 @@ export function Director({
       energy: mic ? live.energy : 0.5,
       micActive: mic,
       stageAngle,
+      headings,
     };
     if (back.current) back.current.intensity = 18 + frameRef.current.energy * 14 + pulse * 30;
 
@@ -130,7 +136,7 @@ export function Director({
     camera.lookAt(...cam.target);
     // für Tests und Debug: aktuelle Kameraeinstellung und Drehbühne am Canvas
     const phrase = choreo.phrases[phraseIndexAt(choreo, t)];
-    const label = `${phrase?.camera ?? "totale"}${phrase?.turn ? "+drehbuehne" : ""}`;
+    const label = `${shotAt(choreo, t)}${phrase?.turn ? "+drehbuehne" : ""}`;
     if (label !== shot.current) gl.domElement.dataset.camera = shot.current = label;
     if (phrase && gl.domElement.dataset.moment !== phrase.moment) gl.domElement.dataset.moment = phrase.moment;
 

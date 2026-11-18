@@ -9,6 +9,7 @@ import { briefFor, energyLevel, type CrowdMode, type ShowMoment } from "@/lib/sh
 import type { EffectKind } from "@/lib/stage/themes";
 import { slots, type Formation, type Vec2 } from "./formations";
 import { planClimaxes, type Climax } from "@/lib/stage/climax";
+import { bandKind } from "@/lib/stage/band";
 import { rng } from "./rng";
 
 export type CameraPreset =
@@ -23,7 +24,9 @@ export type CameraPreset =
   /** hoch von oben */
   | "vogel"
   /** langsame Fahrt von der Totale auf die Tänzer zu */
-  | "zoom";
+  | "zoom"
+  /** aus dem Publikum: über die Köpfe auf die Bühne */
+  | "ueberkopf";
 
 /** Choreografie-Moment: synchron, Kanon (gleicher Tanz als Welle), Solo (Lead im Spot), frei */
 export type Moment = ShowMoment;
@@ -47,6 +50,8 @@ export type Phrase = {
   moment: Moment;
   formation: Formation;
   camera: CameraPreset;
+  /** zweite Einstellung für Schnitte (bei hoher Energie alle 4 Takte hart zwischen beiden wechseln) */
+  cut?: CameraPreset;
   /** Regieanweisung (KI): was das Publikum tut und welche Effekte beim Einsatz zünden */
   crowd?: CrowdMode;
   effects?: EffectKind[];
@@ -67,7 +72,16 @@ export type Choreography = {
   order: string[];
   /** Höhepunkte (Refrain-Einsätze, Finale) – siehe lib/stage/climax.ts */
   climaxes: Climax[];
+  /** Songlänge (Abgang: Winken und Verbeugung in den letzten Takten) */
+  durationMs: number;
+  /** Publikum: Moshpit bei Rock, Feuerzeuge bei Balladen */
+  crowdStyle: CrowdStyle;
 };
+
+export type CrowdStyle = "rock" | "ballade" | null;
+
+/** Einstellungen, die stehen (kein Fahrt) – nur zwischen diesen wird geschnitten */
+export const STATIC_SHOTS: CameraPreset[] = ["totale", "halbnah", "untersicht", "seite", "vogel", "ueberkopf"];
 
 const BASE_ENERGY: Record<SectionKind, Energy> = {
   intro: 0,
@@ -152,6 +166,8 @@ export function planChoreography(
   const rTurn = rng(`${song.trackKey}:drehbuehne${variant}`);
   // eigener Zufall für die Momente (synchron/Kanon/Solo/frei)
   const rMoment = rng(`${song.trackKey}:moment${variant}`);
+  // eigener Zufall für Schnitte und Publikumsperspektive (ändert sonst nichts)
+  const rCam = rng(`${song.trackKey}:schnitt${variant}`);
   const avoid = opts.avoidClips;
   const genres = song.music.genres.length ? song.music.genres : song.artists.flatMap((a) => a.genres);
   const bias = genreBias(genres);
@@ -202,6 +218,9 @@ export function planChoreography(
         if (!["nah", "halbnah", "zoom"].includes(camera)) camera = rMoment.pick(["nah", "halbnah"] as const);
       }
       prevFormation = formation;
+      // Aus dem Publikum: manchmal statt der Totale über die Köpfe filmen
+      if (camera === "totale" && (sec.kind === "chorus" || sec.kind === "instrumental") && rCam.next() < 0.4)
+        camera = "ueberkopf";
       // nicht zusammen mit Kreisfahrt (hebt sich auf) oder Nahaufnahme (Sänger dreht sich weg)
       const turn =
         moment !== "solo" &&
@@ -259,6 +278,10 @@ export function planChoreography(
         moment,
         formation,
         camera,
+        // Schnitte: bei hoher Energie, stehender Einstellung und ohne Drehbühne eine zweite Einstellung
+        ...(energy >= 2 && !turn && moment !== "solo" && STATIC_SHOTS.includes(camera) && end - t >= 8 * barMs
+          ? { cut: rCam.pick(STATIC_SHOTS.filter((x) => x !== camera && x !== "vogel")) }
+          : {}),
         turn,
         ...directives(song, sec.kind),
         moves: Object.fromEntries(
@@ -281,7 +304,20 @@ export function planChoreography(
     }
   }
 
-  return { trackKey: song.trackKey, bpm, beatMs, barMs, timeScale, phrases, order, climaxes: planClimaxes(phrases, barMs) };
+  const kind = bandKind(genres);
+  const crowdStyle: CrowdStyle = kind === "rock" ? "rock" : kind === "keys" || song.music.mood === "ruhig" ? "ballade" : null;
+  return {
+    trackKey: song.trackKey,
+    bpm,
+    beatMs,
+    barMs,
+    timeScale,
+    phrases,
+    order,
+    climaxes: planClimaxes(phrases, barMs),
+    durationMs: song.track.durationMs,
+    crowdStyle,
+  };
 }
 
 /**

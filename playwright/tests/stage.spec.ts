@@ -73,6 +73,12 @@ test.describe("Bühne & Licht", () => {
     await expect(page.getByTestId("countdown")).toHaveText("");
   });
 
+  test("Ballade: Feuerzeuge statt Handys im Publikum", async ({ page }) => {
+    await page.goto("/?demo=abendrot&t=5000&qualitaet=niedrig");
+    await ready(page);
+    await expect(page.locator("[data-testid=stage] canvas")).toHaveAttribute("data-crowd", "feuerzeuge");
+  });
+
   // Publikum: Handylichter im ruhigen Outro, Springen mit Armbändern im Refrain
   const crowd = [
     { name: "publikum-handys", q: "demo=neonlicht&t=180000&buehne=festival", state: "handys" },

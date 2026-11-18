@@ -65,6 +65,12 @@ export function mixamoOffStyle(genres: string[]): Set<string> {
 
 export const mixamoById = new Map(mixamoClips.map((c) => [c.id, c]));
 
+/**
+ * Alle umgewandelten Clips – auch solche, die nicht getanzt werden (Gehen, Winken …). Die Bühne nutzt einige
+ * davon für Auftritt und Abgang (siehe STAGE_CLIPS in lib/dance/evaluate.ts).
+ */
+export const mixamoFileById = new Map(MIXAMO.filter((c): c is MixamoEntry & { file: string } => !!c.file).map((c) => [c.id, c]));
+
 export function mixamoForEnergy(e: Energy): string[] {
   return mixamoClips.filter((c) => c.energy === e).map((c) => c.id);
 }

@@ -15,6 +15,8 @@ export type Frame = {
   micActive: boolean;
   /** Drehbühne: aktueller Drehwinkel (Rad) */
   stageAngle: number;
+  /** Blickrichtung je Tänzer (Rad; Auftritt: in Gehrichtung) */
+  headings: Record<string, number>;
 };
 
 export const initialFrame: Frame = {
@@ -28,6 +30,7 @@ export const initialFrame: Frame = {
   energy: 0,
   micActive: false,
   stageAngle: 0,
+  headings: {},
 };
 
 export const TARGET_HEIGHT = 1.8;

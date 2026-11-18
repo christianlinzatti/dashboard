@@ -154,6 +154,15 @@ Für das Konzert-Erlebnis wurde die Bühne in vier Schichten gegliedert. Jede Sc
   und Schlagzeuger (Rock/Metal/Punk) oder Keyboarder (Jazz/Soul/Klassik/Ballade). Musiker sind zusätzliche Avatare,
   die nicht tanzen (passende Typen bevorzugt, Look der Crew), und spielen ihre Animation im Songtakt; Instrumente
   sind einfache Formen mit Leuchtakzenten (`components/stage/Band.tsx`). Nicht auf Qualitätsstufe „niedrig“.
+- **Auftritt und Abgang.** In den ersten drei Takten kommt die Crew nacheinander von der Seite (Gehen, Blick in
+  Gehrichtung, am Platz zum Publikum drehen; Lead zuletzt), in den letzten zwei Takten winken alle und verbeugen
+  sich (Vorbeugen des Oberkörpers im Avatar, Winkel aus `bowAngleAt`). Gehen und Winken sind Mixamo-Clips, die nicht
+  getanzt, aber für die Bühne mitgeladen werden (`STAGE_CLIPS`).
+- **Publikum nach Stil.** Rock → Moshpit vor der Bühnenmitte im Refrain (Rempeln und Springen im Shader), Ballade
+  oder ruhiger Song → Feuerzeuge statt Handys (warm, flackernd). Die KI kann beides als Publikumsanweisung geben.
+- **Kamera wie ein Konzertmitschnitt.** Bei hoher Energie harte Schnitte statt Fahrten und alle 4 Takte ein Wechsel
+  zwischen zwei stehenden Einstellungen (`cut`, `shotAt`), dazu leichte Handkamera; neue Einstellung „ueberkopf“
+  aus dem Publikum über die Köpfe. Kreisfahrt, Zoom und Drehbühne bleiben ungeschnitten.
 - **Ein Abend, nicht lauter Einzelsongs.** `setlistStore` merkt sich Bühne und Tänze der gespielten Songs. Der
   nächste Song meidet die Bühne des vorigen (verwandte statt gleiche: Club → Synthwave/Weltraum/Festival, Jazz
   bleibt Jazz) und wählt Tänze der letzten zwei Songs seltener. Nur im Speicher: Neuladen beginnt einen neuen

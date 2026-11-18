@@ -7,6 +7,7 @@ import {
   AnimationMixer,
   Box3,
   Object3D,
+  Quaternion,
   Vector3,
   type AnimationAction,
   type Group,
@@ -20,7 +21,7 @@ import { materialRole, outfitById } from "@/lib/avatars/outfits";
 import { IDLE_CLIP } from "@/lib/dance/clips";
 import { fallbackFor } from "@/lib/dance/mixamo";
 import { loadedMixamo } from "@/lib/dance/mixamo-loader";
-import { layersAt, type Layer } from "@/lib/dance/evaluate";
+import { bowAngleAt, layersAt, type Layer } from "@/lib/dance/evaluate";
 import type { Choreography } from "@/lib/dance/plan";
 import type { CastMember, SongStatic } from "@/lib/song-context/schema";
 import { ErrorBoundary } from "../ErrorBoundary";
@@ -39,6 +40,26 @@ type AvatarProps = {
   band?: BandPart;
 };
 
+const AXIS = new Vector3();
+const Q_ROOT = new Quaternion();
+const Q_PARENT = new Quaternion();
+const Q_BEND = new Quaternion();
+
+/**
+ * Oberkörper nach vorn beugen: Drehung um die Links-rechts-Achse des Modells, in den lokalen Raum jedes
+ * Rückenglieds umgerechnet (die Knochen haben eigene Achsen). Positiv = Kopf Richtung Publikum (+z).
+ */
+function bendForward(root: Object3D, bones: Object3D[], angle: number) {
+  root.updateMatrixWorld(true);
+  root.getWorldQuaternion(Q_ROOT);
+  for (const b of bones) {
+    b.parent!.getWorldQuaternion(Q_PARENT);
+    AXIS.set(1, 0, 0).applyQuaternion(Q_ROOT).applyQuaternion(Q_PARENT.invert());
+    b.quaternion.premultiply(Q_BEND.setFromAxisAngle(AXIS, angle / bones.length));
+    b.updateMatrixWorld(true);
+  }
+}
+
 /** Ein Avatar; scheitert das Laden (z. B. Netzwerk), fehlt nur dieser Tänzer – die Bühne läuft weiter. */
 export function Avatar(props: AvatarProps) {
   const info = avatarById.get(props.member.avatarId);
@@ -55,7 +76,7 @@ function AvatarModel({ url, member, song, choreo, frameRef, band }: AvatarProps 
   const group = useRef<Group>(null);
   const ledsTouched = useRef(false);
 
-  const { root, mixer, leds, dyed } = useMemo(() => {
+  const { root, mixer, leds, dyed, spine } = useMemo(() => {
     const model = cloneSkinned(scene) as Group;
     // Outfit: Anzug, Rüstung und Leuchtstreifen umfärben (Materialien sind zwischen Kopien geteilt → erst kopieren)
     const outfit = member.outfit ? outfitById.get(member.outfit) : undefined;
@@ -89,7 +110,9 @@ function AvatarModel({ url, member, song, choreo, frameRef, band }: AvatarProps 
       bars: [0, 1, 2, 3, 4].map((i) => model.getObjectByName(`FaceLedBar${i}`)).filter((b): b is Object3D => !!b),
       eyes: ["FaceLedEyeLeft", "FaceLedEyeRight"].map((n) => model.getObjectByName(n)).filter((b): b is Object3D => !!b),
     };
-    return { root: model, mixer: new AnimationMixer(model), leds, dyed };
+    // Rücken für die Verbeugung (zwei Glieder teilen sich die Beugung)
+    const spine = ["Spine", "Chest"].map((n) => model.getObjectByName(n)).filter((b): b is Object3D => !!b);
+    return { root: model, mixer: new AnimationMixer(model), leds, dyed, spine };
   }, [scene, member.outfit, member.trim]);
   useEffect(() => () => dyed.forEach((m) => m.dispose()), [dyed]);
   const clipSet = useMemo(() => new Set(animations.map((a) => a.name)), [animations]);
@@ -155,10 +178,15 @@ function AvatarModel({ url, member, song, choreo, frameRef, band }: AvatarProps 
       group.current?.position.set(band.position[0], band.lift ?? 0, band.position[1]);
       return;
     }
+    // Verbeugung am Songende: Oberkörper nach vorn beugen (über die Grundhaltung gelegt)
+    const bow = f.playing ? bowAngleAt(choreo, f.t) : 0;
+    if (bow > 0.001) bendForward(root, spine, bow);
+
     const p = f.positions[member.avatarId];
     if (group.current && p) {
       group.current.position.set(p[0], 0, p[1]);
-      group.current.rotation.y = f.stageAngle; // Drehbühne: Tänzer drehen sich mit
+      // Drehbühne: Tänzer drehen sich mit; beim Auftritt schauen sie in Gehrichtung
+      group.current.rotation.y = f.stageAngle + (f.headings[member.avatarId] ?? 0);
     }
   });
 

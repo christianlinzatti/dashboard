@@ -684,7 +684,8 @@ describe("Doppelte Tänze", () => {
     expect(signatureDistance(a.sig, [])).toBe(Infinity);
   });
 
-  it("der Katalog im Repo enthält keinen Tanz doppelt", async () => {
+  // liest alle Clip-Dateien (400+) – im vollen Testlauf parallel deutlich langsamer als allein
+  it("der Katalog im Repo enthält keinen Tanz doppelt", { timeout: 30_000 }, async () => {
     const { default: catalog } = await import("@/lib/dance/mixamo-clips.json");
     const { DUPLICATE_DISTANCE, signatureDistance } = await import("@/scripts/mixamo/auto");
     const entries = (catalog.clips as Array<{ id: string; file?: string; duplicateOf?: string }>).filter((c) => c.file);

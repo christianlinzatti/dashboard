@@ -168,8 +168,8 @@ describe("Auswertung zur Songzeit", () => {
     const mid = (p: { startMs: number; endMs: number }) => (p.startMs + p.endMs) / 2;
     const left = cameraAt(plan, mid(nah), [-1.5, 0.5]);
     const right = cameraAt(plan, mid(nah), [1.5, 0.5]);
-    expect(left.target[0]).toBeCloseTo(-1.5);
-    expect(right.target[0]).toBeCloseTo(1.5);
+    expect(left.target[0]).toBeCloseTo(-1.5, 1); // Handkamera wackelt leicht
+    expect(right.target[0]).toBeCloseTo(1.5, 1);
     expect(left.target[1]).toBeGreaterThan(1.2); // Gesicht/Oberkörper
     expect(left.pos[2] - left.target[2]).toBeLessThan(3); // nah dran
 

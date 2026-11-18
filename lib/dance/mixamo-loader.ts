@@ -1,8 +1,9 @@
 import type { AnimationClip } from "three";
 import { report } from "@/lib/live/telemetry";
 import { unpackClip, type PackedClip } from "./clip-pack";
-import { mixamoById } from "./mixamo";
+import { mixamoById, mixamoFileById } from "./mixamo";
 import type { Choreography } from "./plan";
+import { STAGE_CLIPS } from "./evaluate";
 
 /**
  * Lädt umgewandelte Mixamo-Clips bei Bedarf (nur die, die der Plan eines Songs verwendet).
@@ -17,11 +18,13 @@ export const loadedMixamo = (id: string) => loaded.get(id);
 export function mixamoIdsIn(c: Choreography): string[] {
   const ids = new Set<string>();
   for (const p of c.phrases) for (const m of Object.values(p.moves)) if (mixamoById.has(m.clip)) ids.add(m.clip);
+  // Auftritt und Abgang (Gehen, Winken)
+  for (const id of STAGE_CLIPS) if (mixamoFileById.has(id)) ids.add(id);
   return [...ids].sort();
 }
 
 function loadOne(id: string, fetchImpl: typeof fetch): Promise<void> {
-  const entry = mixamoById.get(id);
+  const entry = mixamoFileById.get(id);
   if (!entry) return Promise.resolve();
   let p = pending.get(id);
   if (!p) {

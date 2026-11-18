@@ -29,7 +29,7 @@ test.describe("Dashboard", () => {
     await expect(page.getByTestId("name-tag")).toHaveCount(0);
   });
 
-  test("Intro: Lead winkt, Choreografie startet", async ({ page }) => {
+  test("Intro: die Crew läuft von der Seite ein", async ({ page }) => {
     await page.goto("/?demo=neonlicht&t=3000");
     await ready(page);
     await expect(page.getByTestId("section")).toHaveText("Intro");

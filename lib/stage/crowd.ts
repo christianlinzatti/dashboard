@@ -1,5 +1,5 @@
 import { phraseIndexAt } from "@/lib/dance/evaluate";
-import type { Choreography, Phrase } from "@/lib/dance/plan";
+import type { Choreography, CrowdStyle, Phrase } from "@/lib/dance/plan";
 
 /**
  * Publikums-Regie: was die Menge vor der Bühne gerade tut – zustandslos aus Songzeit und Choreografie.
@@ -22,31 +22,48 @@ export type CrowdFrame = {
   bandMode: 0 | 1 | 2;
   /** Wiegen 0..1 */
   sway: number;
+  /** Moshpit vor der Bühnenmitte: schubsen und springen 0..1 (Rock) */
+  mosh: number;
+  /** Feuerzeuge statt Handys: warmes, flackerndes Licht 0..1 (Balladen) */
+  lighter: number;
 };
 
 export type CrowdInput = { dropMs?: number | null };
 
-const QUIET: CrowdFrame = { hands: 0.05, jump: 0, phones: 0.8, bands: 0.15, bandMode: 0, sway: 1 };
+const QUIET: CrowdFrame = { hands: 0.05, jump: 0, phones: 0.8, bands: 0.15, bandMode: 0, sway: 1, mosh: 0, lighter: 0 };
 
 const DIRECTED: Record<NonNullable<Phrase["crowd"]>, CrowdFrame> = {
   handys: { ...QUIET, phones: 0.9 },
-  wiegen: { hands: 0.1, jump: 0, phones: 0.15, bands: 0.45, bandMode: 0, sway: 1 },
-  haende: { hands: 0.85, jump: 0.2, phones: 0, bands: 0.9, bandMode: 2, sway: 0.4 },
-  springen: { hands: 0.85, jump: 1, phones: 0, bands: 1, bandMode: 1, sway: 0.2 },
+  wiegen: { hands: 0.1, jump: 0, phones: 0.15, bands: 0.45, bandMode: 0, sway: 1, mosh: 0, lighter: 0 },
+  haende: { hands: 0.85, jump: 0.2, phones: 0, bands: 0.9, bandMode: 2, sway: 0.4, mosh: 0, lighter: 0 },
+  springen: { hands: 0.85, jump: 1, phones: 0, bands: 1, bandMode: 1, sway: 0.2, mosh: 0, lighter: 0 },
+  moshpit: { hands: 0.6, jump: 1, phones: 0, bands: 0.8, bandMode: 1, sway: 0, mosh: 1, lighter: 0 },
+  feuerzeuge: { ...QUIET, phones: 0.85, lighter: 1 },
 };
 
+/** Stil des Songs (Rock → Moshpit im Refrain, Ballade → Feuerzeuge statt Handys) */
+function styled(f: CrowdFrame, p: Pick<Phrase, "section" | "energy">, style: CrowdStyle | undefined): CrowdFrame {
+  if (style === "rock" && (p.section === "chorus" || p.energy >= 3)) return { ...f, mosh: 1, jump: Math.max(f.jump, 0.9) };
+  if (style === "ballade" && f.phones > 0.5) return { ...f, lighter: 1 };
+  return f;
+}
+
 /** Zielzustand für eine Phrase – eine Regieanweisung (KI) geht vor */
-export function crowdProfile(p: Pick<Phrase, "section" | "energy" | "crowd">): CrowdFrame {
+export function crowdProfile(p: Pick<Phrase, "section" | "energy" | "crowd">, style?: CrowdStyle): CrowdFrame {
   if (p.crowd) return DIRECTED[p.crowd];
+  return styled(baseProfile(p), p, style);
+}
+
+function baseProfile(p: Pick<Phrase, "section" | "energy">): CrowdFrame {
   if (p.section === "bridge" && p.energy <= 2) return { ...QUIET, phones: 0.9 };
   if (p.energy <= 0) return QUIET;
   if (p.section === "chorus" || p.energy >= 3)
-    return { hands: 0.85, jump: p.energy >= 3 ? 1 : 0.6, phones: 0, bands: 1, bandMode: 1, sway: 0.2 };
-  if (p.energy === 2) return { hands: 0.35, jump: 0.3, phones: 0.05, bands: 0.7, bandMode: 2, sway: 0.5 };
-  return { hands: 0.12, jump: 0, phones: 0.2, bands: 0.4, bandMode: 0, sway: 0.7 };
+    return { hands: 0.85, jump: p.energy >= 3 ? 1 : 0.6, phones: 0, bands: 1, bandMode: 1, sway: 0.2, mosh: 0, lighter: 0 };
+  if (p.energy === 2) return { hands: 0.35, jump: 0.3, phones: 0.05, bands: 0.7, bandMode: 2, sway: 0.5, mosh: 0, lighter: 0 };
+  return { hands: 0.12, jump: 0, phones: 0.2, bands: 0.4, bandMode: 0, sway: 0.7, mosh: 0, lighter: 0 };
 }
 
-const DROP: CrowdFrame = { hands: 1, jump: 1, phones: 0, bands: 1, bandMode: 1, sway: 0 };
+const DROP: CrowdFrame = { hands: 1, jump: 1, phones: 0, bands: 1, bandMode: 1, sway: 0, mosh: 0, lighter: 0 };
 
 const mix = (a: CrowdFrame, b: CrowdFrame, w: number): CrowdFrame => ({
   hands: a.hands + (b.hands - a.hands) * w,
@@ -55,6 +72,8 @@ const mix = (a: CrowdFrame, b: CrowdFrame, w: number): CrowdFrame => ({
   bands: a.bands + (b.bands - a.bands) * w,
   bandMode: w < 0.5 ? a.bandMode : b.bandMode,
   sway: a.sway + (b.sway - a.sway) * w,
+  mosh: a.mosh + (b.mosh - a.mosh) * w,
+  lighter: a.lighter + (b.lighter - a.lighter) * w,
 });
 
 /** Publikum zur Songzeit t: weicher Übergang über zwei Takte, Drops (Mikrofon) überlagern für zwei Takte. */
@@ -64,7 +83,8 @@ export function crowdAt(c: Choreography, t: number, input: CrowdInput = {}): Cro
   if (!p) return QUIET;
   const prev = c.phrases[i - 1];
   const w = Math.min(Math.max((t - p.startMs) / (2 * c.barMs), 0), 1);
-  let frame = prev ? mix(crowdProfile(prev), crowdProfile(p), w) : crowdProfile(p);
+  const style = c.crowdStyle;
+  let frame = prev ? mix(crowdProfile(prev, style), crowdProfile(p, style), w) : crowdProfile(p, style);
   const drop = input.dropMs;
   if (drop != null && t >= drop && t < drop + 2 * c.barMs) {
     const out = Math.min((drop + 2 * c.barMs - t) / c.beatMs, 1);

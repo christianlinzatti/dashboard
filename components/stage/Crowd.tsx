@@ -30,7 +30,7 @@ const BASE_Y = -1.1;
 
 /** Gemeinsame Bewegungslogik für Silhouetten und Lichter (gleiche Person → gleiche Armhaltung). */
 const MOTION = /* glsl */ `
-  uniform float uBeats, uTime, uHands, uJump, uPhones, uSway, uBaseY;
+  uniform float uBeats, uTime, uHands, uJump, uPhones, uSway, uBaseY, uMosh;
   uniform vec3 uCam;
   const float PI = 3.14159265;
   const float ARM = 0.58;
@@ -45,6 +45,10 @@ const MOTION = /* glsl */ `
     if (side > 0.0) up = mix(up, 2.78 + 0.06 * sin(uTime * 1.3 + r.z * 6.0), hasPhone(r));
     return max(up, 0.12);
   }
+  /** Moshpit: nur vor der Bühnenmitte (vorne, nicht zu weit seitlich) */
+  float pit(vec3 spot) {
+    return uMosh * smoothstep(9.5, 6.5, length(spot.xy)) * smoothstep(3.6, 1.8, abs(spot.x));
+  }
   float hop(vec4 r) {
     return uJump * step(r.w, 0.25 + 0.75 * uJump) * abs(sin(PI * (uBeats + r.z * 0.12))) * 0.2;
   }
@@ -57,7 +61,15 @@ const MOTION = /* glsl */ `
     float near = smoothstep(1.2, 2.1, distance(spot.xy, uCam.xz));
     p.x += swayX(r, spot, p.y);
     p *= spot.z * near;
-    return vec3(spot.x + p.x * f.y + p.z * f.x, uBaseY + p.y + hop(r) * near, spot.y - p.x * f.x + p.z * f.y);
+    // Moshpit: Leute rempeln sich (seitlich und vor/zurück), höher und wilder springen
+    float m = pit(spot);
+    vec2 shove = m * vec2(sin(uTime * 5.3 + r.z * 23.0) * 0.32, cos(uTime * 4.1 + r.x * 17.0) * 0.22);
+    float extra = m * abs(sin(PI * (uBeats * 1.5 + r.w * 3.0))) * 0.22;
+    return vec3(
+      spot.x + shove.x + p.x * f.y + p.z * f.x,
+      uBaseY + p.y + (hop(r) + extra) * near,
+      spot.y + shove.y - p.x * f.x + p.z * f.y
+    );
   }
 `;
 
@@ -162,6 +174,7 @@ export function Crowd({
       uJump: { value: 0 },
       uPhones: { value: 0 },
       uSway: { value: 0 },
+      uMosh: { value: 0 },
       uBaseY: { value: BASE_Y },
       uCam: { value: new Vector3() },
       uFogColor: { value: new Color(dark) },
@@ -186,6 +199,7 @@ export function Crowd({
       uA: { value: new Color(accent) },
       uB: { value: new Color(accent) },
       uPhoneColor: { value: new Color(theme.id === "jazz" ? "#ffcf8a" : "#f2f6ff") },
+      uLighter: { value: 0 },
       uPx: { value: 500 },
     }),
     [shared, accent, theme.id],
@@ -195,7 +209,7 @@ export function Crowd({
     const f = frameRef.current;
     const c = f.playing
       ? crowdAt(choreo, f.t, { dropMs: f.dropMs })
-      : { hands: 0, jump: 0, phones: 0, bands: 0.1, bandMode: 0, sway: 0.3 };
+      : { hands: 0, jump: 0, phones: 0, bands: 0.1, bandMode: 0, sway: 0.3, mosh: 0, lighter: 0 };
     // gemeinsame Uniforms (beide Materialien teilen dieselben Objekte) über das Material setzen
     const u = people.current?.uniforms;
     if (!u) return;
@@ -205,6 +219,7 @@ export function Crowd({
     u.uJump!.value = c.jump;
     u.uPhones!.value = c.phones;
     u.uSway!.value = c.sway;
+    u.uMosh!.value = c.mosh;
     (u.uCam!.value as Vector3).copy(camera.position);
     u.uEnergy!.value = f.energy;
     const l = lights.current?.uniforms;
@@ -212,6 +227,7 @@ export function Crowd({
     if (l) {
       l.uBands!.value = c.bands;
       l.uBandMode!.value = c.bandMode;
+      l.uLighter!.value = c.lighter;
       if (lf) {
         (l.uA!.value as Color).set(lf.wall.colorB);
         (l.uB!.value as Color).set(lf.signal.base);
@@ -220,7 +236,18 @@ export function Crowd({
       l.uPx!.value = (size.height * gl.getPixelRatio()) / (2 * Math.tan((fov * Math.PI) / 360));
     }
     // für Tests und Debug: was das Publikum gerade tut
-    const label = c.phones > 0.5 ? "handys" : c.jump > 0.5 ? "springen" : c.hands > 0.5 ? "haende" : "ruhig";
+    const label =
+      c.mosh > 0.5
+        ? "moshpit"
+        : c.phones > 0.5
+          ? c.lighter > 0.5
+            ? "feuerzeuge"
+            : "handys"
+          : c.jump > 0.5
+            ? "springen"
+            : c.hands > 0.5
+              ? "haende"
+              : "ruhig";
     if (gl.domElement.dataset.crowd !== label) gl.domElement.dataset.crowd = label;
   });
 
@@ -288,7 +315,7 @@ export function Crowd({
               vertexShader: /* glsl */ `
                 attribute vec3 aSpot; attribute vec4 aRand; attribute float aKind;
                 ${MOTION}
-                uniform float uBands, uBandMode, uPx, uFogFar;
+                uniform float uBands, uBandMode, uPx, uFogFar, uLighter;
                 uniform vec3 uA, uB, uPhoneColor;
                 varying vec3 vColor;
                 float h(float x) { return fract(sin(x) * 43758.5453); }
@@ -301,8 +328,10 @@ export function Crowd({
                   vec3 w = toWorld(p, aSpot, aRand);
                   float level; vec3 col; float size;
                   if (aKind < 0.5) {
-                    level = hasPhone(aRand) * (0.75 + 0.25 * sin(uTime * 2.0 + aRand.x * 40.0));
-                    col = uPhoneColor; size = 0.075;
+                    // Feuerzeug: warm, flackernd, etwas größer; sonst Handy-Display
+                    float flicker = 0.7 + 0.3 * sin(uTime * 11.0 + aRand.x * 50.0) * sin(uTime * 7.3 + aRand.z * 30.0);
+                    level = hasPhone(aRand) * mix(0.75 + 0.25 * sin(uTime * 2.0 + aRand.x * 40.0), flicker, uLighter);
+                    col = mix(uPhoneColor, vec3(1.0, 0.62, 0.22), uLighter); size = mix(0.075, 0.095, uLighter);
                   } else {
                     float sparkle = step(0.62, h(floor(uBeats * 2.0) * 1.37 + aRand.x * 37.0));
                     float pulse = 0.3 + 0.7 * pow(1.0 - fract(uBeats), 2.0);
