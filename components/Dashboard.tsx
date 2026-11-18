@@ -1,6 +1,7 @@
 "use client";
 
 import { MottoBanner } from "./hud/MottoBanner";
+import { useEveningTracker } from "./live/useEveningTracker";
 import { SongTransition, type TransitionKind } from "./hud/SongTransition";
 import dynamic from "next/dynamic";
 import { useEffect, type CSSProperties } from "react";
@@ -131,6 +132,9 @@ export function Dashboard({
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
   }, []);
+
+  // Spannungsbogen des Abends aufzeichnen (Zugabe, Höhepunkt …) – unabhängig von der 3D-Bühne
+  useEveningTracker();
 
   const p = song?.album.palette;
   const vars = (

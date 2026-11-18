@@ -10,7 +10,7 @@ import type { Mood } from "@/lib/show/brief";
  * (weich) die Tänze der letzten beiden. Nur im Speicher: ein Neuladen beginnt einen neuen Abend
  * (und Demos/Tests bleiben reproduzierbar).
  */
-export type PlayedSong = { trackKey: string; theme: ThemeId; clips: string[] } & EveningEntry;
+export type PlayedSong = { trackKey: string; theme?: ThemeId; clips?: string[] } & EveningEntry;
 
 const KEEP = 6;
 /** Tänze der letzten so vielen Songs werden seltener gewählt */
@@ -18,6 +18,7 @@ export const AVOID_SONGS = 2;
 
 type State = {
   played: PlayedSong[];
+  /** Song festhalten bzw. ergänzen: der Abend (Stimmung, Like, Phase) und die Bühne (Thema, Tänze) melden getrennt */
   record: (song: PlayedSong) => void;
   /** Song wurde (fast) bis zum Ende gespielt – Voraussetzung für eine Zugabe */
   finish: (trackKey: string) => void;
@@ -26,13 +27,13 @@ type State = {
 
 export const setlistStore = createStore<State>()((set) => ({
   played: [],
-  // derselbe Song (z. B. neu geplant nach Tempo-Änderung) ersetzt seinen Eintrag statt einen neuen anzuhängen
+  // derselbe Song (neu geplant, Daten nachgeladen, zweite Meldung) ergänzt seinen Eintrag statt einen neuen anzuhängen
   record: (song) =>
     set((s) => {
       const same = s.played.at(-1)?.trackKey === song.trackKey ? s.played.at(-1) : undefined;
       const rest = same ? s.played.slice(0, -1) : s.played;
-      // neu geplant (z. B. Tempo): „ausgespielt“ bleibt erhalten
-      return { played: [...rest, { ...song, finished: song.finished ?? same?.finished }].slice(-KEEP) };
+      const defined = Object.fromEntries(Object.entries(song).filter(([, v]) => v !== undefined)) as PlayedSong;
+      return { played: [...rest, { ...same, ...defined }].slice(-KEEP) };
     }),
   finish: (trackKey) =>
     set((s) => {
@@ -59,7 +60,7 @@ export function recentClipsKey(played: readonly PlayedSong[], trackKey: string |
     ...new Set(
       before(played, trackKey)
         .slice(-AVOID_SONGS)
-        .flatMap((p) => p.clips),
+        .flatMap((p) => p.clips ?? []),
     ),
   ]
     .sort()

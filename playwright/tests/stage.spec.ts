@@ -91,7 +91,7 @@ test.describe("Bühne & Licht", () => {
   });
 
   test("Wetter: Regen über dem Stadion (erzwungen), sonst trocken", async ({ page }) => {
-    await page.goto("/?demo=neonlicht&t=46000&lyrics=karaoke&buehne=stadion&wetter=regen&qualitaet=hoch");
+    await page.goto("/?demo=neonlicht&t=46000&lyrics=karaoke&buehne=stadion&wetter=regen&qualitaet=mittel");
     await ready(page);
     await expect(page.locator("[data-weather=regen]")).toHaveCount(1);
     await expect(page).toHaveScreenshot("wetter-regen.png");

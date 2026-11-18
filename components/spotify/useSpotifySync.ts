@@ -28,6 +28,8 @@ export function useSpotifySync(enabled: boolean): SpotifyStatus {
     let timer: ReturnType<typeof setTimeout> | undefined;
     let stopped = false;
     let inFlight = false;
+    /** „sofort abfragen“, während noch eine Abfrage läuft: danach direkt nachholen statt verwerfen */
+    let again = false;
 
     const schedule = (ms: number) => {
       clearTimeout(timer);
@@ -35,7 +37,11 @@ export function useSpotifySync(enabled: boolean): SpotifyStatus {
     };
 
     async function poll() {
-      if (inFlight || stopped) return;
+      if (stopped) return;
+      if (inFlight) {
+        again = true;
+        return;
+      }
       inFlight = true;
       try {
         const t0 = performance.now();
@@ -66,6 +72,10 @@ export function useSpotifySync(enabled: boolean): SpotifyStatus {
         schedule(5000);
       } finally {
         inFlight = false;
+        if (again) {
+          again = false;
+          schedule(0);
+        }
       }
     }
 

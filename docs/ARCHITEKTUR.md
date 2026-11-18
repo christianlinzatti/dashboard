@@ -185,7 +185,7 @@ Für das Konzert-Erlebnis wurde die Bühne in vier Schichten gegliedert. Jede Sc
   Auftakt, Steigerung, Höhepunkt (dritter energiegeladener Song in Folge: Feuerwerk und volles Konfetti schon beim
   ersten großen Einsatz), Durchatmen (ruhiger Song nach wilden: Feuerzeuge) und Zugabe (nach einem ausgespielten
   Höhepunkt oder Lieblingssong; nie zweimal hintereinander). Die Setlist merkt sich dazu Stimmung, Like, Phase und
-  ob ein Song bis kurz vor Schluss lief. Beim Songwechsel zeigt `SongTransition` den Umbau (Licht aus, Nebel,
+  ob ein Song bis kurz vor Schluss lief – aufgezeichnet von `useEveningTracker` im Dashboard, unabhängig von der 3D-Bühne (die nur Thema und Tänze ergänzt). Beim Songwechsel startet derselbe Tracker den Übergang (`transitionStore`), `SongTransition` zeigt den Umbau (Licht aus, Nebel,
   suchende Lichtkegel, nächster Song mit Motto) bzw. Zugabe-Rufe mit Handylichtern und blendet aus, sobald die neue
   Bühne steht. Das Motto (`mottoFor`: KI-Regie, sonst aus Stimmung und Titel) läuft zum Songstart ein und steht im
   Schnappschuss für Alexa („Wie heißt das Motto?“). Erzwingbar für Demos: `?uebergang=umbau|zugabe`.

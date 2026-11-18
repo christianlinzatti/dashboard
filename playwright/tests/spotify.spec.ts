@@ -119,9 +119,11 @@ test.describe("Spotify-Anbindung", () => {
     await expect(transition).toHaveAttribute("data-visible", "false", { timeout: 15_000 });
 
     // Lieblingssong bis zum Ende gespielt → das Publikum ruft nach einer Zugabe
+    await expect(page.getByTestId("badge-saved")).toBeVisible();
     progressMs = 195_000;
     await poll();
-    await page.waitForTimeout(500);
+    // erst wechseln, wenn das Dashboard die neue Position wirklich übernommen hat (langsame CI-Rechner)
+    await expect(page.getByTestId("progress")).toContainText("3:1");
     state = "c";
     progressMs = 1000;
     await poll();

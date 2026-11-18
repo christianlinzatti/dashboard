@@ -8,7 +8,7 @@ import { loadMixamo, mixamoIdsIn } from "@/lib/dance/mixamo-loader";
 import { planChoreography } from "@/lib/dance/plan";
 import { useSettings } from "@/lib/settings";
 import type { SongStatic } from "@/lib/song-context/schema";
-import { songContext, useSongContext } from "@/lib/song-context/store";
+import { useSongContext } from "@/lib/song-context/store";
 import { isBigNight } from "@/lib/show/evening";
 import type { LightFrame } from "@/lib/stage/lights";
 import { PRESETS, stepQuality, type Quality } from "@/lib/stage/quality";
@@ -18,9 +18,6 @@ import { Band } from "./Band";
 import { planBand } from "@/lib/stage/band";
 import { avatars } from "@/lib/avatars/catalog";
 import { setlistStore, useEveningPhase, usePreviousTheme, useRecentClipsKey } from "@/lib/stage/setlist";
-
-/** So kurz vor Songende gilt ein Song als ausgespielt (Outro, Abgang) */
-const FINISH_MARGIN_MS = 15_000;
 import { hasBlinders, THEMES, themedPalette, themeFor, type Theme, type ThemeId } from "@/lib/stage/themes";
 import { fpsFrom, perf } from "@/lib/stage/perf";
 import { ErrorBoundary } from "../ErrorBoundary";
@@ -151,24 +148,14 @@ function Scene({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst nur bei inhaltlichen Änderungen
     [raw?.trackKey, sectionsKey, bpm, raw?.cast, followKey, showKey, recentKey],
   );
-  // Spannungsbogen des Abends: Phase dieses Songs aus den Songs davor
-  const mood = raw?.show?.mood ?? raw?.music.mood;
-  const liked = !!(raw?.user?.trackSaved || raw?.user?.lovedOnLastfm);
-  const phase = useEveningPhase(raw?.trackKey, mood);
-  // diesen Song fürs Gedächtnis des Abends festhalten (Bühne, getanzte Clips, Stimmung, Phase)
+  // Spannungsbogen des Abends (aufgezeichnet von useEveningTracker im Dashboard – auch ohne 3D-Szene)
+  const phase = useEveningPhase(raw?.trackKey, raw?.show?.mood ?? raw?.music.mood);
+  // Bühne und getanzte Clips dieses Songs fürs Gedächtnis des Abends ergänzen
   useEffect(() => {
     if (!choreo || !theme) return;
     const clips = [...new Set(choreo.phrases.flatMap((p) => Object.values(p.moves).map((m) => m.clip)))];
-    setlistStore.getState().record({ trackKey: choreo.trackKey, theme: theme.id, clips, mood, liked, phase });
-  }, [choreo, theme, mood, liked, phase]);
-  // fast zu Ende gespielt? (Voraussetzung für die Zugabe-Rufe beim nächsten Song)
-  useEffect(
-    () =>
-      songContext.subscribe((s) => {
-        if (s.song && s.positionMs >= s.song.track.durationMs - FINISH_MARGIN_MS) setlistStore.getState().finish(s.song.trackKey);
-      }),
-    [],
-  );
+    setlistStore.getState().record({ trackKey: choreo.trackKey, theme: theme.id, clips });
+  }, [choreo, theme]);
   // Durchatmen nach mehreren wilden Songs: das Publikum holt die Feuerzeuge raus
   const shown = useMemo(
     () => (choreo && phase === "durchatmen" ? { ...choreo, crowdStyle: "ballade" as const } : choreo),

@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useStore } from "zustand";
 import { mottoFor } from "@/lib/show/motto";
 import { useSongContext } from "@/lib/song-context/store";
-import { eveningPhaseFor, setlistStore } from "@/lib/stage/setlist";
+import { transitionStore, type TransitionKind } from "@/lib/show/transition";
 import { artistLine } from "./labels";
 
-export type TransitionKind = "umbau" | "zugabe";
+export type { TransitionKind } from "@/lib/show/transition";
 
 /** Mindestdauer (die neue Bühne kann schneller bereit sein) und Höchstdauer (falls sie nie meldet) */
 const MIN_MS: Record<TransitionKind, number> = { umbau: 2400, zugabe: 4200 };
@@ -23,32 +24,24 @@ const stageReady = () => document.body.getAttribute("data-stage-ready") === "tru
  */
 export function SongTransition({ force }: { force?: TransitionKind }) {
   const song = useSongContext((s) => s.song);
-  const key = song?.trackKey;
-  const [seen, setSeen] = useState(key);
-  const [active, setActive] = useState<{ key: string; kind: TransitionKind } | null>(null);
-  const [hidden, setHidden] = useState<string | null>(null);
-
-  // Songwechsel erkennen (nicht beim ersten Song des Abends)
-  if (key !== seen) {
-    setSeen(key);
-    if (seen && key && song) {
-      const mood = song.show?.mood ?? song.music.mood;
-      const zugabe = eveningPhaseFor(setlistStore.getState().played, key, mood) === "zugabe";
-      setActive({ key, kind: zugabe ? "zugabe" : "umbau" });
-    }
-  }
+  // nur der Übergang zum aktuellen Song zählt (einfache Werte auswählen – neue Objekte je Aufruf lösen Endlos-Renders aus)
+  const storeKey = useStore(transitionStore, (s) => s.key);
+  const storeKind = useStore(transitionStore, (s) => s.kind);
+  const hidden = useStore(transitionStore, (s) => s.hidden);
+  const activeKey = storeKey && storeKey === song?.trackKey ? storeKey : undefined;
+  const activeKind = activeKey ? (storeKind ?? undefined) : undefined;
 
   useEffect(() => {
-    if (!active || force) return;
+    if (!activeKey || !activeKind || force) return;
     let minOver = false;
-    const done = () => setHidden(active.key);
+    const done = () => transitionStore.getState().hide(activeKey);
     const check = () => {
       if (minOver && stageReady()) done();
     };
     const tMin = setTimeout(() => {
       minOver = true;
       check();
-    }, MIN_MS[active.kind]);
+    }, MIN_MS[activeKind]);
     const tMax = setTimeout(done, MAX_MS);
     const mo = new MutationObserver(check);
     mo.observe(document.body, { attributes: true, attributeFilter: ["data-stage-ready"] });
@@ -57,11 +50,11 @@ export function SongTransition({ force }: { force?: TransitionKind }) {
       clearTimeout(tMax);
       mo.disconnect();
     };
-  }, [active, force]);
+  }, [activeKey, activeKind, force]);
 
-  const kind = force ?? active?.kind;
+  const kind = force ?? activeKind;
   if (!song || !kind) return null;
-  const visible = !!force || (!!active && hidden !== active.key);
+  const visible = !!force || (!!activeKey && hidden !== activeKey);
   const zugabe = kind === "zugabe";
 
   return (
@@ -73,11 +66,11 @@ export function SongTransition({ force }: { force?: TransitionKind }) {
       data-visible={visible}
       aria-hidden={!visible}
     >
-      {/* Nebel */}
+      {/* Nebel: weiche Verläufe statt Unschärfe-Filter (Filter sind ohne GPU – Pi, CI – sehr teuer) */}
       {[0, 1].map((i) => (
         <div
           key={i}
-          className="transition-anim absolute -inset-[20%] blur-3xl"
+          className="transition-anim absolute -inset-[20%]"
           style={{
             background: `radial-gradient(ellipse 45% 30% at ${30 + i * 40}% ${70 - i * 15}%, color-mix(in srgb, var(--c-accent, #ff4fd8) 22%, transparent), transparent 70%)`,
             animation: `haze-drift ${9 + i * 4}s ease-in-out ${i * -3}s infinite alternate`,
@@ -91,12 +84,13 @@ export function SongTransition({ force }: { force?: TransitionKind }) {
       ].map((b) => (
         <div
           key={b.left}
-          className="transition-anim absolute top-[-10%] h-[130%] w-[22vmin] origin-top mix-blend-screen blur-md"
+          className="transition-anim absolute top-[-10%] h-[130%] w-[22vmin] origin-top"
           style={
             {
               left: b.left,
-              background: `linear-gradient(to bottom, color-mix(in srgb, var(--c-light, #fff) 55%, transparent), transparent 85%)`,
-              clipPath: "polygon(42% 0, 58% 0, 100% 100%, 0 100%)",
+              // Kegel: nach unten ausblendender Verlauf, als Trapez zugeschnitten (ohne Filter – billig auch ohne GPU)
+              background: `linear-gradient(to bottom, color-mix(in srgb, var(--c-light, #fff) 40%, transparent), transparent 85%)`,
+              clipPath: "polygon(40% 0, 60% 0, 100% 100%, 0 100%)",
               animation: `beam-sweep ${b.dur}s ease-in-out infinite alternate`,
               "--from": b.from,
               "--to": b.to,
@@ -109,9 +103,10 @@ export function SongTransition({ force }: { force?: TransitionKind }) {
         <div
           className="transition-anim absolute inset-x-[-5%] bottom-0 h-[38%]"
           style={{
-            backgroundImage: "radial-gradient(circle, rgb(240 246 255 / 0.95) 0 1.5px, transparent 3px)",
-            backgroundSize: "3.4vmin 2.8vmin",
-            maskImage: "linear-gradient(to top, black 30%, transparent)",
+            // oberste Ebene: Verlauf ins Dunkle (statt Maske), darunter das Punktraster der Handys
+            backgroundImage:
+              "linear-gradient(to bottom, rgb(0 0 0 / 0.95), transparent 70%), radial-gradient(circle, rgb(240 246 255 / 0.95) 0 1.5px, transparent 3px)",
+            backgroundSize: "100% 100%, 3.4vmin 2.8vmin",
             animation: "phones-sway 2.2s ease-in-out infinite alternate",
           }}
         />
