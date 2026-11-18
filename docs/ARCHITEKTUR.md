@@ -176,6 +176,11 @@ Für das Konzert-Erlebnis wurde die Bühne in vier Schichten gegliedert. Jede Sc
   ab Qualität „mittel“, Render-Target). Das Publikum trägt unterschiedliche Kleidung, Haare und Kappen, die
   vorderen Reihen fängt das Bühnenlicht; es klatscht über dem Kopf im Takt (`clap`, auch als KI-Anweisung
   „klatschen“), auf dem Festival wehen Fahnen. Monitorboxen an der Bühnenkante, Schaumkanonen auf Stativen.
+- **Viele Figuren aus wenigen Modellen.** `lookFor` (lib/avatars/looks.ts) gibt jedem Auftritt Zubehör und Statur:
+  Basecap, Mütze, Cowboyhut, Zylinder, Fischerhut, Kopfhörer, Sonnenbrille (nur Comic-Gesichter), Größe 94–106 %.
+  Künstler tragen immer denselben Look, die Crew wechselt je Song, die Band bleibt. `components/stage/Accessories.ts`
+  misst die Kopfform in der Grundhaltung (Vertices über dem Hals) und hängt die Teile an Kopf- bzw. Handknochen;
+  Sänger halten ein Handmikrofon in der rechten Hand.
 - **Wetter.** `weatherFor` (lib/stage/weather.ts): auf Freiluftbühnen Schnee bei Winter-/Weihnachtssongs und im
   Dezember/Januar ab und zu, Regen bei Songs über Regen/Sturm/Tränen und gelegentlich bei ruhigen Songs; nie unter
   Dach, am Strand kein Schnee. Deterministisch aus Song, Bühne und Datum (Demos: festes Datum), erzwingbar mit

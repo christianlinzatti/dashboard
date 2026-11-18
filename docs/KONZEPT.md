@@ -411,7 +411,7 @@ Aufwand: S = bis ½ Tag, M = 1–2 Tage, L = mehrere Tage.
 | Baustein | Aufwand |
 |---|---|
 | ✅ Outfits: sieben Farbvarianten der vorhandenen Modelle (Anzug, Rüstung) zur Laufzeit, Leuchtstreifen in der Künstlerfarbe, Crew trägt den Look des Leads – aus 11 Modellen werden 88 Looks | S |
-| Requisiten: Mikrofon für den Sänger, Gitarre/Schlagzeug-Gesten passend zum Genre | M |
+| ✅ Requisiten: Mikrofon für die Sänger; Looks mit Hüten, Kopfhörern, Sonnenbrillen und Statur (aus 11 Modellen werden Hunderte Figuren) | M |
 | Neue Grundmodelle (brauchen Modelldateien mit demselben Skelett; Import-Pipeline wie bei den Mixamo-Tänzen) | L |
 
 ### Stufe 13 – Mehr Bühne

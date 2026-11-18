@@ -31,6 +31,8 @@ import { ErrorBoundary } from "../ErrorBoundary";
 import { TARGET_HEIGHT, type Frame } from "./types";
 import type { Vec2 } from "@/lib/dance/formations";
 import { Guitar } from "./Band";
+import { addMicrophone, dressUp } from "./Accessories";
+import { lookFor, lookSeed } from "@/lib/avatars/looks";
 
 /** Bandmitglied: fester Platz hinten, eine Animation im Songtakt, ggf. Instrument in der Hand */
 export type BandPart = { clip: string; position: Vec2; lift?: number; guitar?: boolean };
@@ -90,7 +92,14 @@ function AvatarModel({ url, member, song, choreo, frameRef, band }: AvatarProps 
   const group = useRef<Group>(null);
   const ledsTouched = useRef(false);
 
-  const { root, mixer, leds, dyed, spine, smile, mouth } = useMemo(() => {
+  // Look (Zubehör, Statur): Künstler immer gleich, Crew je Song anders; Sänger halten ein Mikrofon
+  const isBand = !!band;
+  const look = useMemo(
+    () => lookFor(lookSeed({ avatarId: member.avatarId, artistId: member.artistId }, song.trackKey, isBand)),
+    [member.avatarId, member.artistId, song.trackKey, isBand],
+  );
+  const sings = !isBand && !!member.artistId;
+  const { root, mixer, leds, dyed, spine, smile, mouth, extras } = useMemo(() => {
     const model = cloneSkinned(scene) as Group;
     // Outfit: Anzug, Rüstung und Leuchtstreifen umfärben (Materialien sind zwischen Kopien geteilt → erst kopieren)
     const outfit = member.outfit ? outfitById.get(member.outfit) : undefined;
@@ -116,7 +125,8 @@ function AvatarModel({ url, member, song, choreo, frameRef, band }: AvatarProps 
     model.updateMatrixWorld(true); // Bone-Matrizen aktualisieren, sonst ist die Skinned-Bounding-Box falsch
     const box = new Box3().setFromObject(model, true);
     const size = box.getSize(new Vector3());
-    const scale = TARGET_HEIGHT / Math.max(size.y, 0.001);
+    // Statur aus dem Look: etwas größer oder kleiner als die Normalgröße
+    const scale = (TARGET_HEIGHT / Math.max(size.y, 0.001)) * look.height;
     model.scale.setScalar(scale);
     model.position.y = -box.min.y * scale;
     // LED-Gesicht: Balken (Stimme) und Augen (Beat)
@@ -140,8 +150,26 @@ function AvatarModel({ url, member, song, choreo, frameRef, band }: AvatarProps 
     }
     // Rücken für die Verbeugung (zwei Glieder teilen sich die Beugung)
     const spine = ["Spine", "Chest"].map((n) => model.getObjectByName(n)).filter((b): b is Object3D => !!b);
-    return { root: model, mixer: new AnimationMixer(model), leds, dyed, spine, smile, mouth };
-  }, [scene, member.outfit, member.trim]);
+    // Zubehör nach dem Look (Hut, Kopfhörer, Brille) und das Mikrofon für Sänger – in der Grundhaltung angepasst
+    const outfitColors = outfit ? [outfit.suit, outfit.armor] : [];
+    const palette = [member.trim, ...outfitColors, "#1d1d24", "#e9e3d6", song.album.palette.accent].filter(
+      (c): c is string => !!c,
+    );
+    const extras = dressUp(model, look, {
+      color: palette[Math.floor(look.tint * palette.length)] ?? "#1d1d24",
+      accent: member.trim ?? song.album.palette.accent,
+      comic: !!smile,
+    });
+    if (sings) addMicrophone(model, extras);
+    return { root: model, mixer: new AnimationMixer(model), leds, dyed, spine, smile, mouth, extras };
+  }, [scene, member.outfit, member.trim, look, sings, song.album.palette.accent]);
+  useEffect(
+    () => () => {
+      extras.geometries.forEach((g) => g.dispose());
+      extras.materials.forEach((m) => m.dispose());
+    },
+    [extras],
+  );
   // Lippensynchron: Mundbewegung dieses Avatars aus den Lyrics (Feature-Songs: der jeweilige Sänger)
   const lipTrack = useMemo(() => {
     const byArtist = new Map(song.cast.filter((c) => c.artistId).map((c) => [c.artistId!, c.avatarId]));
