@@ -163,6 +163,11 @@ Für das Konzert-Erlebnis wurde die Bühne in vier Schichten gegliedert. Jede Sc
 - **Kamera wie ein Konzertmitschnitt.** Bei hoher Energie harte Schnitte statt Fahrten und alle 4 Takte ein Wechsel
   zwischen zwei stehenden Einstellungen (`cut`, `shotAt`), dazu leichte Handkamera; neue Einstellung „ueberkopf“
   aus dem Publikum über die Köpfe. Kreisfahrt, Zoom und Drehbühne bleiben ungeschnitten.
+- **Lippensynchron.** `lib/dance/lipsync.ts` teilt jedes Wort an den Vokalen in Silben (oder nimmt die Silben mit
+  eigenem Timing, bei Umschrift deren Wörter) und gibt jeder Silbe eine Mundform (offen, rund). Jede Zeile gehört
+  ihrem Sänger (Feature-Songs), im Refrain singt die Crew leiser mit. Comic-Gesichter bekommen einen Mund am Kopf
+  (das gemalte Lächeln weicht), LED- und Visier-Gesichter bewegen ihre Balken. Mit Mikrofon moduliert die gemessene
+  Gesangslautstärke die Öffnung; ohne Lyrics öffnet die Stimme allein.
 - **Ein Abend, nicht lauter Einzelsongs.** `setlistStore` merkt sich Bühne und Tänze der gespielten Songs. Der
   nächste Song meidet die Bühne des vorigen (verwandte statt gleiche: Club → Synthwave/Weltraum/Festival, Jazz
   bleibt Jazz) und wählt Tänze der letzten zwei Songs seltener. Nur im Speicher: Neuladen beginnt einen neuen

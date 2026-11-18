@@ -6,13 +6,15 @@ import { useEffect, useMemo, useRef } from "react";
 import {
   AnimationMixer,
   Box3,
+  CircleGeometry,
+  Mesh,
+  MeshBasicMaterial,
   Object3D,
   Quaternion,
   Vector3,
   type AnimationAction,
   type Group,
   type Material,
-  type Mesh,
   type MeshStandardMaterial,
 } from "three";
 import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js";
@@ -22,6 +24,7 @@ import { IDLE_CLIP } from "@/lib/dance/clips";
 import { fallbackFor } from "@/lib/dance/mixamo";
 import { loadedMixamo } from "@/lib/dance/mixamo-loader";
 import { bowAngleAt, layersAt, type Layer } from "@/lib/dance/evaluate";
+import { CLOSED, lipsyncTracks, mouthAt } from "@/lib/dance/lipsync";
 import type { Choreography } from "@/lib/dance/plan";
 import type { CastMember, SongStatic } from "@/lib/song-context/schema";
 import { ErrorBoundary } from "../ErrorBoundary";
@@ -39,6 +42,17 @@ type AvatarProps = {
   frameRef: React.RefObject<Frame>;
   band?: BandPart;
 };
+
+/** Mund zum Singen (in Knochen-Einheiten des Modells: Kopf ≈ 0,13 breit) */
+const MOUTH_GEOMETRY = new CircleGeometry(0.026, 24);
+const MOUTH_MATERIAL = new MeshBasicMaterial({ color: "#3a0d18" });
+
+/** Comic-Mund formen: runder Mund schmaler, breiter flacher; das gemalte Lächeln weicht dem offenen Mund. */
+function shapeMouth(mouth: Mesh, smile: Object3D, open: number, round: number) {
+  mouth.visible = open > 0;
+  mouth.scale.set(1 - 0.4 * round, Math.max(0.12, open), 1);
+  smile.scale.setScalar(open > 0 ? 0.001 : 1);
+}
 
 const AXIS = new Vector3();
 const Q_ROOT = new Quaternion();
@@ -76,7 +90,7 @@ function AvatarModel({ url, member, song, choreo, frameRef, band }: AvatarProps 
   const group = useRef<Group>(null);
   const ledsTouched = useRef(false);
 
-  const { root, mixer, leds, dyed, spine } = useMemo(() => {
+  const { root, mixer, leds, dyed, spine, smile, mouth } = useMemo(() => {
     const model = cloneSkinned(scene) as Group;
     // Outfit: Anzug, Rüstung und Leuchtstreifen umfärben (Materialien sind zwischen Kopien geteilt → erst kopieren)
     const outfit = member.outfit ? outfitById.get(member.outfit) : undefined;
@@ -107,13 +121,32 @@ function AvatarModel({ url, member, song, choreo, frameRef, band }: AvatarProps 
     model.position.y = -box.min.y * scale;
     // LED-Gesicht: Balken (Stimme) und Augen (Beat)
     const leds = {
-      bars: [0, 1, 2, 3, 4].map((i) => model.getObjectByName(`FaceLedBar${i}`)).filter((b): b is Object3D => !!b),
+      // LED-Gesicht (5 Balken) oder Visier (3 Pegel) – beide zeigen den Gesang als Balken
+      bars: [
+        ...[0, 1, 2, 3, 4].map((i) => model.getObjectByName(`FaceLedBar${i}`)),
+        ...[0, 1, 2].map((i) => model.getObjectByName(`FaceMeter${i}`)),
+      ].filter((b): b is Object3D => !!b),
       eyes: ["FaceLedEyeLeft", "FaceLedEyeRight"].map((n) => model.getObjectByName(n)).filter((b): b is Object3D => !!b),
     };
+    // Comic-Gesicht: gemaltes Lächeln; zum Singen kommt ein Mund dazu (dunkle Ellipse am Lächeln-Knochen)
+    const smile = model.getObjectByName("FaceSmile") ?? undefined;
+    let mouth: Mesh | undefined;
+    if (smile?.parent) {
+      // am Kopf auf Höhe des Lächelns (nicht am Lächeln selbst – das wird beim Singen ausgeblendet)
+      mouth = new Mesh(MOUTH_GEOMETRY, MOUTH_MATERIAL);
+      mouth.position.copy(smile.position).add(new Vector3(0, -0.004, 0.006));
+      mouth.visible = false;
+      smile.parent.add(mouth);
+    }
     // Rücken für die Verbeugung (zwei Glieder teilen sich die Beugung)
     const spine = ["Spine", "Chest"].map((n) => model.getObjectByName(n)).filter((b): b is Object3D => !!b);
-    return { root: model, mixer: new AnimationMixer(model), leds, dyed, spine };
+    return { root: model, mixer: new AnimationMixer(model), leds, dyed, spine, smile, mouth };
   }, [scene, member.outfit, member.trim]);
+  // Lippensynchron: Mundbewegung dieses Avatars aus den Lyrics (Feature-Songs: der jeweilige Sänger)
+  const lipTrack = useMemo(() => {
+    const byArtist = new Map(song.cast.filter((c) => c.artistId).map((c) => [c.artistId!, c.avatarId]));
+    return lipsyncTracks(song, (a) => (a ? byArtist.get(a) : undefined)).get(member.avatarId);
+  }, [song, member.avatarId]);
   useEffect(() => () => dyed.forEach((m) => m.dispose()), [dyed]);
   const clipSet = useMemo(() => new Set(animations.map((a) => a.name)), [animations]);
 
@@ -162,16 +195,26 @@ function AvatarModel({ url, member, song, choreo, frameRef, band }: AvatarProps 
     }
     mixer.update(0);
 
-    // LED-Gesicht nach der Animation überschreiben (nur mit Mikrofon, sonst Originalpose)
+    // Lippensynchron (nach der Animation): Silben aus den Lyrics, mit Mikrofon zusätzlich nach der Lautstärke
+    const lip = f.playing && !band ? mouthAt(lipTrack, f.t) : CLOSED;
+    let open = lip.open;
     if (f.micActive) {
-      const singing = !f.focus || f.focus === member.avatarId ? f.vocal : f.vocal * 0.3;
-      leds.bars.forEach((b, i) => b.scale.setScalar(0.35 + singing * (0.9 + 0.5 * Math.sin(f.t / 90 + i * 1.7))));
-      leds.eyes.forEach((e) => e.scale.setScalar(1 + f.pulse * 0.35));
-    } else if (ledsTouched.current) {
-      // Mikro aus: LED-Gesicht wieder in Grundstellung
-      [...leds.bars, ...leds.eyes].forEach((b) => b.scale.setScalar(1));
+      const focusVocal = !f.focus || f.focus === member.avatarId ? f.vocal : f.vocal * 0.3;
+      // gemessener Gesang: Silben werden lauter/leiser; ohne Silbe (z. B. Ad-libs) öffnet die Stimme allein
+      open = lip.open > 0 ? lip.open * (0.5 + Math.min(focusVocal * 1.5, 1) * 0.5) : focusVocal * 0.6;
     }
-    ledsTouched.current = f.micActive;
+    const singing = open > 0.04;
+    if (singing || ledsTouched.current) {
+      // Balken: Mitte am höchsten bei „a“, flacher und breiter bei „e/i“
+      const mid = (leds.bars.length - 1) / 2;
+      leds.bars.forEach((b, i) => {
+        const centre = 1 - Math.abs(i - mid) / Math.max(mid, 1);
+        b.scale.setScalar(singing ? 0.35 + open * (0.75 + 0.6 * centre * (0.4 + 0.6 * lip.round)) : 1);
+      });
+    }
+    leds.eyes.forEach((e) => e.scale.setScalar(f.micActive ? 1 + f.pulse * 0.35 : 1));
+    ledsTouched.current = singing;
+    if (mouth && smile) shapeMouth(mouth, smile, singing ? open : 0, lip.round);
 
     if (band) {
       // Band steht fest hinten (dreht sich nicht mit der Drehbühne)
