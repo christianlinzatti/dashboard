@@ -6,6 +6,8 @@ import type { LogEntry } from "@/lib/live/log-schema";
 import { perf } from "@/lib/stage/perf";
 import { songContext } from "@/lib/song-context/store";
 import { sendDebugContext } from "@/lib/live/debug-upload";
+import { browserEnv, diagnose, type Finding } from "@/lib/debug/diagnose";
+import { Findings } from "./Findings";
 
 /** Song-Kontext: kompakt (Lyrics-Zeilen nur gezählt) oder vollständig */
 function contextObject(full: boolean) {
@@ -13,7 +15,7 @@ function contextObject(full: boolean) {
   const shown = full
     ? song
     : song && { ...song, lyrics: song.lyrics && { ...song.lyrics, lines: `${song.lyrics.lines.length} Zeilen` } };
-  return { positionMs: Math.round(positionMs), frozen, derived, playback, live, song: shown };
+  return { positionMs: Math.round(positionMs), frozen, derived, playback, live, env: browserEnv(), song: shown };
 }
 const contextJson = (full: boolean) => JSON.stringify(contextObject(full), null, 2);
 
@@ -33,6 +35,7 @@ function fileName() {
  */
 export function DebugPanel() {
   const [snap, setSnap] = useState("");
+  const [findings, setFindings] = useState<Finding[]>([]);
   const [paused, setPaused] = useState(false);
   const [big, setBig] = useState(false);
   const [note, setNote] = useState("");
@@ -60,7 +63,11 @@ export function DebugPanel() {
 
   useEffect(() => {
     if (paused) return;
-    const read = () => setSnap(contextJson(false));
+    const read = () => {
+      const ctx = contextObject(false);
+      setSnap(JSON.stringify(ctx, null, 2));
+      setFindings(diagnose(ctx as Parameters<typeof diagnose>[0]));
+    };
     read();
     const id = setInterval(read, 250);
     return () => clearInterval(id);
@@ -187,6 +194,10 @@ export function DebugPanel() {
           )}
         </section>
       )}
+      <h2 className="mb-1 font-sans text-sm font-bold text-white">Kurzdiagnose</h2>
+      <div className="mb-3">
+        <Findings items={findings} />
+      </div>
       <h2 className="mb-2 font-sans text-sm font-bold text-white">Song-Kontext</h2>
       <pre ref={pre} className="whitespace-pre-wrap break-all">
         {snap}

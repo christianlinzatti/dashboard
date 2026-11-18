@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import type { DebugEntry } from "@/lib/live/debug-upload";
 import type { LogEntry } from "@/lib/live/log-schema";
+import { diagnose } from "@/lib/debug/diagnose";
+import { Findings } from "./Findings";
 
 type State = { kind: "laden" } | { kind: "login" } | { kind: "fehler"; text: string } | { kind: "ok"; entry: DebugEntry | null };
 
@@ -127,6 +129,13 @@ export function DebugViewer() {
           <p className="mt-6 text-white/70" data-testid="viewer-empty">
             Noch nichts gesendet (oder älter als eine Stunde).
           </p>
+        )}
+
+        {entry && (
+          <section className="mt-4 rounded-lg bg-white/5 p-3">
+            <h2 className="mb-2 text-sm font-bold">Kurzdiagnose</h2>
+            <Findings items={diagnose(entry.context as Parameters<typeof diagnose>[0])} />
+          </section>
         )}
 
         {entry && (

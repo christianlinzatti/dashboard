@@ -1,0 +1,37 @@
+import { describe, expect, it } from "vitest";
+import { diagnose } from "@/lib/debug/diagnose";
+
+const song = (status?: { state: string; provider?: string; detail?: string }, lines: unknown = undefined) => ({
+  track: { title: "Neonlicht" },
+  artists: [{ name: "Mira Sol" }],
+  lyrics: lines === undefined ? undefined : { lines },
+  status: status ? { lyrics: status } : {},
+});
+
+describe("Kurzdiagnose", () => {
+  it("ohne Song: Hinweis auf Spotify", () => {
+    expect(diagnose({ song: null })[0]).toMatchObject({ label: "Song", level: "warnung" });
+  });
+
+  it("Lyrics: zeigt Zustand, Quelle, Zeilen und die Antworten der Quellen", () => {
+    const ok = diagnose({ song: song({ state: "ok", provider: "lrclib", detail: "lrclib: hit" }, [1, 2, 3]) });
+    expect(ok.find((f) => f.label === "Lyrics")).toMatchObject({ level: "ok" });
+    expect(ok.find((f) => f.label === "Lyrics")!.value).toContain("3 Zeilen");
+    const miss = diagnose({ song: song({ state: "missing", detail: "Keine Lyrics gefunden (lrclib: miss, netease: miss)" }) });
+    expect(miss.find((f) => f.label === "Lyrics")).toMatchObject({ level: "warnung" });
+    expect(miss.find((f) => f.label === "Lyrics")!.value).toContain("netease: miss");
+  });
+
+  it("Mikrofon: sagt, was zu tun ist; unsichere Verbindung als Fehler", () => {
+    const off = diagnose({ song: song(), live: { micState: "aus" } });
+    expect(off.find((f) => f.label === "Mikrofon")!.value).toContain("Mikro an");
+    const denied = diagnose({ song: song(), live: { micState: "verweigert" } });
+    expect(denied.find((f) => f.label === "Mikrofon")).toMatchObject({ level: "fehler" });
+    const http = diagnose({
+      song: song(),
+      live: { micState: "nicht-verfuegbar" },
+      env: { secureContext: false, origin: "http://192.168.1.20:3000" },
+    });
+    expect(http.find((f) => f.label === "Verbindung")!.value).toContain("http://192.168.1.20:3000");
+  });
+});
