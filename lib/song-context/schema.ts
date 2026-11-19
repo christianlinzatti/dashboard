@@ -264,6 +264,8 @@ export type Live = {
   bands: number[];
   /** Stimm-Aktivität 0..1 */
   vocal: number;
+  /** Songzeit (ms) des letzten gehörten Schlags je Trommel (Mikrofon) */
+  drums: { kick: number | null; snare: number | null; hat: number | null };
   micActive: boolean;
   micState: MicState;
 };

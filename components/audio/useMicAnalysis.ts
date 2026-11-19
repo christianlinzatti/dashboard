@@ -65,7 +65,13 @@ export function useMicAnalysis(enabled: boolean) {
       lock.reset();
       anchor = null;
       const hint = songContext.getState().song?.music.bpmHint;
-      songContext.getState().setLive({ bpm: hint ?? 120, tempoLocked: false, gridAnchorMs: null, lastDropMs: null });
+      songContext.getState().setLive({
+        bpm: hint ?? 120,
+        tempoLocked: false,
+        gridAnchorMs: null,
+        lastDropMs: null,
+        drums: { kick: null, snare: null, hat: null },
+      });
     });
 
     try {
@@ -100,13 +106,21 @@ export function useMicAnalysis(enabled: boolean) {
           }
           songContext.events.emit("beat", { count: bs.beatCount });
         }
+        if (playing && (f.drums.kick || f.drums.snare || f.drums.hat)) {
+          const at = songMs - LATENCY_MS;
+          patch.drums = {
+            kick: f.drums.kick ? at : s.live.drums.kick,
+            snare: f.drums.snare ? at : s.live.drums.snare,
+            hat: f.drums.hat ? at : s.live.drums.hat,
+          };
+        }
         if (f.drop && playing) {
           patch.lastDropMs = songMs;
           songContext.events.emit("drop", { songMs });
         }
 
         // Store mit ~50 Hz aktualisieren (Ereignisse sofort)
-        if (++frame % 2 === 0 || f.beat || f.drop || locked !== null) s.setLive(patch);
+        if (++frame % 2 === 0 || f.beat || f.drop || patch.drums || locked !== null) s.setLive(patch);
       });
       handle.current = h;
       const origStop = h.stop;

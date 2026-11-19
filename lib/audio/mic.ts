@@ -1,6 +1,7 @@
 import { BeatTracker, type BeatState } from "./beat-tracker";
 import { DropDetector, EnergyMeter } from "./dynamics";
 import { bandPowers, clamp01, smooth, spectralFlux, toDb } from "./features";
+import { DrumDetector, type DrumOnsets } from "./drums";
 
 export type MicFrame = {
   /** Audio-Zeit (s) */
@@ -13,6 +14,8 @@ export type MicFrame = {
   beat: boolean;
   drop: boolean;
   beatState: BeatState;
+  /** Schlagzeug-Einsätze in diesem Frame (Bassdrum, Snare, Hi-Hat) */
+  drums: DrumOnsets;
 };
 
 export type MicHandle = { stop(): void; resume(): Promise<void>; context: AudioContext };
@@ -41,6 +44,7 @@ export async function startMic(onFrame: (f: MicFrame) => void): Promise<MicHandl
   const tracker = new BeatTracker(1000 / FRAME_MS);
   const meter = new EnergyMeter();
   const drops = new DropDetector();
+  const kit = new DrumDetector();
   const bandMax = new Array(6).fill(1e-10) as number[];
   let fluxMean = 1;
   let vocal = 0;
@@ -52,6 +56,8 @@ export async function startMic(onFrame: (f: MicFrame) => void): Promise<MicHandl
     const dt = Math.max(t - lastT, 0.001);
     lastT = t;
     analyser.getFloatFrequencyData(db);
+    // Schlagzeug vor dem Flux: beide vergleichen mit dem vorigen Frame, der Flux überschreibt `prev`
+    const drums = kit.push(db, ctx.sampleRate, FFT, t, dt);
 
     const flux = spectralFlux(db, prev, ctx.sampleRate, FFT);
     fluxMean = smooth(fluxMean, flux, dt, 3);
@@ -71,7 +77,7 @@ export async function startMic(onFrame: (f: MicFrame) => void): Promise<MicHandl
     vocal = smooth(vocal, clamp01((midRatio - 0.05) * 6) * clamp01(energy * 1.5), dt, 0.08);
     const drop = drops.push(energy, longEnergy, bassRatio, t, dt);
 
-    onFrame({ t, dt, bands, energy, longEnergy, vocal, beat, drop, beatState: tracker.state(t) });
+    onFrame({ t, dt, bands, energy, longEnergy, vocal, beat, drop, beatState: tracker.state(t), drums });
   }, FRAME_MS);
 
   return {

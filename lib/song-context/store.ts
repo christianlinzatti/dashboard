@@ -43,6 +43,7 @@ export const initialLive: Live = {
   energy: 0,
   bands: [],
   vocal: 0,
+  drums: { kick: null, snare: null, hat: null },
   micActive: false,
   micState: "aus",
 };

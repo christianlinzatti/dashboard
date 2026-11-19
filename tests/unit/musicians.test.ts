@@ -43,4 +43,15 @@ describe("Band spielt im Takt", () => {
     expect(headNodAt(c, mid, null, true)).toBeGreaterThan(headNodAt(c, mid, null, false));
     expect(headNodAt(c, mid, null, true)).toBeGreaterThan(0.3);
   });
+
+  it("mit Mikrofon: das Schlagzeug spielt die gehörten Schläge", () => {
+    const t = at(verse.startMs, 1, 5);
+    const heard = { kick: t - 10, snare: null, hat: t - 500 };
+    const h = drumHits(c, t, null, heard);
+    expect(h.kick).toBeGreaterThan(0.9);
+    expect(h.snare).toBe(0);
+    expect(h.hat).toBeLessThan(0.01);
+    // ohne gehörte Schläge bleibt es still statt nach dem Raster zu spielen
+    expect(drumHits(c, t, null, { kick: null, snare: null, hat: null }).snare).toBe(0);
+  });
 });

@@ -5,6 +5,7 @@ import { useRef } from "react";
 import type { Group, Mesh, MeshBasicMaterial, MeshStandardMaterial } from "three";
 import type { Band as BandPlan } from "@/lib/stage/band";
 import { deckAngle, drumHits, keysAt } from "@/lib/stage/musicians";
+import { songContext } from "@/lib/song-context/store";
 import type { Choreography } from "@/lib/dance/plan";
 import type { CastMember, SongStatic } from "@/lib/song-context/schema";
 import { Avatar } from "./Avatar";
@@ -96,7 +97,8 @@ function DjBooth({ x, z, accent, choreo, frameRef }: { x: number; z: number; acc
     const a = deckAngle(f.t);
     decks.current.forEach((d) => d && (d.rotation.y = -a));
     // Front pulsiert mit der Bassdrum
-    if (front.current) front.current.opacity = 0.55 + 0.45 * drumHits(choreo, f.t, f.anchorMs).kick;
+    const heard = f.micActive ? songContext.getState().live.drums : null;
+    if (front.current) front.current.opacity = 0.55 + 0.45 * drumHits(choreo, f.t, f.anchorMs, heard).kick;
   });
   return (
     <group position={[x, 0, z + 0.5]}>
@@ -145,7 +147,9 @@ function DrumKit({ x, z, accent, choreo, frameRef }: { x: number; z: number; acc
   const cymbals = useRef<(Mesh | null)[]>([]);
   useFrame(() => {
     const f = frameRef.current;
-    const h = f.playing ? drumHits(choreo, f.t, f.anchorMs) : { kick: 0, snare: 0, hat: 0, crash: 0 };
+    // mit Mikrofon spielt das Schlagzeug die gehörten Schläge, sonst nach dem Raster
+    const heard = f.micActive ? songContext.getState().live.drums : null;
+    const h = f.playing ? drumHits(choreo, f.t, f.anchorMs, heard) : { kick: 0, snare: 0, hat: 0, crash: 0 };
     if (kick.current) kick.current.opacity = 0.25 + 0.75 * h.kick;
     if (snare.current) snare.current.emissiveIntensity = 0.6 * h.snare;
     cymbals.current.forEach((c, i) => {

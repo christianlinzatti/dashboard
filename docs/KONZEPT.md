@@ -402,7 +402,7 @@ Aufwand: S = bis ½ Tag, M = 1–2 Tage, L = mehrere Tage.
 
 | Baustein | Aufwand |
 |---|---|
-| Instrumente aus dem Mikrofon trennen (Kick, Snare, Hi-Hat, Gesang über Frequenzbänder und Einsätze): Kick → Lichtringe/Strobe, Snare → Flammen, Hi-Hat → Laser | M |
+| ◐ Instrumente aus dem Mikrofon trennen: Bassdrum, Snare, Hi-Hat über Einsätze je Frequenzbereich ✅ – das Schlagzeug der Band spielt die gehörten Schläge, Licht pulsiert auf der echten Bassdrum ✅; Snare → Flammen, Hi-Hat → Laser offen | M |
 | ✅ Song-Gedächtnis: gemessene Drops und Tempo je Track (pro Konto), beim nächsten Abspielen vorab bekannt – Effekte punktgenau, auch ohne Mikrofon; bestätigte Drops ab dem zweiten Hören (Energieverlauf noch offen) | M |
 | Abschnitte ohne Lyrics aus dem Energieverlauf erkennen (Instrumentals, Techno) | M |
 

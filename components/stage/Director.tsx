@@ -86,7 +86,9 @@ export function Director({
     const focus = avatarOf(derived.activeSingerId) ?? choreo.order[0];
     const mic = live.micActive;
     // Puls: kurz nach jedem Schlag hell, dann abklingend; ohne Mikro ruhig
-    const pulse = mic ? Math.pow(1 - live.beatPhase, 3) : 0;
+    // mit gehörter Bassdrum: Puls auf jedem echten Kick (kurz und hart), sonst auf dem gezählten Schlag
+    const kick = mic && live.drums.kick !== null && t >= live.drums.kick ? Math.exp(-(t - live.drums.kick) / 120) : 0;
+    const pulse = mic ? Math.max(Math.pow(1 - live.beatPhase, 3), kick) : 0;
     frameRef.current = {
       t,
       playing: frozen || playback.isPlaying,

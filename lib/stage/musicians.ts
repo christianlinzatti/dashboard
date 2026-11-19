@@ -23,8 +23,25 @@ function grid(c: Choreography, t: number, anchorMs: number | null) {
   return { beatInBar: ((beat % 4) + 4) % 4, since, phrase: p, barInPhrase, beats };
 }
 
-export function drumHits(c: Choreography, t: number, anchorMs: number | null = null): DrumHits {
+/** Gehörte Schläge (Mikrofon): Songzeit des letzten Treffers je Trommel */
+export type HeardDrums = { kick: number | null; snare: number | null; hat: number | null };
+
+/**
+ * Treffer zur Songzeit t. Mit Mikrofon (`heard`) spielt das Schlagzeug, was wirklich zu hören ist; ohne nach dem
+ * Raster (Bassdrum auf 1 und 3, Snare auf 2 und 4, Hi-Hat in Achteln). Becken immer nach der Songstruktur.
+ */
+export function drumHits(c: Choreography, t: number, anchorMs: number | null = null, heard?: HeardDrums | null): DrumHits {
   const { beatInBar, since, phrase, barInPhrase, beats } = grid(c, t, anchorMs);
+  if (heard && phrase) {
+    const at = (ms: number | null, decay?: number) => (ms === null ? 0 : pulse(t - ms, decay));
+    const crashBar = barInPhrase === 0 || (phrase.section === "chorus" && barInPhrase % 4 === 0);
+    return {
+      kick: at(heard.kick),
+      snare: at(heard.snare),
+      hat: at(heard.hat, 60),
+      crash: crashBar ? pulse(t - phrase.startMs - barInPhrase * c.barMs, 600) : 0,
+    };
+  }
   if (!phrase || phrase.energy <= 0) return { kick: 0, snare: 0, hat: pulse(since, 60) * 0.3, crash: 0 };
   const loud = phrase.energy >= 2;
   // Bassdrum auf 1 und 3 (laut: auf jedem Schlag), Snare auf 2 und 4, Hi-Hat in Achteln
