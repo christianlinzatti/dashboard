@@ -96,3 +96,42 @@ test("Einstellungen: eigener Avatar für einen Künstler", async ({ page }) => {
     { artistAvatar: { name: "Mira Sol", avatarId: null } },
   ]);
 });
+
+test("Einstellungen: Bildschirm nachts aus", async ({ page }) => {
+  const area = { name: "Wien", lat: 48.2082, lon: 16.3738, radiusKm: 200, custom: false };
+  let quietHours: { from: string; to: string } | null = null;
+  const puts: unknown[] = [];
+  await page.route("**/api/prefs", async (r) => {
+    if (r.request().method() === "PUT") {
+      const b = r.request().postDataJSON() as { quietHours: { from: string; to: string } | null };
+      puts.push(b);
+      quietHours = b.quietHours;
+    }
+    return r.fulfill({ json: { area, artistAvatars: {}, quietHours } });
+  });
+  await page.goto("/einstellungen");
+  await expect(page.getByTestId("quiet-hours-current")).toContainText("Aus");
+  await page.getByTestId("quiet-from").fill("22:30");
+  await page.getByTestId("quiet-save").click();
+  await expect(page.getByTestId("quiet-hours-current")).toHaveText("Ruhezeit 22:30–07:00 Uhr");
+  await page.getByTestId("quiet-off").click();
+  await expect(page.getByTestId("quiet-hours-current")).toContainText("Aus");
+  expect(puts).toEqual([{ quietHours: { from: "22:30", to: "07:00" } }, { quietHours: null }]);
+});
+
+test("Ruhezeit: Bildschirm schwarz ohne Musik, Antippen weckt, mit Musik immer an", async ({ page }) => {
+  await page.clock.setFixedTime(new Date("2026-11-20T02:00:00"));
+  // angehaltene Demo = keine Musik
+  await page.goto("/?demo=neonlicht&t=46000&ruhe=23:00-07:00&qualitaet=niedrig");
+  const overlay = page.getByTestId("quiet-hours");
+  await expect(overlay).toHaveAttribute("data-off", "true");
+  await overlay.click();
+  await expect(overlay).toHaveAttribute("data-off", "false");
+  // laufende Demo = Musik: keine Ruhezeit
+  await page.goto("/?demo=neonlicht&ruhe=23:00-07:00&qualitaet=niedrig");
+  await expect(overlay).toHaveAttribute("data-off", "false");
+  // außerhalb der Ruhezeit
+  await page.clock.setFixedTime(new Date("2026-11-20T12:00:00"));
+  await page.goto("/?demo=neonlicht&t=46000&ruhe=23:00-07:00&qualitaet=niedrig");
+  await expect(overlay).toHaveAttribute("data-off", "false");
+});

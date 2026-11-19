@@ -2,6 +2,7 @@ import { Dashboard } from "@/components/Dashboard";
 import { lyricsEffects, lyricsModes, type LyricsEffect, type LyricsMode } from "@/lib/lyrics/director";
 import { qualities, type Quality } from "@/lib/stage/quality";
 import { themeIds, type ThemeId } from "@/lib/stage/themes";
+import { quietHoursFromParam } from "@/lib/live/quiet-hours";
 
 type Search = Promise<Record<string, string | string[] | undefined>>;
 
@@ -21,6 +22,7 @@ export default async function Page({ searchParams }: { searchParams: Search }) {
       lyricsEffect={lyricsEffects.includes(one(sp.effekt) as LyricsEffect) ? (one(sp.effekt) as LyricsEffect) : undefined}
       weather={(["regen", "schnee", "aus"] as const).find((w) => w === one(sp.wetter))}
       transition={(["umbau", "zugabe"] as const).find((w) => w === one(sp.uebergang))}
+      quietHours={quietHoursFromParam(one(sp.ruhe))}
       lyricsMode={lyricsModes.includes(one(sp.lyrics) as LyricsMode) ? (one(sp.lyrics) as LyricsMode) : undefined}
     />
   );

@@ -3,6 +3,7 @@ import { geocodePlace } from "@/lib/concerts/geocode";
 import { createPoliteFetch } from "@/lib/info/http";
 import { effectiveArea, prefsStore, type Prefs } from "@/lib/server/prefs-store";
 import { artistAvatarSchema, artistKey, MAX_ARTIST_AVATARS } from "@/lib/avatars/overrides";
+import { quietHoursSchema } from "@/lib/live/quiet-hours";
 import { readSession } from "@/lib/server/session";
 import { json } from "@/lib/server/spotify-route";
 
@@ -15,13 +16,15 @@ export async function GET() {
   return json(view(await prefsStore().get(session.uid)));
 }
 
-const view = (p: Prefs) => ({ area: effectiveArea(p), artistAvatars: p.artistAvatars ?? {} });
+const view = (p: Prefs) => ({ area: effectiveArea(p), artistAvatars: p.artistAvatars ?? {}, quietHours: p.quietHours ?? null });
 
 const body = z.object({
   /** neuer Heimatort (frei eingegeben); null = zurück zum Standard */
   home: z.string().trim().min(2).max(100).nullable().optional(),
   /** Umkreis in km; null = Standard */
   radiusKm: z.number().int().min(10).max(20_000).nullable().optional(),
+  /** Ruhezeit setzen (null = aus) */
+  quietHours: quietHoursSchema.nullable().optional(),
   /** Avatar für einen Künstler festlegen; ohne avatarId: Zuordnung entfernen */
   artistAvatar: z
     .union([artistAvatarSchema, z.object({ name: z.string().trim().min(1).max(120), avatarId: z.null() })])
@@ -43,6 +46,8 @@ export async function PUT(req: Request) {
   }
   if (b.data.radiusKm === null) delete prefs.radiusKm;
   else if (b.data.radiusKm) prefs.radiusKm = b.data.radiusKm;
+  if (b.data.quietHours === null) delete prefs.quietHours;
+  else if (b.data.quietHours) prefs.quietHours = b.data.quietHours;
   const pick = b.data.artistAvatar;
   if (pick) {
     const map = { ...prefs.artistAvatars };

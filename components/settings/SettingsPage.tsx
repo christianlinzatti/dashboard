@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { ArtistAvatars as AvatarMap } from "@/lib/avatars/overrides";
 import { ArtistAvatars } from "./ArtistAvatars";
+import { QuietHoursSection } from "./QuietHoursSection";
+import type { QuietHours } from "@/lib/live/quiet-hours";
 
 type Area = { name: string; lat: number; lon: number; radiusKm: number; custom: boolean };
 const RADII: Array<[number, string]> = [
@@ -24,6 +26,7 @@ export function SettingsPage() {
   const [message, setMessage] = useState<{ text: string; error?: boolean } | null>(null);
   const [place, setPlace] = useState("");
   const [artistAvatars, setArtistAvatars] = useState<AvatarMap>({});
+  const [quietHours, setQuietHours] = useState<QuietHours | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -31,9 +34,10 @@ export function SettingsPage() {
       .then(async (r) => {
         if (!alive) return;
         if (r.status === 401) return setState("login");
-        const d = (await r.json()) as { area: Area; artistAvatars?: AvatarMap };
+        const d = (await r.json()) as { area: Area; artistAvatars?: AvatarMap; quietHours?: QuietHours | null };
         setArea(d.area);
         setArtistAvatars(d.artistAvatars ?? {});
+        setQuietHours(d.quietHours ?? null);
         setState("bereit");
       })
       .catch(() => alive && setMessage({ text: "Einstellungen konnten nicht geladen werden.", error: true }));
@@ -46,6 +50,7 @@ export function SettingsPage() {
     home?: string | null;
     radiusKm?: number | null;
     artistAvatar?: { name: string; avatarId: string | null; outfit?: string };
+    quietHours?: QuietHours | null;
   };
   const save = async (patch: Patch, done: string) => {
     setState("speichert");
@@ -56,10 +61,11 @@ export function SettingsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(patch),
       });
-      const d = (await r.json()) as { area?: Area; artistAvatars?: AvatarMap; error?: string };
+      const d = (await r.json()) as { area?: Area; artistAvatars?: AvatarMap; quietHours?: QuietHours | null; error?: string };
       if (!r.ok || !d.area) throw new Error(d.error ?? "Speichern fehlgeschlagen.");
       setArea(d.area);
       setArtistAvatars(d.artistAvatars ?? {});
+      setQuietHours(d.quietHours ?? null);
       setMessage({ text: done });
       setPlace("");
     } catch (e) {
@@ -79,6 +85,16 @@ export function SettingsPage() {
           Zum Dashboard
         </Link>
       </header>
+
+      {message && (
+        <p
+          role="status"
+          className={`sticky top-2 z-10 rounded-xl p-3 ${message.error ? "bg-red-700/95" : "bg-emerald-700/95"}`}
+          data-testid="settings-message"
+        >
+          {message.text}
+        </p>
+      )}
 
       {state === "login" && (
         <p className="rounded-xl bg-white/10 p-4">
@@ -156,17 +172,16 @@ export function SettingsPage() {
         </section>
       )}
 
-      {area && <ArtistAvatars map={artistAvatars} busy={state === "speichert"} save={(p, done) => void save(p, done)} />}
-
-      {message && (
-        <p
-          role="status"
-          className={`rounded-xl p-3 ${message.error ? "bg-red-600/40" : "bg-emerald-600/30"}`}
-          data-testid="settings-message"
-        >
-          {message.text}
-        </p>
+      {area && (
+        <QuietHoursSection
+          key={quietHours ? `${quietHours.from}-${quietHours.to}` : "aus"}
+          value={quietHours}
+          busy={state === "speichert"}
+          save={(p, done) => void save(p, done)}
+        />
       )}
+
+      {area && <ArtistAvatars map={artistAvatars} busy={state === "speichert"} save={(p, done) => void save(p, done)} />}
     </main>
   );
 }

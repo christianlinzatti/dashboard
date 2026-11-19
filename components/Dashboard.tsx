@@ -10,6 +10,8 @@ import { songContext, useSongContext } from "@/lib/song-context/store";
 import { NowPlayingBar } from "./hud/NowPlayingBar";
 import { Progress } from "./hud/Progress";
 import { IdleScreen } from "./hud/IdleScreen";
+import { QuietHoursOverlay } from "./live/QuietHours";
+import type { QuietHours } from "@/lib/live/quiet-hours";
 import { LyricsLayer } from "./lyrics/LyricsLayer";
 import { DebugPanel } from "./debug/DebugPanel";
 import { Controls } from "./hud/Controls";
@@ -52,6 +54,8 @@ type Props = {
   weather?: "regen" | "schnee" | "aus";
   /** Übergang zwischen Songs dauerhaft zeigen (URL `?uebergang=`): Demos und Tests */
   transition?: TransitionKind;
+  /** Ruhezeit vorgeben (URL `?ruhe=23:00-07:00`): Demos und Tests */
+  quietHours?: QuietHours;
 };
 
 export function Dashboard({
@@ -66,6 +70,7 @@ export function Dashboard({
   theme,
   weather,
   transition,
+  quietHours,
 }: Props) {
   const song = useSongContext((s) => s.song);
   const frozen = useSongContext((s) => s.frozen);
@@ -175,6 +180,7 @@ export function Dashboard({
           loginError={loginError}
         />
       )}
+      <QuietHoursOverlay enabled={demo === undefined} forced={quietHours} />
       {debug && <DebugPanel />}
     </main>
   );

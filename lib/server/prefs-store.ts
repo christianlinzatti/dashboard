@@ -3,6 +3,7 @@ import { z } from "zod";
 import { home } from "@/lib/concerts/geo";
 import { getCache, type Cache } from "@/lib/lyrics/cache";
 import { artistAvatarsSchema } from "@/lib/avatars/overrides";
+import { quietHoursSchema } from "@/lib/live/quiet-hours";
 
 /** Einstellungen pro Spotify-Konto (geräteübergreifend, z. B. vom Handy gesetzt). */
 export const prefsSchema = z.object({
@@ -12,6 +13,8 @@ export const prefsSchema = z.object({
   radiusKm: z.number().int().min(10).max(20_000).optional(),
   /** eigener Avatar (und Outfit) je Künstler, Schlüssel: artistKey(Name) */
   artistAvatars: artistAvatarsSchema.optional(),
+  /** Display-Zeitplan: Bildschirm in dieser Zeit schwarz, solange keine Musik läuft */
+  quietHours: quietHoursSchema.optional(),
 });
 export type Prefs = z.infer<typeof prefsSchema>;
 
