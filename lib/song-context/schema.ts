@@ -140,8 +140,14 @@ export const infoSchema = z.object({
       logo: z.string().optional(),
     }),
   ),
-  /** Song-Trivia (Genius): Produzenten, Songwriter, Samples */
-  song: z.object({ trivia: z.array(z.string()), url: z.string().optional() }).optional(),
+  /** Song-Trivia (Genius): Produzenten, Songwriter, Samples; dazu der Wikipedia-Artikel zum Song, falls es einen gibt */
+  song: z
+    .object({
+      trivia: z.array(z.string()),
+      url: z.string().optional(),
+      wiki: z.object({ text: z.string(), url: z.string(), lang: z.enum(["de", "en"]) }).optional(),
+    })
+    .optional(),
   photos: z.array(photoSchema),
 });
 

@@ -18,6 +18,21 @@ type ArtistEntry = {
   photo?: Photo;
 };
 
+/** Karte zum Song selbst (Wikipedia-Artikel); das Cover steht ohnehin oben in der Leiste */
+function songEntry(song: SongStatic): ArtistEntry | null {
+  const wiki = song.info?.song?.wiki;
+  if (!wiki) return null;
+  return {
+    id: "song",
+    name: `„${song.track.title}“`,
+    summary: wiki.text,
+    facts: (song.info?.song?.trivia ?? []).slice(0, 2),
+    wikiUrl: wiki.url,
+    lang: wiki.lang,
+    textSource: "wikipedia",
+  };
+}
+
 /** Artists mit Infos in Song-Reihenfolge (Lead zuerst), samt zugehörigem Foto. */
 export function infoEntries(song: SongStatic): ArtistEntry[] {
   const info: Info | undefined = song.info;
@@ -49,7 +64,8 @@ export function infoEntries(song: SongStatic): ArtistEntry[] {
  * zu Beginn und danach jede Minute kurz. Bei mehreren Artists (Feature) abwechselnd.
  */
 export function infoCardAt(song: SongStatic, d: Derived, t: number): ArtistEntry | null {
-  const entries = infoEntries(song);
+  const own = songEntry(song);
+  const entries = own ? [own, ...infoEntries(song)] : infoEntries(song);
   if (!entries.length || concertCardAt(song, d, t)) return null; // Konzertkarte hat Vorrang
   const hasLyrics = !!song.lyrics?.lines.length && song.lyrics.quality !== "plain";
   const calmSection = d.section === "intro" || d.section === "outro" || d.section === "instrumental";

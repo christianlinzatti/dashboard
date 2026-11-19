@@ -293,7 +293,7 @@ Band-Infos, Lampen/Strobo/Qualität · ○ virtuelles Smart-Home-Gerät („Part
 
 ### Stufe 4 – Band-Infos & Fotos
 ✅ MusicBrainz → Wikidata → Wikipedia (de, sonst en), Commons-Fotos mit Lizenz, Infokarte in ruhigen Teilen,
-Fakten-Ticker in Strophen, Feature-Artists abwechselnd · ○ Wikipedia-Artikel zum Song/Album als Trivia
+Fakten-Ticker in Strophen, Feature-Artists abwechselnd · ✅ Wikipedia-Artikel zum Song als eigene Infokarte (streng geprüft: Titel, Künstler, Musikstück)
 
 ### Stufe 5 – Persönliches, Konzerte, weitere Quellen
 ✅ Zuletzt gehört (Last.fm, sonst Spotify), Lieblingssong, Herz, Hörzahlen, ★ bei gefolgten Künstlern ·

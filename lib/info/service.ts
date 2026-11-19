@@ -5,6 +5,8 @@ import { normalizeLine } from "@/lib/lyrics/text";
 import type { Info, Photo } from "@/lib/song-context/schema";
 import { flickrPhotos } from "./flickr";
 import { geniusTrivia } from "./genius";
+import { songArticle } from "./song-wiki";
+import type { WikiSummary } from "./wikimedia";
 import { createPoliteFetch, SourceBusyError } from "./http";
 import { findArtist, type MbArtist } from "./musicbrainz";
 import { AUDIODB_TEST_KEY, audioDbArtist } from "./theaudiodb";
@@ -171,6 +173,23 @@ export function createInfoService(deps: {
         }
       }
       if (hit?.value?.trivia.length) info.song = { trivia: hit.value.trivia, url: hit.value.url };
+    }
+
+    // Wikipedia-Artikel zum Song (nur bekanntere Songs haben einen)
+    if (song && lead) {
+      const key = `songwiki:v1:${normalizeLine(lead.name)}|${normalizeLine(song.title)}`;
+      let hit = await deps.cache.get<{ value: WikiSummary | null }>(key);
+      if (!hit) {
+        try {
+          const value = await songArticle({ title: song.title, artist: lead.name }, deps.http, signal);
+          hit = { value };
+          await deps.cache.set(key, hit, value ? CACHE_TTL.infoFound : CACHE_TTL.infoMissing);
+        } catch (e) {
+          complete = false;
+          if (!(e instanceof SourceBusyError)) console.warn("Wikipedia (Song) fehlgeschlagen:", (e as Error).message);
+        }
+      }
+      if (hit?.value) info.song = { ...(info.song ?? { trivia: [] }), wiki: hit.value };
     }
     return { info, complete };
   };
