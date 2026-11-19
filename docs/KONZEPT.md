@@ -424,7 +424,7 @@ Aufwand: S = bis ½ Tag, M = 1–2 Tage, L = mehrere Tage.
 | ✅ Musiker spielen sichtbar (Tasten, Plattenteller, Felle/Becken, Bassist, Headbangen) | S |
 | ✅ Eigener Avatar und Outfit je Künstler in den Einstellungen | S |
 | ✅ Weitere Bühnen (Stadion, Strand, Kathedrale) und Wetter (Regen, Schnee) | M |
-| Kamerakran und Handkamera-Wackeln, Schnitt auf den Beat im Refrain | S |
+| ✅ Kamerakran (steigt im Refrain übers Publikum, Abschied im Outro), Handkamera-Wackeln, Schnitte alle zwei Takte im wilden Refrain | S |
 | Bildrate auf dem Pi je Qualitätsstufe messen und Partikel/Publikum danach einstellen (hängt an Stufe 6) | S |
 
 ### Stufe 14 – KI erweitert

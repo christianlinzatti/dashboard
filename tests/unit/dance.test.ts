@@ -4,7 +4,6 @@ import { mixamoById } from "@/lib/dance/mixamo";
 import { cameraAt, focusTimeline, layersAt, positionsAt, rotateOnStage, stageAngleAt } from "@/lib/dance/evaluate";
 import { Vector3 } from "three";
 import { fixtures } from "@/lib/song-context/fixtures";
-import { hoshizora } from "@/lib/song-context/fixtures/hoshizora";
 import { slots } from "@/lib/dance/formations";
 import { contiguous, fallbackSections, planChoreography } from "@/lib/dance/plan";
 import { rng } from "@/lib/dance/rng";
@@ -179,11 +178,28 @@ describe("Auswertung zur Songzeit", () => {
     expect(Math.abs(cameraAt(plan, quarter).pos[0])).toBeGreaterThan(3); // seitlich
     expect(cameraAt(plan, kreis.endMs - 1).pos[2]).toBeGreaterThan(5); // wieder vorn
 
-    const p2 = { ...planChoreography(hoshizora, 132), singAlong: null };
-    const zoom = p2.phrases.find((p) => p.camera === "zoom")!;
-    const dist = (t: number) => Math.hypot(...cameraAt(p2, t).pos.map((v, i) => v - [0, 1, 0][i]!));
-    expect(dist(zoom.endMs - 1)).toBeLessThan(dist(zoom.startMs + 100) - 2);
-    expect(cameraAt(p2, p2.phrases.find((p) => p.camera === "vogel")!.startMs + 8000).pos[1]).toBeGreaterThan(6);
+    // in irgendeinem Demo-Song (welche Einstellung wo landet, hängt am Zufallsgenerator je Song)
+    const plans = Object.values(fixtures).map((s) => ({ ...planChoreography(s, s.music.bpmHint ?? 120), singAlong: null }));
+    const find = (cam: string) => {
+      for (const k of plans) {
+        const p = k.phrases.find((x) => x.camera === cam && !x.cut);
+        if (p) return { k, p };
+      }
+      throw new Error(`keine Phrase mit ${cam}`);
+    };
+    const z = find("zoom");
+    const dist = (t: number) => Math.hypot(...cameraAt(z.k, t).pos.map((v, i) => v - [0, 1, 0][i]!));
+    expect(dist(z.p.endMs - 1)).toBeLessThan(dist(z.p.startMs + 100) - 2);
+    const v = find("vogel");
+    expect(cameraAt(v.k, (v.p.startMs + v.p.endMs) / 2).pos[1]).toBeGreaterThan(6);
+    // Kran: steigt über die Phrase vom Publikum hoch über die Bühne
+    const k = find("kran");
+    // (nach dem Einschwenken – im Finale fliegt die Kamera die ersten zwei Takte von hinten heran)
+    const len = k.p.endMs - k.p.startMs;
+    const early = cameraAt(k.k, k.p.startMs + len * 0.35);
+    const end = cameraAt(k.k, k.p.endMs - 50);
+    if (k.p.section === "outro") expect(end.pos[2]).toBeGreaterThan(early.pos[2]);
+    else expect(end.pos[1]).toBeGreaterThan(early.pos[1] + 1);
   });
 
   it("Drehbühne: eine volle Umdrehung pro Phrase, nur in passenden Abschnitten", () => {

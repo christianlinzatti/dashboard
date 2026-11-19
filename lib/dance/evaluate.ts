@@ -210,6 +210,12 @@ const CAMERA: Record<"totale" | "halbnah" | "untersicht" | "seite" | "vogel" | "
   vogel: { pos: [0, 7.6, 3.4], target: [0, 0.3, -0.3], fov: FOV },
 };
 const ZOOM_END: Cam = { pos: [0, 1.35, 3.9], target: [0, 1.0, 0], fov: FOV };
+/** Kamerakran: von schräg über den Köpfen links hinten hoch auf die rechte Seite über der Bühne */
+const CRANE_START: Cam = { pos: [-4.2, 1.1, 9.4], target: [0, 1.1, 0], fov: 32 };
+const CRANE_END: Cam = { pos: [3.2, 5.2, 5.6], target: [0, 0.6, -0.2], fov: FOV };
+/** Outro: der Kran zieht sich nach hinten oben zurück – Abschied von der Bühne */
+const CRANE_OUT_START: Cam = { pos: [0, 1.5, 5.2], target: [0, 1.0, 0], fov: FOV };
+const CRANE_OUT_END: Cam = { pos: [0, 5.8, 13], target: [0, 0.8, 0], fov: 30 };
 
 const mix3 = (x: V3, y: V3, w: number): [number, number, number] => [
   x[0] + (y[0] - x[0]) * w,
@@ -239,6 +245,18 @@ function presetAt(preset: CameraPreset, p: Phrase, t: number, focus: Vec2 | unde
         fov: CAMERA.totale.fov + (ZOOM_END.fov - CAMERA.totale.fov) * w,
       };
     }
+    case "kran": {
+      const w = easeInOut(phraseProgress(p, t));
+      const [from, to] = p.section === "outro" ? [CRANE_OUT_START, CRANE_OUT_END] : [CRANE_START, CRANE_END];
+      // im Bogen: der Ausleger schwenkt seitlich und steigt dabei
+      const arc = Math.sin(Math.PI * w) * 0.8;
+      const pos = mix3(from.pos, to.pos, w);
+      return {
+        pos: [pos[0], pos[1] + arc, pos[2]],
+        target: mix3(from.target, to.target, w),
+        fov: from.fov + (to.fov - from.fov) * w,
+      };
+    }
     default:
       return CAMERA[preset];
   }
@@ -256,7 +274,8 @@ export function cameraAt(c: Choreography, t: number, focus?: Vec2): Cam {
   const now = shotAt(c, t);
   // hohe Energie: harter Schnitt (wie ein Konzertmitschnitt), sonst weiche Fahrt in die neue Einstellung
   const hard = p.energy >= 2;
-  const cutStart = Math.max(p.startMs, p.startMs + Math.floor((t - p.startMs) / (CUT_BARS * c.barMs)) * CUT_BARS * c.barMs);
+  const bars = cutBarsFor(p);
+  const cutStart = Math.max(p.startMs, p.startMs + Math.floor((t - p.startMs) / (bars * c.barMs)) * bars * c.barMs);
   const before = prev ? prev.camera : p.camera;
   const a = hard ? presetAt(now, p, t, focus) : presetAt(before, prev ?? p, t, focus);
   const b = presetAt(now, p, t, focus);
@@ -276,15 +295,19 @@ export function cameraAt(c: Choreography, t: number, focus?: Vec2): Cam {
 
 /** Schnitt-Raster: so viele Takte zwischen zwei Einstellungen einer Phrase */
 export const CUT_BARS = 4;
+/** Im wilden Refrain wird schneller geschnitten – alle zwei Takte, auf der Eins */
+export const CUT_BARS_FAST = 2;
+export const cutBarsFor = (p: Pick<Phrase, "section" | "energy">) =>
+  p.section === "chorus" && p.energy >= 3 ? CUT_BARS_FAST : CUT_BARS;
 
-/** Einstellung zur Zeit t: mit zweiter Einstellung (`cut`) im 4-Takt-Raster abwechselnd (für Tests und Debug). */
+/** Einstellung zur Zeit t: mit zweiter Einstellung (`cut`) im Schnitt-Raster abwechselnd (für Tests und Debug). */
 export function shotAt(c: Choreography, t: number): CameraPreset {
   const p = c.phrases[phraseIndexAt(c, t)];
   if (!p) return "totale";
   // Mitsing-Moment: aus dem Publikum über die Köpfe – man sieht die Menge singen und den Sänger, der ihr das Mikro hinhält
   if (c.singAlong && t >= c.singAlong.startMs && t < c.singAlong.endMs) return "ueberkopf";
   if (!p.cut) return p.camera;
-  return Math.floor((t - p.startMs) / (CUT_BARS * c.barMs)) % 2 === 1 ? p.cut : p.camera;
+  return Math.floor((t - p.startMs) / (cutBarsFor(p) * c.barMs)) % 2 === 1 ? p.cut : p.camera;
 }
 
 /** Start des Kameraflugs im Finale: hoch hinter dem Publikum, Blick über die Köpfe auf die Bühne */

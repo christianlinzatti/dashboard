@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { planChoreography } from "@/lib/dance/plan";
 import {
   CUT_BARS,
+  cutBarsFor,
   ENTRANCE_BARS,
   EXIT_BARS,
   FAREWELL_CLIP,
@@ -78,9 +79,11 @@ describe("Kamera wie ein Konzertmitschnitt", () => {
       expect(p.energy).toBeGreaterThanOrEqual(2);
       expect(p.turn).toBe(false);
       expect(shotAt(k, p.startMs + 10)).toBe(p.camera);
-      expect(shotAt(k, p.startMs + CUT_BARS * k.barMs + 10)).toBe(p.cut);
+      const bars = cutBarsFor(p);
+      expect(bars).toBe(p.section === "chorus" && p.energy >= 3 ? 2 : CUT_BARS);
+      expect(shotAt(k, p.startMs + bars * k.barMs + 10)).toBe(p.cut);
       // harter Schnitt: direkt nach dem Wechsel schon die neue Einstellung
-      const t = p.startMs + CUT_BARS * k.barMs + 5;
+      const t = p.startMs + bars * k.barMs + 5;
       const before = cameraAt(k, t - 10);
       const after = cameraAt(k, t);
       expect(Math.hypot(...after.pos.map((v, i) => v - before.pos[i]!))).toBeGreaterThan(0.3);

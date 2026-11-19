@@ -28,7 +28,9 @@ export type CameraPreset =
   /** langsame Fahrt von der Totale auf die Tänzer zu */
   | "zoom"
   /** aus dem Publikum: über die Köpfe auf die Bühne */
-  | "ueberkopf";
+  | "ueberkopf"
+  /** Kamerakran: steigt über die Phrase vom Publikum hoch über die Bühne (im Outro: zieht sich zurück) */
+  | "kran";
 
 /** Choreografie-Moment: synchron, Kanon (gleicher Tanz als Welle), Solo (Lead im Spot), frei */
 export type Moment = ShowMoment;
@@ -111,9 +113,9 @@ const CAMERAS: Record<SectionKind, CameraPreset[]> = {
   intro: ["zoom", "totale"],
   verse: ["halbnah", "nah", "totale", "seite", "nah"],
   prechorus: ["halbnah", "seite", "zoom"],
-  chorus: ["untersicht", "totale", "kreisfahrt", "vogel"],
+  chorus: ["untersicht", "totale", "kreisfahrt", "vogel", "kran"],
   bridge: ["nah", "seite", "kreisfahrt"],
-  instrumental: ["totale", "seite", "untersicht", "kreisfahrt", "vogel"],
+  instrumental: ["totale", "seite", "untersicht", "kreisfahrt", "vogel", "kran"],
   outro: ["totale"],
 };
 
@@ -230,6 +232,7 @@ export function planChoreography(
         moment !== "solo" &&
         rTurn.next() < (TURN_CHANCE[sec.kind] ?? 0) &&
         camera !== "kreisfahrt" &&
+        camera !== "kran" &&
         camera !== "nah" &&
         end - t >= 4 * barMs;
 
@@ -317,13 +320,19 @@ export function planChoreography(
     beatMs,
     barMs,
     timeScale,
-    phrases: phrases.map((p) => waveShots(p, crowdStyle)),
+    phrases: phrases.map((p, i) => farewell(waveShots(p, crowdStyle), i === phrases.length - 1)),
     order,
     climaxes,
     durationMs: song.track.durationMs,
     crowdStyle,
     singAlong: planSingAlong(phrases, climaxes, barMs, song.lyrics),
   };
+}
+
+/** Letzte Phrase im Outro: der Kran zieht sich nach hinten oben zurück – Abschied von der Bühne */
+function farewell(p: Phrase, last: boolean): Phrase {
+  if (!last || p.section !== "outro" || p.turn) return p;
+  return { ...p, camera: "kran", cut: undefined };
 }
 
 /** La-Ola: im Wechsel mit der Bühnen-Einstellung eine weite Einstellung, damit man die Welle durch die Menge sieht */
