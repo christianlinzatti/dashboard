@@ -14,6 +14,7 @@ import { rng } from "./rng";
 import { crowdProfile } from "@/lib/stage/crowd";
 import { planSingAlong, type SingAlong } from "@/lib/show/singalong";
 import { trustedDrops } from "@/lib/song-memory/memory";
+import { sectionsFromEnergy } from "@/lib/song-memory/energy-sections";
 
 export type CameraPreset =
   | "totale"
@@ -195,7 +196,9 @@ export function planChoreography(
 
   const sections = song.lyrics?.sections.length
     ? contiguous(song.lyrics.sections, song.track.durationMs)
-    : fallbackSections(song.track.durationMs, barMs);
+    : // ohne Lyrics-Abschnitte: aus dem gemessenen Energieverlauf (Song-Gedächtnis), sonst nach der Songlänge geschätzt
+      (song.memory?.energy && sectionsFromEnergy(song.memory.energy, song.track.durationMs, barMs)) ||
+      fallbackSections(song.track.durationMs, barMs);
 
   const phrases: Phrase[] = [];
   let prevFormation: Formation | undefined;

@@ -19,7 +19,8 @@ greifen in die Tasten, der DJ scratcht, Felle und Becken leuchten bei Treffern, 
 Unter `/einstellungen` legst du für jeden Künstler einen eigenen Avatar und ein Outfit fest und stellst eine Ruhezeit
 ein: Nachts wird der Bildschirm schwarz, solange keine Musik läuft (Antippen weckt ihn für fünf Minuten).
 Mit eingeschaltetem Mikrofon merkt sich das Dashboard je Song die Drops und das Tempo (**Song-Gedächtnis**): Beim
-nächsten Mal zünden die Effekte punktgenau auf dem Drop – auch ohne Mikrofon. Ist die Musik aus, zeigt der Startbildschirm
+nächsten Mal zünden die Effekte punktgenau auf dem Drop – auch ohne Mikrofon. Songs ohne Lyrics (Techno, Instrumentals)
+bekommen aus dem gemerkten Energieverlauf echte Abschnitte: Intro, Aufbau, Drop, Breakdown, Outro. Ist die Musik aus, zeigt der Startbildschirm
 den **Rückblick auf den Abend** (Songs, Dauer, Höhepunkte, Zugabe, meistgespielter Künstler). Mit Mikrofon hört das
 Dashboard das Schlagzeug heraus: Die Band spielt die echten Schläge, das Licht pulsiert auf der Bassdrum, die Snare zündet
 im Refrain Flammen und die Hi-Hat lässt die Laser aufblitzen. Mit der Pi-Bridge geht der Bildschirm in der Ruhezeit

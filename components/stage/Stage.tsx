@@ -145,7 +145,7 @@ function Scene({
     .map(([id]) => id)
     .join();
   // Regie (Genres, Stimmung, KI-Brief, Tagesform) kommt kurz nach dem Songwechsel
-  const showKey = `${raw?.variant}|${raw?.music.mood}|${raw?.music.genres.join()}|${raw?.show?.motto}|${raw?.memory?.drops.map((d) => d.ms).join()}`;
+  const showKey = `${raw?.variant}|${raw?.music.mood}|${raw?.music.genres.join()}|${raw?.show?.motto}|${raw?.memory?.drops.map((d) => d.ms).join()}|${raw?.memory?.energySeen ?? 0}`;
   const choreo = useMemo(
     () => (raw ? planChoreography(raw, bpm, { avoidClips: new Set(recentKey ? recentKey.split(",") : []) }) : null),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst nur bei inhaltlichen Änderungen

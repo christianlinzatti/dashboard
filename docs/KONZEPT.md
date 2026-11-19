@@ -403,8 +403,8 @@ Aufwand: S = bis ½ Tag, M = 1–2 Tage, L = mehrere Tage.
 | Baustein | Aufwand |
 |---|---|
 | ✅ Instrumente aus dem Mikrofon trennen: Bassdrum, Snare, Hi-Hat über Einsätze je Frequenzbereich ✅ – das Schlagzeug der Band spielt die gehörten Schläge, Licht pulsiert auf der echten Bassdrum ✅, Snare zündet im Refrain Flammenstöße (höchstens einer je Takt) ✅, Hi-Hat lässt die Laser aufblitzen ✅ | M |
-| ✅ Song-Gedächtnis: gemessene Drops und Tempo je Track (pro Konto), beim nächsten Abspielen vorab bekannt – Effekte punktgenau, auch ohne Mikrofon; bestätigte Drops ab dem zweiten Hören (Energieverlauf noch offen) | M |
-| Abschnitte ohne Lyrics aus dem Energieverlauf erkennen (Instrumentals, Techno) | M |
+| ✅ Song-Gedächtnis: gemessene Drops und Tempo je Track (pro Konto), beim nächsten Abspielen vorab bekannt – Effekte punktgenau, auch ohne Mikrofon; bestätigte Drops ab dem zweiten Hören (Energieverlauf je 2 s gemittelt über mehrere Abspielungen) | M |
+| ✅ Abschnitte ohne Lyrics aus dem Energieverlauf (Song-Gedächtnis): Intro, Aufbau, Drop/Höhepunkt, Breakdown, Outro auf dem 8-Takt-Raster – ab dem zweiten Abspielen mit Mikrofon | M |
 
 ### Stufe 12 – Avatare
 

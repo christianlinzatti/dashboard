@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { MAX_ENERGY_BINS, mergeEnergy } from "./energy-sections";
 
 /**
  * Song-Gedächtnis: Was das Mikrofon über einen Song gemessen hat – Drops (Songzeit) und das sicher eingerastete
@@ -14,6 +15,9 @@ export const memorySchema = z.object({
   plays: z.number().int().nonnegative(),
   /** songeigene Verschiebung der Lyrics (ms, + = später), z. B. andere Version mit längerem Intro */
   lyricsShiftMs: z.number().min(-15_000).max(15_000).optional(),
+  /** Energieverlauf (0..100 je ENERGY_BIN_MS) – daraus Abschnitte für Songs ohne Lyrics; gemittelt über `energySeen` */
+  energy: z.array(z.number().min(0).max(100)).max(MAX_ENERGY_BINS).optional(),
+  energySeen: z.number().int().positive().optional(),
 });
 export type SongMemory = z.infer<typeof memorySchema>;
 
@@ -30,6 +34,7 @@ export const observationSchema = z.object({
     .max(64),
   bpm: z.number().min(40).max(250).optional(),
   lyricsShiftMs: z.number().min(-15_000).max(15_000).optional(),
+  energy: z.array(z.number().min(0).max(100)).max(MAX_ENERGY_BINS).optional(),
 });
 export type Observation = z.infer<typeof observationSchema>;
 
@@ -38,7 +43,10 @@ export const DROP_TOLERANCE_MS = 1200;
 const MAX_DROPS = 64;
 
 /** Neue Messung einrechnen: nahe Drops zusammenfassen (gewichteter Mittelwert), neue anhängen */
-export function mergeObservation(mem: SongMemory | null, obs: Pick<Observation, "drops" | "bpm" | "lyricsShiftMs">): SongMemory {
+export function mergeObservation(
+  mem: SongMemory | null,
+  obs: Pick<Observation, "drops" | "bpm" | "lyricsShiftMs" | "energy">,
+): SongMemory {
   const drops = (mem?.drops ?? []).map((d) => ({ ...d }));
   for (const ms of obs.drops) {
     const near = drops.find((d) => Math.abs(d.ms - ms) <= DROP_TOLERANCE_MS);
@@ -56,6 +64,12 @@ export function mergeObservation(mem: SongMemory | null, obs: Pick<Observation, 
     ...((obs.lyricsShiftMs ?? mem?.lyricsShiftMs) !== undefined
       ? { lyricsShiftMs: obs.lyricsShiftMs ?? mem?.lyricsShiftMs }
       : {}),
+    // Energieverlauf über mehrere Abspielungen mitteln
+    ...(obs.energy?.length
+      ? { energy: mergeEnergy(mem?.energy, mem?.energySeen ?? 0, obs.energy), energySeen: (mem?.energySeen ?? 0) + 1 }
+      : mem?.energy
+        ? { energy: mem.energy, energySeen: mem.energySeen ?? 1 }
+        : {}),
   };
 }
 
