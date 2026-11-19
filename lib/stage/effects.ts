@@ -1,3 +1,4 @@
+import { phraseIndexAt } from "@/lib/dance/evaluate";
 import type { Choreography } from "@/lib/dance/plan";
 import { rng } from "@/lib/dance/rng";
 import type { EffectKind, Theme } from "./themes";
@@ -102,6 +103,27 @@ export function dropCues(dropMs: number, c: Choreography, theme: Theme): Cue[] {
       intensity: 1,
       seed: Math.round(dropMs),
     }));
+}
+
+/** Pause zwischen zwei Snare-Flammenstößen: höchstens einer je Takt (sonst brennt die Bühne durchgehend) */
+export const SNARE_FLAME_BARS = 1;
+
+/**
+ * Mit Mikrofon: eine gehörte Snare zündet einen kurzen Flammenstoß – nur wo es knallen darf (Refrain, Drop-Energie)
+ * und nur auf Bühnen mit Flammenwerfern; höchstens einer je Takt. `lastMs` ist der letzte Snare-Flammenstoß.
+ */
+export function snareFlame(c: Choreography, theme: Theme, snareMs: number | null, lastMs: number | null): Cue | null {
+  if (snareMs === null || !theme.effects.includes("flammen")) return null;
+  if (lastMs !== null && snareMs - lastMs < SNARE_FLAME_BARS * c.barMs) return null;
+  const p = c.phrases[phraseIndexAt(c, snareMs)];
+  if (!p || (p.section !== "chorus" && p.energy < 3)) return null;
+  return {
+    kind: "flammen",
+    startMs: snareMs,
+    durationMs: Math.min(450, c.beatMs * 0.9),
+    intensity: 0.8,
+    seed: Math.round(snareMs),
+  };
 }
 
 export type ActiveCue = Cue & { ageMs: number };

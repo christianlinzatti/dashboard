@@ -46,7 +46,12 @@ export type LightInput = {
   /** Bühnen-Thema: Helligkeit der Moving Heads (Jazz gedämpft) und ob Laser erlaubt sind */
   headLevel?: number;
   lasers?: boolean;
+  /** Songzeit des letzten gehörten Hi-Hat-Schlags (Mikrofon): die Laser flackern darauf */
+  hatMs?: number | null;
 };
+
+/** Hi-Hat-Impuls: kurz und spitz (ein Laserblitz je Schlag) */
+const HAT_DECAY_MS = 70;
 
 const SCENE_OF: Record<SectionKind, LightScene> = {
   intro: "intro",
@@ -136,16 +141,20 @@ export function lightsAt(song: SongStatic, c: Choreography, heads: number, input
         ? Math.pow(1 - (sinceHit % 1), 1.6) * (1 - sinceHit / 6)
         : Math.max(0, 1 - sinceHit / 1.5);
 
+  // Mit Mikrofon: die Laser blitzen auf jedem gehörten Hi-Hat-Schlag auf und fächern dabei kurz auf
+  const hat = input.micActive && input.hatMs != null && t >= input.hatMs ? Math.exp(-(t - input.hatMs) / HAT_DECAY_MS) : null;
+  const laserBase = (scene === "drop" ? 1 : 0.6) * (0.6 + 0.4 * pulse);
+
   return {
     scene,
     heads: out,
     blinders,
     lasers: {
       on: prof.lasers && energy > 0.45 && input.lasers !== false && blackout === 0,
-      spread: scene === "drop" ? 1.1 : 0.55 + 0.25 * Math.sin(beats / 8),
+      spread: (scene === "drop" ? 1.1 : 0.55 + 0.25 * Math.sin(beats / 8)) + (hat ?? 0) * 0.15,
       rotation: Math.sin(beats / 16) * 0.4,
       color: alt,
-      intensity: (scene === "drop" ? 1 : 0.6) * (0.6 + 0.4 * pulse),
+      intensity: hat === null ? laserBase : laserBase * (0.35 + 0.65 * hat),
     },
     strobe,
     wall: {

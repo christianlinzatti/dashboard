@@ -117,6 +117,7 @@ export function Director({
       strobeAllowed: settings.getState().strobe,
       headLevel: theme.headLevel,
       lasers: theme.lasers,
+      hatMs: mic ? live.drums.hat : null,
     });
     lightsRef.current = lf;
     lightBus.publish(lf);

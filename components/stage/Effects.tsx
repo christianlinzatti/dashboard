@@ -16,7 +16,8 @@ import {
 import type { Choreography } from "@/lib/dance/plan";
 import { rng } from "@/lib/dance/rng";
 import type { Palette } from "@/lib/song-context/schema";
-import { dropCues, effectsAt, type ActiveCue, type Cue } from "@/lib/stage/effects";
+import { songContext } from "@/lib/song-context/store";
+import { dropCues, effectsAt, snareFlame, type ActiveCue, type Cue } from "@/lib/stage/effects";
 import type { EffectKind, Theme } from "@/lib/stage/themes";
 import { Confetti3D, Foam3D, FoamCannons } from "./Effects3D";
 import type { Frame } from "./types";
@@ -491,13 +492,21 @@ export function Effects({
   const active = useRef<ActiveCue[]>([]);
   const lastKinds = useRef("");
   const drop = useRef<{ at: number | null; cues: Cue[] }>({ at: null, cues: [] });
+  // Snare-Flammen (Mikrofon): die letzten Stöße, solange sie noch brennen
+  const snare = useRef<{ heard: number | null; cues: Cue[] }>({ heard: null, cues: [] });
 
   // Aktive Einsätze vor den Emittern bestimmen (Priorität nach dem Director)
   useFrame(({ gl }) => {
     const f = frameRef.current;
     if (f.dropMs !== drop.current.at)
       drop.current = { at: f.dropMs, cues: f.dropMs !== null ? dropCues(f.dropMs, choreo, theme) : [] };
-    active.current = f.playing ? effectsAt(cues, f.t, drop.current.cues) : [];
+    const heard = f.micActive ? songContext.getState().live.drums.snare : null;
+    if (heard !== snare.current.heard) {
+      const last = snare.current.cues.at(-1)?.startMs ?? null;
+      const q = snareFlame(choreo, theme, heard, last);
+      snare.current = { heard, cues: q ? [...snare.current.cues.slice(-2), q] : snare.current.cues };
+    }
+    active.current = f.playing ? effectsAt(cues, f.t, [...drop.current.cues, ...snare.current.cues]) : [];
     // für Tests und Debug: aktive Effektarten am Canvas
     const kinds = [...new Set(active.current.map((c) => c.kind))].sort().join(",");
     if (kinds !== lastKinds.current) {

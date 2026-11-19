@@ -20,7 +20,10 @@ Unter `/einstellungen` legst du für jeden Künstler einen eigenen Avatar und ei
 ein: Nachts wird der Bildschirm schwarz, solange keine Musik läuft (Antippen weckt ihn für fünf Minuten).
 Mit eingeschaltetem Mikrofon merkt sich das Dashboard je Song die Drops und das Tempo (**Song-Gedächtnis**): Beim
 nächsten Mal zünden die Effekte punktgenau auf dem Drop – auch ohne Mikrofon. Ist die Musik aus, zeigt der Startbildschirm
-den **Rückblick auf den Abend** (Songs, Dauer, Höhepunkte, Zugabe, meistgespielter Künstler).
+den **Rückblick auf den Abend** (Songs, Dauer, Höhepunkte, Zugabe, meistgespielter Künstler). Mit Mikrofon hört das
+Dashboard das Schlagzeug heraus: Die Band spielt die echten Schläge, das Licht pulsiert auf der Bassdrum, die Snare zündet
+im Refrain Flammen und die Hi-Hat lässt die Laser aufblitzen. Mit der Pi-Bridge geht der Bildschirm in der Ruhezeit
+per HDMI wirklich aus (`bridge/README.md`).
 
 **Neu: Betrieb** – Fehler und alle 5 min eine Leistungsprobe (Bildrate, Qualitätsstufe) landen im Kiosk-Protokoll
 (Debug-Panel `?debug=1` und `/debug`; höchstens 100 Einträge, nach 7 Tagen gelöscht, mit „Leeren“ sofort). Ein Watchdog in der Pi-Bridge startet den Kiosk neu, wenn das Dashboard hängt
