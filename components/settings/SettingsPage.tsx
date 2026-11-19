@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import type { ArtistAvatars as AvatarMap } from "@/lib/avatars/overrides";
+import { ArtistAvatars } from "./ArtistAvatars";
 
 type Area = { name: string; lat: number; lon: number; radiusKm: number; custom: boolean };
 const RADII: Array<[number, string]> = [
@@ -21,6 +23,7 @@ export function SettingsPage() {
   const [state, setState] = useState<"laden" | "bereit" | "login" | "speichert">("laden");
   const [message, setMessage] = useState<{ text: string; error?: boolean } | null>(null);
   const [place, setPlace] = useState("");
+  const [artistAvatars, setArtistAvatars] = useState<AvatarMap>({});
 
   useEffect(() => {
     let alive = true;
@@ -28,8 +31,9 @@ export function SettingsPage() {
       .then(async (r) => {
         if (!alive) return;
         if (r.status === 401) return setState("login");
-        const d = (await r.json()) as { area: Area };
+        const d = (await r.json()) as { area: Area; artistAvatars?: AvatarMap };
         setArea(d.area);
+        setArtistAvatars(d.artistAvatars ?? {});
         setState("bereit");
       })
       .catch(() => alive && setMessage({ text: "Einstellungen konnten nicht geladen werden.", error: true }));
@@ -38,7 +42,12 @@ export function SettingsPage() {
     };
   }, []);
 
-  const save = async (patch: { home?: string | null; radiusKm?: number | null }, done: string) => {
+  type Patch = {
+    home?: string | null;
+    radiusKm?: number | null;
+    artistAvatar?: { name: string; avatarId: string | null; outfit?: string };
+  };
+  const save = async (patch: Patch, done: string) => {
     setState("speichert");
     setMessage(null);
     try {
@@ -47,9 +56,10 @@ export function SettingsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(patch),
       });
-      const d = (await r.json()) as { area?: Area; error?: string };
+      const d = (await r.json()) as { area?: Area; artistAvatars?: AvatarMap; error?: string };
       if (!r.ok || !d.area) throw new Error(d.error ?? "Speichern fehlgeschlagen.");
       setArea(d.area);
+      setArtistAvatars(d.artistAvatars ?? {});
       setMessage({ text: done });
       setPlace("");
     } catch (e) {
@@ -145,6 +155,8 @@ export function SettingsPage() {
           </p>
         </section>
       )}
+
+      {area && <ArtistAvatars map={artistAvatars} busy={state === "speichert"} save={(p, done) => void save(p, done)} />}
 
       {message && (
         <p

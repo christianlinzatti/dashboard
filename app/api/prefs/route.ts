@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { geocodePlace } from "@/lib/concerts/geocode";
 import { createPoliteFetch } from "@/lib/info/http";
-import { effectiveArea, prefsStore } from "@/lib/server/prefs-store";
+import { effectiveArea, prefsStore, type Prefs } from "@/lib/server/prefs-store";
+import { artistAvatarSchema, artistKey, MAX_ARTIST_AVATARS } from "@/lib/avatars/overrides";
 import { readSession } from "@/lib/server/session";
 import { json } from "@/lib/server/spotify-route";
 
@@ -11,14 +12,20 @@ const geoHttp = createPoliteFetch({ minIntervalMs: { "nominatim.openstreetmap.or
 export async function GET() {
   const session = await readSession();
   if (!session) return json({ error: "Nicht angemeldet." }, 401);
-  return json({ area: effectiveArea(await prefsStore().get(session.uid)) });
+  return json(view(await prefsStore().get(session.uid)));
 }
+
+const view = (p: Prefs) => ({ area: effectiveArea(p), artistAvatars: p.artistAvatars ?? {} });
 
 const body = z.object({
   /** neuer Heimatort (frei eingegeben); null = zurück zum Standard */
   home: z.string().trim().min(2).max(100).nullable().optional(),
   /** Umkreis in km; null = Standard */
   radiusKm: z.number().int().min(10).max(20_000).nullable().optional(),
+  /** Avatar für einen Künstler festlegen; ohne avatarId: Zuordnung entfernen */
+  artistAvatar: z
+    .union([artistAvatarSchema, z.object({ name: z.string().trim().min(1).max(120), avatarId: z.null() })])
+    .optional(),
 });
 
 export async function PUT(req: Request) {
@@ -36,6 +43,18 @@ export async function PUT(req: Request) {
   }
   if (b.data.radiusKm === null) delete prefs.radiusKm;
   else if (b.data.radiusKm) prefs.radiusKm = b.data.radiusKm;
+  const pick = b.data.artistAvatar;
+  if (pick) {
+    const map = { ...prefs.artistAvatars };
+    const key = artistKey(pick.name);
+    if (pick.avatarId === null) delete map[key];
+    else {
+      if (!map[key] && Object.keys(map).length >= MAX_ARTIST_AVATARS)
+        return json({ error: `Höchstens ${MAX_ARTIST_AVATARS} Künstler.` }, 400);
+      map[key] = { name: pick.name, avatarId: pick.avatarId, ...(pick.outfit ? { outfit: pick.outfit } : {}) };
+    }
+    prefs.artistAvatars = map;
+  }
   await prefsStore().set(session.uid, prefs);
-  return json({ area: effectiveArea(prefs) });
+  return json(view(prefs));
 }

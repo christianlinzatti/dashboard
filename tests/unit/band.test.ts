@@ -10,7 +10,7 @@ import { mixamoById } from "@/lib/dance/mixamo";
 const all = avatars.map((a) => a.id);
 
 describe("Band nach Genre", () => {
-  it("DJ bei Techno, Gitarre + Schlagzeug bei Rock, Keyboard bei Jazz/Soul, sonst keine", () => {
+  it("DJ bei Techno, Gitarre + Bass + Schlagzeug bei Rock, Keyboard bei Jazz/Soul, sonst keine", () => {
     expect(bandKind(["techno"])).toBe("dj");
     expect(bandKind(["deep house"])).toBe("dj");
     expect(bandKind(["indie rock"])).toBe("rock");
@@ -22,7 +22,7 @@ describe("Band nach Genre", () => {
     expect(planBand(instrumental, all)?.kind).toBe("dj");
     expect(planBand(abendrot, all)?.kind).toBe("keys");
     const rock = planBand({ ...neonlicht, music: { ...neonlicht.music, genres: ["rock"] } }, all)!;
-    expect(rock.members.map((m) => m.role).sort()).toEqual(["gitarre", "schlagzeug"]);
+    expect(rock.members.map((m) => m.role).sort()).toEqual(["bass", "gitarre", "schlagzeug"]);
   });
 
   it("Musiker sind Avatare, die nicht schon tanzen – bevorzugt passende Typen", () => {

@@ -31,11 +31,23 @@ import { ErrorBoundary } from "../ErrorBoundary";
 import { TARGET_HEIGHT, type Frame } from "./types";
 import type { Vec2 } from "@/lib/dance/formations";
 import { Guitar } from "./Band";
+import type { BandRole } from "@/lib/stage/band";
+import { headNodAt, keysAt, scratchAt } from "@/lib/stage/musicians";
+import { findArms, reach, sideOf } from "./pose";
 import { addMicrophone, dressUp } from "./Accessories";
 import { lookFor, lookSeed } from "@/lib/avatars/looks";
 
 /** Bandmitglied: fester Platz hinten, eine Animation im Songtakt, ggf. Instrument in der Hand */
-export type BandPart = { clip: string; position: Vec2; lift?: number; guitar?: boolean };
+export type BandPart = {
+  clip: string;
+  position: Vec2;
+  lift?: number;
+  role: BandRole;
+  /** Clip-Versatz (s), damit zwei Musiker mit demselben Clip nicht im Gleichschritt spielen */
+  offset?: number;
+  /** Rock-Band: im Refrain wird geheadbangt */
+  rock?: boolean;
+};
 
 type AvatarProps = {
   member: CastMember;
@@ -76,6 +88,47 @@ function bendForward(root: Object3D, bones: Object3D[], angle: number) {
   }
 }
 
+const HAND = new Vector3();
+
+/**
+ * Musiker über die Animation legen: Keyboarder greifen in die Tasten (Akkord je Takt, Anschlag auf jedem Schlag),
+ * der DJ hat eine Hand am Plattenteller (scratcht im Refrain) und eine am Mischpult; alle nicken im Takt, Rock-Bands
+ * headbangen im Refrain. Ziele im Raum der Avatar-Gruppe (Instrumente stehen fest vor dem Musiker).
+ */
+function playInstrument(
+  g: Group,
+  band: BandPart,
+  arms: ReturnType<typeof findArms>,
+  neck: Object3D[],
+  root: Object3D,
+  choreo: Choreography,
+  t: number,
+  anchorMs: number | null,
+) {
+  if ((band.role === "keyboard" || band.role === "dj") && arms.length === 2) {
+    g.updateMatrixWorld(true);
+    for (const arm of arms) {
+      const side = sideOf(g, arm);
+      if (band.role === "keyboard") {
+        const { zones, press } = keysAt(choreo, t, anchorMs);
+        // linke Hand: tiefe Tasten, rechte: hohe; gedrückte Zone bestimmt die Lage
+        const zone = side < 0 ? (zones[0] ? 0 : 1) : zones[2] ? 2 : 3;
+        HAND.set(-0.42 + zone * 0.28, 0.98 - press * 0.03, 0.42);
+      } else if (side > 0) {
+        HAND.set(0.5 + scratchAt(choreo, t, anchorMs) * 0.07, 1.12, 0.48);
+      } else {
+        HAND.set(-0.05, 1.14 + 0.02 * Math.sin(t / 700), 0.5);
+      }
+      reach(g, arm, HAND);
+    }
+  }
+  const nod = headNodAt(choreo, t, anchorMs, band.rock);
+  if (nod > 0.001) {
+    if (band.rock && nod > 0.2) bendForward(root, neck, nod);
+    else bendForward(root, neck.slice(0, 1), nod);
+  }
+}
+
 /** Ein Avatar; scheitert das Laden (z. B. Netzwerk), fehlt nur dieser Tänzer – die Bühne läuft weiter. */
 export function Avatar(props: AvatarProps) {
   const info = avatarById.get(props.member.avatarId);
@@ -99,7 +152,7 @@ function AvatarModel({ url, member, song, choreo, frameRef, band }: AvatarProps 
     [member.avatarId, member.artistId, song.trackKey, isBand],
   );
   const sings = !isBand && !!member.artistId;
-  const { root, mixer, leds, dyed, spine, smile, mouth, extras } = useMemo(() => {
+  const { root, mixer, leds, dyed, spine, smile, mouth, extras, arms, neck } = useMemo(() => {
     const model = cloneSkinned(scene) as Group;
     // Outfit: Anzug, Rüstung und Leuchtstreifen umfärben (Materialien sind zwischen Kopien geteilt → erst kopieren)
     const outfit = member.outfit ? outfitById.get(member.outfit) : undefined;
@@ -150,6 +203,9 @@ function AvatarModel({ url, member, song, choreo, frameRef, band }: AvatarProps 
     }
     // Rücken für die Verbeugung (zwei Glieder teilen sich die Beugung)
     const spine = ["Spine", "Chest"].map((n) => model.getObjectByName(n)).filter((b): b is Object3D => !!b);
+    // Arme und Hals für Musiker ohne eigene Animation (Keyboard, DJ) und fürs Kopfnicken
+    const arms = findArms(model);
+    const neck = ["Neck", "Head"].map((n) => model.getObjectByName(n)).filter((b): b is Object3D => !!b);
     // Zubehör nach dem Look (Hut, Kopfhörer, Brille) und das Mikrofon für Sänger – in der Grundhaltung angepasst
     const outfitColors = outfit ? [outfit.suit, outfit.armor] : [];
     const palette = [member.trim, ...outfitColors, "#1d1d24", "#e9e3d6", song.album.palette.accent].filter(
@@ -161,7 +217,7 @@ function AvatarModel({ url, member, song, choreo, frameRef, band }: AvatarProps 
       comic: !!smile,
     });
     if (sings) addMicrophone(model, extras);
-    return { root: model, mixer: new AnimationMixer(model), leds, dyed, spine, smile, mouth, extras };
+    return { root: model, mixer: new AnimationMixer(model), leds, dyed, spine, smile, mouth, extras, arms, neck };
   }, [scene, member.outfit, member.trim, look, sings, song.album.palette.accent]);
   useEffect(
     () => () => {
@@ -210,7 +266,7 @@ function AvatarModel({ url, member, song, choreo, frameRef, band }: AvatarProps 
       ? [{ clip: IDLE_CLIP, time: performance.now() / 1000, weight: 1 }]
       : band
         ? // Band: spielt durchgehend im Songtakt (Clips sind auf 120 BPM normiert)
-          [{ clip: band.clip, time: Math.max(0, (f.t / 1000) * choreo.timeScale), weight: 1 }]
+          [{ clip: band.clip, time: Math.max(0, (f.t / 1000) * choreo.timeScale + (band.offset ?? 0)), weight: 1 }]
         : layersAt(choreo, member.avatarId, f.t, { anchorMs: f.anchorMs, dropMs: f.dropMs, clipsOf: () => clipSet });
     for (const a of actions.current.values()) a.setEffectiveWeight(0);
     for (const l of layers) {
@@ -246,7 +302,9 @@ function AvatarModel({ url, member, song, choreo, frameRef, band }: AvatarProps 
 
     if (band) {
       // Band steht fest hinten (dreht sich nicht mit der Drehbühne)
-      group.current?.position.set(band.position[0], band.lift ?? 0, band.position[1]);
+      const g = group.current;
+      g?.position.set(band.position[0], band.lift ?? 0, band.position[1]);
+      if (g && f.playing) playInstrument(g, band, arms, neck, root, choreo, f.t, f.anchorMs);
       return;
     }
     // Verbeugung am Songende: Oberkörper nach vorn beugen (über die Grundhaltung gelegt)
@@ -266,7 +324,7 @@ function AvatarModel({ url, member, song, choreo, frameRef, band }: AvatarProps 
   return (
     <group ref={group}>
       <primitive object={root} />
-      {band?.guitar && <Guitar />}
+      {(band?.role === "gitarre" || band?.role === "bass") && <Guitar bass={band.role === "bass"} />}
       {artist && (
         <Html position={[0, TARGET_HEIGHT + 0.05, 0]} center zIndexRange={[10, 0]} pointerEvents="none">
           <span

@@ -3,11 +3,11 @@ import type { SongStatic } from "@/lib/song-context/schema";
 import type { Vec2 } from "@/lib/dance/formations";
 
 /**
- * Band hinter den Tänzern – je nach Genre: DJ am Pult (Techno/House/EDM), Gitarrist und Schlagzeuger (Rock),
+ * Band hinter den Tänzern – je nach Genre: DJ am Pult (Techno/House/EDM), Gitarrist, Bassist und Schlagzeuger (Rock),
  * Keyboarder (Jazz/Soul/Klassik/Ballade). Zusätzliche Avatare, die nicht zur tanzenden Crew gehören; sie stehen
  * hinten auf einem Podest und spielen im Takt. Deterministisch je Song.
  */
-export type BandRole = "dj" | "gitarre" | "schlagzeug" | "keyboard";
+export type BandRole = "dj" | "gitarre" | "bass" | "schlagzeug" | "keyboard";
 export type BandKind = "dj" | "rock" | "keys";
 
 export type BandMember = {
@@ -33,6 +33,7 @@ const ROLES: Record<BandKind, Array<{ role: BandRole; clip: string; position: Ve
   rock: [
     { role: "schlagzeug", clip: "Mixamo_PlayingDrums", position: [0.75, -2.35], prefer: ["chrome-beat", "quantum-bass"] },
     { role: "gitarre", clip: "Mixamo_GuitarPlaying", position: [-1.6, -2.15], prefer: ["ember-rock", "festival-nova"] },
+    { role: "bass", clip: "Mixamo_GuitarPlaying", position: [2.3, -2.15], prefer: ["atlas-prism", "neon-pulse"] },
   ],
   keys: [{ role: "keyboard", clip: "Dance_HeelToe", position: [2.2, -2.15], prefer: ["velvet-jazz", "aurora-synth"] }],
 };

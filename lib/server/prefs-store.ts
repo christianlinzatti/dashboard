@@ -2,6 +2,7 @@ import "server-only";
 import { z } from "zod";
 import { home } from "@/lib/concerts/geo";
 import { getCache, type Cache } from "@/lib/lyrics/cache";
+import { artistAvatarsSchema } from "@/lib/avatars/overrides";
 
 /** Einstellungen pro Spotify-Konto (geräteübergreifend, z. B. vom Handy gesetzt). */
 export const prefsSchema = z.object({
@@ -9,6 +10,8 @@ export const prefsSchema = z.object({
     .object({ name: z.string().min(1).max(100), lat: z.number().min(-90).max(90), lon: z.number().min(-180).max(180) })
     .optional(),
   radiusKm: z.number().int().min(10).max(20_000).optional(),
+  /** eigener Avatar (und Outfit) je Künstler, Schlüssel: artistKey(Name) */
+  artistAvatars: artistAvatarsSchema.optional(),
 });
 export type Prefs = z.infer<typeof prefsSchema>;
 

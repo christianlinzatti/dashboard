@@ -24,6 +24,7 @@ import { ConcertOverlay } from "./concerts/ConcertOverlay";
 import { useConcertLoader } from "./concerts/useConcertLoader";
 import { useTempoLoader } from "./audio/useTempoLoader";
 import { useShowLoader } from "./show/useShowLoader";
+import { useArtistAvatars } from "./avatars/useArtistAvatars";
 import { installTelemetry, report } from "@/lib/live/telemetry";
 import { perf } from "@/lib/stage/perf";
 import { markFrame } from "@/lib/live/frame-clock";
@@ -86,6 +87,8 @@ export function Dashboard({
   useTempoLoader(demo === undefined);
   // Regie: Genres/Stimmung aus offenen Quellen und – wenn eingerichtet – die Regieanweisung der KI
   useShowLoader(demo === undefined);
+  // eigene Avatare je Künstler (Einstellungen)
+  useArtistAvatars(demo === undefined);
   // Mikrofon: im Live-Betrieb; in Demos nur mit ?mic=1 (Screenshots bleiben reproduzierbar)
   const micCtl = useMicAnalysis(demo === undefined || !!mic);
 
