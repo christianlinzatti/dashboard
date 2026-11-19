@@ -58,6 +58,11 @@ export function createBridgeClient(opts: BridgeClientOptions) {
   let lastSentAt = 0;
   let pending: string | null = null;
   let flushTimer: ReturnType<typeof setTimeout> | undefined;
+  /** gewünschter Bildschirm-Zustand – nach jedem (Neu-)Verbinden erneut gemeldet */
+  let displayOn: boolean | null = null;
+  const sendDisplay = () => {
+    if (displayOn !== null && ws && ws.readyState === OPEN) ws.send(JSON.stringify({ type: "display", on: displayOn }));
+  };
 
   const setState = (s: BridgeState) => opts.onState?.(s);
 
@@ -70,6 +75,7 @@ export function createBridgeClient(opts: BridgeClientOptions) {
       attempt = 0;
       lastSent = "";
       setState("verbunden");
+      sendDisplay();
     };
     sock.onerror = () => sock.close();
     sock.onclose = () => {
@@ -100,6 +106,12 @@ export function createBridgeClient(opts: BridgeClientOptions) {
     heartbeat(frameAgeMs: number, visible: boolean) {
       if (ws && ws.readyState === OPEN)
         ws.send(JSON.stringify({ type: "heartbeat", frameAgeMs: Math.round(frameAgeMs), visible }));
+    },
+    /** Bildschirm ein/aus (Ruhezeit) – die Bridge schaltet per HDMI, wenn sie dafür eingerichtet ist */
+    display(on: boolean) {
+      if (displayOn === on) return;
+      displayOn = on;
+      sendDisplay();
     },
     /** Neues Lichtsignal (pro Frame aufrufbar – wird gedrosselt). */
     update(f: SignalFrame, lamps: boolean, now = Date.now()) {

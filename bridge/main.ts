@@ -13,6 +13,7 @@ import { LampController } from "./controller.ts";
 import { discover } from "./discovery.ts";
 import { createBridgeServer } from "./server.ts";
 import { createWatchdog } from "./watchdog.ts";
+import { createDisplay } from "./display.ts";
 
 const configPath = process.argv[2] ?? path.join(import.meta.dirname, "config.json");
 if (!existsSync(configPath)) {
@@ -40,6 +41,17 @@ await refreshLamps();
 setInterval(() => void refreshLamps(), 5 * 60_000);
 setInterval(() => controller.flush(), 25);
 
+// über die System-Shell: /bin/sh auf Linux/macOS, cmd.exe unter Windows
+const run = (label: string) => (command: string) => {
+  console.log(`${label}: ${command}`);
+  exec(command, (err) => err && console.error(`${label} fehlgeschlagen:`, err.message));
+};
+
+const display = cfg.display ? createDisplay({ ...cfg.display, run: run("Bildschirm") }) : undefined;
+// beim Start der Bridge ist der Bildschirm an (falls er beim letzten Beenden aus war)
+display?.forceOn("Start der Bridge");
+if (display) setInterval(() => display.check(), 5000);
+
 const wd = cfg.watchdog;
 const watchdog = wd
   ? createWatchdog({
@@ -47,15 +59,16 @@ const watchdog = wd
       frameStallMs: wd.frameStallS * 1000,
       cooldownMs: wd.cooldownS * 1000,
       onStall: (reason) => {
-        console.warn(`Watchdog: ${reason} – führe aus: ${wd.command}`);
-        // über die System-Shell: /bin/sh auf Linux/macOS, cmd.exe unter Windows
-        exec(wd.command, (err) => err && console.error("Watchdog-Befehl fehlgeschlagen:", err.message));
+        console.warn(`Watchdog: ${reason}`);
+        // ein hängendes Dashboard soll man sehen: Bildschirm an, dann Kiosk neu starten
+        display?.forceOn(`Watchdog: ${reason}`);
+        run("Watchdog")(wd.command);
       },
     })
   : undefined;
 if (watchdog) setInterval(() => watchdog.check(), 5000);
 
-const server = await createBridgeServer({ port: cfg.port, allowedOrigins: cfg.allowedOrigins, controller, watchdog });
+const server = await createBridgeServer({ port: cfg.port, allowedOrigins: cfg.allowedOrigins, controller, watchdog, display });
 console.log(`Bridge läuft auf ws://127.0.0.1:${server.port} (Status: http://127.0.0.1:${server.port}/status)`);
 console.log(`Erlaubtes Dashboard: ${cfg.allowedOrigins.join(", ")} – beenden mit Strg+C`);
 

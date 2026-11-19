@@ -3,6 +3,7 @@ import { WebSocketServer } from "ws";
 import { z } from "zod";
 import type { LampController } from "./controller.ts";
 import type { Watchdog } from "./watchdog.ts";
+import type { Display } from "./display.ts";
 
 /** Nachricht vom Dashboard: aktuelles Lichtsignal (ca. 20×/s, nur bei Änderung). */
 export const lightMessage = z.object({
@@ -26,6 +27,9 @@ export const heartbeatMessage = z.object({
   visible: z.boolean(),
 });
 
+/** Bildschirm ein/aus (Ruhezeit des Dashboards) – nur wirksam, wenn in der Konfiguration Befehle stehen */
+export const displayMessage = z.object({ type: z.literal("display"), on: z.boolean() });
+
 export type BridgeOptions = {
   host?: string;
   port?: number;
@@ -34,6 +38,8 @@ export type BridgeOptions = {
   controller: LampController;
   /** optional: Watchdog, der bei ausbleibendem Lebenszeichen eingreift */
   watchdog?: Watchdog;
+  /** optional: Bildschirm per Systembefehl ein-/ausschalten */
+  display?: Display;
 };
 
 /**
@@ -41,7 +47,7 @@ export type BridgeOptions = {
  * GET /status liefert Lampen und Zustand (für Diagnose und das Dashboard).
  */
 export function createBridgeServer(opts: BridgeOptions) {
-  const { host = "127.0.0.1", port = 8787, allowedOrigins, controller, watchdog } = opts;
+  const { host = "127.0.0.1", port = 8787, allowedOrigins, controller, watchdog, display } = opts;
   const allowed = (origin: string | undefined) => !!origin && allowedOrigins.includes(origin);
   let clients = 0;
 
@@ -54,7 +60,13 @@ export function createBridgeServer(opts: BridgeOptions) {
     if (req.method === "GET" && req.url === "/status") {
       res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
       res.end(
-        JSON.stringify({ ok: true, clients, ...controller.status(), ...(watchdog ? { watchdog: watchdog.status() } : {}) }),
+        JSON.stringify({
+          ok: true,
+          clients,
+          ...controller.status(),
+          ...(watchdog ? { watchdog: watchdog.status() } : {}),
+          ...(display ? { display: display.status() } : {}),
+        }),
       );
       return;
     }
@@ -80,7 +92,13 @@ export function createBridgeServer(opts: BridgeOptions) {
       const m = lightMessage.safeParse(parsed);
       if (m.success) return controller.apply(m.data.signal, m.data.lamps);
       const h = heartbeatMessage.safeParse(parsed);
-      if (h.success) watchdog?.beat(h.data.frameAgeMs, h.data.visible);
+      if (h.success) {
+        watchdog?.beat(h.data.frameAgeMs, h.data.visible);
+        display?.alive();
+        return;
+      }
+      const d = displayMessage.safeParse(parsed);
+      if (d.success) display?.set(d.data.on);
     });
   });
 

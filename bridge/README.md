@@ -95,6 +95,34 @@ höchstens alle `cooldownS` Sekunden. Scharf wird der Watchdog erst nach dem ers
 
 `http://127.0.0.1:8787/status` zeigt den Zustand (`watchdog.armed`, letztes Lebenszeichen, letzter Eingriff).
 
+## Bildschirm nachts ausschalten (HDMI)
+
+In den Einstellungen des Dashboards (`/einstellungen` → „Bildschirm nachts aus“) legst du eine Ruhezeit fest. Ohne Bridge
+wird der Bildschirm dann nur schwarz. Mit diesem Eintrag in `config.json` schaltet die Bridge ihn wirklich ab und wieder
+an, sobald Musik läuft oder jemand auf den Bildschirm tippt:
+
+```json
+"display": { "off": "wlopm --off '*'", "on": "wlopm --on '*'" }
+```
+
+Welcher Befehl passt, hängt vom System ab:
+
+| System | aus | an |
+|---|---|---|
+| Raspberry Pi OS (Wayland, labwc/wayfire) | `wlopm --off '*'` | `wlopm --on '*'` |
+| Wayland ohne `wlopm` | `wlr-randr --output HDMI-A-1 --off` | `wlr-randr --output HDMI-A-1 --on` |
+| X11 | `xset dpms force off` | `xset dpms force on` |
+| Fernseher per HDMI-CEC | `echo 'standby 0' \| cec-client -s -d 1` | `echo 'on 0' \| cec-client -s -d 1` |
+
+Den Namen des Ausgangs zeigt `wlr-randr`. `wlopm` versetzt den Monitor nur in den Ruhemodus (wie DPMS). Das
+Antippen eines Touchscreens weckt ihn dann in der Regel wieder. Schaltet `wlr-randr` den Ausgang ganz ab, kann es sein,
+dass Berührungen nicht mehr ankommen. Dann weckt erst die Musik den Bildschirm.
+
+Sicherheitsnetz: Geschaltet wird höchstens alle 10 s. Beim Start der Bridge und wenn der Watchdog eingreift, geht der
+Bildschirm an. Meldet sich das Dashboard bei dunklem Bildschirm zwei Minuten lang nicht, geht er ebenfalls wieder an.
+`http://127.0.0.1:8787/status` zeigt den Zustand (`display.on`, letzter Grund). Mit einem echten Monitor ist das
+noch nicht getestet. Bitte einmal von Hand prüfen, ob die Befehle auf deinem Gerät wirken.
+
 ## Hinweise
 
 - **Chromium und lokale Adressen:** Neuere Chromium-Versionen fragen nach, bevor eine öffentliche Seite

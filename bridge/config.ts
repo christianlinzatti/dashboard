@@ -30,6 +30,11 @@ const configSchema = z.object({
       cooldownS: z.number().int().min(60).default(300),
     })
     .optional(),
+  /**
+   * Bildschirm in der Ruhezeit wirklich ausschalten (HDMI): Befehle zum Aus- und Einschalten, z. B.
+   * „wlr-randr --output HDMI-A-1 --off“ / „… --on“ (Raspberry Pi OS mit Wayland)
+   */
+  display: z.object({ off: z.string().min(1), on: z.string().min(1) }).optional(),
 });
 export type BridgeConfig = z.infer<typeof configSchema>;
 export type LampConfig = BridgeConfig["lamps"][number];

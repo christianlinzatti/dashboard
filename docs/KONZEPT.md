@@ -77,7 +77,7 @@ Getestet werden **1024×600, 1280×800 und 1920×1200**.
 | Robust: Fehlergrenzen je Avatar/Szene, 2D-Ersatz ohne WebGL, Neuaufbau nach GPU-Reset | ✅ |
 | **Burn-in-Schutz** (minimale Drift statischer Elemente, Abdunkeln im Leerlauf) | ✅ |
 | **Watchdog** (Lebenszeichen an die Pi-Bridge, Kiosk-Neustart per systemd) | ✅ |
-| **Display-Zeitplan**: Ruhezeit in den Einstellungen, Bildschirm schwarz ohne Musik, Antippen weckt (HDMI-Abschaltung per `wlr-randr`/CEC über die Pi-Bridge noch offen) | ◐ |
+| **Display-Zeitplan**: Ruhezeit in den Einstellungen, Bildschirm schwarz ohne Musik, Antippen weckt; mit Pi-Bridge per HDMI wirklich aus (`wlopm`/`wlr-randr`/`xset`/CEC, mit Sicherheitsnetz) – am echten Gerät noch zu prüfen | ✅ |
 
 ---
 
@@ -443,7 +443,7 @@ Aufwand: S = bis ½ Tag, M = 1–2 Tage, L = mehrere Tage.
 ## 14. Offene Fragen
 
 1. **Rechner:** Raspberry Pi 5 (8 GB) oder N100-Mini-PC? Beides wird unterstützt; die Wahl bestimmt die Standard-Qualitätsstufe.
-2. **Display-Zeitplan:** ✅ als Einstellung gelöst (Ruhezeit pro Konto, Standard aus). Offen: soll die Pi-Bridge den Bildschirm in der Ruhezeit auch per HDMI abschalten?
+2. **Display-Zeitplan:** ✅ als Einstellung gelöst (Ruhezeit pro Konto, Standard aus); die Pi-Bridge schaltet per HDMI ab, wenn in ihrer `config.json` Befehle stehen.
 3. **Lyrics-Offset automatisch:** nur vorschlagen oder selbstständig einstellen?
 4. **Better-Lyrics-Schlüssel:** bei den Betreibern anfragen oder ohne Schlüssel bleiben?
 
