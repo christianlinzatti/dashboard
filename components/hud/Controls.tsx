@@ -3,6 +3,7 @@
 import { useStore } from "zustand";
 import { offsetStore } from "@/lib/lyrics/offset-store";
 import Link from "next/link";
+import { QrCode } from "../concerts/QrCode";
 import { useEffect, useRef, useState } from "react";
 import { useSongContext } from "@/lib/song-context/store";
 import { POLL_NOW_EVENT } from "../spotify/useSpotifySync";
@@ -36,6 +37,7 @@ const micLabel: Record<MicState, string> = {
 export function Controls({ live, mic }: { live: boolean; mic?: { state: MicState; toggle: () => void } }) {
   const [visible, setVisible] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [remoteQr, setRemoteQr] = useState<string | null>(null);
   const isPlaying = useSongContext((s) => s.playback.isPlaying);
   const offset = useSongContext((s) => s.playback.offsetMs);
   const hideTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -85,6 +87,20 @@ export function Controls({ live, mic }: { live: boolean; mic?: { state: MicState
 
   return (
     <>
+      {remoteQr && (
+        <button
+          type="button"
+          className="absolute inset-0 z-50 flex flex-col items-center justify-center gap-[2vmin] bg-black/85 text-white"
+          onClick={() => setRemoteQr(null)}
+          data-testid="remote-qr"
+        >
+          <QrCode text={remoteQr} size="min(42vmin, 360px)" label="QR-Code zur Fernbedienung" />
+          <span className="text-[clamp(16px,3vmin,30px)] font-bold">Mit dem Handy scannen</span>
+          <span className="text-[clamp(12px,2vmin,20px)] text-white/60">
+            {remoteQr.replace(/^https?:\/\//, "")} · mit demselben Spotify-Konto anmelden · antippen zum Schließen
+          </span>
+        </button>
+      )}
       {message && (
         <div
           className="absolute left-1/2 top-[16vmin] z-40 -translate-x-1/2 rounded-full bg-black/80 px-5 py-2 text-[clamp(13px,2.2vmin,22px)]"
@@ -181,6 +197,11 @@ export function Controls({ live, mic }: { live: boolean; mic?: { state: MicState
         {mic && (
           <button className={btn} onClick={mic.toggle} data-testid="mic-toggle" aria-pressed={mic.state === "aktiv"}>
             {micLabel[mic.state]}
+          </button>
+        )}
+        {live && (
+          <button className={btn} onClick={() => setRemoteQr(location.origin + "/fernbedienung")} data-testid="remote-qr-toggle">
+            Handy als Fernbedienung
           </button>
         )}
         {live && (

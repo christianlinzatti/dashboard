@@ -17,6 +17,7 @@ import type { Choreography } from "@/lib/dance/plan";
 import { rng } from "@/lib/dance/rng";
 import type { Palette } from "@/lib/song-context/schema";
 import { songContext } from "@/lib/song-context/store";
+import { manualCue, manualCues } from "@/lib/stage/manual-cues";
 import { dropCues, effectsAt, snareFlame, type ActiveCue, type Cue } from "@/lib/stage/effects";
 import type { EffectKind, Theme } from "@/lib/stage/themes";
 import { Confetti3D, Foam3D, FoamCannons } from "./Effects3D";
@@ -506,7 +507,13 @@ export function Effects({
       const q = snareFlame(choreo, theme, heard, last);
       snare.current = { heard, cues: q ? [...snare.current.cues.slice(-2), q] : snare.current.cues };
     }
-    active.current = f.playing ? effectsAt(cues, f.t, [...drop.current.cues, ...snare.current.cues]) : [];
+    // Effekte auf Knopfdruck (Fernbedienung, Alexa) – nur was die Bühne hat
+    const manual = manualCues.getState();
+    const pressed =
+      manual.trackKey === choreo.trackKey
+        ? manual.cues.filter((m) => theme.effects.includes(m.kind)).map((m) => manualCue(m.kind, m.songMs, choreo))
+        : [];
+    active.current = f.playing ? effectsAt(cues, f.t, [...drop.current.cues, ...snare.current.cues, ...pressed]) : [];
     // für Tests und Debug: aktive Effektarten am Canvas
     const kinds = [...new Set(active.current.map((c) => c.kind))].sort().join(",");
     if (kinds !== lastKinds.current) {

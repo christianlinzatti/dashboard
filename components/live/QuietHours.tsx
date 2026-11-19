@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { screenOff, type QuietHours } from "@/lib/live/quiet-hours";
 import { useSongContext } from "@/lib/song-context/store";
 import { displayPower } from "@/lib/live/display-power";
+import { screenStore } from "@/lib/live/screen";
+import { useStore } from "zustand";
 
 /** Wie oft die Ruhezeit-Einstellung neu geholt wird (am Handy geändert → gilt spätestens dann) */
 const RELOAD_MS = 15 * 60_000;
@@ -50,11 +52,15 @@ export function QuietHoursOverlay({ enabled, forced }: { enabled: boolean; force
       clearInterval(id);
     };
   }, [q]);
-  const off = now !== null && screenOff(q, new Date(now), playing, wokeAt);
+  // von Hand (Fernbedienung, Alexa): „Bildschirm aus“ bis zum Antippen bzw. „an“
+  const manualOff = useStore(screenStore, (s) => s.manualOff);
+  const remoteWoke = useStore(screenStore, (s) => s.wokeAt);
+  const woke = Math.max(wokeAt ?? 0, remoteWoke ?? 0) || null;
+  const off = manualOff || (now !== null && screenOff(q, new Date(now), playing, woke));
   // an die Pi-Bridge weitergeben (schaltet per HDMI ab, wenn eingerichtet)
   useEffect(() => displayPower.getState().set(!off), [off]);
   useEffect(() => () => displayPower.getState().set(true), []);
-  if (!q) return null;
+  if (!q && !manualOff) return null;
   return (
     <div
       className="absolute inset-0 z-[70] bg-black transition-opacity duration-[2000ms]"
@@ -62,6 +68,7 @@ export function QuietHoursOverlay({ enabled, forced }: { enabled: boolean; force
       onPointerDown={() => {
         setWokeAt(Date.now());
         setNow(Date.now());
+        screenStore.getState().set(true);
       }}
       data-testid="quiet-hours"
       data-off={off}

@@ -13,7 +13,7 @@ export async function POST(req: Request) {
   if (!parsed.success) return json({ error: "Ungültiger Schnappschuss." }, 400);
   const store = liveStore();
   await store.saveSnapshot(session.uid, parsed.data);
-  return json({ commands: await store.takeCommands(session.uid) });
+  return json(await store.takeCommands(session.uid));
 }
 
 /** Aktueller Stand (für Diagnose; Alexa liest serverseitig direkt aus dem Store). */

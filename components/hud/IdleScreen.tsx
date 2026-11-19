@@ -91,13 +91,14 @@ export function IdleScreen({ status, unknownDemo, loginError }: Props) {
       {/* nach einem Abend mit Musik: der Rückblick statt „Zuletzt gehört“ (beides passt nicht ohne Scrollen) */}
       {status.kind === "idle" && (recap ? <EveningRecap recap={recap} /> : <RecentList />)}
       {status.kind === "idle" && (
-        <Link
-          href="/einstellungen"
-          className="text-[clamp(12px,1.9vmin,20px)] text-white/60 underline"
-          data-testid="settings-link"
-        >
-          Einstellungen (Heimatort für Konzerte)
-        </Link>
+        <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-[clamp(12px,1.9vmin,20px)] text-white/60">
+          <Link href="/einstellungen" className="underline" data-testid="settings-link">
+            Einstellungen (Heimatort für Konzerte)
+          </Link>
+          <Link href="/fernbedienung" className="underline" data-testid="remote-link">
+            Fernbedienung fürs Handy
+          </Link>
+        </div>
       )}
       <nav className="mt-[2vmin] flex flex-wrap justify-center gap-3 text-[clamp(12px,1.9vmin,20px)] text-white/70">
         <span className="self-center">Demos:</span>

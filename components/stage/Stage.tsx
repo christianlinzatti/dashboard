@@ -40,6 +40,7 @@ import { Crowd, CrowdFlags } from "./Crowd";
 import { Effects } from "./Effects";
 import { initialFrame, type Frame } from "./types";
 import type { SingAlong } from "@/lib/show/singalong";
+import { stageInfo } from "@/lib/stage/stage-info";
 
 function hasWebGL() {
   try {
@@ -209,6 +210,11 @@ function Scene({
   const preset = PRESETS[quality];
 
   useEffect(() => () => document.body.removeAttribute("data-stage-ready"), []);
+  // Fernbedienung: welche Bühne steht und welche Effekte sie hat
+  useEffect(() => {
+    stageInfo.getState().set(theme ? { id: theme.id, effects: theme.effects } : null);
+  }, [theme]);
+  useEffect(() => () => stageInfo.getState().set(null), []);
 
   if (!song || !choreo || !theme) return null;
   const crowdCount = Math.round(preset.crowd * theme.crowd);

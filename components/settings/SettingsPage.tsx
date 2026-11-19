@@ -1,5 +1,6 @@
 "use client";
 
+import { ScrollPage } from "../ScrollPage";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { ArtistAvatars as AvatarMap } from "@/lib/avatars/overrides";
@@ -78,110 +79,112 @@ export function SettingsPage() {
     `min-h-12 rounded-full px-5 text-lg font-semibold ${active ? "bg-white text-black" : "bg-white/10 text-white"} disabled:opacity-50`;
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-xl flex-col gap-6 px-4 py-8 text-white" data-testid="settings">
-      <header className="flex items-center justify-between gap-4">
-        <h1 className="text-3xl font-bold">Einstellungen</h1>
-        <Link href="/" className="shrink-0 whitespace-nowrap rounded-full bg-white/10 px-4 py-2 font-semibold">
-          Zum Dashboard
-        </Link>
-      </header>
+    <ScrollPage>
+      <main className="mx-auto flex min-h-dvh max-w-xl flex-col gap-6 px-4 py-8 text-white" data-testid="settings">
+        <header className="flex items-center justify-between gap-4">
+          <h1 className="text-3xl font-bold">Einstellungen</h1>
+          <Link href="/" className="shrink-0 whitespace-nowrap rounded-full bg-white/10 px-4 py-2 font-semibold">
+            Zum Dashboard
+          </Link>
+        </header>
 
-      {message && (
-        <p
-          role="status"
-          className={`sticky top-2 z-10 rounded-xl p-3 ${message.error ? "bg-red-700/95" : "bg-emerald-700/95"}`}
-          data-testid="settings-message"
-        >
-          {message.text}
-        </p>
-      )}
-
-      {state === "login" && (
-        <p className="rounded-xl bg-white/10 p-4">
-          Bitte zuerst{" "}
-          <a href="/api/auth/login" className="font-bold text-[#1ed760] underline">
-            mit Spotify anmelden
-          </a>
-          . Die Einstellungen gelten dann auf allen Geräten mit diesem Konto.
-        </p>
-      )}
-
-      {area && (
-        <section className="flex flex-col gap-4 rounded-2xl bg-white/5 p-5" aria-labelledby="konzerte">
-          <h2 id="konzerte" className="text-xl font-bold">
-            Konzerte in deiner Nähe
-          </h2>
-          <p className="text-lg" data-testid="current-area">
-            {area.name} · {area.radiusKm >= 5000 ? "überall" : `${area.radiusKm} km`}
-            {!area.custom && <span className="text-white/50"> (Standard)</span>}
-          </p>
-
-          <form
-            className="flex flex-wrap gap-2"
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (place.trim().length >= 2) void save({ home: place.trim() }, "Heimatort gespeichert.");
-            }}
+        {message && (
+          <p
+            role="status"
+            className={`sticky top-2 z-10 rounded-xl p-3 ${message.error ? "bg-red-700/95" : "bg-emerald-700/95"}`}
+            data-testid="settings-message"
           >
-            <label className="sr-only" htmlFor="place">
-              Heimatort
-            </label>
-            <input
-              id="place"
-              value={place}
-              onChange={(e) => setPlace(e.target.value)}
-              placeholder="Heimatort, z. B. Linz"
-              className="min-h-12 flex-1 rounded-xl bg-white/10 px-4 text-lg placeholder:text-white/40"
-              autoComplete="address-level2"
-              data-testid="place-input"
-            />
-            <button type="submit" className={chip(false)} disabled={state === "speichert" || place.trim().length < 2}>
-              Übernehmen
-            </button>
-          </form>
-
-          <div className="flex flex-wrap gap-2" role="group" aria-label="Umkreis">
-            {RADII.map(([km, label]) => (
-              <button
-                key={km}
-                type="button"
-                className={chip(area.radiusKm === km)}
-                aria-pressed={area.radiusKm === km}
-                disabled={state === "speichert"}
-                onClick={() => void save({ radiusKm: km }, `Umkreis: ${label}.`)}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-
-          {area.custom && (
-            <button
-              type="button"
-              className="self-start text-white/70 underline"
-              disabled={state === "speichert"}
-              onClick={() => void save({ home: null, radiusKm: null }, "Auf Standard zurückgesetzt.")}
-            >
-              Auf Standard zurücksetzen
-            </button>
-          )}
-          <p className="text-sm text-white/50">
-            Gilt auf allen Geräten mit diesem Spotify-Konto, auch für Alexa. Das Dashboard übernimmt die Änderung beim nächsten
-            Song. Orte werden über OpenStreetMap gesucht.
+            {message.text}
           </p>
-        </section>
-      )}
+        )}
 
-      {area && (
-        <QuietHoursSection
-          key={quietHours ? `${quietHours.from}-${quietHours.to}` : "aus"}
-          value={quietHours}
-          busy={state === "speichert"}
-          save={(p, done) => void save(p, done)}
-        />
-      )}
+        {state === "login" && (
+          <p className="rounded-xl bg-white/10 p-4">
+            Bitte zuerst{" "}
+            <a href="/api/auth/login" className="font-bold text-[#1ed760] underline">
+              mit Spotify anmelden
+            </a>
+            . Die Einstellungen gelten dann auf allen Geräten mit diesem Konto.
+          </p>
+        )}
 
-      {area && <ArtistAvatars map={artistAvatars} busy={state === "speichert"} save={(p, done) => void save(p, done)} />}
-    </main>
+        {area && (
+          <section className="flex flex-col gap-4 rounded-2xl bg-white/5 p-5" aria-labelledby="konzerte">
+            <h2 id="konzerte" className="text-xl font-bold">
+              Konzerte in deiner Nähe
+            </h2>
+            <p className="text-lg" data-testid="current-area">
+              {area.name} · {area.radiusKm >= 5000 ? "überall" : `${area.radiusKm} km`}
+              {!area.custom && <span className="text-white/50"> (Standard)</span>}
+            </p>
+
+            <form
+              className="flex flex-wrap gap-2"
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (place.trim().length >= 2) void save({ home: place.trim() }, "Heimatort gespeichert.");
+              }}
+            >
+              <label className="sr-only" htmlFor="place">
+                Heimatort
+              </label>
+              <input
+                id="place"
+                value={place}
+                onChange={(e) => setPlace(e.target.value)}
+                placeholder="Heimatort, z. B. Linz"
+                className="min-h-12 flex-1 rounded-xl bg-white/10 px-4 text-lg placeholder:text-white/40"
+                autoComplete="address-level2"
+                data-testid="place-input"
+              />
+              <button type="submit" className={chip(false)} disabled={state === "speichert" || place.trim().length < 2}>
+                Übernehmen
+              </button>
+            </form>
+
+            <div className="flex flex-wrap gap-2" role="group" aria-label="Umkreis">
+              {RADII.map(([km, label]) => (
+                <button
+                  key={km}
+                  type="button"
+                  className={chip(area.radiusKm === km)}
+                  aria-pressed={area.radiusKm === km}
+                  disabled={state === "speichert"}
+                  onClick={() => void save({ radiusKm: km }, `Umkreis: ${label}.`)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {area.custom && (
+              <button
+                type="button"
+                className="self-start text-white/70 underline"
+                disabled={state === "speichert"}
+                onClick={() => void save({ home: null, radiusKm: null }, "Auf Standard zurückgesetzt.")}
+              >
+                Auf Standard zurücksetzen
+              </button>
+            )}
+            <p className="text-sm text-white/50">
+              Gilt auf allen Geräten mit diesem Spotify-Konto, auch für Alexa. Das Dashboard übernimmt die Änderung beim nächsten
+              Song. Orte werden über OpenStreetMap gesucht.
+            </p>
+          </section>
+        )}
+
+        {area && (
+          <QuietHoursSection
+            key={quietHours ? `${quietHours.from}-${quietHours.to}` : "aus"}
+            value={quietHours}
+            busy={state === "speichert"}
+            save={(p, done) => void save(p, done)}
+          />
+        )}
+
+        {area && <ArtistAvatars map={artistAvatars} busy={state === "speichert"} save={(p, done) => void save(p, done)} />}
+      </main>
+    </ScrollPage>
   );
 }

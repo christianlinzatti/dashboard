@@ -1,13 +1,16 @@
 "use client";
 
 import { useEffect } from "react";
-import { settingsPatchFor } from "@/lib/live/commands";
-import { setLiked } from "@/lib/personal/like";
-import { settings } from "@/lib/settings";
+import { runCommand } from "@/lib/live/run-command";
 import { buildSnapshot, type Command } from "@/lib/song-context/snapshot";
+import { stageInfo } from "@/lib/stage/stage-info";
+import { recapStore, summarize } from "@/lib/show/recap";
 import { songContext } from "@/lib/song-context/store";
 import { lightBus } from "@/lib/stage/light-bus";
 import { REPORT_INTERVAL_MS } from "@/lib/cache-policy";
+
+/** Ist eine Fernbedienung offen, holt der Kiosk Befehle so oft ab */
+const FAST_POLL_MS = 2000;
 
 /**
  * Meldet den Song-Kontext regelmäßig (15 s beim Abspielen, sonst 60 s; bei Songwechsel,
@@ -20,24 +23,56 @@ export function useSnapshotReporter(enabled: boolean) {
     let stopped = false;
     let debounce: ReturnType<typeof setTimeout> | undefined;
 
+    // Fernbedienung offen: Befehle alle 2 s abholen, bis der Server meldet, dass sie zu ist
+    let fast: ReturnType<typeof setInterval> | undefined;
+    const handle = (d: { commands?: Command[]; remote?: boolean }) => {
+      for (const c of d.commands ?? []) runCommand(c);
+      if (d.remote && !fast && !stopped) fast = setInterval(() => void poll(), FAST_POLL_MS);
+      if (!d.remote && fast) {
+        clearInterval(fast);
+        fast = undefined;
+      }
+    };
+    const poll = async () => {
+      try {
+        const res = await fetch("/api/commands", { cache: "no-store" });
+        if (res.ok) handle(await res.json());
+      } catch {
+        /* nächster Versuch */
+      }
+    };
+
     const report = async () => {
+      if (stopped) return;
       const snap = buildSnapshot(songContext.getState(), lightBus.latest());
-      if (!snap || stopped) return;
       lastReport = Date.now();
+      // ohne Song nichts zu melden – Befehle (z. B. „Bildschirm an“) trotzdem abholen
+      if (!snap) return void poll();
+      const stage = stageInfo.getState().current;
+      const evening = summarize(recapStore.getState().log, Date.now());
       try {
         const res = await fetch("/api/song-context", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(snap),
+          body: JSON.stringify({
+            ...snap,
+            ...(stage ? { stage } : {}),
+            ...(evening
+              ? {
+                  evening: {
+                    songs: evening.songs,
+                    minutes: evening.minutes,
+                    since: evening.since,
+                    highlights: evening.highlights.slice(0, 10),
+                    encores: evening.encores.slice(0, 10),
+                    liked: evening.liked,
+                    ...(evening.topArtist ? { topArtist: evening.topArtist } : {}),
+                  },
+                }
+              : {}),
+          }),
         });
-        if (!res.ok) return;
-        const { commands } = (await res.json()) as { commands: Command[] };
-        for (const c of commands) {
-          const patch = settingsPatchFor(c);
-          if (patch) settings.getState().set(patch);
-          // „Alexa, merk dir den Song“ – gilt dem Song, der beim Sprechen lief (auch wenn er inzwischen gewechselt hat)
-          if (c.type === "merken") void setLiked(c.on, fetch, c.trackKey);
-        }
+        if (res.ok) handle(await res.json());
       } catch {
         /* nächster Versuch beim nächsten Intervall */
       }
@@ -56,8 +91,11 @@ export function useSnapshotReporter(enabled: boolean) {
     const offs = (["trackChanged", "sectionChanged", "paused", "resumed"] as const).map((e) => songContext.events.on(e, soon));
     // Likes, Konzerte und Band-Infos kommen nach dem Songwechsel – dann gleich nachmelden (für Alexa)
     offs.push(songContext.subscribe((s) => `${!!s.song?.user}${!!s.song?.concerts}${!!s.song?.info}`, soon));
+    // Bühne gewechselt: der Fernbedienung zeigen, welche Effekte es jetzt gibt
+    offs.push(stageInfo.subscribe(soon));
     return () => {
       stopped = true;
+      clearInterval(fast);
       clearInterval(timer);
       clearTimeout(debounce);
       offs.forEach((off) => off());

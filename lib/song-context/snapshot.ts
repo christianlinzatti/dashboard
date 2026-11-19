@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { themeIds } from "@/lib/stage/themes";
+import { effectKinds, themeIds } from "@/lib/stage/themes";
 import type { SongContextState } from "./store";
 import type { LightFrame } from "@/lib/stage/lights";
 import { topConcerts } from "@/lib/concerts/display";
@@ -82,6 +82,20 @@ export const snapshotSchema = z.object({
     )
     .max(6)
     .optional(),
+  /** aktuelle Bühne und ihre Effekte (Fernbedienung bietet nur an, was es gibt) */
+  stage: z.object({ id: z.enum(themeIds), effects: z.array(z.enum(effectKinds)).max(20) }).optional(),
+  /** Rückblick auf den Abend (Alexa: „Wie war der Abend?“) */
+  evening: z
+    .object({
+      songs: z.number().int().nonnegative(),
+      minutes: z.number().int().nonnegative(),
+      since: z.number(),
+      highlights: z.array(z.string().max(300)).max(10),
+      encores: z.array(z.string().max(300)).max(10),
+      liked: z.number().int().nonnegative(),
+      topArtist: z.object({ name: z.string().max(200), songs: z.number().int().positive() }).optional(),
+    })
+    .optional(),
 });
 export type Snapshot = z.infer<typeof snapshotSchema>;
 
@@ -94,6 +108,12 @@ export const commandSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("merken"), on: z.boolean(), trackKey: z.string().max(200).optional() }),
   /** Bühnen-Thema wechseln (oder zurück auf automatisch) */
   z.object({ type: z.literal("buehne"), value: z.enum(["auto", ...themeIds]) }),
+  /** Lyrics von Hand früher/später (ms, + = später) */
+  z.object({ type: z.literal("versatz"), deltaMs: z.number().int().min(-2000).max(2000) }),
+  /** Effekt jetzt zünden (Fernbedienung, Alexa) */
+  z.object({ type: z.literal("effekt"), kind: z.enum(effectKinds) }),
+  /** Bildschirm jetzt aus (bis zum Antippen oder „an“) bzw. wieder an */
+  z.object({ type: z.literal("bildschirm"), on: z.boolean() }),
 ]);
 export type CommandInput = z.infer<typeof commandSchema>;
 export type Command = CommandInput & { id: string; createdAt: number };

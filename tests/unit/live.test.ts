@@ -55,10 +55,24 @@ describe("Live-Store", () => {
 
     await live.pushCommand("u1", { type: "lampen", on: false });
     await live.pushCommand("u1", { type: "strobo", on: true });
-    const cmds = await live.takeCommands("u1");
+    const { commands: cmds, remote } = await live.takeCommands("u1");
     expect(cmds.map((c) => c.type)).toEqual(["lampen", "strobo"]);
     expect(cmds[0]!.id).toMatch(/[0-9a-f-]{36}/);
-    expect(await live.takeCommands("u1")).toEqual([]);
+    expect(remote).toBe(false);
+    expect(await live.takeCommands("u1")).toEqual({ commands: [], remote: false });
+  });
+
+  it("Fernbedienung offen: Kiosk fragt schnell; ohne Lebenszeichen wieder normal", async () => {
+    const live = createLiveStore(memoryCache());
+    await live.markRemote("u1");
+    expect((await live.takeCommands("u1")).remote).toBe(true);
+    await live.pushCommand("u1", { type: "effekt", kind: "konfetti" }, { remote: true });
+    const t = await live.takeCommands("u1");
+    expect(t.commands.map((c) => c.type)).toEqual(["effekt"]);
+    expect(t.remote).toBe(true);
+    // Lebenszeichen bleibt beim Abholen erhalten
+    expect((await live.takeCommands("u1")).remote).toBe(true);
+    expect((await live.takeCommands("u2")).remote).toBe(false);
   });
 });
 
