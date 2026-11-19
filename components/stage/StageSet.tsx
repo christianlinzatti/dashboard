@@ -11,7 +11,7 @@ import type { Frame } from "./types";
 import { Curtain, NeonGrid, Planet, RetroSun, SkyDome, Stars, useFloorTexture } from "./Scenery";
 import { Beach, Cathedral, Stadium, StadiumRoof, Warehouse } from "./Venues";
 import { songContext, useSongContext } from "@/lib/song-context/store";
-import { chorusKeyword, forcedWallPattern, keywordShown, wallPattern, wallPatterns } from "@/lib/stage/wall";
+import { chorusKeyword, forcedWallPattern, keywordAmount, wallPattern, wallPatterns } from "@/lib/stage/wall";
 
 export const TRUSS_Y = 4.3;
 export const TRUSS_Z = -2.6;
@@ -300,7 +300,6 @@ function useWallContent() {
 
 function LedWall({ lightsRef }: { lightsRef: React.RefObject<LightFrame | null> }) {
   const mat = useRef<ShaderMaterial>(null);
-  const word = useRef(0);
   const { pattern, keyword } = useWallContent();
   const tex = useMemo(() => wordTexture(keyword), [keyword]);
   useEffect(() => () => tex.dispose(), [tex]);
@@ -319,7 +318,7 @@ function LedWall({ lightsRef }: { lightsRef: React.RefObject<LightFrame | null> 
     }),
     [],
   );
-  useFrame((_, dt) => {
+  useFrame(() => {
     const f = lightsRef.current;
     const m = mat.current;
     if (!f || !m) return;
@@ -335,10 +334,8 @@ function LedWall({ lightsRef }: { lightsRef: React.RefObject<LightFrame | null> 
     // Takt-Puls (fällt nach jedem Schlag ab)
     const beatMs = 60_000 / (live.bpm || 120);
     m.uniforms.uBeat!.value = Math.pow(1 - (positionMs % beatMs) / beatMs, 3);
-    // Schlagwort weich ein- und ausblenden (nur im Refrain, im Wechsel mit dem Muster)
-    const target = keyword && f.wall.mode === 1 && keywordShown(positionMs, live.bpm, derived.isChorus) ? 1 : 0;
-    word.current += (target - word.current) * Math.min(1, dt * 6);
-    m.uniforms.uWordAmt!.value = word.current;
+    // Schlagwort nur im Refrain, im Wechsel mit dem Muster (Blende rein aus der Songzeit)
+    m.uniforms.uWordAmt!.value = keyword && f.wall.mode === 1 ? keywordAmount(positionMs, live.bpm, derived.isChorus) : 0;
     if (live.micActive && live.bands.length === 6) m.uniforms.uBands!.value = live.bands;
     // ohne Mikro: ruhige, deterministische Balken aus der Songzeit
     else m.uniforms.uBands!.value = [0, 1, 2, 3, 4, 5].map((i) => 0.35 + 0.25 * Math.sin(t * (1.3 + i * 0.4) + i));

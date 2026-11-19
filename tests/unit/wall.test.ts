@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { neonlicht } from "@/lib/song-context/fixtures/neonlicht";
-import { chorusKeyword, forcedWallPattern, keywordShown, wallPattern, wallPatterns } from "@/lib/stage/wall";
+import { chorusKeyword, forcedWallPattern, keywordAmount, keywordShown, wallPattern, wallPatterns } from "@/lib/stage/wall";
 
 const line = (text: string, startMs: number) => ({ text, startMs, endMs: startMs + 2000, words: [] });
 const song = (genres: string[], trackKey = "t1") => ({ trackKey, music: { genres } });
@@ -52,6 +52,9 @@ describe("LED-Wand", () => {
     expect([0, 3_900, 4_100, 7_900, 8_100].map((t) => keywordShown(t, 120, true))).toEqual([true, true, false, false, true]);
     expect(keywordShown(0, 120, false)).toBe(false);
     expect(keywordShown(0, 0, true)).toBe(false);
+    // weiche Blende, rein aus der Songzeit (gleiche Zeit → gleiches Bild)
+    expect([0, 125, 2000, 3875, 4000].map((t) => keywordAmount(t, 120, true))).toEqual([0, 0.5, 1, 0.5, 0]);
+    expect(keywordAmount(2000, 120, true)).toBe(keywordAmount(2000, 120, true));
   });
 
   it("Muster per Adresse festlegen (Demo, Screenshots)", () => {

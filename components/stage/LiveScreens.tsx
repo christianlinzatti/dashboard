@@ -14,6 +14,7 @@ import {
 } from "three";
 import type { Choreography } from "@/lib/dance/plan";
 import { liveShotAt, SCREEN_ASPECT, type LiveShot } from "@/lib/stage/screens";
+import { songContext } from "@/lib/song-context/store";
 import type { LightFrame } from "@/lib/stage/lights";
 import { TRUSS_Z } from "./StageSet";
 import type { Frame } from "./types";
@@ -98,8 +99,12 @@ export function LiveScreens({
     const lf = lightsRef.current;
     const u = mat.current?.uniforms;
     if (u) u.uLevel!.value = 1 - 0.85 * (lf?.blackout ?? 0);
-    if (count.current++ % every !== 0) return;
-    const focus = f.focus ? f.positions[f.focus] : undefined;
+    // Erst filmen, wenn die Regie (Director) den Frame gefüllt hat – sonst hinge bei angehaltener Szene (es werden
+    // nur wenige Bilder gerendert) ein Bild vom Songanfang auf den Schirmen, je nach Reihenfolge der Komponenten.
+    if (!f.focus) return;
+    // angehalten: jedes Bild filmen (es gibt nur wenige), damit das letzte sicher zum Stand passt
+    if (count.current++ % every !== 0 && !songContext.getState().frozen) return;
+    const focus = f.positions[f.focus];
     const shot = liveShotAt(choreo, f.t, focus);
     film(gl, scene, cam, fbo, g, shot);
     if (gl.domElement.dataset.screen !== shot.name) gl.domElement.dataset.screen = shot.name;

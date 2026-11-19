@@ -79,6 +79,20 @@ export function keywordShown(positionMs: number, bpm: number, isChorus: boolean)
   return Math.floor(positionMs / (barMs * 2)) % 2 === 0;
 }
 
+/** Weiche Blende am Anfang und Ende jedes Schlagwort-Fensters (ms) */
+const KEYWORD_FADE_MS = 250;
+
+/**
+ * Deckkraft des Schlagworts 0..1 – rein aus der Songzeit (zustandslos wie alle Effekte: gleiche Zeit, gleiches Bild,
+ * auch für Screenshots und angehaltene Demos).
+ */
+export function keywordAmount(positionMs: number, bpm: number, isChorus: boolean): number {
+  if (!keywordShown(positionMs, bpm, isChorus)) return 0;
+  const window = (60_000 / bpm) * 4 * 2;
+  const phase = positionMs - Math.floor(positionMs / (window * 2)) * window * 2;
+  return Math.min(1, phase / KEYWORD_FADE_MS, (window - phase) / KEYWORD_FADE_MS);
+}
+
 /** Demo und Screenshots: Muster per ?wand=tunnel|plasma|wellen|equalizer festlegen */
 export function forcedWallPattern(search: string | undefined = typeof location === "undefined" ? undefined : location.search) {
   const v = search ? new URLSearchParams(search).get("wand") : null;
