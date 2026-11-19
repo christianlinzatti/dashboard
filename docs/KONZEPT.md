@@ -420,6 +420,9 @@ Aufwand: S = bis ½ Tag, M = 1–2 Tage, L = mehrere Tage.
 |---|---|
 | ✅ LED-Wand-Visuals je Genre als Shader (Tunnel, Plasma, Wellen, Equalizer), Refrain-Schlagwort auf der Wand | M |
 | ✅ La-Ola-Welle durch das Publikum (Instrumentalteile, KI-Regie „welle“), Kamera dafür in der Totale | S |
+| ✅ Mitsing-Moment im letzten Refrain (Mikro ins Publikum, Kamera über die Köpfe) | S |
+| ✅ Musiker spielen sichtbar (Tasten, Plattenteller, Felle/Becken, Bassist, Headbangen) | S |
+| ✅ Eigener Avatar und Outfit je Künstler in den Einstellungen | S |
 | ✅ Weitere Bühnen (Stadion, Strand, Kathedrale) und Wetter (Regen, Schnee) | M |
 | Kamerakran und Handkamera-Wackeln, Schnitt auf den Beat im Refrain | S |
 | Bildrate auf dem Pi je Qualitätsstufe messen und Partikel/Publikum danach einstellen (hängt an Stufe 6) | S |

@@ -26,7 +26,7 @@ export function aimAt(bone: Object3D, child: Object3D, target: Vector3) {
   bone.updateMatrixWorld(true);
 }
 
-export type Arm = { upper: Object3D; fore: Object3D; hand: Object3D };
+export type Arm = { upper: Object3D; fore: Object3D; hand: Object3D; right: boolean };
 
 export function findArms(model: Object3D): Arm[] {
   return (["Left", "Right"] as const)
@@ -34,6 +34,7 @@ export function findArms(model: Object3D): Arm[] {
       upper: model.getObjectByName(`${s}Arm`),
       fore: model.getObjectByName(`${s}ForeArm`),
       hand: model.getObjectByName(`${s}Hand`),
+      right: s === "Right",
     }))
     .filter((a): a is Arm => !!a.upper && !!a.fore && !!a.hand);
 }
@@ -59,6 +60,18 @@ export function reach(space: Object3D, arm: Arm, targetLocal: Vector3) {
   space.localToWorld(E);
   aimAt(arm.upper, arm.fore, E);
   aimAt(arm.fore, arm.hand, H);
+}
+
+/**
+ * Wie `reach`, aber nur anteilig (0..1): die Hand wandert von ihrer animierten Lage zum Ziel – für weiche
+ * Übergänge in eine Geste und wieder heraus.
+ */
+export function reachPartly(space: Object3D, arm: Arm, targetLocal: Vector3, amount: number) {
+  if (amount <= 0.001) return;
+  arm.hand.getWorldPosition(H);
+  space.worldToLocal(H);
+  H.lerp(targetLocal, Math.min(amount, 1));
+  reach(space, arm, H.clone());
 }
 
 /** Seite (links -1 / rechts +1) eines Arms im Raum von `space` */

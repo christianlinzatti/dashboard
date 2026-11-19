@@ -281,6 +281,8 @@ export const CUT_BARS = 4;
 export function shotAt(c: Choreography, t: number): CameraPreset {
   const p = c.phrases[phraseIndexAt(c, t)];
   if (!p) return "totale";
+  // Mitsing-Moment: aus dem Publikum über die Köpfe – man sieht die Menge singen und den Sänger, der ihr das Mikro hinhält
+  if (c.singAlong && t >= c.singAlong.startMs && t < c.singAlong.endMs) return "ueberkopf";
   if (!p.cut) return p.camera;
   return Math.floor((t - p.startMs) / (CUT_BARS * c.barMs)) % 2 === 1 ? p.cut : p.camera;
 }

@@ -33,7 +33,8 @@ import type { Vec2 } from "@/lib/dance/formations";
 import { Guitar } from "./Band";
 import type { BandRole } from "@/lib/stage/band";
 import { headNodAt, keysAt, scratchAt } from "@/lib/stage/musicians";
-import { findArms, reach, sideOf } from "./pose";
+import { findArms, reach, reachPartly, sideOf } from "./pose";
+import { singAlongAt } from "@/lib/show/singalong";
 import { addMicrophone, dressUp } from "./Accessories";
 import { lookFor, lookSeed } from "@/lib/avatars/looks";
 
@@ -89,6 +90,18 @@ function bendForward(root: Object3D, bones: Object3D[], angle: number) {
 }
 
 const HAND = new Vector3();
+const MIC_OUT = new Vector3(0.18, 1.5, 0.85);
+const OTHER_UP = new Vector3(-0.3, 2.15, 0.15);
+
+/** Mitsing-Moment: Mikrofon-Hand weit nach vorn zum Publikum, die andere Hand hoch („Alle zusammen!“) */
+function holdOutMic(g: Group, arms: ReturnType<typeof findArms>, amount: number) {
+  g.updateMatrixWorld(true);
+  for (const arm of arms) {
+    const side = sideOf(g, arm);
+    const target = arm.right ? MIC_OUT : OTHER_UP;
+    reachPartly(g, arm, HAND.set(Math.abs(target.x) * side, target.y, target.z), amount);
+  }
+}
 
 /**
  * Musiker über die Animation legen: Keyboarder greifen in die Tasten (Akkord je Takt, Anschlag auf jedem Schlag),
@@ -279,8 +292,11 @@ function AvatarModel({ url, member, song, choreo, frameRef, band }: AvatarProps 
     }
     mixer.update(0);
 
+    // Mitsing-Moment: der Lead hält das Mikrofon ins Publikum und schweigt – die Menge singt
+    const sing =
+      f.playing && sings && choreo.order[0] === member.avatarId ? singAlongAt(choreo.singAlong, f.t, choreo.beatMs) : 0;
     // Lippensynchron (nach der Animation): Silben aus den Lyrics, mit Mikrofon zusätzlich nach der Lautstärke
-    const lip = f.playing && !band ? mouthAt(lipTrack, f.t) : CLOSED;
+    const lip = f.playing && !band && sing < 0.5 ? mouthAt(lipTrack, f.t) : CLOSED;
     let open = lip.open;
     if (f.micActive) {
       const focusVocal = !f.focus || f.focus === member.avatarId ? f.vocal : f.vocal * 0.3;
@@ -316,6 +332,7 @@ function AvatarModel({ url, member, song, choreo, frameRef, band }: AvatarProps 
       group.current.position.set(p[0], 0, p[1]);
       // Drehbühne: Tänzer drehen sich mit; beim Auftritt schauen sie in Gehrichtung
       group.current.rotation.y = f.stageAngle + (f.headings[member.avatarId] ?? 0);
+      if (sing > 0) holdOutMic(group.current, arms, sing);
     }
   });
 

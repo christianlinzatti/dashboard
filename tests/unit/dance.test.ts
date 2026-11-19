@@ -179,7 +179,7 @@ describe("Auswertung zur Songzeit", () => {
     expect(Math.abs(cameraAt(plan, quarter).pos[0])).toBeGreaterThan(3); // seitlich
     expect(cameraAt(plan, kreis.endMs - 1).pos[2]).toBeGreaterThan(5); // wieder vorn
 
-    const p2 = planChoreography(hoshizora, 132);
+    const p2 = { ...planChoreography(hoshizora, 132), singAlong: null };
     const zoom = p2.phrases.find((p) => p.camera === "zoom")!;
     const dist = (t: number) => Math.hypot(...cameraAt(p2, t).pos.map((v, i) => v - [0, 1, 0][i]!));
     expect(dist(zoom.endMs - 1)).toBeLessThan(dist(zoom.startMs + 100) - 2);

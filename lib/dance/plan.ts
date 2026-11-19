@@ -12,6 +12,7 @@ import { planClimaxes, type Climax } from "@/lib/stage/climax";
 import { bandKind } from "@/lib/stage/band";
 import { rng } from "./rng";
 import { crowdProfile } from "@/lib/stage/crowd";
+import { planSingAlong, type SingAlong } from "@/lib/show/singalong";
 
 export type CameraPreset =
   | "totale"
@@ -77,6 +78,8 @@ export type Choreography = {
   durationMs: number;
   /** Publikum: Moshpit bei Rock, Feuerzeuge bei Balladen */
   crowdStyle: CrowdStyle;
+  /** Mitsing-Moment im letzten Refrain (lib/show/singalong.ts) */
+  singAlong?: SingAlong | null;
 };
 
 export type CrowdStyle = "rock" | "ballade" | null;
@@ -305,6 +308,7 @@ export function planChoreography(
     }
   }
 
+  const climaxes = planClimaxes(phrases, barMs);
   const kind = bandKind(genres);
   const crowdStyle: CrowdStyle = kind === "rock" ? "rock" : kind === "keys" || song.music.mood === "ruhig" ? "ballade" : null;
   return {
@@ -315,9 +319,10 @@ export function planChoreography(
     timeScale,
     phrases: phrases.map((p) => waveShots(p, crowdStyle)),
     order,
-    climaxes: planClimaxes(phrases, barMs),
+    climaxes,
     durationMs: song.track.durationMs,
     crowdStyle,
+    singAlong: planSingAlong(phrases, climaxes, barMs, song.lyrics),
   };
 }
 

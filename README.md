@@ -13,7 +13,10 @@ Song-Hintergründe: „Erzähl mir was über den Song“, „Was ist das für ei
 **Neu: Bühne** – Das Band-Logo (TheAudioDB) leuchtet in Intro, Outro und Instrumentalteilen über der LED-Wand;
 Avatare von Künstlern, denen du folgst, winken zum Songstart. Die LED-Wand spielt in lauten Teilen ein Muster passend
 zum Genre (Tunnel, Plasma, Wellen, Equalizer; `?wand=` legt es fest), im Refrain blinkt das Schlagwort des Refrains im
-Takt auf. In Instrumentalteilen läuft eine La-Ola-Welle durch das Publikum.
+Takt auf. In Instrumentalteilen läuft eine La-Ola-Welle durch das Publikum. Im letzten Refrain hält der Sänger das
+Mikrofon ins Publikum – „Alle zusammen!“, die Menge schwenkt gemeinsam die Arme. Die Band spielt sichtbar: Keyboarder
+greifen in die Tasten, der DJ scratcht, Felle und Becken leuchten bei Treffern, Rock-Bands haben einen Bassisten.
+Unter `/einstellungen` legst du für jeden Künstler einen eigenen Avatar und ein Outfit fest.
 
 **Neu: Betrieb** – Fehler und alle 5 min eine Leistungsprobe (Bildrate, Qualitätsstufe) landen im Kiosk-Protokoll
 (Debug-Panel `?debug=1` und `/debug`; höchstens 100 Einträge, nach 7 Tagen gelöscht, mit „Leeren“ sofort). Ein Watchdog in der Pi-Bridge startet den Kiosk neu, wenn das Dashboard hängt

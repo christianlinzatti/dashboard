@@ -1,5 +1,6 @@
 import { phraseIndexAt } from "@/lib/dance/evaluate";
 import type { Choreography, CrowdStyle, Phrase } from "@/lib/dance/plan";
+import { singAlongAt } from "@/lib/show/singalong";
 
 /**
  * Publikums-Regie: was die Menge vor der Bühne gerade tut – zustandslos aus Songzeit und Choreografie.
@@ -95,6 +96,20 @@ function baseProfile(p: Pick<Phrase, "section" | "energy">): CrowdFrame {
   return { hands: 0.12, jump: 0, phones: 0.2, bands: 0.4, bandMode: 0, sway: 0.7, mosh: 0, lighter: 0, clap: 0, wave: 0 };
 }
 
+/** Mitsing-Moment: alle Hände hoch, die ganze Menge schwenkt gemeinsam die Arme, Armbänder als Welle */
+const SINGALONG: CrowdFrame = {
+  hands: 0.95,
+  jump: 0,
+  phones: 0.25,
+  bands: 1,
+  bandMode: 2,
+  sway: 1,
+  mosh: 0,
+  lighter: 0,
+  clap: 0,
+  wave: 0,
+};
+
 const DROP: CrowdFrame = { hands: 1, jump: 1, phones: 0, bands: 1, bandMode: 1, sway: 0, mosh: 0, lighter: 0, clap: 0, wave: 0 };
 
 const mix = (a: CrowdFrame, b: CrowdFrame, w: number): CrowdFrame => ({
@@ -119,6 +134,8 @@ export function crowdAt(c: Choreography, t: number, input: CrowdInput = {}): Cro
   const w = Math.min(Math.max((t - p.startMs) / (2 * c.barMs), 0), 1);
   const style = c.crowdStyle;
   let frame = prev ? mix(crowdProfile(prev, style), crowdProfile(p, style), w) : crowdProfile(p, style);
+  const sing = singAlongAt(c.singAlong, t, c.beatMs);
+  if (sing > 0) frame = mix(frame, SINGALONG, sing);
   const drop = input.dropMs;
   if (drop != null && t >= drop && t < drop + 2 * c.barMs) {
     const out = Math.min((drop + 2 * c.barMs - t) / c.beatMs, 1);

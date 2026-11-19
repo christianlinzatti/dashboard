@@ -131,6 +131,16 @@ test.describe("Bühne & Licht", () => {
     await expect(page.getByTestId("motto")).toHaveAttribute("data-visible", "false");
   });
 
+  test("Mitsing-Moment im letzten Refrain: Einblendung, Kamera über die Köpfe", async ({ page }) => {
+    await page.goto("/?demo=neonlicht&t=131000&qualitaet=niedrig");
+    await ready(page);
+    await expect(page.getByTestId("singalong")).toHaveAttribute("data-visible", "true");
+    await expect(page.locator("[data-testid=stage] canvas")).toHaveAttribute("data-camera", /^ueberkopf/);
+    await page.goto("/?demo=neonlicht&t=46000&qualitaet=niedrig");
+    await ready(page);
+    await expect(page.getByTestId("singalong")).toHaveAttribute("data-visible", "false");
+  });
+
   test("Live-Bildschirme: auf niedriger Qualität aus", async ({ page }) => {
     await page.goto("/?demo=neonlicht&t=40150&qualitaet=niedrig");
     await ready(page);

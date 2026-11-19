@@ -71,7 +71,8 @@ describe("Auftritt und Abgang", () => {
 describe("Kamera wie ein Konzertmitschnitt", () => {
   const all = Object.values(fixtures).map((s) => planChoreography(s, s.music.bpmHint ?? 120));
   it("bei hoher Energie Schnitte im 4-Takt-Raster zwischen zwei stehenden Einstellungen", () => {
-    const withCut = all.flatMap((k) => k.phrases.filter((p) => p.cut).map((p) => ({ k, p })));
+    // (Mitsing-Moment ausgenommen: dort filmt die Kamera immer über die Köpfe – eigener Test)
+    const withCut = all.flatMap((k) => k.phrases.filter((p) => p.cut).map((p) => ({ k: { ...k, singAlong: null }, p })));
     expect(withCut.length).toBeGreaterThan(0);
     for (const { k, p } of withCut) {
       expect(p.energy).toBeGreaterThanOrEqual(2);

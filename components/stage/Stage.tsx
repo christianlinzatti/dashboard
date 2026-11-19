@@ -39,6 +39,7 @@ import { Fog, StageSet, TurntableMarks, WallFrame, wallScale } from "./StageSet"
 import { Crowd, CrowdFlags } from "./Crowd";
 import { Effects } from "./Effects";
 import { initialFrame, type Frame } from "./types";
+import type { SingAlong } from "@/lib/show/singalong";
 
 function hasWebGL() {
   try {
@@ -382,6 +383,29 @@ function Scene({
         }}
         aria-hidden
       />
+      <SingAlongBadge window={choreo.singAlong} accent={song.album.palette.accent} />
+    </div>
+  );
+}
+
+/** Mitsing-Moment: kurze Einblendung über der Bühne, solange die Menge allein singt */
+function SingAlongBadge({ window, accent }: { window: SingAlong | null | undefined; accent: string }) {
+  const on = useSongContext((s) => !!window && s.positionMs > window.startMs && s.positionMs < window.endMs);
+  if (!window) return null;
+  return (
+    <div
+      className="pointer-events-none absolute inset-x-0 top-[20%] z-20 flex justify-center transition-opacity duration-500"
+      style={{ opacity: on ? 1 : 0 }}
+      data-testid="singalong"
+      data-visible={on}
+      aria-hidden={!on}
+    >
+      <span
+        className="rounded-full bg-black/55 px-[3vmin] py-[1vmin] text-[clamp(16px,3.4vmin,40px)] font-black uppercase tracking-wide"
+        style={{ color: accent, textShadow: `0 0 0.4em ${accent}` }}
+      >
+        Alle zusammen!
+      </span>
     </div>
   );
 }

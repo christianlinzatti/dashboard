@@ -20,6 +20,7 @@ import {
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import type { Choreography } from "@/lib/dance/plan";
 import { rng } from "@/lib/dance/rng";
+import { singAlongAt } from "@/lib/show/singalong";
 import { crowdAt, crowdSpots } from "@/lib/stage/crowd";
 import type { LightFrame } from "@/lib/stage/lights";
 import type { Theme } from "@/lib/stage/themes";
@@ -31,7 +32,7 @@ const BASE_Y = -1.1;
 
 /** Gemeinsame Bewegungslogik für Silhouetten und Lichter (gleiche Person → gleiche Armhaltung). */
 const MOTION = /* glsl */ `
-  uniform float uBeats, uTime, uHands, uJump, uPhones, uSway, uBaseY, uMosh, uClap, uWave;
+  uniform float uBeats, uTime, uHands, uJump, uPhones, uSway, uBaseY, uMosh, uClap, uWave, uSing;
   uniform vec3 uCam;
   const float PI = 3.14159265;
   const float ARM = 0.58;
@@ -81,7 +82,10 @@ const MOTION = /* glsl */ `
     return uJump * step(r.w, 0.25 + 0.75 * uJump) * abs(sin(PI * (uBeats + r.z * 0.12))) * 0.2;
   }
   float swayX(vec4 r, vec3 spot, float y) {
-    return sin(uTime * 1.25 + r.z * 2.0 + spot.x * 0.3) * 0.07 * uSway * max(y - 0.8, 0.0);
+    // Mitsingen: alle schwenken gemeinsam im Takt (ein Schwung über zwei Schläge), weiter ausholend
+    float own = uTime * 1.25 + r.z * 2.0 + spot.x * 0.3;
+    float together = uBeats * PI * 0.5;
+    return sin(mix(own, together, uSing)) * (0.07 + 0.08 * uSing) * uSway * max(y - 0.8, 0.0);
   }
   /** Personen-Koordinaten → Welt: zur Bühnenmitte gedreht, in den Graben gestellt, nahe an der Kamera eingezogen */
   vec3 toWorld(vec3 p, vec3 spot, vec4 r) {
@@ -205,6 +209,7 @@ export function Crowd({
       uMosh: { value: 0 },
       uClap: { value: 0 },
       uWave: { value: 0 },
+      uSing: { value: 0 },
       uBaseY: { value: BASE_Y },
       uCam: { value: new Vector3() },
       uFogColor: { value: new Color(dark) },
@@ -254,6 +259,7 @@ export function Crowd({
     u.uMosh!.value = c.mosh;
     u.uClap!.value = c.clap;
     u.uWave!.value = c.wave;
+    u.uSing!.value = f.playing ? singAlongAt(choreo.singAlong, f.t, choreo.beatMs) : 0;
     u.uBlind!.value = lightsRef.current?.blinders ?? 0;
     (u.uCam!.value as Vector3).copy(camera.position);
     u.uEnergy!.value = f.energy;
