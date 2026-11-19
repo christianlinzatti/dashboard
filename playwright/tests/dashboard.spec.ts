@@ -183,3 +183,33 @@ test.describe("Dashboard", () => {
     expect(h["x-frame-options"]).toBe("DENY");
   });
 });
+
+test("Startbildschirm: Rückblick auf den Abend nach der Musik", async ({ page }) => {
+  const now = Date.now();
+  const entry = (minAgo: number, title: string, artist: string, extra: Record<string, unknown> = {}) => ({
+    trackKey: title,
+    title,
+    artist,
+    durationMs: 200_000,
+    at: now - minAgo * 60_000,
+    ...extra,
+  });
+  await page.addInitScript(
+    (log) => localStorage.setItem("ss_abend", JSON.stringify(log)),
+    [
+      entry(30, "Bussi Baby", "Wanda"),
+      entry(26, "Maschin", "Bilderbuch", { liked: true }),
+      entry(22, "Amore", "Wanda", { phase: "hoehepunkt" }),
+      entry(18, "Columbo", "Wanda", { phase: "zugabe" }),
+    ],
+  );
+  // ohne laufenden Song (unbekannte Demo → Startbildschirm im Leerlauf)
+  await page.goto("/?demo=gibtsnicht");
+  const recap = page.getByTestId("evening-recap");
+  await expect(recap).toContainText("Euer Abend");
+  await expect(page.getByTestId("recap-facts")).toContainText("4 Songs");
+  await expect(recap).toContainText("Höhepunkt: Amore");
+  await expect(recap).toContainText("Zugabe: Columbo");
+  await expect(recap).toContainText("Meistgespielt: Wanda (3 Songs)");
+  await expect(page.getByTestId("recap-songs").locator("li").first()).toContainText("Columbo");
+});

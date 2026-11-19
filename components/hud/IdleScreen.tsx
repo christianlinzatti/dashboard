@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { idleBrightness } from "@/lib/live/idle-dim";
 import type { SpotifyStatus } from "../spotify/useSpotifySync";
 import { RecentList } from "../personal/RecentList";
+import { EveningRecap, useEveningRecap } from "./EveningRecap";
 
 const loginErrors: Record<string, string> = {
   abgebrochen: "Die Anmeldung wurde abgebrochen.",
@@ -59,6 +60,7 @@ function useIdleBrightness() {
 export function IdleScreen({ status, unknownDemo, loginError }: Props) {
   const { title, text } = texts(status, unknownDemo);
   const { level, wake } = useIdleBrightness();
+  const recap = useEveningRecap();
   return (
     <div
       className="burnin-drift flex h-full flex-col items-center justify-center gap-[3vmin] px-6 text-center transition-opacity duration-[3000ms]"
@@ -86,7 +88,8 @@ export function IdleScreen({ status, unknownDemo, loginError }: Props) {
           Mit Spotify anmelden
         </a>
       )}
-      {status.kind === "idle" && <RecentList />}
+      {/* nach einem Abend mit Musik: der Rückblick statt „Zuletzt gehört“ (beides passt nicht ohne Scrollen) */}
+      {status.kind === "idle" && (recap ? <EveningRecap recap={recap} /> : <RecentList />)}
       {status.kind === "idle" && (
         <Link
           href="/einstellungen"
