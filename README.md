@@ -14,7 +14,7 @@ Song-Hintergründe: „Erzähl mir was über den Song“, „Was ist das für ei
 Avatare von Künstlern, denen du folgst, winken zum Songstart.
 
 **Neu: Betrieb** – Fehler und alle 5 min eine Leistungsprobe (Bildrate, Qualitätsstufe) landen im Kiosk-Protokoll
-(Debug-Panel `?debug=1`). Ein Watchdog in der Pi-Bridge startet den Kiosk neu, wenn das Dashboard hängt
+(Debug-Panel `?debug=1` und `/debug`; höchstens 100 Einträge, nach 7 Tagen gelöscht, mit „Leeren“ sofort). Ein Watchdog in der Pi-Bridge startet den Kiosk neu, wenn das Dashboard hängt
 (`bridge/README.md`). Burn-in-Schutz: Kopfzeile und Fortschritt wandern unmerklich, der Startbildschirm dunkelt nach 10 min
 ab. Avatar-Dateien tragen eine Version, damit Updates trotz Jahres-Cache ankommen.
 

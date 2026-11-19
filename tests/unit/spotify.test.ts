@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { pkcePair, seal, unseal } from "@/lib/server/crypto";
 import { measuredPosition, pollDelay, reconcilePosition } from "@/lib/spotify/clock";
 import { pickCover, songFromTrack, trackKeyOf } from "@/lib/spotify/map";
-import { applyNowPlaying } from "@/lib/spotify/sync";
+import { applyNowPlaying, localDay } from "@/lib/spotify/sync";
 import { spotifyTrackSchema, type NowPlaying, type SpotifyTrack } from "@/lib/spotify/types";
 import { songStaticSchema } from "@/lib/song-context/schema";
 import { createSongContextStore } from "@/lib/song-context/store";
@@ -126,6 +126,14 @@ describe("applyNowPlaying", () => {
     const s = store.getState();
     expect(s.song?.track.title).toBe("Testlied (feat. Gast)");
     expect(s.playback).toMatchObject({ isPlaying: true, positionMs: 40_050, updatedAt: 1000 });
+  });
+
+  it("Tagesform nach dem echten Kalendertag, nicht nach der Messuhr", () => {
+    const store = createSongContextStore();
+    // Messuhr (performance.now) zählt ab Seitenstart – früher wurde daraus immer 1970-01-01
+    applyNowPlaying(store, playing(40_000), 100, 1000, new Date(2026, 10, 19, 0, 30).getTime());
+    expect(store.getState().song?.variant).toBe("2026-11-19");
+    expect(localDay(new Date(2026, 0, 5, 23, 59).getTime())).toBe("2026-01-05");
   });
 
   it("korrigiert bei gleichem Song sanft statt zu springen", () => {

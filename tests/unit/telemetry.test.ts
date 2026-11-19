@@ -45,7 +45,7 @@ describe("Kiosk-Protokoll", () => {
   });
 
   it("Server hält die letzten 100 Einträge", async () => {
-    const store = createLogStore(memoryCache());
+    const store = createLogStore(memoryCache(), () => 1000);
     const e = (n: number) => ({ level: "info" as const, source: "t", message: `m${n}`, count: 1, at: n });
     await store.append(
       "u1",
@@ -59,6 +59,19 @@ describe("Kiosk-Protokoll", () => {
     expect(list).toHaveLength(100);
     expect(list[0]!.message).toBe("m20");
     expect(await store.list("u2")).toEqual([]);
+  });
+
+  it("Server vergisst Einträge nach 7 Tagen und leert auf Wunsch", async () => {
+    const day = 24 * 3600_000;
+    let now = 10 * day;
+    const store = createLogStore(memoryCache(), () => now);
+    const e = (at: number) => ({ level: "info" as const, source: "t", message: `m${at}`, count: 1, at });
+    await store.append("u1", [e(now - 8 * day), e(now - 6 * day), e(now)]);
+    expect((await store.list("u1")).map((x) => x.at)).toEqual([4 * day, 10 * day]);
+    now += 2 * day;
+    expect((await store.list("u1")).map((x) => x.at)).toEqual([10 * day]);
+    await store.clear("u1");
+    expect(await store.list("u1")).toEqual([]);
   });
 });
 

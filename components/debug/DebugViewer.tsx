@@ -16,7 +16,7 @@ function ago(ms: number) {
 /**
  * Song-Kontext auf einem anderen Gerät ansehen: zeigt, was das Debug-Panel des Dashboards zuletzt an den Server
  * geschickt hat (gleiches Spotify-Konto). Abschnitte aufklappbar, alles markier- und kopierbar, als Datei speicherbar;
- * auf Wunsch alle 5 s neu laden. Darunter das Kiosk-Protokoll.
+ * auf Wunsch alle 5 s neu laden. Darunter das Kiosk-Protokoll (7 Tage, mit „Leeren“).
  */
 export function DebugViewer() {
   const [state, setState] = useState<State>({ kind: "laden" });
@@ -168,7 +168,22 @@ export function DebugViewer() {
 
         {log.length > 0 && (
           <section className="mt-6">
-            <h2 className="text-lg font-bold">Protokoll des Kiosks</h2>
+            <div className="flex items-center gap-3">
+              <h2 className="text-lg font-bold">Protokoll des Kiosks</h2>
+              <button
+                type="button"
+                className="rounded-md bg-white/15 px-3 py-1 text-sm font-semibold hover:bg-white/25"
+                onClick={() =>
+                  void fetch("/api/log", { method: "DELETE" }).then((r) => {
+                    if (r.ok) setLog([]);
+                    flash(r.ok ? "Protokoll geleert ✓" : "Leeren fehlgeschlagen");
+                  })
+                }
+                data-testid="viewer-log-clear"
+              >
+                Leeren
+              </button>
+            </div>
             <ul className="mt-2 space-y-1 font-mono text-xs">
               {log.map((e, i) => (
                 <li

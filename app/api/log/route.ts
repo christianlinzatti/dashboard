@@ -26,3 +26,11 @@ export async function GET() {
   if (!session) return json({ error: "Nicht angemeldet." }, 401);
   return json({ entries: await logStore().list(session.uid) });
 }
+
+/** Protokoll leeren (Debug-Panel, /debug). */
+export async function DELETE() {
+  const session = await readSession();
+  if (!session) return json({ error: "Nicht angemeldet." }, 401);
+  await logStore().clear(session.uid);
+  return json({ ok: true });
+}

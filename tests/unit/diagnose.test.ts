@@ -34,4 +34,16 @@ describe("Kurzdiagnose", () => {
     });
     expect(http.find((f) => f.label === "Verbindung")!.value).toContain("http://192.168.1.20:3000");
   });
+
+  it("KI-Regie: Modellname, feste Regeln oder Fehler", () => {
+    const regie = (show?: { state: string; provider?: string; detail?: string }, brief = false) =>
+      diagnose({ song: { ...song(), status: show ? { show } : {}, ...(brief ? { show: { motto: "x" } } : {}) } }).find(
+        (f) => f.label === "KI-Regie",
+      )!;
+    expect(regie({ state: "ok", provider: "gpt-5.4-mini" }, true)).toMatchObject({ level: "ok" });
+    expect(regie({ state: "ok", provider: "gpt-5.4-mini" }, true).value).toContain("ja – gpt-5.4-mini");
+    expect(regie({ state: "missing", provider: "regeln" }).value).toContain("festen Regeln");
+    expect(regie({ state: "error", detail: "Regie nicht erreichbar" })).toMatchObject({ level: "fehler" });
+    expect(regie().value).toBe("noch nicht gefragt");
+  });
 });

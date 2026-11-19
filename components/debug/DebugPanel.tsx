@@ -179,7 +179,24 @@ export function DebugPanel() {
       </p>
       {log && (
         <section className="mb-2" data-testid="debug-log">
-          <h2 className="font-sans text-sm font-bold text-white">Protokoll</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="font-sans text-sm font-bold text-white">Protokoll</h2>
+            {log.length > 0 && (
+              <button
+                type="button"
+                className={button}
+                onClick={() =>
+                  void fetch("/api/log", { method: "DELETE" }).then((r) => {
+                    if (r.ok) setLog([]);
+                    flash(r.ok ? "Protokoll geleert ✓" : "Leeren fehlgeschlagen");
+                  })
+                }
+                data-testid="debug-log-clear"
+              >
+                Leeren
+              </button>
+            )}
+          </div>
           {log.length === 0 ? (
             <p className="text-white/50">keine Meldungen</p>
           ) : (

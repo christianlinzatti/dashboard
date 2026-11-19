@@ -10,7 +10,11 @@ type Ctx = {
     track?: { title?: string };
     artists?: Array<{ name?: string }>;
     lyrics?: { lines?: unknown };
-    status?: { lyrics?: { state?: string; provider?: string; detail?: string } };
+    status?: {
+      lyrics?: { state?: string; provider?: string; detail?: string };
+      show?: { state?: string; provider?: string; detail?: string };
+    };
+    show?: { motto?: string };
   } | null;
   playback?: { isPlaying?: boolean };
   live?: { micState?: string };
@@ -67,6 +71,7 @@ export function diagnose(ctx: Ctx): Finding[] {
       .join(" · "),
     level: LYRICS_LEVEL[l?.state ?? ""] ?? "warnung",
   });
+  out.push(showFinding(song.status?.show, !!song.show));
   const mic = MIC[ctx.live?.micState ?? "aus"] ?? { value: ctx.live?.micState ?? "?", level: "info" as const };
   out.push({ label: "Mikrofon", ...mic });
   if (ctx.env) {
@@ -80,6 +85,26 @@ export function diagnose(ctx: Ctx): Finding[] {
       out.push({ label: "Verbindung", value: "Browser bietet kein Mikrofon an (getUserMedia fehlt)", level: "fehler" });
   }
   return out;
+}
+
+/** KI-Regie: wurde die KI gefragt (Modellname) oder lief die Show nach festen Regeln? */
+function showFinding(s: { state?: string; provider?: string; detail?: string } | undefined, hasBrief: boolean): Finding {
+  const label = "KI-Regie";
+  const extra = s?.detail ? ` · ${s.detail}` : "";
+  switch (s?.state) {
+    case "ok":
+      return s.provider && s.provider !== "regeln"
+        ? { label, value: `ja – ${s.provider}${hasBrief ? " (Bühne, Abschnitte, Motto)" : ""}${extra}`, level: "ok" }
+        : { label, value: `nein – feste Regeln${extra}`, level: "info" };
+    case "missing":
+      return { label, value: "nein – keine KI eingerichtet oder keine Antwort, Show nach festen Regeln", level: "info" };
+    case "loading":
+      return { label, value: "wird gefragt …", level: "info" };
+    case "error":
+      return { label, value: `Fehler${extra}`, level: "fehler" };
+    default:
+      return { label, value: "noch nicht gefragt", level: "info" };
+  }
 }
 
 /** Umgebung des Browsers, in dem das Dashboard läuft (fürs Debug-Panel und den Versand an /debug) */
