@@ -170,7 +170,7 @@ Die Demo-Songs haben frei erfundene Texte.
 | Workflow | Inhalt |
 |---|---|
 | `ci.yml` | Prettier, Lint, Typecheck, Unit-Tests mit Mindest-Abdeckung, Build (mit Cache) |
-| `e2e.yml` | Playwright in Chromium, je Auflösung ein paralleler Job (1280×800, 1024×600, 1920×1200) im offiziellen Playwright-Container, Screenshot-Vergleich gegen `playwright/screenshots/`, Bericht als Artefakt |
+| `e2e.yml` | Playwright in Chromium, je Auflösung (1280×800, 1024×600, 1920×1200) auf bis zu vier Rechner verteilt (Shards, 8 Jobs, ~8 min), dazu ein Gesamtergebnis „E2E gesamt“, im offiziellen Playwright-Container, Screenshot-Vergleich gegen `playwright/screenshots/`, Bericht als Artefakt |
 | `update-screenshots.yml` | manuell: Referenz-Screenshots im Container neu erzeugen, auf den Branch committen und danach E2E starten |
 | `workflows-lint.yml` | `actionlint` prüft die Workflows bei Änderungen |
 | `codeql.yml` | CodeQL-Sicherheitsanalyse |

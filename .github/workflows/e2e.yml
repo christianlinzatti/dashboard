@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   playwright:
-    name: Playwright ${{ matrix.project }}
+    name: Playwright ${{ matrix.project }} (${{ matrix.shard }}/${{ matrix.shards }})
     runs-on: ubuntu-latest
     timeout-minutes: 30
     # Gleiches Image wie beim Erzeugen der Referenz-Screenshots → pixelgleiche Ergebnisse
@@ -24,9 +24,18 @@ jobs:
       image: mcr.microsoft.com/playwright:v1.63.0-noble
     strategy:
       fail-fast: false
-      # je Auflösung ein paralleler Job – deutlich kürzere Laufzeit
+      # je Auflösung parallel und in Teile (Shards) zerlegt – große Auflösungen rendern ohne GPU langsamer
+      # und bekommen mehr Rechner (Laufzeit vorher: 5 / 12 / 20 min)
       matrix:
-        project: ["1280x800", "1024x600", "1920x1200"]
+        include:
+          - { project: "1024x600", shard: 1, shards: 1 }
+          - { project: "1280x800", shard: 1, shards: 3 }
+          - { project: "1280x800", shard: 2, shards: 3 }
+          - { project: "1280x800", shard: 3, shards: 3 }
+          - { project: "1920x1200", shard: 1, shards: 4 }
+          - { project: "1920x1200", shard: 2, shards: 4 }
+          - { project: "1920x1200", shard: 3, shards: 4 }
+          - { project: "1920x1200", shard: 4, shards: 4 }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -44,15 +53,30 @@ jobs:
           restore-keys: next-e2e-${{ hashFiles('package-lock.json') }}-
       - run: npm run build
       - name: Playwright-Tests mit Screenshot-Vergleich
-        run: npx playwright test --trace off --project="${{ matrix.project }}"
+        run: npx playwright test --trace off --project="${{ matrix.project }}" --shard="${{ matrix.shard }}/${{ matrix.shards }}"
         env:
           CI: "true"
       - name: Bericht & Diff-Bilder hochladen
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: playwright-report-${{ matrix.project }}
+          name: playwright-report-${{ matrix.project }}-${{ matrix.shard }}
           path: |
             playwright-report/
             test-results/
           retention-days: 14
+
+  # ein Gesamtergebnis (für Branch-Schutz und den schnellen Blick): grün nur, wenn alle Teile grün sind
+  e2e:
+    name: E2E gesamt
+    needs: playwright
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Alle Teile grün?
+        env:
+          RESULT: ${{ needs.playwright.result }}
+        run: |
+          echo "Ergebnis der Playwright-Teile: $RESULT"
+          test "$RESULT" = "success"

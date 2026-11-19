@@ -258,7 +258,7 @@ Beide nach demselben Prinzip zustandslos im Vertex-Shader bewegt, vom Grundlicht
 | Workflow | Inhalt |
 |---|---|
 | `ci.yml` | Prettier, ESLint, `tsc`, Vitest mit Mindestabdeckung (88/78/85/90 %), Build |
-| `e2e.yml` | Playwright im offiziellen Container, je Auflösung ein paralleler Job, Screenshot-Vergleich |
+| `e2e.yml` | Playwright im offiziellen Container, je Auflösung parallel und in Shards verteilt, Screenshot-Vergleich |
 | `update-screenshots.yml` | erzeugt Referenzbilder im Container, startet danach E2E |
 | `provider-check.yml` | täglich gegen echte Dienste, Issue bei Ausfall |
 | `codeql.yml`, `security.yml` | CodeQL, `npm audit`, Gitleaks, Dependency-Review |

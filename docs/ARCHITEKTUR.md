@@ -87,7 +87,7 @@ reproduzierbar (gleiche Songzeit → gleiche Pose, gleiches Licht) und die Logik
 | Workflow | Änderung |
 |---|---|
 | `ci.yml` | + Prettier-Prüfung, Abdeckung mit Schwellwerten, Abdeckung als Job-Zusammenfassung und Artefakt, Next.js-Build-Cache |
-| `e2e.yml` | Matrix je Auflösung (parallel), Build-Cache, manuell startbar |
+| `e2e.yml` | Matrix je Auflösung, große Auflösungen in Shards (1 + 3 + 4 Jobs), Gesamtergebnis „E2E gesamt“, Build-Cache, manuell startbar; „Screenshots aktualisieren“ verteilt genauso und committet die geänderten Bilder in einem Schritt |
 | `update-screenshots.yml` | startet danach automatisch den E2E-Lauf (Bot-Commits lösen sonst keine Workflows aus) |
 | `workflows-lint.yml` | neu: `actionlint` prüft alle Workflows bei Änderungen |
 

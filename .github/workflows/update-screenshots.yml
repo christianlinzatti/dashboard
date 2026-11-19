@@ -1,7 +1,7 @@
 name: Screenshots aktualisieren
 
 # Manuell starten (Actions → „Screenshots aktualisieren“ → Branch wählen).
-# Erzeugt die Referenz-Screenshots im CI-Container neu und committet sie auf den Branch.
+# Erzeugt die Referenz-Screenshots im CI-Container neu (verteilt auf mehrere Rechner) und committet sie auf den Branch.
 on:
   workflow_dispatch:
 
@@ -9,19 +9,30 @@ permissions:
   contents: read
 
 jobs:
-  update:
-    name: Referenz-Screenshots neu erzeugen
+  render:
+    name: Screenshots ${{ matrix.project }} (${{ matrix.shard }}/${{ matrix.shards }})
     if: github.ref != 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 45
-    permissions:
-      contents: write
-      # danach den E2E-Workflow starten (Bot-Commits lösen keine Workflows aus)
-      actions: write
+    timeout-minutes: 30
     container:
       image: mcr.microsoft.com/playwright:v1.63.0-noble
+    strategy:
+      fail-fast: true
+      # gleiche Aufteilung wie im E2E-Workflow
+      matrix:
+        include:
+          - { project: "1024x600", shard: 1, shards: 1 }
+          - { project: "1280x800", shard: 1, shards: 3 }
+          - { project: "1280x800", shard: 2, shards: 3 }
+          - { project: "1280x800", shard: 3, shards: 3 }
+          - { project: "1920x1200", shard: 1, shards: 4 }
+          - { project: "1920x1200", shard: 2, shards: 4 }
+          - { project: "1920x1200", shard: 3, shards: 4 }
+          - { project: "1920x1200", shard: 4, shards: 4 }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
@@ -29,18 +40,54 @@ jobs:
       - run: npm ci
       - run: npm run build
       - name: Screenshots erzeugen
-        run: npx playwright test --trace off --update-snapshots=all
+        run: npx playwright test --trace off --update-snapshots=all --project="${{ matrix.project }}" --shard="${{ matrix.shard }}/${{ matrix.shards }}"
         env:
           CI: "true"
-      - name: Committen, falls sich etwas geändert hat
+      # nur geänderte und neue Bilder weitergeben – sonst überschreiben unveränderte Kopien anderer Teile neue Bilder
+      - name: Geänderte Screenshots sammeln
+        env:
+          SHARD_ID: ${{ matrix.project }}-${{ matrix.shard }}
         run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          mkdir -p out
+          echo "$SHARD_ID" > "out/shard-$SHARD_ID.txt"
+          git ls-files --modified --others --exclude-standard -- playwright/screenshots | while read -r f; do
+            mkdir -p "out/$(dirname "$f")"
+            cp "$f" "out/$f"
+          done
+          find out -type f | sort
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: screenshots-${{ matrix.project }}-${{ matrix.shard }}
+          path: out/
+          retention-days: 3
+
+  commit:
+    name: Referenz-Screenshots committen
+    needs: render
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      # danach den E2E-Workflow starten (Bot-Commits lösen keine Workflows aus)
+      actions: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: screenshots-*
+          path: incoming
+          merge-multiple: true
+      - name: Committen, falls sich etwas geändert hat
+        run: |
+          if [ -d incoming/playwright/screenshots ]; then cp -R incoming/playwright/screenshots/. playwright/screenshots/; fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add playwright/screenshots
           if git diff --cached --quiet; then
             echo "Keine Änderungen an den Screenshots."
           else
+            git diff --cached --stat
             git commit -m "test: Referenz-Screenshots aktualisiert"
             # Kamen inzwischen neue Commits auf den Branch, vor dem Push darauf aufsetzen (bis zu 3 Versuche)
             for i in 1 2 3; do
@@ -49,6 +96,9 @@ jobs:
               git pull --rebase origin "$GITHUB_REF_NAME"
             done
           fi
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
       - name: E2E auf dem neuen Stand starten
         env:
           GITHUB_TOKEN: ${{ github.token }}
