@@ -28,6 +28,7 @@ import { useTempoLoader } from "./audio/useTempoLoader";
 import { useShowLoader } from "./show/useShowLoader";
 import { useArtistAvatars } from "./avatars/useArtistAvatars";
 import { useSongMemory } from "./memory/useSongMemory";
+import { useAutoOffset } from "./lyrics/useAutoOffset";
 import { installTelemetry, report } from "@/lib/live/telemetry";
 import { perf } from "@/lib/stage/perf";
 import { markFrame } from "@/lib/live/frame-clock";
@@ -97,6 +98,8 @@ export function Dashboard({
   useArtistAvatars(demo === undefined);
   // Song-Gedächtnis: früher gemessene Drops und Tempo laden, neue Messungen melden
   useSongMemory(demo === undefined);
+  // Lyrics-Versatz: von Hand (Steuerleiste) + automatisch über das Mikrofon (Lautsprecher-Verzögerung, Songversion)
+  useAutoOffset(demo === undefined);
   // Mikrofon: im Live-Betrieb; in Demos nur mit ?mic=1 (Screenshots bleiben reproduzierbar)
   const micCtl = useMicAnalysis(demo === undefined || !!mic);
 

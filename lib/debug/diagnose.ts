@@ -20,7 +20,10 @@ type Ctx = {
   playback?: { isPlaying?: boolean };
   live?: { micState?: string };
   env?: { secureContext?: boolean; micApi?: boolean; origin?: string };
+  offset?: { manual?: number; device?: number; song?: number; measured?: { n?: number; spreadMs?: number } | null };
 };
+
+const sec = (ms: number) => `${ms >= 0 ? "+" : "−"}${(Math.abs(ms) / 1000).toFixed(1).replace(".", ",")} s`;
 
 const MIC: Record<string, Omit<Finding, "label">> = {
   aus: { value: "aus – in der Steuerleiste (Bildschirm antippen) „Mikro an“ tippen; erst dann fragt der Browser", level: "info" },
@@ -81,6 +84,19 @@ export function diagnose(ctx: Ctx): Finding[] {
       : "noch nichts gemessen – mit eingeschaltetem Mikrofon merkt sich das Dashboard Drops und Tempo",
     level: mem?.drops?.length ? "ok" : "info",
   });
+  if (ctx.offset) {
+    const o = ctx.offset;
+    const parts = [
+      `von Hand ${sec(o.manual ?? 0)}`,
+      `Lautsprecher ${sec(o.device ?? 0)}`,
+      ...(o.song ? [`dieser Song ${sec(o.song)}`] : []),
+    ];
+    out.push({
+      label: "Lyrics-Versatz",
+      value: `${parts.join(" · ")}${o.measured ? ` · gemessen an ${o.measured.n} Einsätzen (±${o.measured.spreadMs} ms)` : " · noch nicht gemessen (Mikrofon an, Gesang)"}`,
+      level: o.measured ? "ok" : "info",
+    });
+  }
   const mic = MIC[ctx.live?.micState ?? "aus"] ?? { value: ctx.live?.micState ?? "?", level: "info" as const };
   out.push({ label: "Mikrofon", ...mic });
   if (ctx.env) {

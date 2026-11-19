@@ -1,8 +1,10 @@
 "use client";
 
+import { useStore } from "zustand";
+import { offsetStore } from "@/lib/lyrics/offset-store";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { songContext, useSongContext } from "@/lib/song-context/store";
+import { useSongContext } from "@/lib/song-context/store";
 import { POLL_NOW_EVENT } from "../spotify/useSpotifySync";
 import type { MicState } from "@/lib/song-context/schema";
 import { useSettings } from "@/lib/settings";
@@ -16,16 +18,7 @@ const STAGE_CYCLE: ThemeChoice[] = ["auto", ...themeIds];
 const QUALITY_CYCLE: Array<Quality | "auto"> = ["auto", "niedrig", "mittel", "hoch"];
 const qualityLabel: Record<Quality | "auto", string> = { auto: "Auto", niedrig: "Niedrig", mittel: "Mittel", hoch: "Hoch" };
 
-const OFFSET_KEY = "ss_lyrics_offset";
 const HIDE_AFTER_MS = 6000;
-
-function storedOffset(): number {
-  try {
-    return Number(localStorage.getItem(OFFSET_KEY)) || 0;
-  } catch {
-    return 0;
-  }
-}
 
 /**
  * Steuerleiste: erscheint nach Berührung, blendet nach 6 s wieder aus.
@@ -56,10 +49,6 @@ export function Controls({ live, mic }: { live: boolean; mic?: { state: MicState
   const setSettings = useSettings((s) => s.set);
 
   useEffect(() => {
-    songContext.getState().setPlayback({ offsetMs: storedOffset() });
-  }, []);
-
-  useEffect(() => {
     const show = () => {
       setVisible(true);
       clearTimeout(hideTimer.current);
@@ -72,15 +61,9 @@ export function Controls({ live, mic }: { live: boolean; mic?: { state: MicState
     };
   }, []);
 
-  const changeOffset = (delta: number) => {
-    const next = Math.round((songContext.getState().playback.offsetMs + delta) / 50) * 50;
-    songContext.getState().setPlayback({ offsetMs: next });
-    try {
-      localStorage.setItem(OFFSET_KEY, String(next));
-    } catch {
-      /* privater Modus – Offset gilt dann nur für diese Sitzung */
-    }
-  };
+  // von Hand verschieben; die automatische Korrektur (Mikrofon) kommt dazu
+  const changeOffset = (delta: number) => offsetStore.getState().changeManual(delta);
+  const auto = useStore(offsetStore, (s) => s.device + s.song);
 
   const player = async (action: "play" | "pause" | "next" | "previous") => {
     const res = await fetch(`/api/player/${action}`, { method: "POST" }).catch(() => null);
@@ -139,6 +122,12 @@ export function Controls({ live, mic }: { live: boolean; mic?: { state: MicState
           <span className="min-w-[9ch] text-center text-[clamp(12px,2vmin,20px)] tabular-nums" data-testid="offset">
             Lyrics {offset >= 0 ? "+" : "−"}
             {(Math.abs(offset) / 1000).toFixed(1).replace(".", ",")} s
+            {auto !== 0 && (
+              <span className="ml-1 text-white/50" data-testid="offset-auto">
+                (auto {auto >= 0 ? "+" : "−"}
+                {(Math.abs(auto) / 1000).toFixed(1).replace(".", ",")})
+              </span>
+            )}
           </span>
           <button className={btn} onClick={() => changeOffset(100)} aria-label="Lyrics später">
             +

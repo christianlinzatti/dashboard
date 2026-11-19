@@ -12,6 +12,8 @@ export const memorySchema = z.object({
   bpm: z.number().min(40).max(250).optional(),
   /** wie oft der Song mit Mikrofon gehört wurde */
   plays: z.number().int().nonnegative(),
+  /** songeigene Verschiebung der Lyrics (ms, + = später), z. B. andere Version mit längerem Intro */
+  lyricsShiftMs: z.number().min(-15_000).max(15_000).optional(),
 });
 export type SongMemory = z.infer<typeof memorySchema>;
 
@@ -27,6 +29,7 @@ export const observationSchema = z.object({
     )
     .max(64),
   bpm: z.number().min(40).max(250).optional(),
+  lyricsShiftMs: z.number().min(-15_000).max(15_000).optional(),
 });
 export type Observation = z.infer<typeof observationSchema>;
 
@@ -35,7 +38,7 @@ export const DROP_TOLERANCE_MS = 1200;
 const MAX_DROPS = 64;
 
 /** Neue Messung einrechnen: nahe Drops zusammenfassen (gewichteter Mittelwert), neue anhängen */
-export function mergeObservation(mem: SongMemory | null, obs: Pick<Observation, "drops" | "bpm">): SongMemory {
+export function mergeObservation(mem: SongMemory | null, obs: Pick<Observation, "drops" | "bpm" | "lyricsShiftMs">): SongMemory {
   const drops = (mem?.drops ?? []).map((d) => ({ ...d }));
   for (const ms of obs.drops) {
     const near = drops.find((d) => Math.abs(d.ms - ms) <= DROP_TOLERANCE_MS);
@@ -49,6 +52,10 @@ export function mergeObservation(mem: SongMemory | null, obs: Pick<Observation, 
     drops: drops.slice(0, MAX_DROPS).map((d) => ({ ms: Math.round(d.ms), seen: d.seen })),
     ...((obs.bpm ?? mem?.bpm) ? { bpm: obs.bpm ?? mem?.bpm } : {}),
     plays: (mem?.plays ?? 0) + 1,
+    // jüngste Messung gilt (auch 0: der Song ist doch nicht verschoben)
+    ...((obs.lyricsShiftMs ?? mem?.lyricsShiftMs) !== undefined
+      ? { lyricsShiftMs: obs.lyricsShiftMs ?? mem?.lyricsShiftMs }
+      : {}),
   };
 }
 

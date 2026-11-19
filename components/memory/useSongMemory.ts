@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import type { SongMemory } from "@/lib/song-memory/memory";
 import { songContext } from "@/lib/song-context/store";
+import { offsetStore } from "@/lib/lyrics/offset-store";
 
 /** Kürzer als das nicht melden (kurz reingehört und weitergeskippt) */
 const MIN_LISTEN_MS = 45_000;
@@ -20,8 +21,16 @@ export function useSongMemory(enabled: boolean) {
     const flush = (beacon = false) => {
       const c = current;
       current = null;
-      if (!c || !c.mic || (!c.drops.length && !c.bpm) || Date.now() - c.since < MIN_LISTEN_MS) return;
-      const body = JSON.stringify({ trackKey: c.trackKey, drops: c.drops.map(Math.round), ...(c.bpm ? { bpm: c.bpm } : {}) });
+      // Lyrics-Versatz: in diesem Abspielen sicher geschätzt?
+      const m = offsetStore.getState().measured;
+      const shift = c && m && m.trackKey === c.trackKey ? m.song : undefined;
+      if (!c || !c.mic || (!c.drops.length && !c.bpm && shift === undefined) || Date.now() - c.since < MIN_LISTEN_MS) return;
+      const body = JSON.stringify({
+        trackKey: c.trackKey,
+        drops: c.drops.map(Math.round),
+        ...(c.bpm ? { bpm: c.bpm } : {}),
+        ...(shift !== undefined ? { lyricsShiftMs: shift } : {}),
+      });
       if (beacon && navigator.sendBeacon)
         navigator.sendBeacon("/api/song-memory", new Blob([body], { type: "application/json" }));
       else

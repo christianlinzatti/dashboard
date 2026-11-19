@@ -199,7 +199,7 @@ deutsche Übersetzung falls vorhanden, Schalter „2. Zeile“. Info- und Konzer
 
 ✅ Tempo per Autokorrelation mit Oktav-Korrektur, Beat-Phase (PLL), Tempo-Verriegelung, Energie, Drop-Erkennung
 (`lib/audio`). Audio bleibt im Browser. Ohne Mikrofon läuft alles mit 120 BPM weiter.
-○ **Wort-Timing per Mikrofon verfeinern** und ○ **Lyrics-Offset automatisch nachjustieren** (siehe 13).
+○ **Wort-Timing per Mikrofon verfeinern** und ✅ **Lyrics-Offset automatisch nachjustieren** (Mikrofon: Lautsprecher-Verzögerung je Gerät, Songversion je Song) (siehe 13).
 
 ---
 
@@ -444,7 +444,7 @@ Aufwand: S = bis ½ Tag, M = 1–2 Tage, L = mehrere Tage.
 
 1. **Rechner:** Raspberry Pi 5 (8 GB) oder N100-Mini-PC? Beides wird unterstützt; die Wahl bestimmt die Standard-Qualitätsstufe.
 2. **Display-Zeitplan:** ✅ als Einstellung gelöst (Ruhezeit pro Konto, Standard aus); die Pi-Bridge schaltet per HDMI ab, wenn in ihrer `config.json` Befehle stehen.
-3. **Lyrics-Offset automatisch:** nur vorschlagen oder selbstständig einstellen?
+3. **Lyrics-Offset automatisch:** ✅ geklärt – stellt sich selbst ein (kleine Abweichung = Lautsprecher, langsam gelernt; große = nur dieser Song, im Song-Gedächtnis).
 4. **Better-Lyrics-Schlüssel:** bei den Betreibern anfragen oder ohne Schlüssel bleiben?
 
 ### Geklärt
