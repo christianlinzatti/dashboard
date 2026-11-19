@@ -9,7 +9,9 @@ const context = (page: Page) => debugContext<Ctx>(page);
 test("Mikrofon lässt sich einschalten und liefert Messwerte", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  await page.goto("/?demo=neonlicht&mic=1&debug=1");
+  // geprüft wird das Mikrofon, nicht die Bühne: niedrige Qualität, sonst bremst die 3D-Szene (ohne GPU, große Auflösung)
+  // die Seite so aus, dass das Debug-Panel den Zustand erst nach vielen Sekunden zeigt
+  await page.goto("/?demo=neonlicht&mic=1&debug=1&qualitaet=niedrig");
   await expect(page.getByTestId("now-playing")).toBeVisible();
 
   // Berechtigung ist erteilt → Mikro startet automatisch
