@@ -44,8 +44,10 @@ test.describe("Bühne & Licht", () => {
   // Kamera-Einstellungen und Drehbühne (aus dem Plan des Demo-Songs)
   const shots = [
     { name: "kamera-nah", q: "demo=neonlicht&t=20000&lyrics=karaoke", camera: "nah" },
-    { name: "kamera-kreisfahrt", q: "demo=neonlicht&t=98000&lyrics=karaoke", camera: "kreisfahrt" },
-    { name: "drehbuehne", q: "demo=abendrot&t=50000", camera: "untersicht+drehbuehne" },
+    { name: "kamera-kreisfahrt", q: "demo=neonlicht&t=50000&lyrics=karaoke", camera: "kreisfahrt" },
+    { name: "drehbuehne", q: "demo=abendrot&t=45000", camera: "untersicht+drehbuehne" },
+    // Abschied: der Kran zieht sich in der letzten Outro-Phrase zurück
+    { name: "kamera-kran", q: "demo=neonlicht&t=196000", camera: "kran" },
   ] as const;
   for (const { name, q, camera } of shots) {
     test(`Kamera ${name}`, async ({ page }) => {
