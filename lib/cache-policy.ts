@@ -37,6 +37,8 @@ export const CACHE_TTL = {
   commands: 5 * 60,
   /** Song-Kontext aus dem Debug-Panel (zum Ansehen auf einem anderen Gerät) – nur kurz aufheben */
   debugContext: 3600,
+  /** Song-Gedächtnis (gemessene Drops und Tempo je Song, pro Konto): lange, wird bei jedem Hören verlängert */
+  songMemory: 365 * DAY,
 } as const;
 
 /** Wie oft das Dashboard seinen Stand meldet (Songwechsel, Abschnitt, Pause zusätzlich sofort). */

@@ -13,6 +13,7 @@ import { bandKind } from "@/lib/stage/band";
 import { rng } from "./rng";
 import { crowdProfile } from "@/lib/stage/crowd";
 import { planSingAlong, type SingAlong } from "@/lib/show/singalong";
+import { trustedDrops } from "@/lib/song-memory/memory";
 
 export type CameraPreset =
   | "totale"
@@ -82,6 +83,8 @@ export type Choreography = {
   crowdStyle: CrowdStyle;
   /** Mitsing-Moment im letzten Refrain (lib/show/singalong.ts) */
   singAlong?: SingAlong | null;
+  /** aus dem Song-Gedächtnis bekannte Drops (Songzeit) – wirken wie live gemessene, nur punktgenau */
+  knownDrops?: number[];
 };
 
 export type CrowdStyle = "rock" | "ballade" | null;
@@ -326,6 +329,7 @@ export function planChoreography(
     durationMs: song.track.durationMs,
     crowdStyle,
     singAlong: planSingAlong(phrases, climaxes, barMs, song.lyrics),
+    knownDrops: trustedDrops(song.memory),
   };
 }
 

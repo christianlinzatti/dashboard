@@ -135,3 +135,8 @@ test("Ruhezeit: Bildschirm schwarz ohne Musik, Antippen weckt, mit Musik immer a
   await page.goto("/?demo=neonlicht&t=46000&ruhe=23:00-07:00&qualitaet=niedrig");
   await expect(overlay).toHaveAttribute("data-off", "false");
 });
+
+test("Song-Gedächtnis nur mit Anmeldung", async ({ request }) => {
+  expect((await request.get("/api/song-memory?track=x")).status()).toBe(401);
+  expect((await request.post("/api/song-memory", { data: { trackKey: "x", drops: [1000] } })).status()).toBe(401);
+});

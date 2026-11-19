@@ -1,5 +1,6 @@
 "use client";
 
+import { DROP_TOLERANCE_MS, lastDropBefore } from "@/lib/song-memory/memory";
 import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import { Object3D, type PointLight, type SpotLight } from "three";
@@ -42,6 +43,10 @@ type DirectorProps = {
   glareRef?: React.RefObject<HTMLDivElement | null>;
   theme: Theme;
 };
+
+/** Bekannter (a) und live gemessener Drop (b): derselbe Drop (knapp danach gemessen) zählt nur einmal, sonst der jüngere */
+const latestDrop = (a: number | null, b: number | null) =>
+  a === null ? b : b === null ? a : Math.abs(a - b) <= DROP_TOLERANCE_MS ? a : Math.max(a, b);
 
 export function Director({
   song,
@@ -88,7 +93,8 @@ export function Director({
       positions,
       focus,
       anchorMs: mic ? live.gridAnchorMs : null,
-      dropMs: mic ? live.lastDropMs : null,
+      // Drop: bekannt aus dem Song-Gedächtnis (punktgenau) oder live gemessen – der jüngere zählt
+      dropMs: latestDrop(lastDropBefore(choreo.knownDrops ?? [], t), mic ? live.lastDropMs : null),
       pulse,
       vocal: mic ? live.vocal : 0,
       energy: mic ? live.energy : 0.5,

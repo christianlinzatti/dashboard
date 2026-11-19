@@ -403,7 +403,7 @@ Aufwand: S = bis ½ Tag, M = 1–2 Tage, L = mehrere Tage.
 | Baustein | Aufwand |
 |---|---|
 | Instrumente aus dem Mikrofon trennen (Kick, Snare, Hi-Hat, Gesang über Frequenzbänder und Einsätze): Kick → Lichtringe/Strobe, Snare → Flammen, Hi-Hat → Laser | M |
-| Song-Gedächtnis: gemessener Energieverlauf und Drops je Track im Cache, beim nächsten Abspielen vorab bekannt (Effekte punktgenau statt nachträglich) | M |
+| ✅ Song-Gedächtnis: gemessene Drops und Tempo je Track (pro Konto), beim nächsten Abspielen vorab bekannt – Effekte punktgenau, auch ohne Mikrofon; bestätigte Drops ab dem zweiten Hören (Energieverlauf noch offen) | M |
 | Abschnitte ohne Lyrics aus dem Energieverlauf erkennen (Instrumentals, Techno) | M |
 
 ### Stufe 12 – Avatare

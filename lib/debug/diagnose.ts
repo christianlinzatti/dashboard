@@ -15,6 +15,7 @@ type Ctx = {
       show?: { state?: string; provider?: string; detail?: string };
     };
     show?: { motto?: string };
+    memory?: { drops?: Array<{ ms?: number; seen?: number }>; bpm?: number; plays?: number };
   } | null;
   playback?: { isPlaying?: boolean };
   live?: { micState?: string };
@@ -72,6 +73,14 @@ export function diagnose(ctx: Ctx): Finding[] {
     level: LYRICS_LEVEL[l?.state ?? ""] ?? "warnung",
   });
   out.push(showFinding(song.status?.show, !!song.show));
+  const mem = song.memory;
+  out.push({
+    label: "Song-Gedächtnis",
+    value: mem
+      ? `${mem.plays ?? 0}× mit Mikrofon gehört · ${mem.drops?.length ?? 0} Drops bekannt${mem.bpm ? ` · ${mem.bpm} BPM gemessen` : ""}`
+      : "noch nichts gemessen – mit eingeschaltetem Mikrofon merkt sich das Dashboard Drops und Tempo",
+    level: mem?.drops?.length ? "ok" : "info",
+  });
   const mic = MIC[ctx.live?.micState ?? "aus"] ?? { value: ctx.live?.micState ?? "?", level: "info" as const };
   out.push({ label: "Mikrofon", ...mic });
   if (ctx.env) {

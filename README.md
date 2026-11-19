@@ -18,6 +18,8 @@ Mikrofon ins Publikum – „Alle zusammen!“, die Menge schwenkt gemeinsam die
 greifen in die Tasten, der DJ scratcht, Felle und Becken leuchten bei Treffern, Rock-Bands haben einen Bassisten.
 Unter `/einstellungen` legst du für jeden Künstler einen eigenen Avatar und ein Outfit fest und stellst eine Ruhezeit
 ein: Nachts wird der Bildschirm schwarz, solange keine Musik läuft (Antippen weckt ihn für fünf Minuten).
+Mit eingeschaltetem Mikrofon merkt sich das Dashboard je Song die Drops und das Tempo (**Song-Gedächtnis**): Beim
+nächsten Mal zünden die Effekte punktgenau auf dem Drop – auch ohne Mikrofon.
 
 **Neu: Betrieb** – Fehler und alle 5 min eine Leistungsprobe (Bildrate, Qualitätsstufe) landen im Kiosk-Protokoll
 (Debug-Panel `?debug=1` und `/debug`; höchstens 100 Einträge, nach 7 Tagen gelöscht, mit „Leeren“ sofort). Ein Watchdog in der Pi-Bridge startet den Kiosk neu, wenn das Dashboard hängt
