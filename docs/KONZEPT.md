@@ -418,8 +418,9 @@ Aufwand: S = bis ½ Tag, M = 1–2 Tage, L = mehrere Tage.
 
 | Baustein | Aufwand |
 |---|---|
-| LED-Wand-Visuals je Genre als Shader (Tunnel, Plasma, Equalizer-Varianten), Lyrics-Schlagworte auf der Wand | M |
-| Weitere Bühnen (Stadion, Strand, Kathedrale) und Wetter (Regen, Schnee) | M |
+| ✅ LED-Wand-Visuals je Genre als Shader (Tunnel, Plasma, Wellen, Equalizer), Refrain-Schlagwort auf der Wand | M |
+| ✅ La-Ola-Welle durch das Publikum (Instrumentalteile, KI-Regie „welle“), Kamera dafür in der Totale | S |
+| ✅ Weitere Bühnen (Stadion, Strand, Kathedrale) und Wetter (Regen, Schnee) | M |
 | Kamerakran und Handkamera-Wackeln, Schnitt auf den Beat im Refrain | S |
 | Bildrate auf dem Pi je Qualitätsstufe messen und Partikel/Publikum danach einstellen (hängt an Stufe 6) | S |
 

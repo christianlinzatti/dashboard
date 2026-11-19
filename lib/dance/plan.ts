@@ -11,6 +11,7 @@ import { slots, type Formation, type Vec2 } from "./formations";
 import { planClimaxes, type Climax } from "@/lib/stage/climax";
 import { bandKind } from "@/lib/stage/band";
 import { rng } from "./rng";
+import { crowdProfile } from "@/lib/stage/crowd";
 
 export type CameraPreset =
   | "totale"
@@ -312,12 +313,18 @@ export function planChoreography(
     beatMs,
     barMs,
     timeScale,
-    phrases,
+    phrases: phrases.map((p) => waveShots(p, crowdStyle)),
     order,
     climaxes: planClimaxes(phrases, barMs),
     durationMs: song.track.durationMs,
     crowdStyle,
   };
+}
+
+/** La-Ola: im Wechsel mit der Bühnen-Einstellung eine weite Einstellung, damit man die Welle durch die Menge sieht */
+function waveShots(p: Phrase, style: CrowdStyle): Phrase {
+  if (crowdProfile(p, style).wave < 0.5 || p.turn) return p;
+  return { ...p, cut: p.camera === "totale" ? "ueberkopf" : "totale" };
 }
 
 /**

@@ -13,6 +13,11 @@ export type { TransitionKind } from "@/lib/show/transition";
 const MIN_MS: Record<TransitionKind, number> = { umbau: 2400, zugabe: 4200 };
 const MAX_MS = 9000;
 
+/** Handylichter: Höhe einer Rasterzeile (vmin), Zeilen je Streifen und Deckkraft der Streifen von hinten nach vorn */
+const CELL_H = 2.8;
+const ROWS_PER_STRIP = 3;
+const PHONE_ROWS = [0.08, 0.2, 0.38, 0.6, 0.85, 1];
+
 /** Bühnenbereitschaft (ReadySignal setzt das Attribut, sobald die neue Szene gerendert ist) */
 const stageReady = () => document.body.getAttribute("data-stage-ready") === "true";
 
@@ -98,18 +103,32 @@ export function SongTransition({ force }: { force?: TransitionKind }) {
           }
         />
       ))}
-      {/* Zugabe: Handylichter im Publikum */}
+      {/* Zugabe: Handylichter im Publikum – nach hinten (oben) immer weniger. Streifen mit steigender Deckkraft statt
+          Maske oder schwarzem Verlauf: Masken sind ohne GPU teuer, ein Verlauf deckt die Lichtkegel ab (sichtbare Kante).
+          Jeder Streifen ist ein Vielfaches einer Rasterzeile hoch, damit die Punkte über die Streifen hinweg fluchten. */}
       {zugabe && (
         <div
-          className="transition-anim absolute inset-x-[-5%] bottom-0 h-[38%]"
+          className="transition-anim absolute inset-x-[-5%] bottom-0"
           style={{
-            // oberste Ebene: Verlauf ins Dunkle (statt Maske), darunter das Punktraster der Handys
-            backgroundImage:
-              "linear-gradient(to bottom, rgb(0 0 0 / 0.95), transparent 70%), radial-gradient(circle, rgb(240 246 255 / 0.95) 0 1.5px, transparent 3px)",
-            backgroundSize: "100% 100%, 3.4vmin 2.8vmin",
+            height: `${PHONE_ROWS.length * ROWS_PER_STRIP * CELL_H}vmin`,
             animation: "phones-sway 2.2s ease-in-out infinite alternate",
           }}
-        />
+          data-testid="phones"
+        >
+          {PHONE_ROWS.map((opacity, i) => (
+            <div
+              key={i}
+              className="absolute inset-x-0"
+              style={{
+                top: `${i * ROWS_PER_STRIP * CELL_H}vmin`,
+                height: `${ROWS_PER_STRIP * CELL_H}vmin`,
+                opacity,
+                backgroundImage: "radial-gradient(circle, rgb(240 246 255 / 0.95) 0 1.5px, transparent 3px)",
+                backgroundSize: `3.4vmin ${CELL_H}vmin`,
+              }}
+            />
+          ))}
+        </div>
       )}
       <div className="absolute inset-0 flex flex-col items-center justify-center px-[6vmin] text-center">
         {zugabe ? (

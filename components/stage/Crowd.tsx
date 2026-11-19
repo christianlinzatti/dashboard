@@ -31,12 +31,20 @@ const BASE_Y = -1.1;
 
 /** Gemeinsame Bewegungslogik für Silhouetten und Lichter (gleiche Person → gleiche Armhaltung). */
 const MOTION = /* glsl */ `
-  uniform float uBeats, uTime, uHands, uJump, uPhones, uSway, uBaseY, uMosh, uClap;
+  uniform float uBeats, uTime, uHands, uJump, uPhones, uSway, uBaseY, uMosh, uClap, uWave;
   uniform vec3 uCam;
   const float PI = 3.14159265;
   const float ARM = 0.58;
   const vec2 SHOULDER = vec2(0.26, 1.38);
 
+  /** La-Ola dieser Person (je Vertex in main() gesetzt): die Welle läuft alle zwei Takte von links nach rechts */
+  float gOla = 0.0;
+  float ola(vec3 spot) {
+    if (uWave <= 0.001) return 0.0;
+    float across = atan(spot.x, spot.y) / 4.0 + 0.5;
+    float ph = fract(uBeats / 8.0 - across);
+    return uWave * smoothstep(0.0, 0.05, ph) * smoothstep(0.17, 0.06, ph);
+  }
   float handsUp(vec4 r) { return step(r.x, uHands); }
   float hasPhone(vec4 r) { return step(r.y, uPhones); }
   /** Klatscher sind andere Leute als die mit erhobenen Händen (vom anderen Ende der Zufallswerte) */
@@ -47,12 +55,13 @@ const MOTION = /* glsl */ `
     float up = handsUp(r) * pump;
     up = mix(up, 2.45, clapper(r));
     if (side > 0.0) up = mix(up, 2.78 + 0.06 * sin(uTime * 1.3 + r.z * 6.0), hasPhone(r));
+    up = mix(up, 2.95, gOla);
     return max(up, 0.12);
   }
   /** Klatschen: beide Arme schwingen zur Mitte, die Hände treffen sich auf jedem Schlag */
   float armRoll(vec4 r, float side) {
     float hit = pow(1.0 - abs(sin(PI * uBeats)), 3.0);
-    return side * clapper(r) * (1.0 - hasPhone(r)) * (0.12 + 0.5 * hit);
+    return side * clapper(r) * (1.0 - hasPhone(r)) * (0.12 + 0.5 * hit) * (1.0 - gOla);
   }
   /** Armpunkt (Grundhaltung: hängend) an die aktuelle Armhaltung: erst heben (um x), dann zur Mitte schwingen (um z) */
   vec3 armXform(vec3 p, float side, vec4 r) {
@@ -86,7 +95,7 @@ const MOTION = /* glsl */ `
     float extra = m * abs(sin(PI * (uBeats * 1.5 + r.w * 3.0))) * 0.22;
     return vec3(
       spot.x + shove.x + p.x * f.y + p.z * f.x,
-      uBaseY + p.y + (hop(r) + extra) * near,
+      uBaseY + p.y + (hop(r) + extra + gOla * 0.24) * near,
       spot.y + shove.y - p.x * f.x + p.z * f.y
     );
   }
@@ -195,6 +204,7 @@ export function Crowd({
       uSway: { value: 0 },
       uMosh: { value: 0 },
       uClap: { value: 0 },
+      uWave: { value: 0 },
       uBaseY: { value: BASE_Y },
       uCam: { value: new Vector3() },
       uFogColor: { value: new Color(dark) },
@@ -231,7 +241,7 @@ export function Crowd({
     const f = frameRef.current;
     const c = f.playing
       ? crowdAt(choreo, f.t, { dropMs: f.dropMs })
-      : { hands: 0, jump: 0, phones: 0, bands: 0.1, bandMode: 0, sway: 0.3, mosh: 0, lighter: 0, clap: 0 };
+      : { hands: 0, jump: 0, phones: 0, bands: 0.1, bandMode: 0, sway: 0.3, mosh: 0, lighter: 0, clap: 0, wave: 0 };
     // gemeinsame Uniforms (beide Materialien teilen dieselben Objekte) über das Material setzen
     const u = people.current?.uniforms;
     if (!u) return;
@@ -243,6 +253,7 @@ export function Crowd({
     u.uSway!.value = c.sway;
     u.uMosh!.value = c.mosh;
     u.uClap!.value = c.clap;
+    u.uWave!.value = c.wave;
     u.uBlind!.value = lightsRef.current?.blinders ?? 0;
     (u.uCam!.value as Vector3).copy(camera.position);
     u.uEnergy!.value = f.energy;
@@ -317,6 +328,7 @@ export function Crowd({
                   } else if (aPart > 0.5 && position.y < 1.12) {
                     vAlbedo = skin; // Unterarme und Hände
                   }
+                  gOla = ola(aSpot);
                   if (aPart > 0.5) p = armXform(p, aPart < 1.5 ? -1.0 : 1.0, aRand);
                   vec2 f = normalize(-aSpot.xy);
                   vN = vec3(nrm.x * f.y + nrm.z * f.x, nrm.y, -nrm.x * f.x + nrm.z * f.y);
@@ -369,6 +381,7 @@ export function Crowd({
                   float side = aKind < 0.5 ? 1.0 : -1.0;
                   // Handy an der Hand, Armband am Handgelenk
                   float len = aKind < 0.5 ? ARM + 0.06 : ARM * 0.86;
+                  gOla = ola(aSpot);
                   vec3 p = armXform(vec3(side * SHOULDER.x, SHOULDER.y - len, 0.0), side, aRand);
                   vec3 w = toWorld(p, aSpot, aRand);
                   float level; vec3 col; float size;

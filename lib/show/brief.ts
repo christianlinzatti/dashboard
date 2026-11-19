@@ -9,7 +9,7 @@ import { effectKinds, themeIds } from "@/lib/stage/themes";
  */
 export const briefSectionKinds = ["intro", "verse", "prechorus", "chorus", "bridge", "instrumental", "outro"] as const;
 export const briefEnergies = ["ruhig", "mittel", "hoch", "hoehepunkt"] as const;
-export const crowdModes = ["handys", "wiegen", "haende", "klatschen", "springen", "moshpit", "feuerzeuge"] as const;
+export const crowdModes = ["handys", "wiegen", "haende", "klatschen", "springen", "moshpit", "feuerzeuge", "welle"] as const;
 export type CrowdMode = (typeof crowdModes)[number];
 export const moods = ["ruhig", "mittel", "energetisch"] as const;
 /**

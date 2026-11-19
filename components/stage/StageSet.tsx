@@ -2,7 +2,7 @@
 
 import { useFrame } from "@react-three/fiber";
 import { MeshReflectorMaterial } from "@react-three/drei";
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { AdditiveBlending, CanvasTexture, Color, DoubleSide, type Group, type Mesh, type ShaderMaterial } from "three";
 import type { LightFrame } from "@/lib/stage/lights";
 import type { QualityPreset } from "@/lib/stage/quality";
@@ -10,7 +10,8 @@ import type { Theme } from "@/lib/stage/themes";
 import type { Frame } from "./types";
 import { Curtain, NeonGrid, Planet, RetroSun, SkyDome, Stars, useFloorTexture } from "./Scenery";
 import { Beach, Cathedral, Stadium, StadiumRoof, Warehouse } from "./Venues";
-import { songContext } from "@/lib/song-context/store";
+import { songContext, useSongContext } from "@/lib/song-context/store";
+import { chorusKeyword, forcedWallPattern, keywordShown, wallPattern, wallPatterns } from "@/lib/stage/wall";
 
 export const TRUSS_Y = 4.3;
 export const TRUSS_Z = -2.6;
@@ -200,37 +201,109 @@ const wallShader = {
   `,
   fragmentShader: /* glsl */ `
     uniform float uTime; uniform vec3 uA; uniform vec3 uB; uniform float uLevel; uniform float uMode; uniform float uBands[6];
+    uniform float uPattern; uniform float uBeat; uniform sampler2D uWord; uniform float uWordAmt;
     varying vec2 vUv;
+    float band(float x) {
+      int i = int(mod(abs(floor(x) - 5.5), 6.0));
+      float h = 0.0;
+      for (int k = 0; k < 6; k++) if (k == i) h = uBands[k];
+      return h;
+    }
     void main() {
       // LED-Raster
       vec2 grid = fract(vUv * vec2(96.0, 48.0));
       float led = smoothstep(0.0, 0.25, grid.x) * smoothstep(1.0, 0.75, grid.x) * smoothstep(0.0, 0.25, grid.y) * smoothstep(1.0, 0.75, grid.y);
+      // Seitenverhältnis der Wand (10 × 4,4): Kreise bleiben rund
+      vec2 p = (vUv - 0.5) * vec2(2.27, 1.0);
+      float bass = 0.5 * (uBands[0] + uBands[1]);
       vec3 col;
       if (uMode < 0.5) {
         // ruhiger Farbverlauf, langsam wandernd
         float w = 0.5 + 0.5 * sin(vUv.x * 3.0 + uTime * 0.3 + vUv.y * 2.0);
         col = mix(uA, uB, w) * (0.2 + 0.3 * uLevel);
       } else if (uMode < 1.5) {
-        // Equalizer-Balken aus den Frequenzbändern
-        float x = vUv.x * 12.0;
-        int i = int(mod(abs(floor(x) - 5.5), 6.0));
-        float h = 0.0;
-        for (int k = 0; k < 6; k++) if (k == i) h = uBands[k];
-        h = clamp(h * (0.4 + uLevel), 0.05, 0.98);
-        float bar = step(vUv.y, h) * step(0.08, fract(x));
-        col = mix(uA, uB, vUv.y) * (0.15 + bar * (0.6 + 0.4 * uLevel));
+        if (uPattern < 0.5) {
+          // Equalizer-Balken aus den Frequenzbändern
+          float x = vUv.x * 12.0;
+          float h = clamp(band(x) * (0.4 + uLevel), 0.05, 0.98);
+          float bar = step(vUv.y, h) * step(0.08, fract(x));
+          col = mix(uA, uB, vUv.y) * (0.15 + bar * (0.6 + 0.4 * uLevel));
+        } else if (uPattern < 1.5) {
+          // Tunnel: Ringe fliegen im Takt auf das Publikum zu
+          float r = length(p);
+          float a = atan(p.y, p.x);
+          float depth = 0.35 / max(r, 0.04) + uTime * 1.6 + uBeat * 0.5;
+          float ring = smoothstep(0.35, 0.5, abs(fract(depth) - 0.5) * 2.0);
+          float spokes = 0.5 + 0.5 * sin(a * 8.0 + uTime * 0.7);
+          col = mix(uA, uB, fract(depth * 0.25)) * ring * (0.35 + 0.65 * spokes) * (0.4 + 0.8 * uLevel + bass) * smoothstep(0.02, 0.3, r);
+        } else if (uPattern < 2.5) {
+          // Plasma: weiche, fließende Farbflächen, der Bass treibt das Tempo
+          float t = uTime * (0.6 + 0.6 * bass);
+          float v = sin(p.x * 4.0 + t) + sin(p.y * 5.0 - t * 1.3) + sin((p.x + p.y) * 3.0 + t * 0.7) + sin(length(p * 4.0) - t * 1.6);
+          float w = 0.5 + 0.5 * sin(v * 1.6);
+          float glow = smoothstep(0.55, 1.0, w);
+          col = mix(uA * 0.5, uB, w) * (0.3 + 0.7 * uLevel) * (0.5 + 1.1 * glow);
+        } else {
+          // Wellen: Linien wie Lautstärke-Kurven, die Höhen zittern
+          float k = 0.0;
+          for (int j = 0; j < 4; j++) {
+            float fj = float(j);
+            float y = 0.5 + (0.12 + 0.1 * band(fj * 3.0)) * sin(vUv.x * (5.0 + fj * 2.0) + uTime * (1.4 + fj * 0.5) + fj * 1.7);
+            k += smoothstep(0.035, 0.0, abs(vUv.y - y - (fj - 1.5) * 0.12));
+          }
+          col = mix(uA, uB, vUv.x) * (0.12 + min(k, 1.2) * (0.6 + 0.5 * uLevel));
+        }
       } else {
         // Gegenlicht: heller Rand unten
         col = uB * (0.1 + 0.6 * pow(1.0 - vUv.y, 3.0)) * (0.4 + uLevel);
       }
+      // Schlagwort des Refrains groß und hell darüber (Maske aus dem Schrift-Canvas)
+      float word = texture2D(uWord, vUv).r * uWordAmt;
+      col = mix(col, mix(uB, vec3(1.0), 0.35) * (1.05 + 0.45 * uBeat), word * 0.85);
       // Wand bleibt Hintergrund: gedämpft, damit Avatare und Lyrics vorne bleiben
       gl_FragColor = vec4(col * (0.25 + 0.75 * led) * 0.45, 1.0);
     }
   `,
 };
 
+/** Schlagwort als Maske (weiß auf schwarz) für die LED-Wand */
+function wordTexture(word: string | null): CanvasTexture {
+  const c = document.createElement("canvas");
+  c.width = 1024;
+  c.height = 450;
+  const g = c.getContext("2d")!;
+  g.fillStyle = "#000";
+  g.fillRect(0, 0, c.width, c.height);
+  if (word) {
+    g.fillStyle = "#fff";
+    g.textAlign = "center";
+    g.textBaseline = "middle";
+    // so groß wie möglich, aber mit Rand
+    // die Wand ist breiter als das Bild – das Wort bleibt in der Mitte, die auf jedem Bildschirm zu sehen ist
+    let size = 190;
+    g.font = `900 ${size}px system-ui, sans-serif`;
+    const w = g.measureText(word).width;
+    if (w > c.width * 0.56) size = Math.floor((size * c.width * 0.56) / w);
+    g.font = `900 ${size}px system-ui, sans-serif`;
+    g.fillText(word, c.width / 2, c.height / 2);
+  }
+  return new CanvasTexture(c);
+}
+
+/** Wechselt mit dem Song: Muster nach Genre und Schlagwort des Refrains */
+function useWallContent() {
+  const song = useSongContext((s) => s.song);
+  const pattern = forcedWallPattern() ?? (song ? wallPattern(song) : "equalizer");
+  const keyword = useMemo(() => chorusKeyword(song?.lyrics), [song?.lyrics]);
+  return { pattern: wallPatterns.indexOf(pattern), keyword };
+}
+
 function LedWall({ lightsRef }: { lightsRef: React.RefObject<LightFrame | null> }) {
   const mat = useRef<ShaderMaterial>(null);
+  const word = useRef(0);
+  const { pattern, keyword } = useWallContent();
+  const tex = useMemo(() => wordTexture(keyword), [keyword]);
+  useEffect(() => () => tex.dispose(), [tex]);
   const uniforms = useMemo(
     () => ({
       uTime: { value: 0 },
@@ -239,25 +312,36 @@ function LedWall({ lightsRef }: { lightsRef: React.RefObject<LightFrame | null> 
       uLevel: { value: 0.5 },
       uMode: { value: 0 },
       uBands: { value: [0.4, 0.5, 0.4, 0.35, 0.3, 0.2] },
+      uPattern: { value: 0 },
+      uBeat: { value: 0 },
+      uWord: { value: null as CanvasTexture | null },
+      uWordAmt: { value: 0 },
     }),
     [],
   );
-  useFrame(() => {
+  useFrame((_, dt) => {
     const f = lightsRef.current;
     const m = mat.current;
     if (!f || !m) return;
-    const { positionMs, live } = songContext.getState();
-    m.uniforms.uTime!.value = positionMs / 1000;
+    const { positionMs, live, derived } = songContext.getState();
+    const t = positionMs / 1000;
+    m.uniforms.uTime!.value = t;
     (m.uniforms.uA!.value as Color).set(f.wall.colorA);
     (m.uniforms.uB!.value as Color).set(f.wall.colorB);
     m.uniforms.uLevel!.value = f.wall.level;
     m.uniforms.uMode!.value = f.wall.mode;
+    m.uniforms.uPattern!.value = pattern;
+    m.uniforms.uWord!.value = tex;
+    // Takt-Puls (fällt nach jedem Schlag ab)
+    const beatMs = 60_000 / (live.bpm || 120);
+    m.uniforms.uBeat!.value = Math.pow(1 - (positionMs % beatMs) / beatMs, 3);
+    // Schlagwort weich ein- und ausblenden (nur im Refrain, im Wechsel mit dem Muster)
+    const target = keyword && f.wall.mode === 1 && keywordShown(positionMs, live.bpm, derived.isChorus) ? 1 : 0;
+    word.current += (target - word.current) * Math.min(1, dt * 6);
+    m.uniforms.uWordAmt!.value = word.current;
     if (live.micActive && live.bands.length === 6) m.uniforms.uBands!.value = live.bands;
-    else {
-      // ohne Mikro: ruhige, deterministische Balken aus der Songzeit
-      const t = positionMs / 1000;
-      m.uniforms.uBands!.value = [0, 1, 2, 3, 4, 5].map((i) => 0.35 + 0.25 * Math.sin(t * (1.3 + i * 0.4) + i));
-    }
+    // ohne Mikro: ruhige, deterministische Balken aus der Songzeit
+    else m.uniforms.uBands!.value = [0, 1, 2, 3, 4, 5].map((i) => 0.35 + 0.25 * Math.sin(t * (1.3 + i * 0.4) + i));
   });
   return (
     <mesh position={[0, 2.3, TRUSS_Z - 0.5]}>

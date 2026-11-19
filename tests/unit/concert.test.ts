@@ -37,6 +37,19 @@ describe("Publikums-Regie", () => {
     expect(k.clap + k.hands).toBeLessThanOrEqual(1);
   });
 
+  it("La-Ola: in Instrumentalteilen mit Schwung und auf Anweisung, die Kamera geht dafür in die Totale", () => {
+    expect(crowdProfile({ section: "instrumental", energy: 3 }).wave).toBe(1);
+    expect(crowdProfile({ section: "instrumental", energy: 1 }).wave).toBe(0);
+    expect(crowdProfile({ section: "chorus", energy: 3 }).wave).toBe(0);
+    expect(crowdProfile({ section: "verse", energy: 1, crowd: "welle" }).wave).toBe(1);
+    // Rock: im lauten Instrumentalteil lieber Moshpit
+    expect(crowdProfile({ section: "instrumental", energy: 3 }, "rock")).toMatchObject({ mosh: 1 });
+    const c = planChoreography(instrumental, 132);
+    const wave = c.phrases.filter((p) => crowdAt(c, mid(p)).wave > 0.5);
+    expect(wave.length).toBeGreaterThan(0);
+    for (const p of wave.filter((x) => !x.turn)) expect([p.camera, p.cut]).toContain("totale");
+  });
+
   it("folgt dem Song, deterministisch, mit weichem Übergang", () => {
     const chorus = phraseOf("chorus");
     expect(crowdAt(plan, mid(chorus)).jump).toBe(1);

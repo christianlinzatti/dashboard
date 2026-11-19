@@ -31,6 +31,7 @@ import { DEMO_TODAY } from "@/lib/song-context/fixtures";
 import { todayLocal } from "@/lib/concerts/display";
 import { ReadySignal } from "./ReadySignal";
 import { PhotoWall } from "./PhotoWall";
+import { chorusKeyword, forcedWallPattern, wallPattern } from "@/lib/stage/wall";
 import { LogoWall } from "./LogoWall";
 import { wallPhotoAt } from "@/lib/info/display";
 import { displayUrl } from "@/lib/info/photos";
@@ -221,6 +222,8 @@ function Scene({
       data-weather={weather ?? "kein"}
       data-evening={phase}
       data-wall-logo={logo && theme.wall === "led" ? displayUrl(logo, 640) : undefined}
+      data-wall={theme.wall === "led" ? (forcedWallPattern() ?? wallPattern(song)) : undefined}
+      data-wall-word={theme.wall === "led" ? (chorusKeyword(song.lyrics) ?? undefined) : undefined}
     >
       <Canvas
         data-testid="stage"
