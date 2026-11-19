@@ -11,12 +11,20 @@ import { createShowDirector, DEFAULT_SHOW_MODEL, type DirectorResult, type SongF
 import OpenAI from "openai";
 import { createOpenAiShowDirector, DEFAULT_OPENAI_SHOW_MODEL } from "./director-openai";
 import { collectTags, type MusicTags } from "./tags";
+import { aiTraceSchema, type AiTrace, type AiTraceInfo } from "./trace";
 
 export type ShowQuery = { trackKey: string; title: string; artists: string[]; album?: string; year?: number; durationMs: number };
 export type ShowResponse = MusicTags & {
   brief: ShowBrief | null;
   /** woher die Regie kommt: KI-Modell oder nur die eingebauten Regeln */
-  source: { tags: "quellen" | "keine"; brief: string | null };
+  source: {
+    tags: "quellen" | "keine";
+    brief: string | null;
+    /** Brief kam aus dem Server-Cache (die KI wurde für diesen Song schon früher gefragt) */
+    cached?: boolean;
+    /** warum es keinen Brief gibt */
+    reason?: DirectorResult["reason"];
+  };
 };
 
 type Deps = {
@@ -69,7 +77,12 @@ export function createShowService(deps: Deps) {
     const model = deps.model || DEFAULT_SHOW_MODEL;
     const briefKey = `show:brief:v1:${model}:${q.trackKey}`;
     const hit = await deps.cache.get<{ brief: ShowBrief | null }>(briefKey);
-    if (hit) return { ...merge(tags, hit.brief), brief: hit.brief, source: { ...source, brief: hit.brief ? model : null } };
+    if (hit)
+      return {
+        ...merge(tags, hit.brief),
+        brief: hit.brief,
+        source: { ...source, brief: hit.brief ? model : null, cached: true },
+      };
 
     const stored = await deps.cache.get<{ lyrics: Lyrics | null }>(foundKey(q.trackKey));
     const lyrics = stored?.lyrics;
@@ -84,8 +97,24 @@ export function createShowService(deps: Deps) {
     if (r.brief) await deps.cache.set(briefKey, { brief: r.brief }, CACHE_TTL.showBrief);
     else if (r.reason === "abgelehnt" || r.reason === "ungültig")
       await deps.cache.set(briefKey, { brief: null }, CACHE_TTL.showBriefMissing);
-    return { ...merge(tags, r.brief), brief: r.brief, source: { ...source, brief: r.brief ? model : null } };
+    // Frage und Antwort fürs Debug-Panel (auch bei Fehlern – gerade dann interessant)
+    if (r.trace)
+      await deps.cache.set(traceKey(model, q.trackKey), r.trace, r.brief ? CACHE_TTL.showBrief : CACHE_TTL.showBriefMissing);
+    return {
+      ...merge(tags, r.brief),
+      brief: r.brief,
+      source: { ...source, brief: r.brief ? model : null, ...(r.reason ? { reason: r.reason } : {}) },
+    };
   };
+}
+
+const traceKey = (model: string, trackKey: string) => `show:trace:v1:${model}:${trackKey}`;
+
+/** Letzte Frage und Antwort der KI-Regie zu einem Song (Debug-Panel) */
+export async function readShowTrace(cache: Cache, model: string, trackKey: string): Promise<AiTrace | null> {
+  const raw = await cache.get<unknown>(traceKey(model, trackKey));
+  const p = aiTraceSchema.safeParse(raw);
+  return p.success ? p.data : null;
 }
 
 /** Die Regie darf Genres und Stimmung ergänzen, wenn die Quellen nichts wissen */
@@ -130,4 +159,11 @@ export function showFor(q: ShowQuery) {
     });
   }
   return shared(q);
+}
+
+/** Für /api/show/trace: welche KI eingerichtet ist und was sie zuletzt zu diesem Song gefragt und geantwortet hat */
+export async function showTrace(trackKey: string): Promise<AiTraceInfo> {
+  const ai = showAi(process.env);
+  if (!ai) return { ai: null, trace: null };
+  return { ai, trace: await readShowTrace(getCache(), ai.model, trackKey) };
 }

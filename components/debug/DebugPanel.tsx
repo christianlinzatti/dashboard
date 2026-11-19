@@ -7,17 +7,28 @@ import { perf } from "@/lib/stage/perf";
 import { songContext } from "@/lib/song-context/store";
 import { sendDebugContext } from "@/lib/live/debug-upload";
 import { browserEnv, diagnose, type Finding } from "@/lib/debug/diagnose";
+import type { AiTraceInfo } from "@/lib/show/trace";
+import { AiTraceView, useAiTrace } from "./AiTraceView";
 import { Findings } from "./Findings";
 
 /** Song-Kontext: kompakt (Lyrics-Zeilen nur gezählt) oder vollständig */
-function contextObject(full: boolean) {
+function contextObject(full: boolean, ki?: AiTraceInfo | null) {
   const { song, playback, live, derived, positionMs, frozen } = songContext.getState();
   const shown = full
     ? song
     : song && { ...song, lyrics: song.lyrics && { ...song.lyrics, lines: `${song.lyrics.lines.length} Zeilen` } };
-  return { positionMs: Math.round(positionMs), frozen, derived, playback, live, env: browserEnv(), song: shown };
+  // KI-Frage und -Antwort nur vollständig (Kopieren, Datei, Server) – in der laufenden Anzeige steht sie eigens
+  return {
+    positionMs: Math.round(positionMs),
+    frozen,
+    derived,
+    playback,
+    live,
+    env: browserEnv(),
+    song: shown,
+    ...(full && ki ? { ki } : {}),
+  };
 }
-const contextJson = (full: boolean) => JSON.stringify(contextObject(full), null, 2);
 
 /** Im Live-Modus so oft an den Server senden */
 const LIVE_SEND_MS = 10_000;
@@ -44,6 +55,12 @@ export function DebugPanel() {
   const fps = useStore(perf, (s) => s.fps);
   const quality = useStore(perf, (s) => s.quality);
   const [log, setLog] = useState<LogEntry[] | null>(null);
+  const ki = useAiTrace();
+  const kiRef = useRef(ki);
+  useEffect(() => {
+    kiRef.current = ki;
+  }, [ki]);
+  const contextJson = (full: boolean) => JSON.stringify(contextObject(full, ki), null, 2);
 
   // Kiosk-Protokoll (nur angemeldet; in Demos ohne Anmeldung bleibt es aus)
   useEffect(() => {
@@ -76,11 +93,20 @@ export function DebugPanel() {
   // Live: alle 10 s an den Server (zum Mitlesen auf einem anderen Gerät unter /debug)
   useEffect(() => {
     if (!liveSend) return;
-    const send = () => void sendDebugContext(contextObject(true)).then((m) => setNote(m));
+    const send = () => void sendDebugContext(contextObject(true, kiRef.current)).then((m) => setNote(m));
     send();
     const id = setInterval(send, LIVE_SEND_MS);
     return () => clearInterval(id);
   }, [liveSend]);
+
+  const copyText = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      flash("Kopiert ✓");
+    } catch {
+      flash("Kopieren nicht erlaubt – Text markieren und kopieren");
+    }
+  };
 
   const flash = (text: string) => {
     setNote(text);
@@ -150,7 +176,7 @@ export function DebugPanel() {
         <button
           type="button"
           className={button}
-          onClick={() => void sendDebugContext(contextObject(true)).then(flash)}
+          onClick={() => void sendDebugContext(contextObject(true, ki)).then(flash)}
           data-testid="debug-send"
         >
           An Server
@@ -214,6 +240,10 @@ export function DebugPanel() {
       <h2 className="mb-1 font-sans text-sm font-bold text-white">Kurzdiagnose</h2>
       <div className="mb-3">
         <Findings items={findings} />
+      </div>
+      <h2 className="mb-1 font-sans text-sm font-bold text-white">KI-Regie: Frage und Antwort</h2>
+      <div className="mb-3">
+        <AiTraceView info={ki} onCopy={(t) => void copyText(t)} />
       </div>
       <h2 className="mb-2 font-sans text-sm font-bold text-white">Song-Kontext</h2>
       <pre ref={pre} className="whitespace-pre-wrap break-all">

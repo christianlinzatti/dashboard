@@ -8,7 +8,7 @@ import { planLyricsEffects } from "@/lib/lyrics/director";
 import { foundKey } from "@/lib/lyrics/service";
 import { briefFor, energyLevel, sanitizeBrief, type ShowBrief } from "@/lib/show/brief";
 import { createShowDirector, DEFAULT_SHOW_MODEL, describeSong, SHOW_SYSTEM_PROMPT, type SongFacts } from "@/lib/show/director";
-import { createShowService, lyricsExcerpt, showAi } from "@/lib/show/service";
+import { createShowService, lyricsExcerpt, readShowTrace, showAi } from "@/lib/show/service";
 import { createOpenAiShowDirector, DEFAULT_OPENAI_SHOW_MODEL } from "@/lib/show/director-openai";
 import { audioDbTags, cleanTags, collectTags, lastfmTags, moodFrom } from "@/lib/show/tags";
 import { neonlicht } from "@/lib/song-context/fixtures/neonlicht";
@@ -193,8 +193,27 @@ describe("KI-Regie", () => {
   };
 
   it("ein Aufruf mit strukturierter Ausgabe, niedrigem Aufwand und Ausweich-Fallback", async () => {
-    const { client, parse } = fake({ stop_reason: "end_turn", parsed_output: brief });
-    expect(await createShowDirector({ client })(facts)).toEqual({ brief });
+    const { client, parse } = fake({
+      stop_reason: "end_turn",
+      parsed_output: brief,
+      model: "claude-opus-5-5",
+      content: [{ type: "text", text: '{"stage":"club"}' }],
+      usage: { input_tokens: 1500, output_tokens: 300 },
+    });
+    const done = await createShowDirector({ client })(facts);
+    expect(done).toMatchObject({ brief });
+    // Mitschrift: komplette Frage und rohe Antwort
+    expect(done.trace).toMatchObject({
+      provider: "anthropic",
+      model: DEFAULT_SHOW_MODEL,
+      servedModel: "claude-opus-5-5",
+      system: SHOW_SYSTEM_PROMPT,
+      user: describeSong(facts),
+      response: '{"stage":"club"}',
+      stop: "end_turn",
+      usage: { input: 1500, output: 300 },
+      outcome: "ok",
+    });
     const args = parse.mock.calls[0]![0] as {
       model: string;
       betas: string[];
@@ -223,11 +242,11 @@ describe("KI-Regie", () => {
   });
 
   it("Ablehnung, unbrauchbare Antwort und API-Fehler werden unterschieden", async () => {
-    expect(await createShowDirector(fake({ stop_reason: "refusal", parsed_output: null }))(facts)).toEqual({
+    expect(await createShowDirector(fake({ stop_reason: "refusal", parsed_output: null }))(facts)).toMatchObject({
       brief: null,
       reason: "abgelehnt",
     });
-    expect(await createShowDirector(fake({ stop_reason: "end_turn", parsed_output: null }))(facts)).toEqual({
+    expect(await createShowDirector(fake({ stop_reason: "end_turn", parsed_output: null }))(facts)).toMatchObject({
       brief: null,
       reason: "ungültig",
     });
@@ -237,10 +256,11 @@ describe("KI-Regie", () => {
       });
       return createShowDirector({ client: { beta: { messages: { parse } } } as unknown as Anthropic })(facts);
     };
-    expect(await failing(401)).toEqual({ brief: null, reason: "konfiguration" });
-    expect(await failing(400)).toEqual({ brief: null, reason: "konfiguration" });
-    expect(await failing(429)).toEqual({ brief: null, reason: "vorübergehend" });
-    expect(await failing(529)).toEqual({ brief: null, reason: "vorübergehend" });
+    expect(await failing(401)).toMatchObject({ brief: null, reason: "konfiguration", trace: { outcome: "konfiguration" } });
+    expect((await failing(401)).trace!.error).toContain("m");
+    expect(await failing(400)).toMatchObject({ brief: null, reason: "konfiguration" });
+    expect(await failing(429)).toMatchObject({ brief: null, reason: "vorübergehend" });
+    expect(await failing(529)).toMatchObject({ brief: null, reason: "vorübergehend" });
     const broken = {
       beta: { messages: { parse: async () => Promise.reject(new TypeError("Programmfehler")) } },
     } as unknown as Anthropic;
@@ -307,6 +327,40 @@ describe("Show-Dienst", () => {
     expect(ok.source).toEqual({ tags: "keine", brief: "claude-haiku-5-5" });
   });
 
+  it("merkt sich Frage und Antwort der KI (auch bei Fehlern) und meldet Cache-Treffer", async () => {
+    const cache = memoryCache();
+    const trace = {
+      provider: "anthropic" as const,
+      model: DEFAULT_SHOW_MODEL,
+      at: 1,
+      ms: 1200,
+      system: SHOW_SYSTEM_PROMPT,
+      user: "Titel: Neonlicht",
+      response: JSON.stringify(brief),
+      outcome: "ok" as const,
+    };
+    const direct = vi.fn(async () => ({ brief, trace }));
+    const show = createShowService({ cache, http: http(), audioDbKey: "123", direct });
+    expect((await show(q)).source.cached).toBeUndefined();
+    expect(await readShowTrace(cache, DEFAULT_SHOW_MODEL, "t1")).toEqual(trace);
+    expect((await show(q)).source).toMatchObject({ brief: DEFAULT_SHOW_MODEL, cached: true });
+    expect(await readShowTrace(cache, "anderes-modell", "t1")).toBeNull();
+
+    const broken = createShowService({
+      cache,
+      http: http(),
+      audioDbKey: "123",
+      direct: async () => ({
+        brief: null,
+        reason: "konfiguration" as const,
+        trace: { ...trace, response: undefined, outcome: "konfiguration" as const, error: "401 invalid x-api-key" },
+      }),
+      model: "m2",
+    });
+    expect((await broken(q)).source).toMatchObject({ brief: null, reason: "konfiguration" });
+    expect(await readShowTrace(cache, "m2", "t1")).toMatchObject({ outcome: "konfiguration", error: "401 invalid x-api-key" });
+  });
+
   it("Textauszug: ohne Wiederholungen und begrenzt", () => {
     const excerpt = lyricsExcerpt(neonlicht.lyrics)!;
     const lines = excerpt.split("\n");
@@ -361,6 +415,15 @@ describe("Regie im Dashboard", () => {
       show: { state: "missing", provider: "regeln" },
       music: { state: "missing" },
     });
+    // Kurzdiagnose erfährt, ob der Brief aus dem Cache kam oder warum es keinen gibt
+    expect(showPatch(live, { ...payload, source: { ...payload.source, cached: true } }, true).status!.show!.detail).toContain(
+      "Server-Cache",
+    );
+    expect(late.status!.show!.detail).toBe("erst beim nächsten Abspielen");
+    expect(
+      showPatch(live, { ...payload, brief: null, source: { tags: "quellen", brief: null, reason: "konfiguration" } }, true)
+        .status!.show!.detail,
+    ).toContain("falsch eingerichtet");
   });
 });
 
@@ -372,8 +435,25 @@ describe("KI-Regie über OpenAI", () => {
   };
 
   it("gleicher Auftrag und gleiches Schema wie bei Claude, strikte Ausgabe, niedriger Aufwand", async () => {
-    const { client, parse } = fakeOpenAi({ choices: [{ message: { parsed: brief, refusal: null } }] });
-    expect(await createOpenAiShowDirector({ client })(facts)).toEqual({ brief });
+    const { client, parse } = fakeOpenAi({
+      model: "gpt-5.4-mini-2026",
+      choices: [{ message: { parsed: brief, refusal: null, content: '{"stage":"club"}' }, finish_reason: "stop" }],
+      usage: { prompt_tokens: 1400, completion_tokens: 250 },
+    });
+    expect(await createOpenAiShowDirector({ client })(facts)).toMatchObject({
+      brief,
+      trace: {
+        provider: "openai",
+        model: DEFAULT_OPENAI_SHOW_MODEL,
+        servedModel: "gpt-5.4-mini-2026",
+        system: SHOW_SYSTEM_PROMPT,
+        user: describeSong(facts),
+        response: '{"stage":"club"}',
+        stop: "stop",
+        usage: { input: 1400, output: 250 },
+        outcome: "ok",
+      },
+    });
     const args = parse.mock.calls[0]![0] as {
       model: string;
       reasoning_effort: string;
@@ -396,25 +476,27 @@ describe("KI-Regie über OpenAI", () => {
   it("Ablehnung, unbrauchbare Antwort und API-Fehler", async () => {
     expect(
       await createOpenAiShowDirector(fakeOpenAi({ choices: [{ message: { parsed: null, refusal: "Nein." } }] }))(facts),
-    ).toEqual({
+    ).toMatchObject({
       brief: null,
       reason: "abgelehnt",
     });
-    expect(await createOpenAiShowDirector(fakeOpenAi({ choices: [{ message: { parsed: { stage: "mond" } } }] }))(facts)).toEqual({
+    expect(
+      await createOpenAiShowDirector(fakeOpenAi({ choices: [{ message: { parsed: { stage: "mond" } } }] }))(facts),
+    ).toMatchObject({
       brief: null,
       reason: "ungültig",
     });
-    expect(await createOpenAiShowDirector(fakeOpenAi({ choices: [] }))(facts)).toEqual({ brief: null, reason: "ungültig" });
+    expect(await createOpenAiShowDirector(fakeOpenAi({ choices: [] }))(facts)).toMatchObject({ brief: null, reason: "ungültig" });
     const failing = (status: number) => {
       const parse = vi.fn(async () => {
         throw OpenAI.APIError.generate(status, { error: { message: "m" } }, "m", new Headers());
       });
       return createOpenAiShowDirector({ client: { chat: { completions: { parse } } } as unknown as OpenAI })(facts);
     };
-    expect(await failing(401)).toEqual({ brief: null, reason: "konfiguration" });
-    expect(await failing(403)).toEqual({ brief: null, reason: "konfiguration" });
-    expect(await failing(429)).toEqual({ brief: null, reason: "vorübergehend" });
-    expect(await failing(500)).toEqual({ brief: null, reason: "vorübergehend" });
+    expect(await failing(401)).toMatchObject({ brief: null, reason: "konfiguration" });
+    expect(await failing(403)).toMatchObject({ brief: null, reason: "konfiguration" });
+    expect(await failing(429)).toMatchObject({ brief: null, reason: "vorübergehend" });
+    expect(await failing(500)).toMatchObject({ brief: null, reason: "vorübergehend" });
     const broken = {
       chat: { completions: { parse: async () => Promise.reject(new TypeError("Programmfehler")) } },
     } as unknown as OpenAI;

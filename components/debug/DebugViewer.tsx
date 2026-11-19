@@ -5,6 +5,7 @@ import type { DebugEntry } from "@/lib/live/debug-upload";
 import type { LogEntry } from "@/lib/live/log-schema";
 import { diagnose } from "@/lib/debug/diagnose";
 import { Findings } from "./Findings";
+import { AiTraceView, parseTraceInfo } from "./AiTraceView";
 
 type State = { kind: "laden" } | { kind: "login" } | { kind: "fehler"; text: string } | { kind: "ok"; entry: DebugEntry | null };
 
@@ -138,31 +139,40 @@ export function DebugViewer() {
           </section>
         )}
 
+        {entry && "ki" in entry.context && (
+          <section className="mt-4 rounded-lg bg-white/5 p-3" data-testid="viewer-ai">
+            <h2 className="mb-2 text-sm font-bold">KI-Regie: Frage und Antwort</h2>
+            <AiTraceView info={parseTraceInfo(entry.context.ki)} onCopy={(t) => void copy(t)} />
+          </section>
+        )}
+
         {entry && (
           <div className="mt-4 space-y-2" data-testid="viewer-sections">
-            {Object.entries(entry.context).map(([key, value]) => {
-              const part = JSON.stringify(value, null, 2);
-              return (
-                <details key={key} open={key !== "song"} className="rounded-lg bg-white/5 p-3">
-                  <summary className="cursor-pointer select-none font-mono text-sm font-bold text-emerald-300">
-                    {key}
-                    <button
-                      type="button"
-                      className="ml-3 rounded bg-white/10 px-2 py-0.5 font-sans text-xs font-normal text-white"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        void copy(part);
-                      }}
-                    >
-                      kopieren
-                    </button>
-                  </summary>
-                  <pre className="mt-2 select-text overflow-x-auto whitespace-pre-wrap break-all font-mono text-xs leading-snug text-emerald-100">
-                    {part}
-                  </pre>
-                </details>
-              );
-            })}
+            {Object.entries(entry.context)
+              .filter(([key]) => key !== "ki")
+              .map(([key, value]) => {
+                const part = JSON.stringify(value, null, 2);
+                return (
+                  <details key={key} open={key !== "song"} className="rounded-lg bg-white/5 p-3">
+                    <summary className="cursor-pointer select-none font-mono text-sm font-bold text-emerald-300">
+                      {key}
+                      <button
+                        type="button"
+                        className="ml-3 rounded bg-white/10 px-2 py-0.5 font-sans text-xs font-normal text-white"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          void copy(part);
+                        }}
+                      >
+                        kopieren
+                      </button>
+                    </summary>
+                    <pre className="mt-2 select-text overflow-x-auto whitespace-pre-wrap break-all font-mono text-xs leading-snug text-emerald-100">
+                      {part}
+                    </pre>
+                  </details>
+                );
+              })}
           </div>
         )}
 

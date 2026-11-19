@@ -45,5 +45,9 @@ describe("Kurzdiagnose", () => {
     expect(regie({ state: "missing", provider: "regeln" }).value).toContain("festen Regeln");
     expect(regie({ state: "error", detail: "Regie nicht erreichbar" })).toMatchObject({ level: "fehler" });
     expect(regie().value).toBe("noch nicht gefragt");
+    expect(regie({ state: "missing", provider: "regeln", detail: "KI gerade nicht erreichbar" })).toMatchObject({
+      level: "warnung",
+      value: expect.stringContaining("nicht erreichbar"),
+    });
   });
 });

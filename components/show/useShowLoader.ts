@@ -15,8 +15,25 @@ export type ShowPayload = {
   genres: string[];
   mood?: Mood;
   brief: ShowBrief | null;
-  source: { tags: string; brief: string | null };
+  source: { tags: string; brief: string | null; cached?: boolean; reason?: string };
 };
+
+const REASONS: Record<string, string> = {
+  abgelehnt: "KI hat abgelehnt",
+  ungültig: "KI-Antwort unbrauchbar",
+  konfiguration: "KI falsch eingerichtet (Schlüssel/Modell prüfen)",
+  vorübergehend: "KI gerade nicht erreichbar",
+};
+
+/** Zusatz für die Kurzdiagnose: aus dem Cache oder warum es keinen Brief gibt */
+function showDetail(r: ShowPayload, late: boolean): string | undefined {
+  const parts = [
+    r.source.cached && "aus dem Server-Cache (früher gefragt)",
+    r.source.reason && (REASONS[r.source.reason] ?? r.source.reason),
+    late && "erst beim nächsten Abspielen",
+  ].filter(Boolean);
+  return parts.length ? parts.join(" · ") : undefined;
+}
 
 export function showUrl(song: SongStatic) {
   const year = Number(song.track.releaseDate?.slice(0, 4));
@@ -37,7 +54,7 @@ export function showPatch(song: SongStatic, r: ShowPayload, early: boolean): Par
     return {
       status: {
         ...song.status,
-        show: { state: "ok", provider: r.source.brief ?? "regeln", detail: "erst beim nächsten Abspielen" },
+        show: { state: "ok", provider: r.source.brief ?? "regeln", detail: showDetail(r, true) },
       },
     };
   const genres = song.music.genres.length ? song.music.genres : r.genres;
@@ -47,7 +64,7 @@ export function showPatch(song: SongStatic, r: ShowPayload, early: boolean): Par
     status: {
       ...song.status,
       music: { state: genres.length ? "ok" : "missing", provider: song.music.genres.length ? "spotify" : "theaudiodb/last.fm" },
-      show: { state: r.brief ? "ok" : "missing", provider: r.source.brief ?? "regeln" },
+      show: { state: r.brief ? "ok" : "missing", provider: r.source.brief ?? "regeln", detail: showDetail(r, false) },
     },
   };
 }

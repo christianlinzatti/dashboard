@@ -3,6 +3,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { THEMES, themeIds } from "@/lib/stage/themes";
 import { sanitizeBrief, showBriefSchema, type ShowBrief } from "./brief";
+import { errorText, type AiTrace } from "./trace";
 
 /** Was die KI-Regie über den Song erfährt */
 export type SongFacts = {
@@ -67,7 +68,12 @@ function describe(f: SongFacts): string {
   return lines.filter(Boolean).join("\n");
 }
 
-export type DirectorResult = { brief: ShowBrief | null; reason?: "abgelehnt" | "ungültig" | "konfiguration" | "vorübergehend" };
+export type DirectorResult = {
+  brief: ShowBrief | null;
+  reason?: "abgelehnt" | "ungültig" | "konfiguration" | "vorübergehend";
+  /** komplette Frage und Antwort (fürs Debug-Panel) */
+  trace?: AiTrace;
+};
 
 /**
  * KI-Regie: ein Aufruf je Song (Ergebnis wird gecacht). Strukturierte Ausgabe nach dem Brief-Schema,
@@ -76,6 +82,17 @@ export type DirectorResult = { brief: ShowBrief | null; reason?: "abgelehnt" | "
 export function createShowDirector(deps: { client: Anthropic; model?: string }) {
   const model = deps.model || DEFAULT_SHOW_MODEL;
   return async function direct(facts: SongFacts): Promise<DirectorResult> {
+    const user = describe(facts);
+    const t0 = Date.now();
+    const trace = (rest: Omit<AiTrace, "provider" | "model" | "at" | "ms" | "system" | "user">): AiTrace => ({
+      provider: "anthropic",
+      model,
+      at: t0,
+      ms: Date.now() - t0,
+      system: SHOW_SYSTEM_PROMPT,
+      user,
+      ...rest,
+    });
     try {
       const res = await deps.client.beta.messages.parse({
         model,
@@ -83,21 +100,30 @@ export function createShowDirector(deps: { client: Anthropic; model?: string }) 
         betas: ["server-side-fallback-2026-07-01"],
         fallbacks: "default",
         system: SHOW_SYSTEM_PROMPT,
-        messages: [{ role: "user", content: describe(facts) }],
+        messages: [{ role: "user", content: user }],
         output_config: { effort: "low", format: betaZodOutputFormat(showBriefSchema) },
       });
-      if (res.stop_reason === "refusal") return { brief: null, reason: "abgelehnt" };
+      const seen = {
+        servedModel: res.model,
+        response: (res.content ?? []).flatMap((b) => (b.type === "text" ? [b.text] : [])).join("") || undefined,
+        stop: res.stop_reason ?? undefined,
+        usage: res.usage && { input: res.usage.input_tokens, output: res.usage.output_tokens },
+      };
+      if (res.stop_reason === "refusal")
+        return { brief: null, reason: "abgelehnt", trace: trace({ ...seen, outcome: "abgelehnt" }) };
       const brief = sanitizeBrief(res.parsed_output);
-      return brief ? { brief } : { brief: null, reason: "ungültig" };
+      return brief
+        ? { brief, trace: trace({ ...seen, outcome: "ok" }) }
+        : { brief: null, reason: "ungültig", trace: trace({ ...seen, outcome: "ungültig" }) };
     } catch (e) {
       if (
         e instanceof Anthropic.AuthenticationError ||
         e instanceof Anthropic.PermissionDeniedError ||
         e instanceof Anthropic.BadRequestError
       )
-        return { brief: null, reason: "konfiguration" };
+        return { brief: null, reason: "konfiguration", trace: trace({ outcome: "konfiguration", error: errorText(e) }) };
       if (e instanceof Anthropic.RateLimitError || e instanceof Anthropic.APIConnectionError || e instanceof Anthropic.APIError)
-        return { brief: null, reason: "vorübergehend" };
+        return { brief: null, reason: "vorübergehend", trace: trace({ outcome: "vorübergehend", error: errorText(e) }) };
       throw e;
     }
   };

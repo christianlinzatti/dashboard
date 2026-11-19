@@ -107,13 +107,36 @@ test.describe("Dashboard", () => {
   });
 
   test("Debug: Song-Kontext an den Server senden und auf einem anderen Gerät ansehen", async ({ page, browser }) => {
+    // KI-Mitschrift (angemeldet nachgebildet): komplette Frage und Antwort im Panel
+    await page.route("**/api/show/trace**", (r) =>
+      r.fulfill({
+        json: {
+          ai: { provider: "openai", model: "gpt-5.4-mini" },
+          trace: {
+            provider: "openai",
+            model: "gpt-5.4-mini",
+            at: Date.now(),
+            ms: 2100,
+            system: "Du bist die Show-Regie von „Sonic Stage“.",
+            user: "Titel: Neonlicht\nKünstler: Mira Sol",
+            response: '{"stage":"club","motto":"Neonnacht"}',
+            usage: { input: 1800, output: 240 },
+            outcome: "ok",
+          },
+        },
+      }),
+    );
     // Demo ist nicht angemeldet: der Server antwortet ehrlich mit 401
     await page.goto("/?demo=neonlicht&t=46000&debug=1&qualitaet=niedrig");
     await ready(page);
+    const ai = page.getByTestId("ai-trace");
+    await expect(ai).toContainText("gpt-5.4-mini");
+    await expect(ai).toContainText("Titel: Neonlicht");
+    await expect(ai).toContainText('"motto": "Neonnacht"');
     await page.getByTestId("debug-send").click();
     await expect(page.getByRole("status")).toContainText("Nicht angemeldet");
     // angemeldet (nachgebildet): der gesendete Kontext kommt an
-    let sent: { context: { song: { trackKey: string } } } | null = null;
+    let sent: { context: { song: { trackKey: string }; ki?: { trace: { user: string } } } } | null = null;
     await page.route("**/api/debug-context", async (r) => {
       sent = JSON.parse(r.request().postData() ?? "null");
       await r.fulfill({ json: { ok: true } });
@@ -121,6 +144,7 @@ test.describe("Dashboard", () => {
     await page.getByTestId("debug-send").click();
     await expect(page.getByRole("status")).toContainText("An Server gesendet");
     expect(sent!.context.song.trackKey).toBe("demo-neonlicht");
+    expect(sent!.context.ki?.trace.user).toContain("Titel: Neonlicht");
 
     // zweites Gerät: /debug zeigt, was gesendet wurde
     const phone = await browser.newPage({ viewport: { width: 390, height: 844 } });
@@ -131,6 +155,7 @@ test.describe("Dashboard", () => {
     await phone.goto("/debug");
     await expect(phone.getByTestId("viewer-sections")).toContainText("demo-neonlicht");
     await expect(phone.getByTestId("viewer-age")).toContainText("gesendet vor");
+    await expect(phone.getByTestId("viewer-ai")).toContainText('"motto": "Neonnacht"');
     // ohne Anmeldung: Hinweis mit Anmelde-Link
     await phone.unroute("**/api/debug-context");
     await phone.reload();

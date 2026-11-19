@@ -211,6 +211,8 @@ Für das Konzert-Erlebnis wurde die Bühne in vier Schichten gegliedert. Jede Sc
 ```
 /api/show   Session → Tags (TheAudioDB, Last.fm; Cache 30 d) → KI-Brief (Claude oder OpenAI, strukturierte Ausgabe;
             liest Aufbau und Textauszug aus dem Lyrics-Cache; Cache 30 d) → { genres, mood, brief, source }
+            Mitschrift je Song und Modell (komplette Frage, rohe Antwort, Dauer, Token, Fehler) im selben Cache
+/api/show/trace   Session → { ai, trace } für Debug-Panel und /debug
 ```
 
 **Nächste Ausbaustufen** stehen im Konzept, Abschnitt 13 (Stufen 10–14).

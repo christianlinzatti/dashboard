@@ -97,7 +97,11 @@ function showFinding(s: { state?: string; provider?: string; detail?: string } |
         ? { label, value: `ja – ${s.provider}${hasBrief ? " (Bühne, Abschnitte, Motto)" : ""}${extra}`, level: "ok" }
         : { label, value: `nein – feste Regeln${extra}`, level: "info" };
     case "missing":
-      return { label, value: "nein – keine KI eingerichtet oder keine Antwort, Show nach festen Regeln", level: "info" };
+      return {
+        label,
+        value: s.detail ? `nein – ${s.detail}, Show nach festen Regeln` : "nein – keine KI eingerichtet, Show nach festen Regeln",
+        level: s.detail ? "warnung" : "info",
+      };
     case "loading":
       return { label, value: "wird gefragt …", level: "info" };
     case "error":
