@@ -223,6 +223,70 @@
             "zeig die {buehne} Bühne",
             "mach eine {buehne} Bühne"
           ]
+        },
+        {
+          "name": "AbendIntent",
+          "slots": [],
+          "samples": [
+            "wie war der Abend",
+            "wie war der Abend bisher",
+            "was lief heute",
+            "was lief heute Abend",
+            "Rückblick",
+            "gib mir einen Rückblick",
+            "wie viele Songs liefen heute"
+          ]
+        },
+        {
+          "name": "BildschirmIntent",
+          "slots": [
+            {
+              "name": "zustand",
+              "type": "ZUSTAND"
+            }
+          ],
+          "samples": [
+            "Bildschirm {zustand}",
+            "mach den Bildschirm {zustand}",
+            "schalte den Bildschirm {zustand}",
+            "Display {zustand}",
+            "Monitor {zustand}"
+          ]
+        },
+        {
+          "name": "LyricsVersatzIntent",
+          "slots": [
+            {
+              "name": "richtung",
+              "type": "RICHTUNG"
+            }
+          ],
+          "samples": [
+            "Lyrics {richtung}",
+            "Text {richtung}",
+            "die Lyrics sollen {richtung} kommen",
+            "zeig den Text {richtung}",
+            "Liedtext {richtung}"
+          ]
+        },
+        {
+          "name": "EffektIntent",
+          "slots": [
+            {
+              "name": "effekt",
+              "type": "EFFEKT"
+            }
+          ],
+          "samples": [
+            "{effekt}",
+            "zünde {effekt}",
+            "zünde das {effekt}",
+            "mach {effekt}",
+            "starte {effekt}",
+            "{effekt} bitte",
+            "lass {effekt} los",
+            "Zeit für {effekt}"
+          ]
         }
       ],
       "types": [
@@ -349,6 +413,86 @@
               "name": {
                 "value": "automatisch",
                 "synonyms": ["auto", "passend", "nach Genre"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "RICHTUNG",
+          "values": [
+            {
+              "id": "spaeter",
+              "name": {
+                "value": "später",
+                "synonyms": ["verzögert", "langsamer", "nach hinten"]
+              }
+            },
+            {
+              "id": "frueher",
+              "name": {
+                "value": "früher",
+                "synonyms": ["schneller", "vorher", "nach vorne"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EFFEKT",
+          "values": [
+            {
+              "id": "konfetti",
+              "name": {
+                "value": "Konfetti",
+                "synonyms": ["Konfettiregen", "Konfettikanone", "Konfetti Kanone"]
+              }
+            },
+            {
+              "id": "feuerwerk",
+              "name": {
+                "value": "Feuerwerk",
+                "synonyms": ["Raketen"]
+              }
+            },
+            {
+              "id": "flammen",
+              "name": {
+                "value": "Flammen",
+                "synonyms": ["Feuer", "Flammenwerfer"]
+              }
+            },
+            {
+              "id": "schaum",
+              "name": {
+                "value": "Schaum",
+                "synonyms": ["Schaumparty", "Schaumkanone", "Schaumkanonen"]
+              }
+            },
+            {
+              "id": "co2",
+              "name": {
+                "value": "Nebel",
+                "synonyms": ["CO2", "Nebelstoß", "Kältenebel"]
+              }
+            },
+            {
+              "id": "pyro",
+              "name": {
+                "value": "Funkenfontänen",
+                "synonyms": ["Pyro", "Pyrotechnik", "Fontänen"]
+              }
+            },
+            {
+              "id": "funken",
+              "name": {
+                "value": "kalte Funken",
+                "synonyms": ["Funken", "Funkenregen"]
+              }
+            },
+            {
+              "id": "glitzer",
+              "name": {
+                "value": "Spiegelkugel",
+                "synonyms": ["Discokugel", "Glitzer"]
               }
             }
           ]

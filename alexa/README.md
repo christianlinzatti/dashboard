@@ -21,12 +21,16 @@ und Bühnenqualität des Dashboards.
 | „Alexa, sag Sonic Stage Stroboskop aus“ | Strobe bei Drops aus |
 | „Alexa, sag Sonic Stage Qualität niedrig“ | Bühnenqualität umstellen |
 | „Alexa, sag Sonic Stage Bühne Weltraum“ | Bühne wechseln (Club, Festival, Synthwave, Jazz, Weltraum, Stadion, Strand, Lagerhalle, Kathedrale, automatisch) |
+| „Alexa, sag Sonic Stage Konfetti“ | Effekt zünden: Konfetti, Feuerwerk, Flammen, Schaum, Nebel, Funkenfontänen, kalte Funken, Spiegelkugel – sofern die Bühne ihn hat |
+| „Alexa, sag Sonic Stage Lyrics später“ | Lyrics 0,2 s später (oder „früher“) |
+| „Alexa, sag Sonic Stage Bildschirm aus“ | Bildschirm schwarz (mit Pi-Bridge per HDMI aus) bis zum Antippen oder „Bildschirm an“ |
+| „Alexa, frag Sonic Stage, wie war der Abend“ | Rückblick: wie viele Songs seit wann, Höhepunkt, Zugabe, meistgespielter Künstler – auch nach der Musik |
 
 Nach dem Ändern von `de-DE.json` das Interaktionsmodell in der Alexa-Developer-Console neu einfügen und
 „Build Model“ ausführen.
 
 Befehle erreichen das Dashboard mit seiner nächsten Meldung an den Server: beim Abspielen nach höchstens 15 Sekunden,
-sonst nach höchstens einer Minute. „Merk dir den Song“ gilt dem Song, der beim Sprechen lief – auch wenn er inzwischen
+sonst nach höchstens einer Minute (ist die Fernbedienung am Handy offen, in etwa zwei Sekunden). „Merk dir den Song“ gilt dem Song, der beim Sprechen lief – auch wenn er inzwischen
 gewechselt hat. Wiedergabe-Befehle (nächster Song, Pause) sind deshalb bewusst nicht eingebaut: dafür ist die
 Verzögerung zu groß; Alexa steuert Spotify direkt.
 

@@ -3,7 +3,7 @@ import { daysUntil } from "@/lib/concerts/display";
 import { home } from "@/lib/concerts/geo";
 import { normalizeLine } from "@/lib/lyrics/text";
 import type { CommandInput, Snapshot } from "@/lib/song-context/snapshot";
-import { isThemeChoice, THEMES } from "@/lib/stage/themes";
+import { effectKinds, isThemeChoice, THEMES, type EffectKind } from "@/lib/stage/themes";
 
 /** Nur die Teile der Alexa-Anfrage, die wir brauchen. */
 export const alexaRequestSchema = z.object({
@@ -201,6 +201,35 @@ function triviaAnswer(s: Snapshot, onlySamples: boolean): string {
 
 const onOff = (v: string | undefined) => (v === "an" ? true : v === "aus" ? false : undefined);
 
+/** Uhrzeit in Wien („20:15“) */
+function viennaTime(ms: number) {
+  return new Intl.DateTimeFormat("de-AT", { timeZone: "Europe/Vienna", hour: "2-digit", minute: "2-digit" }).format(ms);
+}
+
+/** „Wie war der Abend?“ – aus dem Rückblick des Kiosks (letzte Meldung, auch wenn die Musik schon aus ist) */
+export function eveningAnswer(s: Snapshot | null): string {
+  const e = s?.evening;
+  if (!e) return "Heute Abend lief noch nicht genug Musik für einen Rückblick.";
+  const dauer = e.minutes >= 60 ? `${Math.floor(e.minutes / 60)} Stunden und ${e.minutes % 60} Minuten` : `${e.minutes} Minuten`;
+  const parts = [`Seit ${viennaTime(e.since)} Uhr liefen ${e.songs} Songs in ${dauer}.`];
+  if (e.highlights.length) parts.push(`Höhepunkt war ${e.highlights.slice(0, 2).join(" und ")}.`);
+  if (e.encores.length) parts.push(`Als Zugabe gab es ${e.encores[0]}.`);
+  if (e.topArtist) parts.push(`Am meisten lief ${e.topArtist.name} mit ${e.topArtist.songs} Songs.`);
+  if (e.liked) parts.push(e.liked === 1 ? "Ein Lieblingssong war auch dabei." : `${e.liked} Lieblingssongs waren dabei.`);
+  return parts.join(" ");
+}
+
+const EFFECT_NAMES: Partial<Record<EffectKind, string>> = {
+  konfetti: "Konfetti",
+  feuerwerk: "Feuerwerk",
+  flammen: "Flammen",
+  schaum: "Schaum",
+  co2: "Nebel",
+  pyro: "Funkenfontänen",
+  funken: "kalte Funken",
+  glitzer: "Spiegelkugel",
+};
+
 /** Beantwortet eine (bereits geprüfte) Alexa-Anfrage. Sprache: Deutsch. */
 export async function handleAlexa(req: AlexaRequest, deps: HandlerDeps) {
   const now = deps.now?.() ?? Date.now();
@@ -313,9 +342,36 @@ export async function handleAlexa(req: AlexaRequest, deps: HandlerDeps) {
       if (!s) return speak("Das Dashboard ist gerade nicht aktiv.");
       return speak(aboutAnswer(s, slotRaw(req, "kuenstler")));
     }
+    case "AbendIntent":
+      // auch nach der Musik: der letzte Stand (bis zu zwei Stunden alt) enthält den Rückblick
+      return speak(eveningAnswer(await deps.getSnapshot()));
+    case "BildschirmIntent": {
+      const on = onOff(slot(req, "zustand"));
+      if (on === undefined) return speak("Soll ich den Bildschirm an- oder ausschalten?", false);
+      await deps.pushCommand({ type: "bildschirm", on });
+      return speak(on ? "Bildschirm an." : "Bildschirm aus. Antippen oder sag Bildschirm an, dann ist er wieder da.");
+    }
+    case "LyricsVersatzIntent": {
+      const r = slot(req, "richtung");
+      const deltaMs = r === "spaeter" ? 200 : r === "frueher" ? -200 : 0;
+      if (!deltaMs) return speak("Sollen die Lyrics früher oder später kommen?", false);
+      await deps.pushCommand({ type: "versatz", deltaMs });
+      return speak(deltaMs > 0 ? "Die Lyrics kommen etwas später." : "Die Lyrics kommen etwas früher.");
+    }
+    case "EffektIntent": {
+      const v = slot(req, "effekt");
+      const kind = (effectKinds as readonly string[]).includes(v ?? "") ? (v as EffectKind) : undefined;
+      if (!kind) return speak("Welcher Effekt? Konfetti, Feuerwerk, Flammen, Schaum oder Nebel.", false);
+      const s = await live();
+      if (!s) return speak("Das Dashboard ist gerade nicht aktiv.");
+      if (s.stage && !s.stage.effects.includes(kind))
+        return speak(`Auf der Bühne ${THEMES[s.stage.id].label} gibt es kein ${EFFECT_NAMES[kind] ?? kind}.`);
+      await deps.pushCommand({ type: "effekt", kind });
+      return speak(`${EFFECT_NAMES[kind] ?? kind}!`);
+    }
     case "AMAZON.HelpIntent":
       return speak(
-        "Du kannst fragen: Welcher Song läuft? Wer singt gerade? Wann ist der Song erschienen? Wann spielen die in der Nähe? Wie oft habe ich das gehört? Mag ich den Künstler? Erzähl mir was über die Band. Merk dir den Song. Oder sagen: Lampen aus, Stroboskop an, Bühne Weltraum.",
+        "Du kannst fragen: Welcher Song läuft? Wer singt gerade? Wann spielen die in der Nähe? Erzähl mir was über die Band. Wie war der Abend? Oder sagen: Konfetti, Feuerwerk, Lyrics später, Bildschirm aus, Lampen aus, Bühne Weltraum.",
         false,
       );
     case "AMAZON.StopIntent":

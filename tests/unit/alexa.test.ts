@@ -218,6 +218,41 @@ describe("Alexa-Intents", () => {
     expect(unklar.text).toMatch(/an- oder ausschalten/);
   });
 
+  it("Rückblick, Bildschirm, Lyrics-Versatz und Effekte auf Zuruf", async () => {
+    const evening = {
+      songs: 12,
+      minutes: 75,
+      since: Date.UTC(2026, 10, 20, 19, 15),
+      highlights: ["Amore"],
+      encores: ["Columbo"],
+      liked: 2,
+      topArtist: { name: "Wanda", songs: 4 },
+    };
+    // Rückblick auch, wenn die Musik schon aus ist (alter Stand)
+    const r = await run("AbendIntent", {}, { ...snap, updatedAt: 0, evening });
+    expect(r.text).toBe(
+      "Seit 20:15 Uhr liefen 12 Songs in 1 Stunden und 15 Minuten. Höhepunkt war Amore. Als Zugabe gab es Columbo. Am meisten lief Wanda mit 4 Songs. 2 Lieblingssongs waren dabei.",
+    );
+    expect((await run("AbendIntent", {}, snap)).text).toMatch(/noch nicht genug Musik/);
+
+    expect((await run("BildschirmIntent", { zustand: { value: "aus" } })).cmds).toEqual([{ type: "bildschirm", on: false }]);
+    expect((await run("LyricsVersatzIntent", { richtung: { value: "spaeter" } })).cmds).toEqual([
+      { type: "versatz", deltaMs: 200 },
+    ]);
+    expect((await run("LyricsVersatzIntent", { richtung: { value: "frueher" } })).cmds).toEqual([
+      { type: "versatz", deltaMs: -200 },
+    ]);
+
+    const club = { ...snap, stage: { id: "club" as const, effects: ["konfetti" as const, "co2" as const] } };
+    const fx = await run("EffektIntent", { effekt: { value: "konfetti" } }, club);
+    expect(fx.cmds).toEqual([{ type: "effekt", kind: "konfetti" }]);
+    expect(fx.text).toBe("Konfetti!");
+    const none = await run("EffektIntent", { effekt: { value: "schaum" } }, club);
+    expect(none.cmds).toEqual([]);
+    expect(none.text).toBe("Auf der Bühne Club gibt es kein Schaum.");
+    expect((await run("EffektIntent", { effekt: { value: "atombombe" } }, club)).text).toMatch(/Welcher Effekt/);
+  });
+
   it("Start, Hilfe, Stopp", async () => {
     const launch = await handleAlexa(JSON.parse(request({ type: "LaunchRequest", intent: undefined })), {
       getSnapshot: async () => null,
