@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { MAX_SIGN_CHARS, SIGN_FADE_IN_MS, SIGN_FADE_OUT_MS, signAt, signWords, WORD_POP_MS } from "@/lib/stage/chorus-sign";
+import {
+  hudClearance,
+  HUD_TOP_NDC,
+  MAX_SIGN_CHARS,
+  SIGN_FADE_IN_MS,
+  SIGN_FADE_OUT_MS,
+  signAt,
+  signWords,
+  WORD_POP_MS,
+} from "@/lib/stage/chorus-sign";
 import type { LyricLine } from "@/lib/song-context/schema";
 
 const timed: LyricLine = {
@@ -48,5 +57,12 @@ describe("Leuchtschrift im Refrain", () => {
     expect(signAt(lines, -1, 9_000, chorus)).toBeNull();
     const long = [{ ...plain, text: "x".repeat(MAX_SIGN_CHARS + 1) }];
     expect(signAt(long, 0, 13_500, chorus)).toBeNull();
+  });
+
+  it("weicht der oberen Leiste aus (Titel, Plaketten)", () => {
+    expect(hudClearance(0.2)).toBe(1);
+    expect(hudClearance(HUD_TOP_NDC)).toBe(0);
+    expect(hudClearance(0.9)).toBe(0);
+    expect(hudClearance(HUD_TOP_NDC - 0.075)).toBeCloseTo(0.5);
   });
 });

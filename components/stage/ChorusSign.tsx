@@ -2,10 +2,10 @@
 
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
-import { CanvasTexture, Color, type Group, type MeshBasicMaterial, type Vector3 } from "three";
+import { CanvasTexture, Color, Vector3, type Camera, type Group, type MeshBasicMaterial } from "three";
 import type { SongStatic } from "@/lib/song-context/schema";
 import { songContext } from "@/lib/song-context/store";
-import { signAt, type SignState, type SignWord } from "@/lib/stage/chorus-sign";
+import { hudClearance, signAt, type SignState, type SignWord } from "@/lib/stage/chorus-sign";
 
 const TEX_W = 2048;
 const TEX_H = 256;
@@ -47,7 +47,10 @@ function redraw(tex: CanvasTexture, canvas: HTMLCanvasElement, s: SignState) {
 type Parts = { group: Group; front: MeshBasicMaterial; back: MeshBasicMaterial };
 
 /** Ein Bild der Leuchtschrift: Deckkraft, Aufspringen des jüngsten Worts, Takt-Puls, leichtes Schweben */
-function applySign(p: Parts, s: SignState | null, positionMs: number, bpm: number, base: Color, cam: Vector3) {
+const onScreen = new Vector3();
+
+function applySign(p: Parts, s: SignState | null, positionMs: number, bpm: number, base: Color, camera: Camera) {
+  const cam = camera.position;
   p.group.visible = !!s;
   if (!s) return;
   const beatMs = 60_000 / (bpm || 120);
@@ -58,8 +61,11 @@ function applySign(p: Parts, s: SignState | null, positionMs: number, bpm: numbe
   p.group.rotation.y = Math.atan2(cam.x - p.group.position.x, cam.z - p.group.position.z) + 0.04 * Math.sin(positionMs / 2300);
   // über 1: der Glow (Bloom) greift; auf den Schlag etwas heller
   p.front.color.copy(base).multiplyScalar(1.3 + 0.5 * beat + 0.4 * s.pop);
-  p.front.opacity = s.amount;
-  p.back.opacity = 0.85 * s.amount;
+  // filmt die Kamera von unten, landet die Schrift oben bei Titel und Plaketten – dann lieber ausblenden
+  const clear = hudClearance(onScreen.copy(p.group.position).project(camera).y);
+  p.group.visible = clear > 0;
+  p.front.opacity = s.amount * clear;
+  p.back.opacity = 0.85 * s.amount * clear;
 }
 
 /**
@@ -98,7 +104,7 @@ export function ChorusSign({ song, accent }: { song: SongStatic; accent: string 
       redraw(tex, canvas, s);
       drawn.current = key;
     }
-    applySign({ group: group.current, front: front.current, back: back.current }, s, t, live.bpm, white, camera.position);
+    applySign({ group: group.current, front: front.current, back: back.current }, s, t, live.bpm, white, camera);
   });
 
   return (

@@ -65,3 +65,12 @@ export function signAt(
   const pop = since < WORD_POP_MS ? 1 - since / WORD_POP_MS : 0;
   return { lineIdx, words, lit: Math.max(lit, 1), amount, pop };
 }
+
+/** Oberhalb davon (Bildschirmhöhe −1..1) stehen Titel, Plaketten und Abschnitt – dort keine Leuchtschrift */
+export const HUD_TOP_NDC = 0.62;
+const HUD_FADE_NDC = 0.15;
+
+/** 1 = Schrift frei sichtbar, 0 = sie läge in der oberen Leiste (weiche Blende dazwischen) */
+export function hudClearance(ndcY: number): number {
+  return Math.max(0, Math.min(1, (HUD_TOP_NDC - ndcY) / HUD_FADE_NDC));
+}
