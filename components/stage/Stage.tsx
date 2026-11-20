@@ -42,6 +42,7 @@ import { initialFrame, type Frame } from "./types";
 import type { SingAlong } from "@/lib/show/singalong";
 import { stageInfo } from "@/lib/stage/stage-info";
 import { RenderStats } from "./RenderStats";
+import { ChorusSign } from "./ChorusSign";
 
 function hasWebGL() {
   try {
@@ -314,6 +315,7 @@ function Scene({
           lightsRef={lights}
           scale={preset.particles}
         />
+        <ChorusSign song={song} accent={song.album.palette.accent} />
         <Suspense fallback={null}>
           {theme.wall === "led" && (
             <WallFrame scale={wallScale(theme)}>
