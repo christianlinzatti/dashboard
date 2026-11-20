@@ -41,6 +41,7 @@ import { Effects } from "./Effects";
 import { initialFrame, type Frame } from "./types";
 import type { SingAlong } from "@/lib/show/singalong";
 import { stageInfo } from "@/lib/stage/stage-info";
+import { RenderStats } from "./RenderStats";
 
 function hasWebGL() {
   try {
@@ -352,6 +353,7 @@ function Scene({
           )}
           <MixamoClips ids={mixamoIds} />
           <ReadySignal />
+          <RenderStats />
         </Suspense>
         {preset.bloom && (
           <EffectComposer multisampling={0} resolutionScale={quality === "hoch" ? 1 : 0.5}>

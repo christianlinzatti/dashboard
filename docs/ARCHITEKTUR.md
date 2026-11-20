@@ -95,7 +95,7 @@ Ergebnis: kein Handlungsbedarf.
 | Unit-Tests | 143 | 263 |
 | Abdeckung (Anweisungen / Verzweigungen / Funktionen / Zeilen) | 91 / 82 / 88 / 93 % | 91 / 82 / 88 / 94 % |
 | Mindest-Abdeckung in der CI | 88 / 78 / 85 / 90 % | unverändert |
-| E2E-Tests (je Auflösung) | 39 | 54 |
+| E2E-Tests (je Auflösung) | 39 | 54 (+ 18 Leistungsbudgets bei 1280×800) |
 | E2E-Laufzeit | drei parallele Jobs | unverändert, ~3–4 min gesamt |
 | Live-Checks echter Dienste (täglich) | Lyrics | + Info-Quellen, Konzerte, Better Lyrics |
 
@@ -107,6 +107,15 @@ Ergebnis: kein Handlungsbedarf.
 | `e2e.yml` | Matrix je Auflösung, große Auflösungen in Shards (1 + 3 + 4 Jobs), Gesamtergebnis „E2E gesamt“, Build-Cache, manuell startbar; „Screenshots aktualisieren“ verteilt genauso und committet die geänderten Bilder in einem Schritt |
 | `update-screenshots.yml` | startet danach automatisch den E2E-Lauf (Bot-Commits lösen sonst keine Workflows aus) |
 | `workflows-lint.yml` | neu: `actionlint` prüft alle Workflows bei Änderungen |
+
+**Leistungswächter** (`playwright/tests/render-budget.spec.ts`, nur 1280×800): Die Bühne meldet am Canvas die höchsten
+Zeichenaufrufe und Dreiecke seit dem Laden (`data-drawcalls`, `data-triangles`). Der Test lädt jedes Bühnen-Thema in
+Qualität „niedrig“ und „mittel“ und vergleicht mit `render-budget.json` (gemessen + 25 % Zeichenaufrufe, + 50 %
+Dreiecke). Wer die Bühne bewusst aufwendiger macht, misst neu und hebt das Budget im selben Commit an.
+
+Befunde der ersten Messung: In „mittel“ kosten Club, Festival und Stadion etwa das Dreifache von „niedrig“
+(270–300 Zeichenaufrufe, bis ~800 000 Dreiecke) – die Kamera-Bildschirme zeichnen die Szene ein zweites Mal. Die
+Kathedrale braucht schon in „niedrig“ ~140 Zeichenaufrufe (viele Einzelteile) – Kandidat für Instancing.
 
 **Referenz-Screenshots** sind maßgeblich aus dem CI-Container (`mcr.microsoft.com/playwright:v1.63.0-noble`).
 Lokal können einzelne Bilder (vor allem 1024×600 mit Bloom) leicht abweichen; neue Referenzen immer über den
