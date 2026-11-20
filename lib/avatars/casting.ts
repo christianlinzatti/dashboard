@@ -2,11 +2,15 @@ import { avatars } from "./catalog";
 
 /** Genre-Stichwort → bevorzugte Avatare (Reihenfolge = Priorität). */
 const genreAffinity: Array<[RegExp, string[]]> = [
+  // Saison zuerst: „horror punk“ ist erst Halloween, dann Punk
+  [/halloween|horror|spooky|grusel/i, ["kuerbis-kopf", "vampir-vlad", "knochen-kalle"]],
+  [/christmas|weihnacht|xmas|holiday|winter/i, ["weihnachtsmann", "rentier", "schneemann"]],
   [/schlager|volksmusik|volkstüml|austropop|oktoberfest|alpen|polka|blasmusik|ländler/i, ["lederhosn-sepp", "dirndl-vroni"]],
   [/rockabilly|rock.?n.?roll|doo.?wop|oldies|surf rock/i, ["tolle-teddy", "punk-rocker"]],
   [/mariachi|ranchera|mexican|norteño|norteno|banda|corrido|tejano/i, ["mariachi-miguel", "rio-carnival"]],
   [/punk|grunge|hardcore|ska/i, ["punk-rocker", "ember-rock"]],
-  [/metal|goth|emo|horror|halloween|industrial|darkwave/i, ["knochen-kalle", "eisen-ritter", "ember-rock"]],
+  [/goth|darkwave|dark cabaret/i, ["vampir-vlad", "knochen-kalle"]],
+  [/metal|emo|industrial/i, ["knochen-kalle", "eisen-ritter", "ember-rock"]],
   [/epic|symphonic|medieval|mittelalter|power metal|soundtrack|score/i, ["eisen-ritter", "frack-pinguin"]],
   [/country|folk|americana|bluegrass|western|honky/i, ["cowboy-joe", "sol-groove"]],
   [/k-?pop|j-?pop|anime|kawaii|city pop|j-?rock|bubblegum/i, ["mietz-katze", "aurora-synth"]],

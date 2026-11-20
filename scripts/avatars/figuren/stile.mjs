@@ -186,7 +186,7 @@ const figuren = {
       hands(b, J, "Skin", { r: [0.04, 0.055, 0.035], drop: 0.045 });
       for (const [side] of [L, R]) {
         b.limb("White stage suit", J[`${side}UpLeg`], J[`${side}Leg`], 0.075, 0.06, `${side}UpLeg`, `${side}Leg`);
-        b.tube("White stage suit", [J[`${side}Leg`], vec.lerp(J[`${side}Leg`], J[`${side}Foot`], 0.5), vec.add(J[`${side}Foot`], [0, -0.02, 0])], (t) => 0.058 + 0.06 * t * t, (p) => [[`${side}Leg`, 0.6], [`${side}Foot`, 0.4]], { seg: 16, caps: false });
+        b.tube("White stage suit", [J[`${side}Leg`], vec.lerp(J[`${side}Leg`], J[`${side}Foot`], 0.5), vec.add(J[`${side}Foot`], [0, -0.02, 0])], (t) => 0.058 + 0.06 * t * t, () => [[`${side}Leg`, 0.6], [`${side}Foot`, 0.4]], { seg: 16, caps: false });
       }
       feet(b, J, "Platform armor", { r: [0.075, 0.07, 0.13], forward: 0.04, exp: 0.4 });
     },

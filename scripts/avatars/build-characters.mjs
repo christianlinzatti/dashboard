@@ -124,7 +124,9 @@ async function build(id, spec) {
       .setBaseColorFactor([...color, 1])
       .setMetallicFactor(def.metal ?? 0.1)
       .setRoughnessFactor(def.rough ?? 0.5)
-      .setEmissiveFactor(def.emissive ? color.map((c) => Math.min(1, c * def.emissive * 1.6)) : [0, 0, 0]);
+      .setEmissiveFactor(def.emissive ? color.map((c) => Math.min(1, c * def.emissive * 1.6)) : [0, 0, 0])
+      // offene Flächen (Umhang, Rock) von beiden Seiten sichtbar
+      .setDoubleSided(!!def.double);
     const count = g.positions.length / 3;
     const jArr = new Uint8Array(count * 4);
     const wArr = new Float32Array(count * 4);

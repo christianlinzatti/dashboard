@@ -96,7 +96,7 @@ export class Builder {
    * Röhre entlang eines Pfads (Punkte) mit Radius je Punkt – Glieder, Bögen, Antennen. Enden werden mit Kappen
    * geschlossen. `radius` als Zahl, Funktion (t → r) oder [rx, rz] (elliptisch, rz in Richtung `up`).
    */
-  tube(material, points, radius, skin, { seg = 14, caps = true, up = [0, 0, 1] } = {}) {
+  tube(material, points, radius, skin, { seg = 14, caps = true, up = [0, 0, 1], arc } = {}) {
     const n = points.length;
     const frames = points.map((p, i) => {
       const t = norm(sub(points[Math.min(i + 1, n - 1)], points[Math.max(i - 1, 0)]));
@@ -110,19 +110,23 @@ export class Builder {
       const r = typeof radius === "function" ? radius(t) : radius;
       return Array.isArray(r) ? r : [r, r];
     };
+    // `arc` [von, bis] (Radiant): nur ein Teil des Umfangs – offene Bahn (Umhang, Kragen); bei Pfad nach unten und
+    // up = +z liegt 0..π hinten
+    const angle = (c) => (arc ? arc[0] + ((arc[1] - arc[0]) * c) / (seg - 1) : (2 * Math.PI * c) / seg);
     this.grid(
       material,
       n,
       seg,
       (r, c) => {
-        const a = (2 * Math.PI * c) / seg;
+        const a = angle(c);
         const [rx, rz] = rAt(r);
         const f = frames[r];
         return add(points[r], add(mul(f.s, Math.cos(a) * rx), mul(f.b, -Math.sin(a) * rz)));
       },
       skin,
+      !arc,
     );
-    if (caps) {
+    if (caps && !arc) {
       const [r0] = rAt(0);
       const [r1] = rAt(n - 1);
       this.blob(material, points[0], [r0, r0, r0], skin, { seg });

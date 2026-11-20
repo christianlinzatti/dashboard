@@ -270,7 +270,7 @@ const figuren = {
       b.blob("Sequin stage suit", [0, 0.25, 0], [0.18, 0.24, 0.135], torsoSkin, { seg: 28 });
       b.blob("Skin", [0, 0.45, 0.04], [0.15, 0.05, 0.1], "Chest");
       for (const s of [1, -1]) b.blob("Gem luminous trim", [0.08 * s, 0.33, 0.12], [0.02, 0.02, 0.012], "Chest");
-      const skirtSkin = (p) => {
+      const dressSkin = (p) => {
         const down = smoothstep(0.02, -0.5, p[1]);
         const side = p[0] >= 0 ? "LeftUpLeg" : "RightUpLeg";
         // weich zur Seite hin (vorne/hinten in der Mitte bleibt der Rock am Becken), höchstens zur Hälfte am Bein
@@ -281,13 +281,13 @@ const figuren = {
         "Sequin stage suit",
         Array.from({ length: 9 }, (_, i) => [0, 0.06 - (0.6 * i) / 8, 0]),
         (t) => [0.17 + 0.16 * t, 0.14 + 0.12 * t],
-        skirtSkin,
+        dressSkin,
         { seg: 28, caps: false, up: [0, 0, 1] },
       );
       b.tube("Gem luminous trim", Array.from({ length: 29 }, (_, i) => {
         const a = (2 * Math.PI * i) / 28;
         return [0.33 * Math.sin(a), -0.54, 0.26 * Math.cos(a)];
-      }), 0.012, skirtSkin, { seg: 6, caps: false });
+      }), 0.012, dressSkin, { seg: 6, caps: false });
       arms(b, J, "Skin", { upper: [0.045, 0.04], lower: [0.04, 0.035], shoulder: 0.052 });
       for (const [side] of [L, R]) {
         const h = J[`${side}Hand`];
