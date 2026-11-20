@@ -62,6 +62,13 @@ export const OWN_HEADWEAR: ReadonlySet<string> = new Set([
   "schneemann",
   "kuerbis-kopf",
   "vampir-vlad",
+  "dino-rex",
+  "einhorn",
+  "fuchs-fritzi",
+  "hai-kostuem",
+  "zauberer-zarko",
+  "pirat-paula",
+  "ninja-nori",
 ]);
 
 export function lookForAvatar(avatarId: string, seed: string): Look {

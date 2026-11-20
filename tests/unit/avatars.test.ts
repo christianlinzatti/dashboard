@@ -3,8 +3,8 @@ import { avatars, commonClips, timeScaleFor } from "@/lib/avatars/catalog";
 import { avatarForArtist, buildCast, preferredAvatars } from "@/lib/avatars/casting";
 
 describe("Avatar-Katalog", () => {
-  it("kennt alle 33 Avatare und die 20 gemeinsamen Clips", () => {
-    expect(avatars).toHaveLength(33);
+  it("kennt alle 40 Avatare und die 20 gemeinsamen Clips", () => {
+    expect(avatars).toHaveLength(40);
     expect(commonClips).toHaveLength(20);
     expect(commonClips).toContain("Dance_Groove");
     expect(commonClips).toContain("Idle_Breathe");
@@ -36,6 +36,11 @@ describe("Casting", () => {
     expect(preferredAvatars(["schlager"]).slice(0, 2)).toEqual(["lederhosn-sepp", "dirndl-vroni"]);
     expect(preferredAvatars(["rockabilly"])[0]).toBe("tolle-teddy");
     expect(preferredAvatars(["ranchera"])[0]).toBe("mariachi-miguel");
+    expect(preferredAvatars(["kinderlieder"]).slice(0, 2)).toEqual(["dino-rex", "einhorn"]);
+    expect(preferredAvatars(["sea shanty"])[0]).toBe("pirat-paula");
+    expect(preferredAvatars(["reggae"])[0]).toBe("hai-kostuem");
+    expect(preferredAvatars(["chiptune"])[0]).toBe("ninja-nori");
+    expect(preferredAvatars(["indie folk"])[0]).toBe("fuchs-fritzi");
     expect(preferredAvatars(["christmas"])).toEqual(["weihnachtsmann", "rentier", "schneemann"]);
     expect(preferredAvatars(["horror punk"]).slice(0, 2)).toEqual(["kuerbis-kopf", "vampir-vlad"]);
     expect(avatarForArtist("x", ["reggaeton"])).toMatch(/rio-carnival|sol-groove/);
