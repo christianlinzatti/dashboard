@@ -71,6 +71,23 @@ reproduzierbar (gleiche Songzeit → gleiche Pose, gleiches Licht) und die Logik
 | 16 | Sporadischer Testfehler (Chiffrat enthielt zufällig „u1“) | niedrig | **behoben:** langer, eindeutiger Klartext im Test |
 | 17 | TTML: Silben, Duett-Typen, `lrc:`-Namensraum, lose Satzzeichen | mittel (falsche Füllung, fehlende Sänger) | **behoben:** Parser gegen echte Antworten geprüft |
 
+### Sicherheitsprüfung der neuen Schnittstellen (2026-11-20)
+
+Geprüft: `/api/remote`, `/api/commands`, `/api/song-memory`, `/api/prefs` (Avatare, Ruhezeit), `/api/show/trace`,
+`/api/debug-context`, `/api/log` (inkl. Löschen) und die Pi-Bridge-Nachricht `display`.
+
+| Punkt | Ergebnis |
+|---|---|
+| Anmeldung | jeder Handler prüft die Sitzung; Daten liegen je Spotify-Konto (`…:${uid}`) |
+| Eingaben | zod mit festen Grenzen (Befehle als Aufzählung, Versatz ±2 s, Drops ≤ 64, Energieverlauf ≤ 720 Werte, Avatare ≤ 100, Debug-Kontext ≤ 900 kB) |
+| Fremde Seiten (CSRF) | Sitzungs-Cookie `SameSite=Lax`: schreibende Anfragen von fremden Seiten kommen ohne Anmeldung an; `*.vercel.app` steht auf der Public-Suffix-Liste |
+| Ausgabe | nur über React (kein `dangerouslySetInnerHTML`), CSP unverändert |
+| Missbrauch | Befehlswarteschlange höchstens 20 Einträge, 5 min gültig; schneller Abruf nur solange die Fernbedienung sich meldet |
+| Bridge | nur `127.0.0.1`, nur erlaubte Herkunft, Nachrichten ≤ 4 kB; Bildschirmbefehle stehen in der lokalen `config.json`, nicht in der Nachricht |
+| Abhängigkeiten | `npm audit --omit=dev`: 0 bekannte Schwachstellen |
+
+Ergebnis: kein Handlungsbedarf.
+
 ## 3. Qualitätssicherung
 
 | | Meilenstein 8 | jetzt (Stufe 5+) |
