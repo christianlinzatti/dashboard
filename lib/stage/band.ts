@@ -38,7 +38,12 @@ const ROLES: Record<BandKind, Array<{ role: BandRole; clip: string; position: Ve
     },
   ],
   rock: [
-    { role: "schlagzeug", clip: "Mixamo_PlayingDrums", position: [0.75, -2.35], prefer: ["chrome-beat", "quantum-bass"] },
+    {
+      role: "schlagzeug",
+      clip: "Mixamo_PlayingDrums",
+      position: [0.75, -2.35],
+      prefer: ["knochen-kalle", "chrome-beat", "quantum-bass"],
+    },
     {
       role: "gitarre",
       clip: "Mixamo_GuitarPlaying",
@@ -47,7 +52,9 @@ const ROLES: Record<BandKind, Array<{ role: BandRole; clip: string; position: Ve
     },
     { role: "bass", clip: "Mixamo_GuitarPlaying", position: [2.3, -2.15], prefer: ["punk-rocker", "atlas-prism", "neon-pulse"] },
   ],
-  keys: [{ role: "keyboard", clip: "Dance_HeelToe", position: [2.2, -2.15], prefer: ["velvet-jazz", "aurora-synth"] }],
+  keys: [
+    { role: "keyboard", clip: "Dance_HeelToe", position: [2.2, -2.15], prefer: ["frack-pinguin", "velvet-jazz", "aurora-synth"] },
+  ],
 };
 
 export function bandKind(genres: readonly string[]): BandKind | null {

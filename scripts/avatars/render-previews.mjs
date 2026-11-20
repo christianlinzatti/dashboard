@@ -20,6 +20,8 @@ const opt = (name, fallback) => {
 };
 const pose = opt("--pose", "Idle_Breathe");
 const at = Number(opt("--time", "0.4"));
+/** --kopf: Nahaufnahme des Kopfs (Gesicht prüfen) */
+const headShot = args.includes("--kopf") ? (args.splice(args.indexOf("--kopf"), 1), true) : false;
 const outDir = opt("--out", path.join(root, "avatars"));
 const ids = args;
 if (!ids.length) throw new Error("Welche Avatare? z. B. node scripts/avatars/render-previews.mjs disco-baer");
@@ -35,7 +37,7 @@ r.setClearColor(0x000000, 0);
 r.outputColorSpace = THREE.SRGBColorSpace;
 r.toneMapping = THREE.ACESFilmicToneMapping;
 document.body.appendChild(r.domElement);
-window.render = async (url, clipName, t) => {
+window.render = async (url, clipName, t, head) => {
   const gltf = await new GLTFLoader().loadAsync(url);
   const scene = new THREE.Scene();
   scene.add(new THREE.HemisphereLight(0xdfe8ff, 0x302838, 1.6));
@@ -51,7 +53,8 @@ window.render = async (url, clipName, t) => {
   const h = box.getSize(new THREE.Vector3()).y;
   scene.add(model);
   const cam = new THREE.PerspectiveCamera(24, 1, 0.1, 100);
-  const d = h * 2.85;
+  if (head) c.y = box.max.y - h * 0.17;
+  const d = h * (head ? 0.75 : 2.85);
   cam.position.set(c.x + d * 0.28, c.y + h * 0.12, c.z + d * 0.96);
   cam.lookAt(c);
   r.render(scene, cam);
@@ -80,7 +83,7 @@ await tab.goto(`http://127.0.0.1:${port}/`);
 await tab.waitForFunction(() => window.ready);
 const { writeFile } = await import("node:fs/promises");
 for (const id of ids) {
-  const data = await tab.evaluate(([u, c, t]) => window.render(u, c, t), [`/avatars/${id}.glb`, pose, at]);
+  const data = await tab.evaluate(([u, c, t, k]) => window.render(u, c, t, k), [`/avatars/${id}.glb`, pose, at, headShot]);
   await writeFile(path.join(outDir, `${id}.png`), Buffer.from(data.split(",")[1], "base64"));
   console.log(`${id}.png`);
 }

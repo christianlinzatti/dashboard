@@ -7,5 +7,6 @@ You may use, modify and redistribute these assets, including commercially,
 without attribution. No downloaded third-party meshes, textures or animations
 are included in this collection.
 
-The figures disco-baer, retro-bot, astro-nova, kosmo-alien, punk-rocker and glitzer-diva (2026-11-20) are generated
+The figures disco-baer, retro-bot, astro-nova, kosmo-alien, punk-rocker and glitzer-diva, cowboy-joe, knochen-kalle, mietz-katze,
+eisen-ritter, frack-pinguin and mc-flow (2026-11-20) are generated
 by scripts/avatars/build-characters.mjs from shapes on the rig and clips of the models above – same license (CC0).

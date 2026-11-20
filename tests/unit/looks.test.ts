@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { lookFor, lookSeed } from "@/lib/avatars/looks";
+import { lookFor, lookForAvatar, lookSeed, OWN_HEADWEAR } from "@/lib/avatars/looks";
 
 describe("Avatar-Looks", () => {
   it("deterministisch: derselbe Künstler trägt immer denselben Look", () => {
@@ -28,5 +28,19 @@ describe("Avatar-Looks", () => {
       // breite Hüte und Kopfhörer schließen sich aus
       if (l.hat === "cowboyhut" || l.hat === "zylinder") expect(l.headphones).toBe(false);
     }
+  });
+});
+
+describe("Figuren mit eigener Kopfbedeckung", () => {
+  it("bekommen keinen Hut und keine Kopfhörer, Brille und Statur bleiben", () => {
+    // einen Schlüssel suchen, der sonst einen Hut ergäbe
+    const seed = Array.from({ length: 200 }, (_, i) => `crew:x:${i}`).find((k) => lookFor(k).hat)!;
+    for (const id of OWN_HEADWEAR) {
+      const look = lookForAvatar(id, seed);
+      expect(look.hat).toBeUndefined();
+      expect(look.headphones).toBe(false);
+      expect(look.height).toBe(lookFor(seed).height);
+    }
+    expect(lookForAvatar("punk-rocker", seed).hat).toBe(lookFor(seed).hat);
   });
 });

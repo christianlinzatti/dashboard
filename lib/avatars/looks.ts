@@ -40,6 +40,25 @@ export function lookFor(seed: string): Look {
   };
 }
 
+/**
+ * Figuren mit eigener Kopfbedeckung oder auffälligem Kopf (Helm, Cowboyhut, Ohren, Fühler, Haar-Puffs) bekommen
+ * keinen zusätzlichen Hut und keine Kopfhörer – Brille und Statur bleiben.
+ */
+export const OWN_HEADWEAR: ReadonlySet<string> = new Set([
+  "astro-nova",
+  "cowboy-joe",
+  "eisen-ritter",
+  "mietz-katze",
+  "disco-baer",
+  "kosmo-alien",
+  "mc-flow",
+]);
+
+export function lookForAvatar(avatarId: string, seed: string): Look {
+  const look = lookFor(seed);
+  return OWN_HEADWEAR.has(avatarId) ? { ...look, hat: undefined, headphones: false } : look;
+}
+
 /** Schlüssel des Looks: Künstler stabil, Crew je Song anders, Band je Musiker */
 export function lookSeed(member: { avatarId: string; artistId?: string }, trackKey: string, band = false): string {
   if (band) return `band:${member.avatarId}`;

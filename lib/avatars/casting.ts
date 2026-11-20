@@ -3,13 +3,18 @@ import { avatars } from "./catalog";
 /** Genre-Stichwort → bevorzugte Avatare (Reihenfolge = Priorität). */
 const genreAffinity: Array<[RegExp, string[]]> = [
   [/punk|grunge|hardcore|ska/i, ["punk-rocker", "ember-rock"]],
+  [/metal|goth|emo|horror|halloween|industrial|darkwave/i, ["knochen-kalle", "eisen-ritter", "ember-rock"]],
+  [/epic|symphonic|medieval|mittelalter|power metal|soundtrack|score/i, ["eisen-ritter", "frack-pinguin"]],
+  [/country|folk|americana|bluegrass|western|honky/i, ["cowboy-joe", "sol-groove"]],
+  [/k-?pop|j-?pop|anime|kawaii|city pop|j-?rock|bubblegum/i, ["mietz-katze", "aurora-synth"]],
+  [/classical|klassik|orchestra|opera|oper|big band|crooner|lounge/i, ["frack-pinguin", "velvet-jazz"]],
   [/rock|metal/i, ["ember-rock", "punk-rocker", "chrome-beat"]],
-  [/jazz|blues|swing/i, ["velvet-jazz", "glitzer-diva", "sol-groove"]],
+  [/jazz|blues|swing/i, ["velvet-jazz", "frack-pinguin", "glitzer-diva", "sol-groove"]],
   [/soul|funk|disco|motown|diva/i, ["glitzer-diva", "sol-groove", "velvet-jazz"]],
   [/latin|reggaeton|salsa|samba|bachata|afro/i, ["rio-carnival", "sol-groove"]],
   [/techno|house|edm|electro|trance|drum|bass/i, ["neon-pulse", "retro-bot", "quantum-bass", "chrome-beat"]],
   [/synth|space|ambient|chill|lo-?fi|downtempo|kraut/i, ["astro-nova", "kosmo-alien", "retro-bot"]],
-  [/hip ?hop|rap|trap|r&b/i, ["atlas-prism", "quantum-bass"]],
+  [/hip ?hop|rap|trap|r&b|grime|drill/i, ["mc-flow", "atlas-prism", "quantum-bass"]],
   [/festival|dance|schlager|party|kinder|children/i, ["festival-nova", "disco-baer", "aurora-synth"]],
   [/pop|indie|singer/i, ["aurora-synth", "luna-flow", "glitzer-diva", "sol-groove"]],
 ];

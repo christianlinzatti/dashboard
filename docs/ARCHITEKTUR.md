@@ -208,14 +208,17 @@ Für das Konzert-Erlebnis wurde die Bühne in vier Schichten gegliedert. Jede Sc
   misst die Kopfform in der Grundhaltung (Vertices über dem Hals) und hängt die Teile an Kopf- bzw. Handknochen;
   Sänger halten ein Handmikrofon in der rechten Hand.
 - **Andere Figuren aus Formen.** `scripts/avatars/build-characters.mjs` baut neue Avatare mit eigener Silhouette:
-  Disco-Bär, Retro-Bot, Astronautin, Alien, Punk und Glitzer-Diva. Skelett, Gesichtsknochen und alle 32 Tanz-Clips
+  Disco-Bär, Retro-Bot, Astronautin, Alien, Punk, Glitzer-Diva, Cowboy, Skelett, Katze, Ritter, Frack-Pinguin
+  und Rapperin. Skelett, Gesichtsknochen und alle 32 Tanz-Clips
   stammen von einem vorhandenen Modell; der Körper entsteht aus abgerundeten Formen (Superellipsoide, Röhren
   zwischen Gelenken), die weich an die Knochen gebunden sind (Ellbogen, Knie, Rumpf, Rock folgt den Beinen).
   Gesichtsknochen (Augen, Lächeln, LED-Balken) werden samt Animationsspuren auf die neue Kopfform verschoben, so
   singen und blinzeln die Figuren wie die anderen. Materialnamen mit „stage suit“, „armor“, „luminous trim“ nehmen
   Outfit- und Künstlerfarben an. Vorschaubilder: `scripts/avatars/render-previews.mjs`; Bühnenprobe mit
   `?avatare=disco-baer,retro-bot,glitzer-diva`. Die Besetzung bevorzugt sie nach Genre (Punk, Disco/Soul,
-  Space/Ambient/Synth, Party/Kinder, Techno).
+  Space/Ambient/Synth, Party/Kinder, Techno, Country, Metal/Goth, Epic/Mittelalter, K-Pop, Klassik, Hip-Hop).
+  Figuren mit eigener Kopfbedeckung oder auffälligem Kopf (`OWN_HEADWEAR` in lib/avatars/looks.ts) bekommen keinen
+  zusätzlichen Hut. Gesicht prüfen: `render-previews.mjs --kopf <id>`.
 - **Ein Abend mit Spannungsbogen.** `eveningPhase` (lib/show/evening.ts) gibt jedem Song eine Phase aus der Setlist:
   Auftakt, Steigerung, Höhepunkt (dritter energiegeladener Song in Folge: Feuerwerk und volles Konfetti schon beim
   ersten großen Einsatz), Durchatmen (ruhiger Song nach wilden: Feuerzeuge) und Zugabe (nach einem ausgespielten

@@ -169,6 +169,8 @@ test.describe("Bühne & Licht", () => {
   for (const [name, cast, theme] of [
     ["baer-bot-diva", "disco-baer,retro-bot,glitzer-diva", "club"],
     ["punk-alien-astro", "punk-rocker,kosmo-alien,astro-nova", "festival"],
+    ["cowboy-ritter-katze", "cowboy-joe,eisen-ritter,mietz-katze", "strand"],
+    ["skelett-pinguin-mc", "knochen-kalle,frack-pinguin,mc-flow", "kathedrale"],
   ] as const) {
     test(`Neue Avatare tanzen: ${name}`, async ({ page }) => {
       const errors = collectErrors(page);
