@@ -29,11 +29,23 @@ const KIND_RULES: Array<[RegExp, BandKind]> = [
 
 /** Wer spielt was, wo, mit welcher Animation; bevorzugte Avatare (passend zum Typ) zuerst */
 const ROLES: Record<BandKind, Array<{ role: BandRole; clip: string; position: Vec2; prefer: string[] }>> = {
-  dj: [{ role: "dj", clip: "Dance_Groove", position: [0, -2.25], prefer: ["neon-pulse", "quantum-bass", "chrome-beat"] }],
+  dj: [
+    {
+      role: "dj",
+      clip: "Dance_Groove",
+      position: [0, -2.25],
+      prefer: ["neon-pulse", "retro-bot", "quantum-bass", "chrome-beat"],
+    },
+  ],
   rock: [
     { role: "schlagzeug", clip: "Mixamo_PlayingDrums", position: [0.75, -2.35], prefer: ["chrome-beat", "quantum-bass"] },
-    { role: "gitarre", clip: "Mixamo_GuitarPlaying", position: [-1.6, -2.15], prefer: ["ember-rock", "festival-nova"] },
-    { role: "bass", clip: "Mixamo_GuitarPlaying", position: [2.3, -2.15], prefer: ["atlas-prism", "neon-pulse"] },
+    {
+      role: "gitarre",
+      clip: "Mixamo_GuitarPlaying",
+      position: [-1.6, -2.15],
+      prefer: ["ember-rock", "punk-rocker", "festival-nova"],
+    },
+    { role: "bass", clip: "Mixamo_GuitarPlaying", position: [2.3, -2.15], prefer: ["punk-rocker", "atlas-prism", "neon-pulse"] },
   ],
   keys: [{ role: "keyboard", clip: "Dance_HeelToe", position: [2.2, -2.15], prefer: ["velvet-jazz", "aurora-synth"] }],
 };

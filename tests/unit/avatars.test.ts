@@ -3,8 +3,8 @@ import { avatars, commonClips, timeScaleFor } from "@/lib/avatars/catalog";
 import { avatarForArtist, buildCast, preferredAvatars } from "@/lib/avatars/casting";
 
 describe("Avatar-Katalog", () => {
-  it("kennt alle 11 Avatare und die 20 gemeinsamen Clips", () => {
-    expect(avatars).toHaveLength(11);
+  it("kennt alle 17 Avatare und die 20 gemeinsamen Clips", () => {
+    expect(avatars).toHaveLength(17);
     expect(commonClips).toHaveLength(20);
     expect(commonClips).toContain("Dance_Groove");
     expect(commonClips).toContain("Idle_Breathe");
@@ -24,7 +24,10 @@ describe("Avatar-Katalog", () => {
 describe("Casting", () => {
   it("bevorzugt genre-passende Avatare", () => {
     expect(preferredAvatars(["hard rock"])[0]).toBe("ember-rock");
+    expect(preferredAvatars(["punk"])[0]).toBe("punk-rocker");
+    expect(preferredAvatars(["space ambient"])).toEqual(["astro-nova", "kosmo-alien", "retro-bot"]);
     expect(preferredAvatars(["vocal jazz"])[0]).toBe("velvet-jazz");
+    expect(preferredAvatars(["disco"])[0]).toBe("glitzer-diva");
     expect(avatarForArtist("x", ["reggaeton"])).toMatch(/rio-carnival|sol-groove/);
   });
 

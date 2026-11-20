@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { neonlicht } from "@/lib/song-context/fixtures/neonlicht";
-import { applyArtistAvatars, artistAvatarsSchema, artistKey } from "@/lib/avatars/overrides";
+import { applyArtistAvatars, artistAvatarsSchema, artistKey, castWith } from "@/lib/avatars/overrides";
 
 const lead = neonlicht.artists[0]!;
 const feat = neonlicht.artists[1]!;
@@ -50,5 +50,15 @@ describe("Eigene Avatare je Künstler", () => {
     expect(artistAvatarsSchema.safeParse({ a: { name: "A", avatarId: "velvet-jazz", outfit: "gold" } }).success).toBe(true);
     expect(artistAvatarsSchema.safeParse({ a: { name: "A", avatarId: "gibtsnicht" } }).success).toBe(false);
     expect(artistAvatarsSchema.safeParse({ a: { name: "A", avatarId: "velvet-jazz", outfit: "pink" } }).success).toBe(false);
+  });
+});
+
+describe("Demo-Besetzung (?avatare=…)", () => {
+  const known = new Set(["disco-baer", "retro-bot", "glitzer-diva"]);
+  it("besetzt der Reihe nach, Künstler bekommen den Avatar ihres Platzes, Unbekanntes fällt weg", () => {
+    const s = castWith(neonlicht, ["disco-baer", "gibts-nicht", "retro-bot"], known);
+    expect(s.cast.map((c) => c.avatarId)).toEqual(["disco-baer", "retro-bot", neonlicht.cast[2]!.avatarId]);
+    expect(s.artists.map((a) => a.avatarId)).toEqual(["disco-baer", "retro-bot"]);
+    expect(castWith(neonlicht, ["gibts-nicht"], known)).toBe(neonlicht);
   });
 });

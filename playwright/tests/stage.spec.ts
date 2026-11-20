@@ -166,6 +166,20 @@ test.describe("Bühne & Licht", () => {
     });
   }
 
+  for (const [name, cast, theme] of [
+    ["baer-bot-diva", "disco-baer,retro-bot,glitzer-diva", "club"],
+    ["punk-alien-astro", "punk-rocker,kosmo-alien,astro-nova", "festival"],
+  ] as const) {
+    test(`Neue Avatare tanzen: ${name}`, async ({ page }) => {
+      const errors = collectErrors(page);
+      await page.goto(`/?demo=neonlicht&t=24000&avatare=${cast}&buehne=${theme}&qualitaet=hoch`);
+      await ready(page);
+      await expect(page.locator("[data-cast]")).toHaveAttribute("data-cast", cast);
+      await expect(page).toHaveScreenshot(`avatare-${name}.png`);
+      expect(errors).toEqual([]);
+    });
+  }
+
   test("Outfits: die Crew trägt den Look des Leads", async ({ page }) => {
     const errors: string[] = [];
     page.on("pageerror", (e) => errors.push(e.message));

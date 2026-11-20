@@ -2,13 +2,16 @@ import { avatars } from "./catalog";
 
 /** Genre-Stichwort → bevorzugte Avatare (Reihenfolge = Priorität). */
 const genreAffinity: Array<[RegExp, string[]]> = [
-  [/rock|metal|punk|grunge/i, ["ember-rock", "chrome-beat"]],
-  [/jazz|soul|blues|swing|funk/i, ["velvet-jazz", "sol-groove"]],
+  [/punk|grunge|hardcore|ska/i, ["punk-rocker", "ember-rock"]],
+  [/rock|metal/i, ["ember-rock", "punk-rocker", "chrome-beat"]],
+  [/jazz|blues|swing/i, ["velvet-jazz", "glitzer-diva", "sol-groove"]],
+  [/soul|funk|disco|motown|diva/i, ["glitzer-diva", "sol-groove", "velvet-jazz"]],
   [/latin|reggaeton|salsa|samba|bachata|afro/i, ["rio-carnival", "sol-groove"]],
-  [/techno|house|edm|electro|trance|drum|bass/i, ["neon-pulse", "quantum-bass", "chrome-beat"]],
+  [/techno|house|edm|electro|trance|drum|bass/i, ["neon-pulse", "retro-bot", "quantum-bass", "chrome-beat"]],
+  [/synth|space|ambient|chill|lo-?fi|downtempo|kraut/i, ["astro-nova", "kosmo-alien", "retro-bot"]],
   [/hip ?hop|rap|trap|r&b/i, ["atlas-prism", "quantum-bass"]],
-  [/festival|dance|schlager|party/i, ["festival-nova", "aurora-synth"]],
-  [/pop|indie|singer/i, ["aurora-synth", "luna-flow", "sol-groove"]],
+  [/festival|dance|schlager|party|kinder|children/i, ["festival-nova", "disco-baer", "aurora-synth"]],
+  [/pop|indie|singer/i, ["aurora-synth", "luna-flow", "glitzer-diva", "sol-groove"]],
 ];
 
 /** Deterministischer Hash (FNV-1a) – gleiche Eingabe, gleiche Besetzung. */

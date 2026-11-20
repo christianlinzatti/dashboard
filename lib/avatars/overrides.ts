@@ -61,3 +61,16 @@ export function applyArtistAvatars(song: CastSong, map: ArtistAvatars | undefine
   }
   return changed ? { artists, cast } : null;
 }
+
+/**
+ * Demo und Screenshots: Besetzung der Reihe nach mit diesen Avataren (`?avatare=disco-baer,retro-bot`). Unbekannte
+ * Namen bleiben weg; Künstler bekommen den Avatar ihres Platzes.
+ */
+export function castWith<T extends CastSong>(song: T, ids: readonly string[], known: ReadonlySet<string>): T {
+  const valid = ids.filter((id) => known.has(id));
+  if (!valid.length) return song;
+  const cast = song.cast.map((c, i) => (valid[i] ? { ...c, avatarId: valid[i] } : c));
+  const byArtist = new Map(cast.filter((c) => c.artistId).map((c) => [c.artistId!, c.avatarId]));
+  const artists = song.artists.map((a) => ({ ...a, avatarId: byArtist.get(a.spotifyId) ?? a.avatarId }));
+  return { ...song, cast, artists };
+}

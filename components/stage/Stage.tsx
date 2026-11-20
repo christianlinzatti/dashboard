@@ -228,6 +228,7 @@ function Scene({
       data-quality={quality}
       data-theme={theme.id}
       data-outfits={song.cast.map((c) => c.outfit ?? "original").join(",")}
+      data-cast={song.cast.map((c) => c.avatarId).join(",")}
       data-weather={weather ?? "kein"}
       data-evening={phase}
       data-wall-logo={logo && theme.wall === "led" ? displayUrl(logo, 640) : undefined}

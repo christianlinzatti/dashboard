@@ -23,6 +23,7 @@ export default async function Page({ searchParams }: { searchParams: Search }) {
       weather={(["regen", "schnee", "aus"] as const).find((w) => w === one(sp.wetter))}
       transition={(["umbau", "zugabe"] as const).find((w) => w === one(sp.uebergang))}
       quietHours={quietHoursFromParam(one(sp.ruhe))}
+      avatars={one(sp.avatare)?.split(",").slice(0, 7)}
       lyricsMode={lyricsModes.includes(one(sp.lyrics) as LyricsMode) ? (one(sp.lyrics) as LyricsMode) : undefined}
     />
   );
