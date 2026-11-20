@@ -52,6 +52,11 @@ export const OWN_HEADWEAR: ReadonlySet<string> = new Set([
   "disco-baer",
   "kosmo-alien",
   "mc-flow",
+  "dirndl-vroni",
+  "lederhosn-sepp",
+  "tolle-teddy",
+  "disco-king",
+  "mariachi-miguel",
 ]);
 
 export function lookForAvatar(avatarId: string, seed: string): Look {

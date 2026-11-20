@@ -2,6 +2,9 @@ import { avatars } from "./catalog";
 
 /** Genre-Stichwort → bevorzugte Avatare (Reihenfolge = Priorität). */
 const genreAffinity: Array<[RegExp, string[]]> = [
+  [/schlager|volksmusik|volkstüml|austropop|oktoberfest|alpen|polka|blasmusik|ländler/i, ["lederhosn-sepp", "dirndl-vroni"]],
+  [/rockabilly|rock.?n.?roll|doo.?wop|oldies|surf rock/i, ["tolle-teddy", "punk-rocker"]],
+  [/mariachi|ranchera|mexican|norteño|norteno|banda|corrido|tejano/i, ["mariachi-miguel", "rio-carnival"]],
   [/punk|grunge|hardcore|ska/i, ["punk-rocker", "ember-rock"]],
   [/metal|goth|emo|horror|halloween|industrial|darkwave/i, ["knochen-kalle", "eisen-ritter", "ember-rock"]],
   [/epic|symphonic|medieval|mittelalter|power metal|soundtrack|score/i, ["eisen-ritter", "frack-pinguin"]],
@@ -10,7 +13,7 @@ const genreAffinity: Array<[RegExp, string[]]> = [
   [/classical|klassik|orchestra|opera|oper|big band|crooner|lounge/i, ["frack-pinguin", "velvet-jazz"]],
   [/rock|metal/i, ["ember-rock", "punk-rocker", "chrome-beat"]],
   [/jazz|blues|swing/i, ["velvet-jazz", "frack-pinguin", "glitzer-diva", "sol-groove"]],
-  [/soul|funk|disco|motown|diva/i, ["glitzer-diva", "sol-groove", "velvet-jazz"]],
+  [/soul|funk|disco|motown|diva|boogie/i, ["glitzer-diva", "disco-king", "sol-groove", "velvet-jazz"]],
   [/latin|reggaeton|salsa|samba|bachata|afro/i, ["rio-carnival", "sol-groove"]],
   [/techno|house|edm|electro|trance|drum|bass/i, ["neon-pulse", "retro-bot", "quantum-bass", "chrome-beat"]],
   [/synth|space|ambient|chill|lo-?fi|downtempo|kraut/i, ["astro-nova", "kosmo-alien", "retro-bot"]],

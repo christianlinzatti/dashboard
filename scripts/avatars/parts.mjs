@@ -1,5 +1,5 @@
 // Körperteile, die mehrere Figuren teilen: Rumpf-Gewichte, Arme, Hände, Beine, Füße, Comic- und LED-Gesicht.
-import { byHeight, vec } from "./geometry.mjs";
+import { byHeight, smoothstep, vec } from "./geometry.mjs";
 
 export const L = ["Left", 1];
 export const R = ["Right", -1];
@@ -62,4 +62,59 @@ export function comicFace(b, F, { eye = [0.024, 0.032, 0.012], brow = true, smil
 export function ledFace(b, F, { bar = [0.009, 0.03, 0.006], eye = [0.026, 0.026, 0.006] } = {}) {
   for (let i = 0; i < 5; i++) b.blob("LED display", F[`FaceLedBar${i}`], bar, `FaceLedBar${i}`, { exp: 0.3, seg: 10 });
   for (const [side] of [L, R]) b.blob("LED display", F[`FaceLedEye${side}`], eye, `FaceLedEye${side}`, { seg: 14 });
+}
+
+/**
+ * Rock (Kegel vom Becken nach unten): folgt zur Seite hin weich den Beinen (vorne/hinten in der Mitte bleibt er am
+ * Becken). `top`/`bottom` Höhe, `r0`/`r1` Radien [x, z] oben/unten, `hem` optionales Material für einen Saum.
+ */
+export const skirtSkin = (top, bottom) => (p) => {
+  const down = smoothstep(top, bottom, p[1]);
+  const side = p[0] >= 0 ? "LeftUpLeg" : "RightUpLeg";
+  const w = 0.5 * down * smoothstep(0, 0.3, Math.abs(p[0]));
+  return w > 0.001 ? [["Hips", 1 - w], [side, w]] : [["Hips", 1]];
+};
+
+export function skirt(b, mat, { top = 0.06, bottom = -0.54, r0 = [0.17, 0.14], r1 = [0.33, 0.26], hem, hemRadius = 0.012 } = {}) {
+  const skin = skirtSkin(top - 0.04, bottom + 0.04);
+  b.tube(
+    mat,
+    Array.from({ length: 9 }, (_, i) => [0, top + ((bottom - top) * i) / 8, 0]),
+    (t) => [r0[0] + (r1[0] - r0[0]) * t, r0[1] + (r1[1] - r0[1]) * t],
+    skin,
+    { seg: 28, caps: false, up: [0, 0, 1] },
+  );
+  if (hem)
+    b.tube(
+      hem,
+      Array.from({ length: 29 }, (_, i) => {
+        const a = (2 * Math.PI * i) / 28;
+        return [r1[0] * Math.sin(a), bottom, r1[1] * Math.cos(a)];
+      }),
+      hemRadius,
+      skin,
+      { seg: 6, caps: false },
+    );
+  return skin;
+}
+
+/** Ring um eine senkrechte Achse (Hutband, Gürtel, Halsband) */
+export function ring(b, mat, center, rx, rz, radius, skin, seg = 24) {
+  b.tube(
+    mat,
+    Array.from({ length: seg + 1 }, (_, i) => {
+      const a = (2 * Math.PI * i) / seg;
+      return [center[0] + rx * Math.sin(a), center[1], center[2] + rz * Math.cos(a)];
+    }),
+    radius,
+    skin,
+    { seg: 8, caps: false },
+  );
+}
+
+/** Krempenhut: flache Krempe, Krone, Band (Cowboy, Sombrero, Trachtenhut) */
+export function brimHat(b, mat, band, { y = 0.88, brim = [0.33, 0.29], crown = [0.15, 0.1, 0.15], tilt = 0, bandColor = band } = {}) {
+  b.blob(mat, [0, y, 0], [brim[0], 0.022, brim[1]], "Head", { seg: 32, rot: [tilt, 0, 0] });
+  b.blob(mat, [0, y + crown[1] * 0.8, -0.01], crown, "Head", { exp: [0.8, 0.7], seg: 24 });
+  if (bandColor) ring(b, bandColor, [0, y + 0.02, -0.01], crown[0] + 0.003, crown[2] + 0.003, 0.014, "Head");
 }

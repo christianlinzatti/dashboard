@@ -22,6 +22,8 @@ const opt = (name, fallback) => {
 const pose = opt("--pose", "Idle_Breathe");
 const at = Number(opt("--time", "0.4"));
 /** --kopf: Nahaufnahme des Kopfs (Gesicht prüfen) */
+/** --ohne <Material>: dieses Material ausblenden (Fehlersuche) */
+const hide = opt("--ohne", "");
 const headShot = args.includes("--kopf") ? (args.splice(args.indexOf("--kopf"), 1), true) : false;
 const outDir = opt("--out", path.join(root, "avatars"));
 const ids = args;
@@ -38,16 +40,17 @@ r.setClearColor(0x000000, 0);
 r.outputColorSpace = THREE.SRGBColorSpace;
 r.toneMapping = THREE.ACESFilmicToneMapping;
 document.body.appendChild(r.domElement);
-window.render = async (url, clipName, t, head) => {
+window.render = async (url, clipName, t, head, hide) => {
   const gltf = await new GLTFLoader().loadAsync(url);
   const scene = new THREE.Scene();
   scene.add(new THREE.HemisphereLight(0xdfe8ff, 0x302838, 1.6));
   const key = new THREE.DirectionalLight(0xffffff, 2.4); key.position.set(1.5, 2.5, 3); scene.add(key);
   const rim = new THREE.DirectionalLight(0xb48cff, 1.6); rim.position.set(-2, 1.5, -2.5); scene.add(rim);
   const model = gltf.scene;
+  if (hide) model.traverse((o) => { if (o.material?.name === hide) o.visible = false; });
   const mixer = new THREE.AnimationMixer(model);
   const clip = gltf.animations.find((a) => a.name === clipName) ?? gltf.animations[0];
-  if (clip) { mixer.clipAction(clip).play(); mixer.setTime(t); }
+  if (clip && clipName !== "keine") { mixer.clipAction(clip).play(); mixer.setTime(t); }
   model.updateMatrixWorld(true);
   const box = new THREE.Box3().setFromObject(model, true);
   const c = box.getCenter(new THREE.Vector3());
@@ -84,7 +87,7 @@ await tab.goto(`http://127.0.0.1:${port}/`);
 await tab.waitForFunction(() => window.ready);
 const { writeFile } = await import("node:fs/promises");
 for (const id of ids) {
-  const data = await tab.evaluate(([u, c, t, k]) => window.render(u, c, t, k), [`/avatars/${existsSync(path.join(root, "avatars", `${id}.glb`)) ? "" : "generated/"}${id}.glb`, pose, at, headShot]);
+  const data = await tab.evaluate(([u, c, t, k, h]) => window.render(u, c, t, k, h), [`/avatars/${existsSync(path.join(root, "avatars", `${id}.glb`)) ? "" : "generated/"}${id}.glb`, pose, at, headShot, hide]);
   await writeFile(path.join(outDir, `${id}.png`), Buffer.from(data.split(",")[1], "base64"));
   console.log(`${id}.png`);
 }

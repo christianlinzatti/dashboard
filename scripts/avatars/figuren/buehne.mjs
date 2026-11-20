@@ -262,7 +262,7 @@ const figuren = {
     body(b, J, F) {
       // großer Afro, Ohrringe
       b.blob("Skin", [0, 0.73, 0], [0.15, 0.18, 0.155], "Head", { seg: 28 });
-      b.blob("Afro armor", [0, 0.83, -0.05], [0.27, 0.24, 0.24], "Head", { seg: 30 });
+      b.blob("Afro armor", [0, 0.87, -0.09], [0.27, 0.22, 0.21], "Head", { seg: 30 });
       comicFace(b, F, { eye: [0.021, 0.028, 0.01], smile: [0.035, 0.014, 0.007] });
       for (const s of [1, -1]) b.blob("Gem luminous trim", [0.15 * s, 0.64, 0.01], [0.022, 0.022, 0.022], "Head");
       b.limb("Skin", [0, 0.45, 0], [0, 0.6, 0], 0.05, 0.047, "Neck", "Head", { caps: false });

@@ -65,7 +65,8 @@ export class Builder {
         const b = base + r * cols + ((c + 1) % cols);
         const d = base + (r + 1) * cols + c;
         const e = base + (r + 1) * cols + ((c + 1) % cols);
-        g.indices.push(a, d, b, b, d, e);
+        // gegen den Uhrzeigersinn von außen gesehen (glTF-Vorderseite)
+        g.indices.push(a, b, d, b, e, d);
       }
   }
 
@@ -117,7 +118,7 @@ export class Builder {
         const a = (2 * Math.PI * c) / seg;
         const [rx, rz] = rAt(r);
         const f = frames[r];
-        return add(points[r], add(mul(f.s, Math.cos(a) * rx), mul(f.b, Math.sin(a) * rz)));
+        return add(points[r], add(mul(f.s, Math.cos(a) * rx), mul(f.b, -Math.sin(a) * rz)));
       },
       skin,
     );
