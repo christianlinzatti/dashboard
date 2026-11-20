@@ -234,6 +234,17 @@ describe("Alexa-Intents", () => {
       "Seit 20:15 Uhr liefen 12 Songs in 1 Stunden und 15 Minuten. Höhepunkt war Amore. Als Zugabe gab es Columbo. Am meisten lief Wanda mit 4 Songs. 2 Lieblingssongs waren dabei.",
     );
     expect((await run("AbendIntent", {}, snap)).text).toMatch(/noch nicht genug Musik/);
+    const mitTipps = await run("AbendIntent", {}, { ...snap, evening: { ...evening, tips: ["Bilderbuch", "Voodoo Jürgens"] } });
+    expect(mitTipps.text).toMatch(/Tipp fürs nächste Mal: Bilderbuch und Voodoo Jürgens\.$/);
+
+    // ähnliche Künstler: zum laufenden Song, nach der Musik die Tipps des Abends
+    const lead = snap.artists[0]!.name;
+    const aehnlich = await run("AehnlichIntent", {}, { ...snap, user: { artists: [], similar: ["A", "B", "C", "D"] } });
+    expect(aehnlich.text).toBe(`Wenn dir ${lead} gefällt, hör mal in A, B und C rein.`);
+    expect((await run("AehnlichIntent", {}, { ...snap, updatedAt: 0, evening: { ...evening, tips: ["X"] } })).text).toBe(
+      "Passend zum heutigen Abend: X.",
+    );
+    expect((await run("AehnlichIntent", {}, null)).text).toMatch(/keine ähnlichen Künstler/);
 
     expect((await run("BildschirmIntent", { zustand: { value: "aus" } })).cmds).toEqual([{ type: "bildschirm", on: false }]);
     expect((await run("LyricsVersatzIntent", { richtung: { value: "spaeter" } })).cmds).toEqual([

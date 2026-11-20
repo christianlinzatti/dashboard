@@ -25,6 +25,7 @@ und Bühnenqualität des Dashboards.
 | „Alexa, sag Sonic Stage Lyrics später“ | Lyrics 0,2 s später (oder „früher“) |
 | „Alexa, sag Sonic Stage Bildschirm aus“ | Bildschirm schwarz (mit Pi-Bridge per HDMI aus) bis zum Antippen oder „Bildschirm an“ |
 | „Alexa, frag Sonic Stage, wie war der Abend“ | Rückblick: wie viele Songs seit wann, Höhepunkt, Zugabe, meistgespielter Künstler – auch nach der Musik |
+| „Alexa, frag Sonic Stage, was klingt ähnlich“ | ähnliche Künstler zum laufenden Song (Last.fm), nach der Musik die Tipps aus dem Rückblick |
 
 Nach dem Ändern von `de-DE.json` das Interaktionsmodell in der Alexa-Developer-Console neu einfügen und
 „Build Model“ ausführen.

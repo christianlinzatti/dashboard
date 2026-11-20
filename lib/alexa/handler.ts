@@ -206,6 +206,20 @@ function viennaTime(ms: number) {
   return new Intl.DateTimeFormat("de-AT", { timeZone: "Europe/Vienna", hour: "2-digit", minute: "2-digit" }).format(ms);
 }
 
+/** „A“, „A und B“, „A, B und C“ */
+function listText(xs: readonly string[]) {
+  return xs.length <= 1 ? (xs[0] ?? "") : `${xs.slice(0, -1).join(", ")} und ${xs.at(-1)}`;
+}
+
+/** „Was klingt ähnlich?“ – zum laufenden Song, sonst die Tipps aus dem Abend */
+export function similarAnswer(s: Snapshot | null): string {
+  const similar = s?.user?.similar?.slice(0, 3);
+  if (s && similar?.length) return `Wenn dir ${s.artists[0]?.name ?? s.title} gefällt, hör mal in ${listText(similar)} rein.`;
+  const tips = s?.evening?.tips?.slice(0, 3);
+  if (tips?.length) return `Passend zum heutigen Abend: ${listText(tips)}.`;
+  return "Dazu kenne ich gerade keine ähnlichen Künstler. Dafür braucht das Dashboard einen Last.fm-Schlüssel.";
+}
+
 /** „Wie war der Abend?“ – aus dem Rückblick des Kiosks (letzte Meldung, auch wenn die Musik schon aus ist) */
 export function eveningAnswer(s: Snapshot | null): string {
   const e = s?.evening;
@@ -216,6 +230,7 @@ export function eveningAnswer(s: Snapshot | null): string {
   if (e.encores.length) parts.push(`Als Zugabe gab es ${e.encores[0]}.`);
   if (e.topArtist) parts.push(`Am meisten lief ${e.topArtist.name} mit ${e.topArtist.songs} Songs.`);
   if (e.liked) parts.push(e.liked === 1 ? "Ein Lieblingssong war auch dabei." : `${e.liked} Lieblingssongs waren dabei.`);
+  if (e.tips?.length) parts.push(`Tipp fürs nächste Mal: ${listText(e.tips.slice(0, 3))}.`);
   return parts.join(" ");
 }
 
@@ -345,6 +360,11 @@ export async function handleAlexa(req: AlexaRequest, deps: HandlerDeps) {
     case "AbendIntent":
       // auch nach der Musik: der letzte Stand (bis zu zwei Stunden alt) enthält den Rückblick
       return speak(eveningAnswer(await deps.getSnapshot()));
+    case "AehnlichIntent": {
+      // läuft nichts mehr, helfen die Tipps aus dem Rückblick (letzter Stand)
+      const s = (await live()) ?? (await deps.getSnapshot());
+      return speak(similarAnswer(s));
+    }
     case "BildschirmIntent": {
       const on = onOff(slot(req, "zustand"));
       if (on === undefined) return speak("Soll ich den Bildschirm an- oder ausschalten?", false);
@@ -371,7 +391,7 @@ export async function handleAlexa(req: AlexaRequest, deps: HandlerDeps) {
     }
     case "AMAZON.HelpIntent":
       return speak(
-        "Du kannst fragen: Welcher Song läuft? Wer singt gerade? Wann spielen die in der Nähe? Erzähl mir was über die Band. Wie war der Abend? Oder sagen: Konfetti, Feuerwerk, Lyrics später, Bildschirm aus, Lampen aus, Bühne Weltraum.",
+        "Du kannst fragen: Welcher Song läuft? Wer singt gerade? Wann spielen die in der Nähe? Erzähl mir was über die Band. Wie war der Abend? Was klingt ähnlich? Oder sagen: Konfetti, Feuerwerk, Lyrics später, Bildschirm aus, Lampen aus, Bühne Weltraum.",
         false,
       );
     case "AMAZON.StopIntent":

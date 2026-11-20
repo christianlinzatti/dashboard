@@ -69,6 +69,15 @@ const artistInfoSchema = z.object({
   }),
 });
 
+const similarSchema = z.object({
+  similarartists: z.object({
+    artist: z.array(z.object({ name: z.string(), match: z.coerce.number().min(0).max(1).catch(0) })),
+  }),
+});
+
+/** So ähnlich (0..1, laut Last.fm) muss ein Künstler mindestens sein */
+export const MIN_SIMILAR_MATCH = 0.15;
+
 export function createLastfm(cfg: { apiKey: string; user: string }, http: Http) {
   const call = async (params: Record<string, string>, signal?: AbortSignal) => {
     const q = new URLSearchParams({ ...params, api_key: cfg.apiKey, format: "json" });
@@ -105,6 +114,19 @@ export function createLastfm(cfg: { apiKey: string; user: string }, http: Http) 
         return { plays: r.track.userplaycount ?? 0, loved: r.track.userloved === "1" };
       } catch (e) {
         if (e instanceof LastfmError && e.code === 6) return null; // nicht gefunden
+        throw e;
+      }
+    },
+
+    /** Ähnliche Künstler (beste zuerst); leer, wenn Last.fm den Künstler nicht kennt */
+    async similarArtists(artist: string, limit = 8, signal?: AbortSignal): Promise<string[]> {
+      try {
+        const r = similarSchema.parse(
+          await call({ method: "artist.getsimilar", artist, limit: String(limit), autocorrect: "1" }, signal),
+        );
+        return r.similarartists.artist.filter((a) => a.match >= MIN_SIMILAR_MATCH && a.name.trim()).map((a) => a.name);
+      } catch (e) {
+        if (e instanceof LastfmError && e.code === 6) return [];
         throw e;
       }
     },

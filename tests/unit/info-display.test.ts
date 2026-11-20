@@ -29,6 +29,13 @@ describe("Info-Anzeige", () => {
     expect(d(46_000)).toBeNull(); // Refrain
   });
 
+  it("ähnliche Künstler kommen als Fakt in die Runde", () => {
+    const song = { ...neonlicht, user: { ...neonlicht.user!, similar: ["A", "B", "C", "D"] } };
+    const seen = new Set<string | null>();
+    for (let t = 0; t < song.track.durationMs; t += 1000) seen.add(factAt(song, derive(song, t), t));
+    expect(seen).toContain(`Ähnlich wie ${song.artists[0]!.name} · A, B, C`);
+  });
+
   it("Wandfoto gehört dem Lead", () => {
     expect(wallPhoto(neonlicht)?.url).toBe("/demo/mira-sol.svg");
     expect(wallPhoto(instrumental)).toBeNull();

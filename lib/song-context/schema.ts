@@ -161,6 +161,8 @@ export const userSchema = z.object({
   lovedOnLastfm: z.boolean().optional(),
   /** wie oft gehört (Last.fm) */
   trackPlays: z.number().int().nonnegative().optional(),
+  /** ähnliche Künstler zum Lead (Last.fm), beste zuerst */
+  similar: z.array(z.string().max(200)).max(5).optional(),
   artists: z.record(
     z.string(),
     z.object({ following: z.boolean().optional(), plays: z.number().int().nonnegative().optional() }),

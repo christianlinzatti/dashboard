@@ -44,7 +44,7 @@ export function EveningRecap({ recap }: { recap: Recap }) {
       <p className="mt-[0.5vmin] text-[clamp(12px,2.1vmin,21px)] text-white/70" data-testid="recap-facts">
         {facts.join(" · ")}
       </p>
-      {(recap.highlights.length > 0 || recap.encores.length > 0 || recap.topArtist) && (
+      {(recap.highlights.length > 0 || recap.encores.length > 0 || recap.topArtist || recap.tips.length > 0) && (
         <ul className="mt-[1vmin] space-y-[0.4vmin] text-[clamp(12px,2vmin,20px)]">
           {recap.highlights.length > 0 && (
             <li>
@@ -60,6 +60,11 @@ export function EveningRecap({ recap }: { recap: Recap }) {
             <li>
               <span className="font-semibold text-cyan-300">Meistgespielt:</span> {recap.topArtist.name} ({recap.topArtist.songs}{" "}
               Songs)
+            </li>
+          )}
+          {recap.tips.length > 0 && (
+            <li data-testid="recap-tips">
+              <span className="font-semibold text-emerald-300">Tipp fürs nächste Mal:</span> {recap.tips.join(", ")}
             </li>
           )}
         </ul>

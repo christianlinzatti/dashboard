@@ -238,6 +238,21 @@
           ]
         },
         {
+          "name": "AehnlichIntent",
+          "slots": [],
+          "samples": [
+            "was klingt ähnlich",
+            "wer klingt ähnlich",
+            "was klingt so ähnlich",
+            "was passt dazu",
+            "welche Künstler sind ähnlich",
+            "empfiehl mir was Ähnliches",
+            "was könnte mir noch gefallen",
+            "hast du einen Tipp für mich",
+            "was soll ich als Nächstes hören"
+          ]
+        },
+        {
           "name": "BildschirmIntent",
           "slots": [
             {

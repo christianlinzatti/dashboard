@@ -40,6 +40,16 @@ const lastfmResponses: Record<string, unknown> = {
       tags: { tag: [{ name: "rock" }, { name: "classic rock" }] },
     },
   },
+  "artist.getsimilar": {
+    similarartists: {
+      artist: [
+        { name: "Freddie Mercury", match: "1" },
+        { name: "Gast", match: "0.9" },
+        { name: "David Bowie", match: "0.6" },
+        { name: "Fast unbekannt", match: "0.05" },
+      ],
+    },
+  },
 };
 
 function lastfmHttp(override?: (method: string) => unknown) {
@@ -68,6 +78,16 @@ describe("Last.fm", () => {
     const lf = createLastfm({ apiKey: "k", user: "u" }, lastfmHttp());
     expect(await lf.trackStats("Helene Fischer", "Atemlos")).toEqual({ plays: 37, loved: true });
     expect(await lf.artistStats("Queen")).toEqual({ plays: 432, tags: ["rock", "classic rock"] });
+  });
+
+  it("ähnliche Künstler: nur ausreichend ähnliche, unbekannt → leer", async () => {
+    const lf = createLastfm({ apiKey: "k", user: "u" }, lastfmHttp());
+    expect(await lf.similarArtists("Queen")).toEqual(["Freddie Mercury", "Gast", "David Bowie"]);
+    const unknown = createLastfm(
+      { apiKey: "k", user: "u" },
+      lastfmHttp(() => ({ error: 6, message: "The artist you supplied could not be found" })),
+    );
+    expect(await unknown.similarArtists("Niemand")).toEqual([]);
   });
 
   it("„nicht gefunden“ → null, ungültiger Key → Fehler", async () => {
@@ -124,6 +144,8 @@ describe("Persönliches zusammenführen", () => {
       trackSaved: true,
       trackPlays: 37,
       lovedOnLastfm: true,
+      // der Gast spielt schon mit – kein Tipp
+      similar: ["Freddie Mercury", "David Bowie"],
       artists: {
         "0OdUWJ0sBjDrqHygGUXeCF": { following: true, plays: 432 },
         "1dfeR4HaWDbWqFHLkxsg1d": { following: false, plays: 432 },

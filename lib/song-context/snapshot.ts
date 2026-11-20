@@ -40,6 +40,7 @@ export const snapshotSchema = z.object({
       trackSaved: z.boolean().optional(),
       lovedOnLastfm: z.boolean().optional(),
       trackPlays: z.number().int().nonnegative().optional(),
+      similar: z.array(z.string().max(200)).max(5).optional(),
       artists: z
         .array(
           z.object({
@@ -94,6 +95,7 @@ export const snapshotSchema = z.object({
       encores: z.array(z.string().max(300)).max(10),
       liked: z.number().int().nonnegative(),
       topArtist: z.object({ name: z.string().max(200), songs: z.number().int().positive() }).optional(),
+      tips: z.array(z.string().max(200)).max(5).optional(),
     })
     .optional(),
 });
@@ -179,11 +181,12 @@ function extras(song: SongStatic): Pick<Snapshot, "user" | "concerts" | "about" 
   const trivia = song.info?.song?.trivia?.filter(Boolean).slice(0, 5);
   if (trivia?.length) out.trivia = trivia.map((t) => t.slice(0, 200));
   if (song.user) {
-    const { trackSaved, lovedOnLastfm, trackPlays, artists } = song.user;
+    const { trackSaved, lovedOnLastfm, trackPlays, similar, artists } = song.user;
     out.user = {
       ...(trackSaved !== undefined ? { trackSaved } : {}),
       ...(lovedOnLastfm !== undefined ? { lovedOnLastfm } : {}),
       ...(trackPlays !== undefined ? { trackPlays } : {}),
+      ...(similar?.length ? { similar } : {}),
       artists: Object.entries(artists ?? {}).flatMap(([id, a]) => {
         const n = name(id);
         return n ? [{ name: n, ...a }] : [];

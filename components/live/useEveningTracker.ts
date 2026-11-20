@@ -17,6 +17,8 @@ export function useEveningTracker() {
   const trackKey = useSongContext((s) => s.song?.trackKey);
   const mood = useSongContext((s) => s.song?.show?.mood ?? s.song?.music.mood);
   const liked = useSongContext((s) => !!(s.song?.user?.trackSaved || s.song?.user?.lovedOnLastfm));
+  // als Text, damit der Selektor einen einfachen Wert liefert
+  const similar = useSongContext((s) => s.song?.user?.similar?.join("\n") ?? "");
 
   // Rückblick: Protokoll des Abends aus dem Browser laden (überlebt einen Neustart des Kiosks)
   useEffect(() => recapStore.getState().hydrate(), []);
@@ -40,6 +42,12 @@ export function useEveningTracker() {
       recapStore.getState().update(trackKey, { phase, liked });
     }
   }, [trackKey, mood, liked]);
+
+  // ähnliche Künstler kommen mit den persönlichen Daten etwas später nach
+  useEffect(() => {
+    if (!trackKey || !similar || songContext.getState().frozen || trackKey.startsWith("demo-")) return;
+    recapStore.getState().update(trackKey, { similar: similar.split("\n") });
+  }, [trackKey, similar]);
 
   useEffect(() => {
     // letzter Song (auch über eine Pause/Stille hinweg) – beim nächsten beginnt der Umbau bzw. die Zugabe

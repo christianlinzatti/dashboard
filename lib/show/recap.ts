@@ -17,6 +17,8 @@ export type LogEntry = {
   phase?: EveningPhase;
   liked?: boolean;
   finished?: boolean;
+  /** ähnliche Künstler zum Lead (Last.fm) – daraus Tipps für den nächsten Abend */
+  similar?: string[];
 };
 
 const STORAGE_KEY = "ss_abend";
@@ -46,7 +48,7 @@ type State = {
   /** Songstart festhalten; derselbe Song direkt nacheinander ergänzt nur */
   start: (e: Omit<LogEntry, "phase" | "liked" | "finished">) => void;
   /** Phase, Like, ausgespielt nachtragen (letzter Eintrag dieses Songs) */
-  update: (trackKey: string, patch: Partial<Pick<LogEntry, "phase" | "liked" | "finished">>) => void;
+  update: (trackKey: string, patch: Partial<Pick<LogEntry, "phase" | "liked" | "finished" | "similar">>) => void;
 };
 
 export const recapStore = createStore<State>()((set, get) => ({
@@ -81,9 +83,38 @@ export type Recap = {
   encores: string[];
   liked: number;
   topArtist?: { name: string; songs: number };
+  /** „Wenn euch das gefallen hat“: Künstler, die zu mehreren gespielten passen und heute noch nicht liefen */
+  tips: string[];
   /** die letzten Songs (neueste zuerst) */
   recent: LogEntry[];
 };
+
+/** So viele Tipps zeigt der Rückblick höchstens */
+export const MAX_TIPS = 3;
+
+/**
+ * Tipps für den nächsten Abend: ähnliche Künstler, gewichtet danach, zu wie vielen gespielten Songs sie passen
+ * (Lieblingssongs zählen doppelt, die Reihenfolge bei Last.fm entscheidet bei Gleichstand). Wer heute schon lief,
+ * fällt heraus.
+ */
+export function tipsFor(evening: readonly LogEntry[]): string[] {
+  const played = new Set(evening.map((e) => e.artist.toLowerCase()));
+  const score = new Map<string, { name: string; score: number; rank: number }>();
+  for (const e of evening) {
+    (e.similar ?? []).forEach((name, i) => {
+      const key = name.toLowerCase();
+      if (played.has(key)) return;
+      const s = score.get(key) ?? { name, score: 0, rank: Infinity };
+      s.score += e.liked ? 2 : 1;
+      s.rank = Math.min(s.rank, i);
+      score.set(key, s);
+    });
+  }
+  return [...score.values()]
+    .sort((a, b) => b.score - a.score || a.rank - b.rank || a.name.localeCompare(b.name))
+    .slice(0, MAX_TIPS)
+    .map((s) => s.name);
+}
 
 /** Mindestens so viele Songs, damit sich ein Rückblick lohnt */
 export const MIN_SONGS = 3;
@@ -113,6 +144,7 @@ export function summarize(log: readonly LogEntry[], now: number): Recap | null {
     encores: evening.filter((e) => e.phase === "zugabe").map((e) => e.title),
     liked: evening.filter((e) => e.liked).length,
     ...(songs >= 2 ? { topArtist: { name, songs } } : {}),
+    tips: tipsFor(evening),
     recent: evening.slice(-8).reverse(),
   };
 }

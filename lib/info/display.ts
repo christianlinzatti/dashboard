@@ -75,6 +75,13 @@ export function infoCardAt(song: SongStatic, d: Derived, t: number): ArtistEntry
   return entries[Math.floor(t / CARD_ROTATE_MS) % entries.length]!;
 }
 
+/** „Ähnlich wie Queen · Freddie Mercury, David Bowie“ (Last.fm) */
+function similarFact(song: SongStatic): string[] {
+  const similar = song.user?.similar?.slice(0, 3);
+  const lead = song.artists[0]?.name;
+  return similar?.length && lead ? [`Ähnlich wie ${lead} · ${similar.join(", ")}`] : [];
+}
+
 /**
  * Fakten-Ticker in Strophen: alle 24 s für 7 s ein Kurzfakt (z. B. „Queen · Gegründet 1970“),
  * Song-Trivia von Genius zuerst („Neonlicht · Produziert von …“).
@@ -85,6 +92,8 @@ export function factAt(song: SongStatic, d: Derived, t: number): string | null {
     ...(song.info?.song?.trivia ?? []).map((f) => `${song.track.title} · ${f}`),
     ...infoEntries(song).flatMap((e) => e.facts.map((f) => `${e.name} · ${f}`)),
   ];
+  // Tipp als zweiter Fakt: ein Song hat oft nur wenige Strophen-Einblendungen
+  facts.splice(1, 0, ...similarFact(song));
   if (!facts.length || t % FACT_PERIOD_MS >= FACT_VISIBLE_MS) return null;
   // laufende Nummer nur über Einblendungen, die in Strophen fallen – so kommt jeder Fakt an die Reihe
   const k = Math.floor(t / FACT_PERIOD_MS);

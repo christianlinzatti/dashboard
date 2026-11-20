@@ -67,6 +67,7 @@ export function useSnapshotReporter(enabled: boolean) {
                     encores: evening.encores.slice(0, 10),
                     liked: evening.liked,
                     ...(evening.topArtist ? { topArtist: evening.topArtist } : {}),
+                    ...(evening.tips.length ? { tips: evening.tips } : {}),
                   },
                 }
               : {}),

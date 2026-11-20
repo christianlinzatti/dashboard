@@ -21,20 +21,26 @@ export async function userInfoFor(
   deps: { spotify: Call; lastfm: ReturnType<typeof createLastfm> | null },
 ): Promise<UserInfo> {
   const info: UserInfo = { artists: {} };
-  const [saved, followed, trackStats, artistStats] = await Promise.all([
+  const lead = q.artists[0]?.name ?? "";
+  const [saved, followed, trackStats, artistStats, similar] = await Promise.all([
     trackSaved(deps.spotify, q.trackId).catch(() => undefined),
     artistsFollowed(
       deps.spotify,
       q.artists.map((a) => a.id),
     ).catch(() => ({}) as Record<string, boolean>),
-    deps.lastfm?.trackStats(q.artists[0]?.name ?? "", q.title).catch(() => null) ?? null,
+    deps.lastfm?.trackStats(lead, q.title).catch(() => null) ?? null,
     Promise.all(q.artists.slice(0, 5).map((a) => deps.lastfm?.artistStats(a.name).catch(() => null) ?? null)),
+    (lead && deps.lastfm?.similarArtists(lead).catch(() => [])) || [],
   ]);
   if (saved !== undefined) info.trackSaved = saved;
   if (trackStats) {
     info.trackPlays = trackStats.plays;
     info.lovedOnLastfm = trackStats.loved;
   }
+  // ähnliche Künstler ohne die, die ohnehin im Song mitspielen
+  const own = new Set(q.artists.map((a) => a.name.toLowerCase()));
+  const others = similar.filter((n) => !own.has(n.toLowerCase())).slice(0, 5);
+  if (others.length) info.similar = others;
   q.artists.forEach((a, i) => {
     const entry: UserInfo["artists"][string] = {};
     if (followed[a.id] !== undefined) entry.following = followed[a.id];
