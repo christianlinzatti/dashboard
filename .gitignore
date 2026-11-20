@@ -8,6 +8,8 @@ next-env.d.ts
 !.env.example
 # generiert aus /avatars (scripts/optimize-avatars.mjs)
 public/avatars/
+# erzeugte Figuren (scripts/avatars/build-characters.mjs, beim Build)
+/avatars/generated/
 # Playwright
 test-results/
 playwright-report/

@@ -1335,9 +1335,10 @@
   },
   {
     "file": "disco-baer.glb",
+    "generated": true,
+    "base": "rio-carnival",
+    "version": "781f33b5b3731520",
     "motionVersion": 3,
-    "bytes": 4152396,
-    "sha256": "e84e4cff7c57598f6f49e427501b6c94f91149053bc0e6936cb061edc898235f",
     "triangles": 18764,
     "joints": 45,
     "clips": [
@@ -1473,9 +1474,10 @@
   },
   {
     "file": "retro-bot.glb",
+    "generated": true,
+    "base": "atlas-prism",
+    "version": "b5b6249e3accec99",
     "motionVersion": 3,
-    "bytes": 4524392,
-    "sha256": "a1fb623087fb6730f3cfe26e3b72d6e782389f2c20acf2381569ae66ff564585",
     "triangles": 20188,
     "joints": 47,
     "clips": [
@@ -1611,9 +1613,10 @@
   },
   {
     "file": "astro-nova.glb",
+    "generated": true,
+    "base": "atlas-prism",
+    "version": "158eb3e58e91e8fe",
     "motionVersion": 3,
-    "bytes": 4371740,
-    "sha256": "672792ab8d512fa69313e80cd9c526acfd447a978a58d689c0cedc428800060e",
     "triangles": 15160,
     "joints": 47,
     "clips": [
@@ -1749,9 +1752,10 @@
   },
   {
     "file": "kosmo-alien.glb",
+    "generated": true,
+    "base": "rio-carnival",
+    "version": "50d1fcc2489c2eb1",
     "motionVersion": 3,
-    "bytes": 4115656,
-    "sha256": "549717cfd698e68e63aa2bd3f717ff545f049dc885a580aff39090cab712923a",
     "triangles": 17336,
     "joints": 45,
     "clips": [
@@ -1887,9 +1891,10 @@
   },
   {
     "file": "punk-rocker.glb",
+    "generated": true,
+    "base": "rio-carnival",
+    "version": "15b3efcabcfe0995",
     "motionVersion": 3,
-    "bytes": 4281248,
-    "sha256": "fcc39a172592b4357f8e8616912dbde1134af235d9453a85881b34defa4b14e8",
     "triangles": 22808,
     "joints": 45,
     "clips": [
@@ -2025,9 +2030,10 @@
   },
   {
     "file": "glitzer-diva.glb",
+    "generated": true,
+    "base": "rio-carnival",
+    "version": "2ddae713d8a7a9ed",
     "motionVersion": 3,
-    "bytes": 4130864,
-    "sha256": "ab5826be617134b7edd05702c6ae9376bab302161a3eba5bf76aa77dddb9c9d0",
     "triangles": 17936,
     "joints": 45,
     "clips": [
@@ -2163,9 +2169,10 @@
   },
   {
     "file": "cowboy-joe.glb",
+    "generated": true,
+    "base": "rio-carnival",
+    "version": "643da676fb86de93",
     "motionVersion": 3,
-    "bytes": 4294240,
-    "sha256": "e72ed3181c2e1bbf953dfc1d52c3bf329fc33ff58220976df4010a99c2e3825f",
     "triangles": 23348,
     "joints": 45,
     "clips": [
@@ -2301,9 +2308,10 @@
   },
   {
     "file": "knochen-kalle.glb",
+    "generated": true,
+    "base": "rio-carnival",
+    "version": "b0e57cfa363b7164",
     "motionVersion": 3,
-    "bytes": 4271796,
-    "sha256": "824a6c7b2dde5aeb073882d138aa6efe24faf38fe5ec9dd8172a1fc3e140c874",
     "triangles": 22408,
     "joints": 45,
     "clips": [
@@ -2439,9 +2447,10 @@
   },
   {
     "file": "mietz-katze.glb",
+    "generated": true,
+    "base": "aurora-synth",
+    "version": "fc4154e2a1c05ad7",
     "motionVersion": 3,
-    "bytes": 4090616,
-    "sha256": "094e3d81899358038b1ba985c75ae656976d71f0975d707e62f2d67ca9f23b84",
     "triangles": 16460,
     "joints": 45,
     "clips": [
@@ -2577,9 +2586,10 @@
   },
   {
     "file": "eisen-ritter.glb",
+    "generated": true,
+    "base": "ember-rock",
+    "version": "38ee4d6bf2d6f46d",
     "motionVersion": 3,
-    "bytes": 3731520,
-    "sha256": "d2e7f4fee136c87a67aec4f1d7b7b8a1796707e1efeda6f2dadfad7def2cbfbf",
     "triangles": 18616,
     "joints": 44,
     "clips": [
@@ -2699,9 +2709,10 @@
   },
   {
     "file": "frack-pinguin.glb",
+    "generated": true,
+    "base": "rio-carnival",
+    "version": "f8302a0bb5e66ed0",
     "motionVersion": 3,
-    "bytes": 4016584,
-    "sha256": "52889238e3e75d0db3cc7e967172cd1b33910aa4fbdd21b30cf04a08e5489af1",
     "triangles": 14160,
     "joints": 45,
     "clips": [
@@ -2837,9 +2848,10 @@
   },
   {
     "file": "mc-flow.glb",
+    "generated": true,
+    "base": "luna-flow",
+    "version": "4affa90379568939",
     "motionVersion": 3,
-    "bytes": 3896460,
-    "sha256": "aaea79a7f6717b1a7124dc1e7d73228400cccdc0a70ffd48a146e41298f8c86b",
     "triangles": 24592,
     "joints": 45,
     "clips": [

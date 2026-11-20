@@ -5,6 +5,7 @@
 //
 // Nutzt Playwright mit Chromium (in der CI und im Cloud-Container vorinstalliert) und three aus node_modules.
 import { createServer } from "node:http";
+import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
@@ -83,7 +84,7 @@ await tab.goto(`http://127.0.0.1:${port}/`);
 await tab.waitForFunction(() => window.ready);
 const { writeFile } = await import("node:fs/promises");
 for (const id of ids) {
-  const data = await tab.evaluate(([u, c, t, k]) => window.render(u, c, t, k), [`/avatars/${id}.glb`, pose, at, headShot]);
+  const data = await tab.evaluate(([u, c, t, k]) => window.render(u, c, t, k), [`/avatars/${existsSync(path.join(root, "avatars", `${id}.glb`)) ? "" : "generated/"}${id}.glb`, pose, at, headShot]);
   await writeFile(path.join(outDir, `${id}.png`), Buffer.from(data.split(",")[1], "base64"));
   console.log(`${id}.png`);
 }

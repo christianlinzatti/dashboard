@@ -25,12 +25,13 @@ const io = new NodeIO()
 const out = [];
 let total = 0;
 for (const entry of manifest) {
-  const src = path.join(srcDir, entry.file);
+  // erzeugte Figuren (scripts/avatars/build-characters.mjs) liegen nicht im Repo, sondern unter avatars/generated
+  const src = path.join(srcDir, entry.generated ? "generated" : "", entry.file);
   const dst = path.join(outDir, entry.file);
   const png = entry.file.replace(/\.glb$/, ".png");
   const buf = await readFile(src);
   const sha = createHash("sha256").update(buf).digest("hex");
-  if (sha !== entry.sha256) throw new Error(`Prüfsumme stimmt nicht: ${entry.file}`);
+  if (!entry.generated && sha !== entry.sha256) throw new Error(`Prüfsumme stimmt nicht: ${entry.file}`);
 
   // Nur neu komprimieren, wenn sich die Quelldatei geändert hat.
   const fresh = !force && (await readFile(dst + ".sha", "utf8").catch(() => "")) === sha;
