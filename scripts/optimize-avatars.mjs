@@ -5,8 +5,13 @@ import { mkdir, readFile, writeFile, stat, copyFile } from "node:fs/promises";
 import path from "node:path";
 import { NodeIO } from "@gltf-transform/core";
 import { ALL_EXTENSIONS } from "@gltf-transform/extensions";
-import { dedup, prune, quantize, resample, weld, meshopt } from "@gltf-transform/functions";
+import { cloneDocument, dedup, prune, quantize, resample, weld, meshopt } from "@gltf-transform/functions";
 import { MeshoptEncoder, MeshoptDecoder } from "meshoptimizer";
+import { comparePoses, dropStaticChannels, packRotations } from "./avatar-anim.mjs";
+import { OPTIMIZE_VERSION } from "./avatar-catalog.mjs";
+
+/** Größte erlaubte Abweichung der Tanz-Posen durch die Optimierung (weit unter sichtbar) */
+const MAX_DEVIATION = { rotationDeg: 0.1, translation: 1e-3, scale: 1e-3 };
 
 const root = path.resolve(import.meta.dirname, "..");
 const srcDir = path.join(root, "avatars");
@@ -34,12 +39,26 @@ for (const entry of manifest) {
   if (!entry.generated && sha !== entry.sha256) throw new Error(`Prüfsumme stimmt nicht: ${entry.file}`);
 
   // Nur neu komprimieren, wenn sich die Quelldatei geändert hat.
-  const fresh = !force && (await readFile(dst + ".sha", "utf8").catch(() => "")) === sha;
+  // (auch wenn sich das Verfahren hier geändert hat: OPTIMIZE_VERSION)
+  const stamp = `${sha}:${OPTIMIZE_VERSION}`;
+  const fresh = !force && (await readFile(dst + ".sha", "utf8").catch(() => "")) === stamp;
+  let note = "";
   if (!fresh) {
     const doc = await io.readBinary(buf);
-    await doc.transform(dedup(), prune(), weld(), resample(), quantize(), meshopt({ encoder: MeshoptEncoder, level: "medium" }));
-    await writeFile(dst, await io.writeBinary(doc));
-    await writeFile(dst + ".sha", sha);
+    await doc.transform(dedup(), prune(), weld(), resample());
+    const before = cloneDocument(doc);
+    // Tanz-Spuren verschlanken: stillstehende Spuren weg, Drehungen als Int16 (Bewegung bleibt gleich)
+    const dropped = dropStaticChannels(doc);
+    packRotations(doc);
+    await doc.transform(prune(), quantize(), meshopt({ encoder: MeshoptEncoder, level: "medium" }));
+    const bin = await io.writeBinary(doc);
+    // Probe: jede Pose vor dem Verschlanken gegen das ausgelieferte Ergebnis
+    const diff = comparePoses(before, await io.readBinary(bin));
+    for (const [k, max] of Object.entries(MAX_DEVIATION))
+      if (diff[k] > max) throw new Error(`${entry.file}: Pose weicht ab (${k} ${diff[k]} > ${max} bei ${diff.where})`);
+    await writeFile(dst, bin);
+    await writeFile(dst + ".sha", stamp);
+    note = `  (${dropped} stille Spuren weg, Abweichung ≤ ${diff.rotationDeg.toFixed(3)}°)`;
   }
   await copyFile(path.join(srcDir, png), path.join(outDir, png));
   const size = (await stat(dst)).size;
@@ -53,7 +72,7 @@ for (const entry of manifest) {
     clips: entry.clips.map((c) => ({ name: c.name, seconds: c.seconds })),
   });
   console.log(
-    `${fresh ? "✓ aktuell " : "✓ optimiert"} ${entry.file}  ${(buf.length / 1e6).toFixed(1)} MB → ${(size / 1e6).toFixed(2)} MB`,
+    `${fresh ? "✓ aktuell " : "✓ optimiert"} ${entry.file}  ${(buf.length / 1e6).toFixed(1)} MB → ${(size / 1e6).toFixed(2)} MB${note}`,
   );
 }
 await writeFile(path.join(outDir, "manifest.json"), JSON.stringify(out, null, 2));
