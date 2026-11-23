@@ -171,6 +171,9 @@ test.describe("Bühne & Licht", () => {
     ["punk-alien-astro", "punk-rocker,kosmo-alien,astro-nova", "festival"],
     ["cowboy-ritter-katze", "cowboy-joe,eisen-ritter,mietz-katze", "strand"],
     ["skelett-pinguin-mc", "knochen-kalle,frack-pinguin,mc-flow", "kathedrale"],
+    ["tracht-disco-mariachi", "lederhosn-sepp,dirndl-vroni,disco-king", "festival"],
+    ["weihnachts-crew", "weihnachtsmann,rentier,schneemann", "stadion"],
+    ["dino-einhorn-ninja", "dino-rex,einhorn,ninja-nori", "club"],
   ] as const) {
     test(`Neue Avatare tanzen: ${name}`, async ({ page }) => {
       const errors = collectErrors(page);

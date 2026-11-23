@@ -139,3 +139,51 @@ describe("Outfits", () => {
     ]);
   });
 });
+
+describe("Saison-Besetzung", () => {
+  const cast = [
+    { avatarId: "aurora-synth", artistId: "a1", role: "lead" as const, position: 0 },
+    { avatarId: "luna-flow", role: "backup" as const, position: -1 },
+    { avatarId: "sol-groove", role: "backup" as const, position: 1 },
+  ];
+  const song = (title: string, trackKey = "t1") => ({ trackKey, title, genres: ["pop"] });
+
+  it("Saison am Datum: Advent bis Weihnachten, zwei Wochen vor Halloween", async () => {
+    const { seasonOn } = await import("@/lib/avatars/casting");
+    expect(seasonOn("2026-12-01")).toBe("weihnachten");
+    expect(seasonOn("2026-12-24")).toBe("weihnachten");
+    expect(seasonOn("2026-12-27")).toBeNull();
+    expect(seasonOn("2026-10-31")).toBe("halloween");
+    expect(seasonOn("2026-11-20")).toBeNull();
+  });
+
+  it("Weihnachtssongs tanzen das ganze Jahr mit der Weihnachts-Crew, Künstler behalten ihren Avatar", async () => {
+    const { withSeasonalCrew, SEASON_CREW } = await import("@/lib/avatars/casting");
+    const out = withSeasonalCrew(cast, song("Last Christmas"), "2026-07-01");
+    expect(out[0]!.avatarId).toBe("aurora-synth");
+    for (const c of out.slice(1)) expect(SEASON_CREW.weihnachten).toContain(c.avatarId);
+    expect(new Set(out.map((c) => c.avatarId)).size).toBe(3);
+    const halloween = withSeasonalCrew(cast, song("Zombie Dance"), "2026-03-01");
+    for (const c of halloween.slice(1)) expect(SEASON_CREW.halloween).toContain(c.avatarId);
+  });
+
+  it("in der Saison: bei etwa zwei von drei Songs ein Crew-Mitglied außen; sonst unverändert", async () => {
+    const { withSeasonalCrew, SEASON_CREW } = await import("@/lib/avatars/casting");
+    expect(withSeasonalCrew(cast, song("Sommerhit"), "2026-11-20")).toBe(cast);
+    let swapped = 0;
+    for (let i = 0; i < 60; i++) {
+      const out = withSeasonalCrew(cast, song("Lied", `t${i}`), "2026-12-10");
+      expect(out[1]!.avatarId).toBe("luna-flow");
+      if (out[2]!.avatarId !== "sol-groove") {
+        swapped++;
+        expect(SEASON_CREW.weihnachten).toContain(out[2]!.avatarId);
+      }
+    }
+    expect(swapped).toBeGreaterThan(25);
+    expect(swapped).toBeLessThan(55);
+    // gleicher Song, gleicher Tag → gleiche Besetzung
+    expect(withSeasonalCrew(cast, song("Lied", "t7"), "2026-12-10")).toEqual(
+      withSeasonalCrew(cast, song("Lied", "t7"), "2026-12-10"),
+    );
+  });
+});

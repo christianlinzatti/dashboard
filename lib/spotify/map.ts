@@ -1,6 +1,6 @@
 import { dressCast } from "@/lib/avatars/outfits";
 import { SCHEMA_VERSION, type SongStatic } from "@/lib/song-context/schema";
-import { avatarForArtist, buildCast } from "@/lib/avatars/casting";
+import { avatarForArtist, buildCast, withSeasonalCrew } from "@/lib/avatars/casting";
 import type { SpotifyTrack } from "./types";
 
 /** Standardfarben, bis die Cover-Palette berechnet ist. */
@@ -25,7 +25,13 @@ export function pickCover(images: SpotifyTrack["album"]["images"]) {
  * Baut die Stammdaten des Song-Kontexts aus einem Spotify-Track.
  * Lyrics, Genres, Infos und Palette werden später angereichert.
  */
-export function songFromTrack(track: SpotifyTrack, opts: { genres?: Record<string, string[]> } = {}): SongStatic {
+/** heutiges Datum (lokal, JJJJ-MM-TT) */
+function today() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+export function songFromTrack(track: SpotifyTrack, opts: { genres?: Record<string, string[]>; today?: string } = {}): SongStatic {
   const trackKey = trackKeyOf(track);
   const taken = new Set<string>();
   const artists = track.artists.map((a, i) => {
@@ -62,7 +68,11 @@ export function songFromTrack(track: SpotifyTrack, opts: { genres?: Record<strin
     album: { name: track.album.name, coverUrl: pickCover(track.album.images), palette: defaultPalette },
     music: { genres },
     // eingekleidet: Outfit je Künstler, Leuchtstreifen in der Künstlerfarbe, Crew im Look des Leads
-    cast: dressCast(buildCast({ trackKey, genres, artists }), artists),
+    // im Advent und vor Halloween tanzt die Saison-Crew mit (Weihnachts-/Halloween-Songs immer)
+    cast: dressCast(
+      withSeasonalCrew(buildCast({ trackKey, genres, artists }), { trackKey, title: track.name, genres }, opts.today ?? today()),
+      artists,
+    ),
     status: {
       spotify: { state: "ok", provider: "spotify", updatedAt: Date.now() },
       lyrics: { state: "idle" },

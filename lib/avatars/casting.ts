@@ -105,3 +105,55 @@ export function buildCast({ trackKey, artists, genres, size = 3, maxSize = 5 }: 
   }
   return cast;
 }
+
+// ---------------------------------------------------------------- Saison-Besetzung
+
+export type Season = "weihnachten" | "halloween";
+
+/** Saison-Crews: wer in der Saison als Background-Tänzer dazukommt */
+export const SEASON_CREW: Record<Season, readonly string[]> = {
+  weihnachten: ["weihnachtsmann", "rentier", "schneemann"],
+  halloween: ["kuerbis-kopf", "vampir-vlad", "knochen-kalle"],
+};
+
+const SEASON_WORDS: Record<Season, RegExp> = {
+  weihnachten: /christmas|xmas|weihnacht|jingle|sleigh|santa|nikolaus|christkind|rudolph|silent night|stille nacht|feliz navidad/i,
+  halloween: /halloween|spooky|horror|zombie|vampire?|vampir|ghost|gespenst|monster mash|witch|hexe|thriller/i,
+};
+
+/** Saison am Tag (JJJJ-MM-TT): Advent bis Weihnachten, die zwei Wochen vor Halloween */
+export function seasonOn(today: string): Season | null {
+  const md = today.slice(5, 10);
+  if (md >= "12-01" && md <= "12-26") return "weihnachten";
+  if (md >= "10-18" && md <= "11-01") return "halloween";
+  return null;
+}
+
+/**
+ * Saison-Besetzung: Weihnachts- bzw. Halloween-Songs (Titel, Genres) tanzen das ganze Jahr mit der passenden Crew;
+ * in der Saison kommt bei zwei von drei Songs ein Crew-Mitglied als Background-Tänzer dazu. Künstler behalten ihren
+ * Avatar. Deterministisch aus Song und Tag.
+ */
+export function withSeasonalCrew<T extends Cast[number]>(
+  cast: T[],
+  song: { trackKey: string; title: string; genres: readonly string[] },
+  today: string,
+): T[] {
+  const text = [song.title, ...song.genres].join(" ");
+  const themed = (Object.keys(SEASON_WORDS) as Season[]).find((s) => SEASON_WORDS[s].test(text));
+  const season = themed ?? seasonOn(today);
+  if (!season) return cast;
+  const seed = hash(`${song.trackKey}:saison:${today}`);
+  if (!themed && seed % 3 === 0) return cast;
+  const crew = SEASON_CREW[season].filter((id) => !cast.some((c) => c.avatarId === id));
+  const start = seed % Math.max(crew.length, 1);
+  const order = [...crew.slice(start), ...crew.slice(0, start)];
+  // thematisch: alle Background-Plätze; sonst nur der äußerste
+  const backups = cast.map((c, i) => (c.artistId ? -1 : i)).filter((i) => i >= 0);
+  const swap = themed ? backups : backups.slice(-1);
+  return cast.map((c, i) => {
+    const k = swap.indexOf(i);
+    const id = k >= 0 ? order[k] : undefined;
+    return id ? { ...c, avatarId: id } : c;
+  });
+}

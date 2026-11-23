@@ -208,8 +208,11 @@ Für das Konzert-Erlebnis wurde die Bühne in vier Schichten gegliedert. Jede Sc
   misst die Kopfform in der Grundhaltung (Vertices über dem Hals) und hängt die Teile an Kopf- bzw. Handknochen;
   Sänger halten ein Handmikrofon in der rechten Hand.
 - **Andere Figuren aus Formen.** `scripts/avatars/build-characters.mjs` baut neue Avatare mit eigener Silhouette:
-  Disco-Bär, Retro-Bot, Astronautin, Alien, Punk, Glitzer-Diva, Cowboy, Skelett, Katze, Ritter, Frack-Pinguin
-  und Rapperin. Skelett, Gesichtsknochen und alle 32 Tanz-Clips
+  bisher 29 Figuren in Gruppen (`scripts/avatars/figuren/*.mjs`): Bühne (Bär, Retro-Bot, Astronautin, Alien, Punk,
+  Diva), Genres (Cowboy, Skelett, Katze, Ritter, Pinguin, Rapperin), Stile (Dirndl, Lederhose, Rock'n'Roll, Disco-King,
+  Mariachi), Saison (Weihnachtsmann, Rentier, Schneemann, Kürbiskopf, Vampir), Fantasie (Dino, Einhorn, Fuchs,
+  Hai-Kostüm, Zauberer, Pirat, Ninja). Die GLBs entstehen beim Build (`prebuild`) unter `avatars/generated/` (nicht im
+  Repo, byte-gleich, Version aus den Quellen im Manifest). Skelett, Gesichtsknochen und alle 32 Tanz-Clips
   stammen von einem vorhandenen Modell; der Körper entsteht aus abgerundeten Formen (Superellipsoide, Röhren
   zwischen Gelenken), die weich an die Knochen gebunden sind (Ellbogen, Knie, Rumpf, Rock folgt den Beinen).
   Gesichtsknochen (Augen, Lächeln, LED-Balken) werden samt Animationsspuren auf die neue Kopfform verschoben, so
@@ -219,6 +222,9 @@ Für das Konzert-Erlebnis wurde die Bühne in vier Schichten gegliedert. Jede Sc
   Space/Ambient/Synth, Party/Kinder, Techno, Country, Metal/Goth, Epic/Mittelalter, K-Pop, Klassik, Hip-Hop).
   Figuren mit eigener Kopfbedeckung oder auffälligem Kopf (`OWN_HEADWEAR` in lib/avatars/looks.ts) bekommen keinen
   zusätzlichen Hut. Gesicht prüfen: `render-previews.mjs --kopf <id>`.
+  Saison-Besetzung (`withSeasonalCrew`): Weihnachts- und Halloween-Songs tanzen das ganze Jahr mit ihrer Crew; im
+  Advent und in den zwei Wochen vor Halloween kommt bei etwa zwei von drei Songs ein Crew-Mitglied als
+  Background-Tänzer dazu (deterministisch aus Song und Tag, Künstler behalten ihren Avatar).
 - **Ein Abend mit Spannungsbogen.** `eveningPhase` (lib/show/evening.ts) gibt jedem Song eine Phase aus der Setlist:
   Auftakt, Steigerung, Höhepunkt (dritter energiegeladener Song in Folge: Feuerwerk und volles Konfetti schon beim
   ersten großen Einsatz), Durchatmen (ruhiger Song nach wilden: Feuerzeuge) und Zugabe (nach einem ausgespielten
