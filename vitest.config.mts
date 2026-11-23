@@ -18,7 +18,7 @@ export default defineConfig({
       exclude: ["lib/audio/mic.ts", "lib/song-context/fixtures/**", "bridge/main.ts"],
       reporter: ["text-summary", "json-summary", "html"],
       // CI schlägt fehl, wenn die Abdeckung der Fachlogik sinkt
-      thresholds: { statements: 88, branches: 78, functions: 85, lines: 90 },
+      thresholds: { statements: 90, branches: 81, functions: 87, lines: 92 },
     },
   },
 });

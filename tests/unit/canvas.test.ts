@@ -100,4 +100,68 @@ describe("Spotify Canvas – Abruf", () => {
     expect(f).not.toHaveBeenCalled();
     expect(c.status()).toMatchObject({ id: "spotify-canvas", configured: false, paused: false });
   });
+
+  it("abgelaufenes Token: einmal frisch nachfragen; Drosselung pausiert; 404 null; Serverfehler wird gemeldet", async () => {
+    // 1. Aufruf füllt den Token-Cache, 2. Aufruf bekommt 401 → frisches Token → Erfolg
+    let canvasCalls = 0;
+    const retry = createCanvas(
+      cfg,
+      tokenFetch(() =>
+        ++canvasCalls === 2
+          ? protobuf(new Uint8Array(), 401)
+          : protobuf(canvazResponse([{ url: "https://x/i.jpg", type: 0, uri: "spotify:track:b" }])),
+      ),
+    );
+    await retry.get("4uLU6hMCjMI75M1A2tKUQC", signal());
+    expect(await retry.get("0VjIjW4GlUZAMYd2vXMi3b", signal())).toMatchObject({ kind: "image" });
+    expect(canvasCalls).toBe(3);
+    expect(retry.status().paused).toBe(false);
+
+    const reasons: string[] = [];
+    const throttled = createCanvas(
+      { ...cfg, onCircuitOpen: (r) => reasons.push(r) },
+      tokenFetch(() => new Response(null, { status: 429, headers: { "retry-after": "120" } })),
+    );
+    expect(await throttled.get("4uLU6hMCjMI75M1A2tKUQC", signal())).toBeNull();
+    expect(reasons[0]).toMatch(/drosselt/);
+    // während der Pause: nichts mehr abgefragt
+    expect(await throttled.get("0VjIjW4GlUZAMYd2vXMi3b", signal())).toBeNull();
+
+    const missing = createCanvas(
+      cfg,
+      tokenFetch(() => protobuf(new Uint8Array(), 404)),
+    );
+    expect(await missing.get("4uLU6hMCjMI75M1A2tKUQC", signal())).toBeNull();
+
+    const broken = createCanvas(
+      cfg,
+      tokenFetch(() => protobuf(new Uint8Array(), 502)),
+    );
+    await expect(broken.get("4uLU6hMCjMI75M1A2tKUQC", signal())).rejects.toThrow("Spotify-Canvas 502");
+    expect(broken.status().paused).toBe(false); // vorübergehend: keine Pause
+    expect(await broken.get("", signal())).toBeNull();
+  });
+
+  it("Decoder: GIF und Bild, alle bekannten Wire-Types überspringbar, unbekannter Wire-Type ist ein Fehler", () => {
+    const fixed64 = [...varint((7 << 3) | 1), 1, 2, 3, 4, 5, 6, 7, 8];
+    const fixed32 = [...varint((8 << 3) | 5), 1, 2, 3, 4];
+    const num = [...varint((9 << 3) | 0), ...varint(300)];
+    const gif = [...field(2, [...Buffer.from("https://x/g.gif")]), ...varint(4 << 3), 4, ...fixed64, ...fixed32, ...num];
+    const buf = Uint8Array.from([...num, ...fixed32, ...field(1, gif), ...field(3, [1, 2])]);
+    expect(decodeCanvasResponse(buf)).toEqual([{ url: "https://x/g.gif", kind: "gif", entityUri: "" }]);
+    // Canvas ohne URL fällt weg
+    expect(decodeCanvasResponse(Uint8Array.from(field(1, field(5, [...Buffer.from("spotify:track:x")]))))).toEqual([]);
+    expect(() => decodeCanvasResponse(Uint8Array.from([(1 << 3) | 3]))).toThrow(/Wire-Type 3/);
+  });
+});
+
+describe("Spotify Canvas – gemeinsame Instanz", () => {
+  it("liest die Konfiguration aus der Umgebung; ohne sp_dc: nicht konfiguriert", async () => {
+    vi.resetModules();
+    vi.stubEnv("SPOTIFY_SP_DC", "");
+    const { canvasFor, canvasStatus } = await import("@/lib/spotify/canvas-service");
+    expect(canvasStatus()).toMatchObject({ id: "spotify-canvas", configured: false });
+    expect(await canvasFor("4uLU6hMCjMI75M1A2tKUQC", signal())).toBeNull();
+    vi.unstubAllEnvs();
+  });
 });
