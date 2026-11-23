@@ -165,6 +165,7 @@ test.describe("Dashboard", () => {
               pausedUntil: Date.now() + 12 * 60_000,
               reason: "TOTP oder sp_dc abgelehnt (HTTP 400)",
             },
+            { id: "spotify-canvas", configured: true, paused: false },
           ],
         },
       }),
