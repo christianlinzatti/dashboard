@@ -5,7 +5,7 @@ import { useTexture } from "@react-three/drei";
 import { useMemo, useRef } from "react";
 import { Color, SRGBColorSpace, type ShaderMaterial } from "three";
 import type { LightFrame, LightScene } from "@/lib/stage/lights";
-import { TRUSS_Z } from "./StageSet";
+import { TRUSS_Z } from "./layout";
 
 /** Wann das Logo zu sehen ist: ruhige Teile ja, Strophe/Refrain nicht (Lyrics haben Vorrang). */
 const VISIBILITY: Record<LightScene, number> = {

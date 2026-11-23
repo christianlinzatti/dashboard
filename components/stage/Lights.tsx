@@ -21,7 +21,7 @@ import {
 } from "three";
 import type { LightFrame } from "@/lib/stage/lights";
 import { songContext } from "@/lib/song-context/store";
-import { TRUSS_Y, TRUSS_Z } from "./StageSet";
+import { TRUSS_Y, TRUSS_Z } from "./layout";
 
 const BEAM_LENGTH = 7;
 const BEAM_TOP = 0.06;

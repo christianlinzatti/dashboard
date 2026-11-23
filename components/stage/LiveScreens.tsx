@@ -16,7 +16,7 @@ import type { Choreography } from "@/lib/dance/plan";
 import { liveShotAt, SCREEN_ASPECT, type LiveShot } from "@/lib/stage/screens";
 import { songContext } from "@/lib/song-context/store";
 import type { LightFrame } from "@/lib/stage/lights";
-import { TRUSS_Z } from "./StageSet";
+import { TRUSS_Z } from "./layout";
 import type { Frame } from "./types";
 
 /** Zwei Bildschirme links und rechts auf der LED-Wand (in Wand-Koordinaten, skaliert mit der Wand) */

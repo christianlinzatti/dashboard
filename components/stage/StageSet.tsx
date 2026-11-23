@@ -9,12 +9,13 @@ import type { QualityPreset } from "@/lib/stage/quality";
 import type { Theme } from "@/lib/stage/themes";
 import type { Frame } from "./types";
 import { Curtain, NeonGrid, Planet, RetroSun, SkyDome, Stars, useFloorTexture } from "./Scenery";
-import { Beach, Cathedral, Stadium, StadiumRoof, Warehouse } from "./Venues";
+import { Beach, Cathedral, Stadium, StadiumRoof, Warehouse } from "./venues";
 import { songContext, useSongContext } from "@/lib/song-context/store";
 import { chorusKeyword, forcedWallPattern, keywordAmount, wallPattern, wallPatterns } from "@/lib/stage/wall";
 
-export const TRUSS_Y = 4.3;
-export const TRUSS_Z = -2.6;
+import { TRUSS_Y, TRUSS_Z } from "./layout";
+
+export { TRUSS_Y, TRUSS_Z };
 
 /** Podest, Boden, Traverse, Rückwand und Himmel – je nach Bühnen-Thema. */
 export function StageSet({

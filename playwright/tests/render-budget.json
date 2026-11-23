@@ -1,6 +1,6 @@
 {
   "_hinweis": "Höchstwerte je Bühne und Qualitätsstufe (Demo neonlicht, Refrain, 1280×800), gemessen als teuerstes Bild seit dem Laden: Zeichenaufrufe +25 % (stabil, strenge Grenze), Dreiecke +50 % (schwanken je nach Bild, fängt nur große Sprünge). Wird eine Szene bewusst schwerer, hier anheben – sonst bremst sie den Pi.",
-  "stand": "2026-11-20",
+  "stand": "2026-11-23",
   "budgets": {
     "club/niedrig": {
       "drawcalls": 115,
@@ -27,15 +27,15 @@
       "triangles": 313000
     },
     "strand/niedrig": {
-      "drawcalls": 124,
+      "drawcalls": 100,
       "triangles": 233000
     },
     "lagerhalle/niedrig": {
-      "drawcalls": 112,
+      "drawcalls": 92,
       "triangles": 236000
     },
     "kathedrale/niedrig": {
-      "drawcalls": 175,
+      "drawcalls": 87,
       "triangles": 202000
     },
     "club/mittel": {
@@ -59,19 +59,19 @@
       "triangles": 308000
     },
     "stadion/mittel": {
-      "drawcalls": 348,
+      "drawcalls": 327,
       "triangles": 1201000
     },
     "strand/mittel": {
-      "drawcalls": 177,
+      "drawcalls": 149,
       "triangles": 397000
     },
     "lagerhalle/mittel": {
-      "drawcalls": 163,
+      "drawcalls": 143,
       "triangles": 404000
     },
     "kathedrale/mittel": {
-      "drawcalls": 228,
+      "drawcalls": 139,
       "triangles": 303000
     }
   }

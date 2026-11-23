@@ -22,7 +22,7 @@ import type { Palette } from "@/lib/song-context/schema";
 import type { ActiveCue } from "@/lib/stage/effects";
 import type { LightFrame } from "@/lib/stage/lights";
 import type { Theme } from "@/lib/stage/themes";
-import { TRUSS_Y, TRUSS_Z } from "./StageSet";
+import { TRUSS_Y, TRUSS_Z } from "./layout";
 
 /**
  * Schaum und Konfetti als echte 3D-Körper statt Bildpunkten: instanzierte Kugeln bzw. Papierschnipsel, im Vertex-Shader

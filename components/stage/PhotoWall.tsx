@@ -5,7 +5,7 @@ import { useTexture } from "@react-three/drei";
 import { useMemo, useRef } from "react";
 import { Color, SRGBColorSpace, type ShaderMaterial } from "three";
 import type { LightFrame, LightScene } from "@/lib/stage/lights";
-import { TRUSS_Z } from "./StageSet";
+import { TRUSS_Z } from "./layout";
 
 const VISIBILITY: Record<LightScene, number> = {
   intro: 0.65,
