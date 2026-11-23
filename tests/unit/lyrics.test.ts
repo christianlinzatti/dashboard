@@ -314,4 +314,26 @@ describe("Cache", () => {
     store.set("kaputt", "gz:nichtbase64!!");
     expect(await c.get("kaputt")).toBeNull();
   });
+
+  it("Upstash hängt oder antwortet mit Fehler: Cache gilt als leer, Schreiben wird verworfen – nichts hängt", async () => {
+    // hängt, bis das Timeout-Signal abbricht
+    const hang = vi.fn(
+      (_url: string | URL | Request, init?: RequestInit) =>
+        new Promise<Response>((_, reject) => init!.signal!.addEventListener("abort", () => reject(init!.signal!.reason))),
+    );
+    const slow = upstashCache("https://redis.example", "token", hang as unknown as typeof fetch, 30);
+    const t0 = Date.now();
+    expect(await slow.get("k")).toBeNull();
+    await expect(slow.set("k", { a: 1 }, 60)).resolves.toBeUndefined();
+    expect(Date.now() - t0).toBeLessThan(1000);
+    expect(hang.mock.calls[0]![1]!.signal).toBeInstanceOf(AbortSignal);
+
+    const broken = upstashCache(
+      "https://redis.example",
+      "token",
+      (async () => new Response("", { status: 503 })) as typeof fetch,
+    );
+    expect(await broken.get("k")).toBeNull();
+    await expect(broken.set("k", 1, 60)).resolves.toBeUndefined();
+  });
 });

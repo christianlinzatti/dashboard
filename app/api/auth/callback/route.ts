@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { exchangeCode } from "@/lib/spotify/api";
+import { SPOTIFY_TIMEOUT_MS, exchangeCode } from "@/lib/spotify/api";
 import { serverEnv } from "@/lib/server/env";
 import { takeOAuthState, writeSession } from "@/lib/server/session";
 
@@ -24,6 +24,7 @@ export async function GET(req: NextRequest) {
     const me = await fetch("https://api.spotify.com/v1/me", {
       headers: { Authorization: `Bearer ${t.access_token}` },
       cache: "no-store",
+      signal: AbortSignal.timeout(SPOTIFY_TIMEOUT_MS),
     });
     if (!me.ok) return back(req, "profil");
     const profile = (await me.json()) as { id: string; display_name?: string | null };

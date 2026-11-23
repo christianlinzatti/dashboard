@@ -29,6 +29,38 @@ const session = (over: Partial<Session> = {}): Session => ({
   ...over,
 });
 
+describe("Spotify-API: Zeitlimits", () => {
+  const session = { uid: "u", name: "n", accessToken: "a", expiresAt: Date.now() + 3_600_000, refreshToken: "r", scope: "" };
+
+  it("jeder Aufruf hat ein Zeitlimit; ein eigenes Abbruch-Signal des Aufrufers wirkt weiter", async () => {
+    const seen: AbortSignal[] = [];
+    const f = vi.fn(async (_u: string | URL | Request, init?: RequestInit) => {
+      seen.push(init!.signal!);
+      return new Response("{}");
+    });
+    await spotifyFetch(session, "/me", {}, { fetch: f as unknown as typeof fetch });
+    expect(seen[0]).toBeInstanceOf(AbortSignal);
+    expect(seen[0]!.aborted).toBe(false);
+
+    const mine = new AbortController();
+    await spotifyFetch(session, "/me", { signal: mine.signal }, { fetch: f as unknown as typeof fetch });
+    mine.abort();
+    expect(seen[1]!.aborted).toBe(true); // Abbruch des Aufrufers kommt durch
+  });
+
+  it("hängende Spotify-Antwort bricht ab statt zu hängen", async () => {
+    const hang = vi.fn(
+      (_u: string | URL | Request, init?: RequestInit) =>
+        new Promise<Response>((_, reject) => init!.signal!.addEventListener("abort", () => reject(init!.signal!.reason))),
+    );
+    const mine = new AbortController();
+    setTimeout(() => mine.abort(new Error("zu langsam")), 20);
+    await expect(
+      spotifyFetch(session, "/me", { signal: mine.signal }, { fetch: hang as unknown as typeof fetch }),
+    ).rejects.toThrow(/zu langsam/);
+  });
+});
+
 describe("Spotify-Token-Erneuerung", () => {
   it("Single-Flight: gleichzeitige Erneuerungen laufen nur einmal", async () => {
     const refresh = vi.fn(async (s: Session) => {

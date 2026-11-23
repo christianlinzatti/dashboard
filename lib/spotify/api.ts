@@ -5,6 +5,15 @@ import type { Session } from "@/lib/server/session";
 const ACCOUNTS = "https://accounts.spotify.com";
 const API = "https://api.spotify.com/v1";
 
+/** Obergrenze je Spotify-Anfrage: hängt Spotify, scheitert die Anfrage, statt bis zum Plattform-Timeout zu hängen */
+export const SPOTIFY_TIMEOUT_MS = 10_000;
+
+/** Timeout mit einem Signal des Aufrufers verbinden (was zuerst abbricht, gewinnt) */
+function withTimeout(signal: AbortSignal | null | undefined, ms = SPOTIFY_TIMEOUT_MS): AbortSignal {
+  const timeout = AbortSignal.timeout(ms);
+  return signal ? AbortSignal.any([signal, timeout]) : timeout;
+}
+
 export const SCOPES = [
   "user-read-currently-playing",
   "user-read-playback-state",
@@ -40,6 +49,7 @@ async function tokenRequest(body: Record<string, string>): Promise<TokenResponse
     },
     body: new URLSearchParams(body),
     cache: "no-store",
+    signal: withTimeout(undefined),
   });
   if (!res.ok) throw new SpotifyError(res.status, `Token-Anfrage fehlgeschlagen (${res.status})`);
   return res.json();
@@ -110,7 +120,12 @@ export async function spotifyFetch(
     refreshed = true;
   }
   const call = (token: string) =>
-    doFetch(`${API}${path}`, { ...init, headers: { ...init.headers, Authorization: `Bearer ${token}` }, cache: "no-store" });
+    doFetch(`${API}${path}`, {
+      ...init,
+      headers: { ...init.headers, Authorization: `Bearer ${token}` },
+      cache: "no-store",
+      signal: withTimeout(init.signal),
+    });
   let res = await call(s.accessToken);
   if (res.status === 401 && !refreshed) {
     s = await renew(s);

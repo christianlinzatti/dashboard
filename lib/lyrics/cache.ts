@@ -39,13 +39,20 @@ export function memoryCache(max = 300): Cache {
   };
 }
 
-export function upstashCache(url: string, token: string, fetchImpl: typeof fetch = fetch): Cache {
+/**
+ * So lange darf ein Redis-Befehl dauern. Der Cache ist nur ein Beschleuniger: Hängt Upstash, gilt der Eintrag als
+ * nicht vorhanden (bzw. das Schreiben als verworfen) – sonst hinge jede API-Route, die den Cache nutzt, mit.
+ */
+export const CACHE_TIMEOUT_MS = 1500;
+
+export function upstashCache(url: string, token: string, fetchImpl: typeof fetch = fetch, timeoutMs = CACHE_TIMEOUT_MS): Cache {
   const cmd = async (args: unknown[]) => {
     const res = await fetchImpl(url, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify(args),
       cache: "no-store",
+      signal: AbortSignal.timeout(timeoutMs),
     });
     if (!res.ok) throw new Error(`Redis ${res.status}`);
     return ((await res.json()) as { result: unknown }).result;

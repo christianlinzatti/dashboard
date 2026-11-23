@@ -63,12 +63,14 @@ export type VerifyDeps = {
 };
 
 const certCache = new Map<string, { pem: string; until: number }>();
+/** Zertifikat laden: Alexa wartet insgesamt höchstens ~8 s auf die Antwort */
+const CERT_TIMEOUT_MS = 4000;
 
 /** Zertifikatskette laden (mit Cache, Amazon nutzt dieselbe Kette über längere Zeit). */
 export async function defaultFetchCertChain(url: string) {
   const hit = certCache.get(url);
   if (hit && hit.until > Date.now()) return hit.pem;
-  const res = await fetch(url, { cache: "no-store" });
+  const res = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(CERT_TIMEOUT_MS) });
   if (!res.ok) throw new AlexaVerificationError(`Zertifikat nicht ladbar (${res.status})`);
   const pem = await res.text();
   certCache.set(url, { pem, until: Date.now() + 3600_000 });
