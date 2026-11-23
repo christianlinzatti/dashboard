@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { applyArtistAvatars, type ArtistAvatars } from "@/lib/avatars/overrides";
+import { applyArtistAvatars, applyAvatarStyle, type ArtistAvatars, type AvatarStyle } from "@/lib/avatars/overrides";
 import { songContext } from "@/lib/song-context/store";
 
 /**
@@ -13,19 +13,25 @@ export function useArtistAvatars(enabled: boolean) {
   useEffect(() => {
     if (!enabled) return;
     let map: ArtistAvatars | undefined;
+    let style: AvatarStyle | undefined;
     let alive = true;
     const apply = () => {
       const s = songContext.getState();
       if (!s.song) return;
-      const patch = applyArtistAvatars(s.song, map);
+      // erst der Stil (z. B. nur Chibis), dann die eigenen Zuordnungen je Künstler – die gewinnen
+      const styled = applyAvatarStyle(s.song, style);
+      if (styled) s.mergeSong(styled);
+      const song = songContext.getState().song;
+      const patch = song && applyArtistAvatars(song, map);
       if (patch) s.mergeSong(patch);
     };
     const load = () =>
       fetch("/api/prefs", { cache: "no-store" })
-        .then((r) => (r.ok ? (r.json() as Promise<{ artistAvatars?: ArtistAvatars }>) : null))
+        .then((r) => (r.ok ? (r.json() as Promise<{ artistAvatars?: ArtistAvatars; avatarStyle?: AvatarStyle }>) : null))
         .then((d) => {
           if (!alive || !d) return;
           map = d.artistAvatars;
+          style = d.avatarStyle;
           apply();
         })
         .catch(() => undefined);

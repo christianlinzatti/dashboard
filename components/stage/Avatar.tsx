@@ -36,7 +36,7 @@ import { headNodAt, keysAt, scratchAt } from "@/lib/stage/musicians";
 import { findArms, reach, reachPartly, sideOf } from "./pose";
 import { singAlongAt } from "@/lib/show/singalong";
 import { addMicrophone, dressUp } from "./Accessories";
-import { lookForAvatar, lookSeed } from "@/lib/avatars/looks";
+import { applyLookOverride, lookForAvatar, lookSeed } from "@/lib/avatars/looks";
 
 /** Bandmitglied: fester Platz hinten, eine Animation im Songtakt, ggf. Instrument in der Hand */
 export type BandPart = {
@@ -162,8 +162,11 @@ function AvatarModel({ url, member, song, choreo, frameRef, band }: AvatarProps 
   const isBand = !!band;
   const look = useMemo(
     () =>
-      lookForAvatar(member.avatarId, lookSeed({ avatarId: member.avatarId, artistId: member.artistId }, song.trackKey, isBand)),
-    [member.avatarId, member.artistId, song.trackKey, isBand],
+      applyLookOverride(
+        lookForAvatar(member.avatarId, lookSeed({ avatarId: member.avatarId, artistId: member.artistId }, song.trackKey, isBand)),
+        member.look,
+      ),
+    [member.avatarId, member.artistId, song.trackKey, isBand, member.look],
   );
   const sings = !isBand && !!member.artistId;
   const { root, mixer, leds, dyed, spine, smile, mouth, extras, arms, neck } = useMemo(() => {

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { lookOverrideSchema } from "@/lib/avatars/look-override";
 import { storedBriefSchema } from "@/lib/show/brief";
 import { memorySchema } from "@/lib/song-memory/memory";
 
@@ -108,6 +109,8 @@ export const castMemberSchema = z.object({
   /** Outfit (lib/avatars/outfits.ts) und Farbe der Leuchtstreifen; ohne Angabe das Original des Modells */
   outfit: z.string().optional(),
   trim: z.string().optional(),
+  /** Wünsche aus dem Avatar-Baukasten (Hut, Brille, Kopfhörer, Größe) */
+  look: lookOverrideSchema.optional(),
 });
 export type CastMember = z.infer<typeof castMemberSchema>;
 

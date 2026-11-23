@@ -1,12 +1,13 @@
 import { hash } from "./casting";
+import { hats, type Hat, type LookOverride } from "./look-override";
+
+export { hats, type Hat };
 
 /**
  * Looks: Zubehör und Statur für die Avatare – aus 11 Grundmodellen werden viele verschiedene Figuren. Künstler tragen
  * immer denselben Look (stabil über den Künstler), die Crew wechselt von Song zu Song. Rein und deterministisch;
  * die Formen baut der Avatar (components/stage/Accessories.ts).
  */
-export const hats = ["basecap", "muetze", "cowboyhut", "zylinder", "fischerhut"] as const;
-export type Hat = (typeof hats)[number];
 
 export type Look = {
   hat?: Hat;
@@ -85,6 +86,23 @@ export function lookForAvatar(avatarId: string, seed: string): Look {
   // Chibis: keine Sonnenbrille über den großen Augen
   const own = avatarId.startsWith("chibi-") ? { ...look, glasses: false } : look;
   return OWN_HEADWEAR.has(avatarId) ? { ...own, hat: undefined, headphones: false } : own;
+}
+
+/**
+ * Wünsche aus dem Avatar-Baukasten über den gewürfelten Look legen – der ausdrückliche Wunsch gewinnt, auch bei
+ * Figuren mit eigener Kopfbedeckung. Breitkrempige Hüte und Kopfhörer schließen sich weiter aus.
+ */
+export function applyLookOverride(look: Look, o: LookOverride | undefined): Look {
+  if (!o) return look;
+  const hat = o.hat === "keiner" ? undefined : (o.hat ?? look.hat);
+  const wide = hat === "cowboyhut" || hat === "zylinder";
+  return {
+    ...look,
+    hat,
+    headphones: wide ? false : (o.headphones ?? look.headphones),
+    glasses: o.glasses ?? look.glasses,
+    height: o.height ?? look.height,
+  };
 }
 
 /** Schlüssel des Looks: Künstler stabil, Crew je Song anders, Band je Musiker */

@@ -187,6 +187,17 @@ test.describe("Bühne & Licht", () => {
     });
   }
 
+  test("Avatar-Stil „nur Chibis“: alle Figuren auf der Bühne sind Chibis", async ({ page }) => {
+    const errors = collectErrors(page);
+    await page.goto("/?demo=neonlicht&t=24000&stil=chibi&buehne=festival&qualitaet=hoch");
+    await ready(page);
+    const cast = (await page.locator("[data-cast]").getAttribute("data-cast"))!.split(",");
+    expect(cast.length).toBeGreaterThanOrEqual(3);
+    for (const id of cast) expect(id).toMatch(/^chibi-/);
+    await expect(page).toHaveScreenshot("avatar-stil-chibi.png");
+    expect(errors).toEqual([]);
+  });
+
   test("Outfits: die Crew trägt den Look des Leads", async ({ page }) => {
     const errors: string[] = [];
     page.on("pageerror", (e) => errors.push(e.message));

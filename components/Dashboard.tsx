@@ -37,7 +37,7 @@ import { useMicAnalysis } from "./audio/useMicAnalysis";
 import type { LyricsEffect, LyricsMode } from "@/lib/lyrics/director";
 import type { Quality } from "@/lib/stage/quality";
 import type { ThemeId } from "@/lib/stage/themes";
-import { castWith } from "@/lib/avatars/overrides";
+import { applyAvatarStyle, castWith, type AvatarStyle } from "@/lib/avatars/overrides";
 import { avatarById } from "@/lib/avatars/catalog";
 
 const Stage = dynamic(() => import("./stage/Stage").then((m) => m.Stage), { ssr: false });
@@ -46,6 +46,8 @@ type Props = {
   demo?: string;
   /** Demo: Besetzung mit diesen Avataren (?avatare=…) */
   avatars?: string[];
+  /** Demo: Avatar-Stil (?stil=chibi) */
+  avatarStyle?: AvatarStyle;
   t?: number;
   debug: boolean;
   loginError?: string;
@@ -67,6 +69,7 @@ type Props = {
 export function Dashboard({
   demo,
   avatars: castIds,
+  avatarStyle,
   t,
   debug,
   loginError,
@@ -132,13 +135,14 @@ export function Dashboard({
     const fx = fixtures[demo];
     if (!fx) return;
     const s = songContext.getState();
-    s.setSong(castIds?.length ? castWith(fx, castIds, new Set(avatarById.keys())) : fx);
+    const cast = castIds?.length ? castWith(fx, castIds, new Set(avatarById.keys())) : fx;
+    s.setSong({ ...cast, ...(applyAvatarStyle(cast, avatarStyle) ?? {}) });
     s.setFrozen(t !== undefined);
     s.setPlayback({ isPlaying: t === undefined, positionMs: t ?? 0, updatedAt: performance.now() });
     s.setLive({ bpm: fx.music.bpmHint ?? 120 });
     s.tick(performance.now());
     // eslint-disable-next-line react-hooks/exhaustive-deps -- Liste als Text verglichen
-  }, [demo, t, castIds?.join(",")]);
+  }, [demo, t, castIds?.join(","), avatarStyle]);
 
   // Frame-Schleife: Songzeit und abgeleitete Werte aktualisieren.
   useEffect(() => {

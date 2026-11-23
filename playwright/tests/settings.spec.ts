@@ -48,16 +48,25 @@ test("Einstellungs-API nur mit Anmeldung", async ({ request }) => {
 test("Einstellungen: eigener Avatar für einen Künstler", async ({ page }) => {
   const area = { name: "Wien", lat: 48.2082, lon: 16.3738, radiusKm: 200, custom: false };
   let artistAvatars: Record<string, { name: string; avatarId: string; outfit?: string }> = {};
+  let avatarStyle = "gemischt";
   const puts: unknown[] = [];
   await page.route("**/api/prefs", async (r) => {
-    if (r.request().method() === "GET") return r.fulfill({ json: { area, artistAvatars } });
-    const b = r.request().postDataJSON() as { artistAvatar: { name: string; avatarId: string | null; outfit?: string } };
+    if (r.request().method() === "GET") return r.fulfill({ json: { area, artistAvatars, avatarStyle } });
+    const b = r.request().postDataJSON() as {
+      artistAvatar?: { name: string; avatarId: string | null; outfit?: string };
+      avatarStyle?: string;
+    };
     puts.push(b);
+    if (b.avatarStyle) {
+      avatarStyle = b.avatarStyle;
+      return r.fulfill({ json: { area, artistAvatars, avatarStyle } });
+    }
+    if (!b.artistAvatar) return r.fulfill({ status: 400, json: { error: "?" } });
     const key = b.artistAvatar.name.toLowerCase();
     if (b.artistAvatar.avatarId === null)
       artistAvatars = Object.fromEntries(Object.entries(artistAvatars).filter(([k]) => k !== key));
     else artistAvatars = { ...artistAvatars, [key]: { ...b.artistAvatar, avatarId: b.artistAvatar.avatarId } };
-    return r.fulfill({ json: { area, artistAvatars } });
+    return r.fulfill({ json: { area, artistAvatars, avatarStyle } });
   });
   // Vorschläge aus dem laufenden Song und den letzten Songs
   await page.route("**/api/song-context", (r) =>
@@ -85,14 +94,35 @@ test("Einstellungen: eigener Avatar für einen Künstler", async ({ page }) => {
   await expect(page.getByTestId("artist-input")).toHaveValue("Mira Sol");
   await page.getByTestId("avatar-velvet-jazz").click();
   await section.getByRole("radio", { name: "Gold" }).click();
+  // Baukasten: Zylinder, Sonnenbrille, groß, pinke Leuchtstreifen
+  await page.getByTestId("avatar-kit").locator("summary").click();
+  await page.getByTestId("hat-zylinder").click();
+  await section.getByRole("radiogroup", { name: "Sonnenbrille" }).getByRole("radio", { name: "Ja" }).click();
+  await section.getByRole("radiogroup", { name: "Größe" }).getByRole("radio", { name: "Groß" }).click();
+  await page.getByTestId("trim-ff3d7f").click();
   await page.getByTestId("artist-save").click();
   await expect(page.getByTestId("settings-message")).toContainText("Mira Sol tritt jetzt als Velvet Jazz auf.");
-  await expect(page.getByTestId("artist-avatar-list")).toContainText("Velvet Jazz · Gold");
+  await expect(page.getByTestId("artist-avatar-list")).toContainText("Velvet Jazz · Gold · Zylinder · Brille · Groß");
+
+  // Avatar-Stil: nur Chibis
+  await expect(page.getByTestId("avatar-style-gemischt")).toHaveAttribute("aria-checked", "true");
+  await page.getByTestId("avatar-style-chibi").click();
+  await expect(page.getByTestId("settings-message")).toContainText("Chibis");
+  await expect(page.getByTestId("avatar-style-chibi")).toHaveAttribute("aria-checked", "true");
 
   await section.getByRole("button", { name: "Entfernen" }).click();
   await expect(page.getByTestId("artist-avatar-list")).toHaveCount(0);
   expect(puts).toEqual([
-    { artistAvatar: { name: "Mira Sol", avatarId: "velvet-jazz", outfit: "gold" } },
+    {
+      artistAvatar: {
+        name: "Mira Sol",
+        avatarId: "velvet-jazz",
+        outfit: "gold",
+        trim: "#ff3d7f",
+        look: { hat: "zylinder", glasses: true, height: 1.1 },
+      },
+    },
+    { avatarStyle: "chibi" },
     { artistAvatar: { name: "Mira Sol", avatarId: null } },
   ]);
 });

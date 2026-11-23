@@ -3,8 +3,9 @@
 import { ScrollPage } from "../ScrollPage";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import type { ArtistAvatars as AvatarMap } from "@/lib/avatars/overrides";
-import { ArtistAvatars } from "./ArtistAvatars";
+import type { ArtistAvatars as AvatarMap, AvatarStyle } from "@/lib/avatars/overrides";
+import { ArtistAvatars, type ArtistAvatarPatch } from "./ArtistAvatars";
+import { AvatarStyleSection } from "./AvatarStyleSection";
 import { QuietHoursSection } from "./QuietHoursSection";
 import type { QuietHours } from "@/lib/live/quiet-hours";
 
@@ -28,6 +29,7 @@ export function SettingsPage() {
   const [place, setPlace] = useState("");
   const [artistAvatars, setArtistAvatars] = useState<AvatarMap>({});
   const [quietHours, setQuietHours] = useState<QuietHours | null>(null);
+  const [avatarStyle, setAvatarStyle] = useState<AvatarStyle>("gemischt");
 
   useEffect(() => {
     let alive = true;
@@ -35,8 +37,14 @@ export function SettingsPage() {
       .then(async (r) => {
         if (!alive) return;
         if (r.status === 401) return setState("login");
-        const d = (await r.json()) as { area: Area; artistAvatars?: AvatarMap; quietHours?: QuietHours | null };
+        const d = (await r.json()) as {
+          area: Area;
+          artistAvatars?: AvatarMap;
+          quietHours?: QuietHours | null;
+          avatarStyle?: AvatarStyle;
+        };
         setArea(d.area);
+        setAvatarStyle(d.avatarStyle ?? "gemischt");
         setArtistAvatars(d.artistAvatars ?? {});
         setQuietHours(d.quietHours ?? null);
         setState("bereit");
@@ -50,8 +58,9 @@ export function SettingsPage() {
   type Patch = {
     home?: string | null;
     radiusKm?: number | null;
-    artistAvatar?: { name: string; avatarId: string | null; outfit?: string };
+    artistAvatar?: ArtistAvatarPatch["artistAvatar"];
     quietHours?: QuietHours | null;
+    avatarStyle?: AvatarStyle;
   };
   const save = async (patch: Patch, done: string) => {
     setState("speichert");
@@ -62,8 +71,15 @@ export function SettingsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(patch),
       });
-      const d = (await r.json()) as { area?: Area; artistAvatars?: AvatarMap; quietHours?: QuietHours | null; error?: string };
+      const d = (await r.json()) as {
+        area?: Area;
+        artistAvatars?: AvatarMap;
+        quietHours?: QuietHours | null;
+        avatarStyle?: AvatarStyle;
+        error?: string;
+      };
       if (!r.ok || !d.area) throw new Error(d.error ?? "Speichern fehlgeschlagen.");
+      setAvatarStyle(d.avatarStyle ?? "gemischt");
       setArea(d.area);
       setArtistAvatars(d.artistAvatars ?? {});
       setQuietHours(d.quietHours ?? null);
@@ -182,6 +198,8 @@ export function SettingsPage() {
             save={(p, done) => void save(p, done)}
           />
         )}
+
+        {area && <AvatarStyleSection value={avatarStyle} busy={state === "speichert"} save={(p, done) => void save(p, done)} />}
 
         {area && <ArtistAvatars map={artistAvatars} busy={state === "speichert"} save={(p, done) => void save(p, done)} />}
       </main>

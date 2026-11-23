@@ -62,3 +62,58 @@ describe("Demo-Besetzung (?avatare=…)", () => {
     expect(castWith(neonlicht, ["gibts-nicht"], known)).toBe(neonlicht);
   });
 });
+
+describe("Avatar-Baukasten", () => {
+  it("Wünsche (Hut, Brille, Kopfhörer, Größe, Leuchtfarbe) kommen auf den Platz des Künstlers", () => {
+    const lead = neonlicht.artists[0]!;
+    const map = artistAvatarsSchema.parse({
+      [artistKey(lead.name)]: {
+        name: lead.name,
+        avatarId: lead.avatarId,
+        trim: "#ff00aa",
+        look: { hat: "cowboyhut", glasses: true, height: 1.1 },
+      },
+    });
+    const patch = applyArtistAvatars(neonlicht, map)!;
+    const own = patch.cast.find((c) => c.artistId === lead.spotifyId)!;
+    expect(own.trim).toBe("#ff00aa");
+    expect(own.look).toEqual({ hat: "cowboyhut", glasses: true, height: 1.1 });
+    // zweimal anwenden ändert nichts mehr
+    expect(applyArtistAvatars({ ...neonlicht, ...patch }, map)).toBeNull();
+    expect(artistAvatarsSchema.safeParse({ x: { name: "x", avatarId: lead.avatarId, look: { hat: "krone" } } }).success).toBe(
+      false,
+    );
+    expect(artistAvatarsSchema.safeParse({ x: { name: "x", avatarId: lead.avatarId, trim: "rot" } }).success).toBe(false);
+  });
+
+  it("Wunsch über dem gewürfelten Look: ausdrücklich kein Hut, breite Hüte ohne Kopfhörer", async () => {
+    const { applyLookOverride } = await import("@/lib/avatars/looks");
+    const base = { hat: "basecap" as const, headphones: true, glasses: false, height: 1, tint: 0.3 };
+    expect(applyLookOverride(base, undefined)).toBe(base);
+    expect(applyLookOverride(base, { hat: "keiner" }).hat).toBeUndefined();
+    expect(applyLookOverride(base, { hat: "zylinder" })).toMatchObject({ hat: "zylinder", headphones: false });
+    expect(applyLookOverride(base, { glasses: true, height: 0.9 })).toMatchObject({ hat: "basecap", glasses: true, height: 0.9 });
+  });
+});
+
+describe("Avatar-Stil „nur Chibis“", () => {
+  const ids = ["chibi-a", "chibi-b", "chibi-c", "chibi-d"];
+  it("jede Figur wird ein Chibi, jeder höchstens einmal, Künstler stabil; gemischt ändert nichts", async () => {
+    const { applyAvatarStyle } = await import("@/lib/avatars/overrides");
+    expect(applyAvatarStyle(neonlicht, "gemischt", ids)).toBeNull();
+    const out = applyAvatarStyle(neonlicht, "chibi", ids)!;
+    expect(out.cast.every((c) => ids.includes(c.avatarId))).toBe(true);
+    expect(new Set(out.cast.map((c) => c.avatarId)).size).toBe(out.cast.length);
+    for (const a of out.artists) expect(out.cast.find((c) => c.artistId === a.spotifyId)?.avatarId).toBe(a.avatarId);
+    // derselbe Künstler in einem anderen Song: derselbe Chibi
+    const again = applyAvatarStyle({ ...neonlicht, trackKey: "anderer-song" }, "chibi", ids)!;
+    expect(again.artists[0]!.avatarId).toBe(out.artists[0]!.avatarId);
+    // schon alles Chibi → nichts zu tun
+    expect(applyAvatarStyle({ ...neonlicht, ...out }, "chibi", ids)).toBeNull();
+  });
+
+  it("die echten Chibis stehen im Katalog", async () => {
+    const { chibiIds } = await import("@/lib/avatars/overrides");
+    expect(chibiIds().length).toBeGreaterThanOrEqual(10);
+  });
+});

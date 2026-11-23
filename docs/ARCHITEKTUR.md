@@ -228,6 +228,10 @@ Für das Konzert-Erlebnis wurde die Bühne in vier Schichten gegliedert. Jede Sc
   Saison-Besetzung (`withSeasonalCrew`): Weihnachts- und Halloween-Songs tanzen das ganze Jahr mit ihrer Crew; im
   Advent und in den zwei Wochen vor Halloween kommt bei etwa zwei von drei Songs ein Crew-Mitglied als
   Background-Tänzer dazu (deterministisch aus Song und Tag, Künstler behalten ihren Avatar).
+  Einstellungen (pro Konto): **Avatar-Stil** „gemischt“ oder „nur Chibis“ (`applyAvatarStyle`: jede Figur wird ein
+  Chibi, passend zum Genre zuerst, Künstler stabil) und der **Avatar-Baukasten** je Künstler – Figur, Outfit,
+  Kopfbedeckung (auch „ohne“), Sonnenbrille, Kopfhörer, Größe, Leuchtfarbe (`look`/`trim` am Platz des Künstlers,
+  `applyLookOverride` legt den Wunsch über den gewürfelten Look). Demo: `?stil=chibi`.
 - **Ein Abend mit Spannungsbogen.** `eveningPhase` (lib/show/evening.ts) gibt jedem Song eine Phase aus der Setlist:
   Auftakt, Steigerung, Höhepunkt (dritter energiegeladener Song in Folge: Feuerwerk und volles Konfetti schon beim
   ersten großen Einsatz), Durchatmen (ruhiger Song nach wilden: Feuerzeuge) und Zugabe (nach einem ausgespielten

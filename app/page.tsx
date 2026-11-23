@@ -24,6 +24,7 @@ export default async function Page({ searchParams }: { searchParams: Search }) {
       transition={(["umbau", "zugabe"] as const).find((w) => w === one(sp.uebergang))}
       quietHours={quietHoursFromParam(one(sp.ruhe))}
       avatars={one(sp.avatare)?.split(",").slice(0, 7)}
+      avatarStyle={one(sp.stil) === "chibi" ? "chibi" : undefined}
       lyricsMode={lyricsModes.includes(one(sp.lyrics) as LyricsMode) ? (one(sp.lyrics) as LyricsMode) : undefined}
     />
   );
