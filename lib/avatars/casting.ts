@@ -5,7 +5,7 @@ const genreAffinity: Array<[RegExp, string[]]> = [
   // Saison zuerst: „horror punk“ ist erst Halloween, dann Punk
   [/halloween|horror|spooky|grusel/i, ["kuerbis-kopf", "vampir-vlad", "knochen-kalle"]],
   [/christmas|weihnacht|xmas|holiday|winter/i, ["weihnachtsmann", "rentier", "schneemann"]],
-  [/kinder|children|kids|nursery|kinderlied/i, ["dino-rex", "einhorn", "disco-baer", "fuchs-fritzi"]],
+  [/kinder|children|kids|nursery|kinderlied/i, ["dino-rex", "chibi-momo", "einhorn", "chibi-fuchsi", "disco-baer", "chibi-tora"]],
   [/shanty|pirate|piraten|celtic|irish|folk punk/i, ["pirat-paula", "zauberer-zarko"]],
   [/reggae(?!ton)|dancehall|tropical|island|surf/i, ["hai-kostuem", "sol-groove"]],
   [/visual kei|video game|chiptune|game|phonk|anime/i, ["ninja-nori", "mietz-katze"]],
@@ -18,7 +18,7 @@ const genreAffinity: Array<[RegExp, string[]]> = [
   [/epic|symphonic|medieval|mittelalter|power metal|soundtrack|score|fantasy|new age/i, ["eisen-ritter", "zauberer-zarko", "frack-pinguin"]],
   [/country|americana|bluegrass|western|honky/i, ["cowboy-joe", "sol-groove"]],
   [/folk|indie folk|singer.?songwriter|acoustic/i, ["fuchs-fritzi", "cowboy-joe", "luna-flow"]],
-  [/k-?pop|j-?pop|anime|kawaii|city pop|j-?rock|bubblegum/i, ["mietz-katze", "aurora-synth"]],
+  [/k-?pop|j-?pop|anime|kawaii|city pop|j-?rock|bubblegum|idol|vocaloid/i, ["chibi-pixel", "chibi-mika", "chibi-hana", "chibi-sora", "mietz-katze"]],
   [/classical|klassik|orchestra|opera|oper|big band|crooner|lounge/i, ["frack-pinguin", "velvet-jazz"]],
   [/rock|metal/i, ["ember-rock", "punk-rocker", "chrome-beat"]],
   [/jazz|blues|swing/i, ["velvet-jazz", "frack-pinguin", "glitzer-diva", "sol-groove"]],
@@ -28,6 +28,7 @@ const genreAffinity: Array<[RegExp, string[]]> = [
   [/synth|space|ambient|chill|lo-?fi|downtempo|kraut/i, ["astro-nova", "kosmo-alien", "retro-bot"]],
   [/hip ?hop|rap|trap|r&b|grime|drill/i, ["mc-flow", "atlas-prism", "quantum-bass"]],
   [/festival|dance|schlager|party|kinder|children/i, ["festival-nova", "disco-baer", "aurora-synth"]],
+  [/hyperpop|bedroom pop|lo-?fi|e-?girl|alt.?pop/i, ["chibi-rin", "chibi-kai", "chibi-leo", "chibi-fuchsi"]],
   [/pop|indie|singer/i, ["aurora-synth", "luna-flow", "glitzer-diva", "sol-groove"]],
 ];
 

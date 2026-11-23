@@ -27,12 +27,41 @@ const io = new NodeIO().registerExtensions(ALL_EXTENSIONS);
 
 // ---------------------------------------------------------------- Mathe für Matrizen (Spalten-Major wie glTF)
 
-function mat4Mul(a, b) {
-  const o = new Array(16).fill(0);
-  for (let c = 0; c < 4; c++) for (let r = 0; r < 4; r++) for (let k = 0; k < 4; k++) o[c * 4 + r] += a[k * 4 + r] * b[c * 4 + k];
-  return o;
+/** Inverse einer 4×4-Matrix (Spalten-Major) */
+function invert(m) {
+  const [a00, a01, a02, a03, a10, a11, a12, a13, a20, a21, a22, a23, a30, a31, a32, a33] = m;
+  const b00 = a00 * a11 - a01 * a10;
+  const b01 = a00 * a12 - a02 * a10;
+  const b02 = a00 * a13 - a03 * a10;
+  const b03 = a01 * a12 - a02 * a11;
+  const b04 = a01 * a13 - a03 * a11;
+  const b05 = a02 * a13 - a03 * a12;
+  const b06 = a20 * a31 - a21 * a30;
+  const b07 = a20 * a32 - a22 * a30;
+  const b08 = a20 * a33 - a23 * a30;
+  const b09 = a21 * a32 - a22 * a31;
+  const b10 = a21 * a33 - a23 * a31;
+  const b11 = a22 * a33 - a23 * a32;
+  const det = 1 / (b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06);
+  return [
+    (a11 * b11 - a12 * b10 + a13 * b09) * det,
+    (a02 * b10 - a01 * b11 - a03 * b09) * det,
+    (a31 * b05 - a32 * b04 + a33 * b03) * det,
+    (a22 * b04 - a21 * b05 - a23 * b03) * det,
+    (a12 * b08 - a10 * b11 - a13 * b07) * det,
+    (a00 * b11 - a02 * b08 + a03 * b07) * det,
+    (a32 * b02 - a30 * b05 - a33 * b01) * det,
+    (a20 * b05 - a22 * b02 + a23 * b01) * det,
+    (a10 * b10 - a11 * b08 + a13 * b06) * det,
+    (a01 * b08 - a00 * b10 - a03 * b06) * det,
+    (a30 * b04 - a31 * b02 + a33 * b00) * det,
+    (a21 * b02 - a20 * b04 - a23 * b00) * det,
+    (a11 * b07 - a10 * b09 - a12 * b06) * det,
+    (a00 * b09 - a01 * b07 + a02 * b06) * det,
+    (a31 * b01 - a30 * b03 - a32 * b00) * det,
+    (a20 * b03 - a21 * b01 + a22 * b00) * det,
+  ];
 }
-const translation = ([x, y, z]) => [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, x, y, z, 1];
 
 /** Glatte Normalen je Material-Gruppe */
 function normals(positions, indices) {
@@ -70,41 +99,68 @@ async function build(id, spec) {
   const byName = new Map(joints.map((j) => [j.getName(), j]));
   const index = new Map(joints.map((j, i) => [j.getName(), i]));
 
-  // Gesichtsknochen auf die neue Kopfform verschieben: Ruhelage, alle Positions-Schlüssel und die Bind-Matrix
-  const ibm = skin.getInverseBindMatrices();
-  const ibmArr = Array.from(ibm.getArray());
-  for (const [name, delta] of Object.entries(spec.shift ?? {})) {
-    const node = byName.get(name);
-    if (!node) throw new Error(`${id}: Knochen ${name} fehlt im Grundmodell ${spec.base}`);
-    const t = node.getTranslation();
-    node.setTranslation([t[0] + delta[0], t[1] + delta[1], t[2] + delta[2]]);
+  /** Ruhelage und alle Positions-Schlüssel eines Knochens umrechnen (Schlüssel können geteilt sein – eigene Kopie) */
+  const moveTranslation = (node, fn) => {
+    node.setTranslation(fn(node.getTranslation()));
     for (const anim of r.listAnimations())
       for (const ch of anim.listChannels()) {
         if (ch.getTargetNode() !== node || ch.getTargetPath() !== "translation") continue;
-        const s = ch.getSampler();
-        const out = Array.from(s.getOutput().getArray());
-        for (let i = 0; i < out.length; i += 3) for (let d = 0; d < 3; d++) out[i + d] += delta[d];
-        // Schlüssel können geteilt sein – eigene Kopie
-        s.setOutput(doc.createAccessor().setType("VEC3").setArray(new Float32Array(out)).setBuffer(buffer));
+        const sampler = ch.getSampler();
+        const out = Array.from(sampler.getOutput().getArray());
+        for (let i = 0; i < out.length; i += 3) out.splice(i, 3, ...fn(out.slice(i, i + 3)));
+        sampler.setOutput(doc.createAccessor().setType("VEC3").setArray(new Float32Array(out)).setBuffer(buffer));
       }
-    const k = index.get(name);
-    const m = mat4Mul(ibmArr.slice(k * 16, k * 16 + 16), translation(delta.map((v) => -v)));
-    ibmArr.splice(k * 16, 16, ...m);
+  };
+  const bone = (name) => {
+    const node = byName.get(name);
+    if (!node) throw new Error(`${id}: Knochen ${name} fehlt im Grundmodell ${spec.base}`);
+    return node;
+  };
+
+  // Proportionen (Chibi): Beine, Arme, Rumpf kürzer – die Hüfte sinkt mit den Beinen, Tänze bleiben stimmig
+  if (spec.proportions) {
+    const { legs = 1, arms = 1, torso = 1 } = spec.proportions;
+    const hips = bone("Hips");
+    // Fußhöhe im Raum der Hüfte (deren Eltern): um sie herum wird die Hüftbewegung gestaucht
+    const footLocal = bone("LeftFoot").getWorldTranslation()[1] - (hips.getWorldTranslation()[1] - hips.getTranslation()[1]);
+    const factor = {
+      LeftLeg: legs,
+      LeftFoot: legs,
+      RightLeg: legs,
+      RightFoot: legs,
+      LeftForeArm: arms,
+      LeftHand: arms,
+      RightForeArm: arms,
+      RightHand: arms,
+      Spine: torso,
+      Chest: torso,
+      Neck: torso,
+      LeftShoulder: torso,
+      RightShoulder: torso,
+    };
+    for (const [name, f] of Object.entries(factor)) if (f !== 1) moveTranslation(bone(name), (v) => v.map((x) => x * f));
+    if (legs !== 1) moveTranslation(hips, ([x, y, z]) => [x * legs, footLocal + (y - footLocal) * legs, z * legs]);
   }
-  skin.setInverseBindMatrices(doc.createAccessor().setType("MAT4").setArray(new Float32Array(ibmArr)).setBuffer(buffer));
+
+  // Gesichtsknochen auf die neue Kopfform verschieben (als Funktion: aus den Gelenkpositionen nach den Proportionen)
+  const shift =
+    typeof spec.shift === "function"
+      ? spec.shift(Object.fromEntries(joints.map((j) => [j.getName(), j.getWorldTranslation()])))
+      : (spec.shift ?? {});
+  for (const [name, delta] of Object.entries(shift))
+    moveTranslation(bone(name), (v) => [v[0] + delta[0], v[1] + delta[1], v[2] + delta[2]]);
+
+  // Bind-Matrizen neu aus der Ruhelage (Bind-Pose = Ruhelage, siehe Grundmodelle)
+  skin.setInverseBindMatrices(
+    doc
+      .createAccessor()
+      .setType("MAT4")
+      .setArray(new Float32Array(joints.flatMap((j) => invert(j.getWorldMatrix()))))
+      .setBuffer(buffer),
+  );
 
   // Gelenkpositionen in der Grundhaltung
-  const world = (name) => {
-    const k = index.get(name);
-    const inv = ibmArr.slice(k * 16, k * 16 + 16);
-    // Position = −R⁻¹·t aus der inversen Bind-Matrix (Rotation orthonormal)
-    const [tx, ty, tz] = [inv[12], inv[13], inv[14]];
-    return [
-      -(inv[0] * tx + inv[1] * ty + inv[2] * tz),
-      -(inv[4] * tx + inv[5] * ty + inv[6] * tz),
-      -(inv[8] * tx + inv[9] * ty + inv[10] * tz),
-    ];
-  };
+  const world = (name) => byName.get(name).getWorldTranslation();
   const J = Object.fromEntries(joints.map((j) => [j.getName(), world(j.getName())]));
 
   const b = new Builder();
@@ -178,11 +234,14 @@ const sha = (...parts) => {
   for (const p of parts) h.update(p);
   return h.digest("hex");
 };
-// gemeinsame Quellen: Baupipeline und Bausteine
+// gemeinsame Quellen: Baupipeline und alle Bausteine (jede .mjs-Datei neben diesem Skript)
 const shared = sha(
-  await readFile(import.meta.filename),
-  await readFile(path.join(import.meta.dirname, "geometry.mjs")),
-  await readFile(path.join(import.meta.dirname, "parts.mjs")),
+  ...(await Promise.all(
+    (await readdir(import.meta.dirname))
+      .filter((f) => f.endsWith(".mjs") && f !== "render-previews.mjs")
+      .sort()
+      .map((f) => readFile(path.join(import.meta.dirname, f))),
+  )),
 );
 
 const groups = (await readdir(figurenDir)).filter((f) => f.endsWith(".mjs")).sort();

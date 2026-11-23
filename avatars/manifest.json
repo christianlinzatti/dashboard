@@ -1337,7 +1337,7 @@
     "file": "disco-baer.glb",
     "generated": true,
     "base": "rio-carnival",
-    "version": "b37c4cd820919ac6",
+    "version": "2137549c97b78877",
     "motionVersion": 3,
     "triangles": 18764,
     "joints": 45,
@@ -1476,7 +1476,7 @@
     "file": "retro-bot.glb",
     "generated": true,
     "base": "atlas-prism",
-    "version": "7a1a126866fbe1e9",
+    "version": "8bbebb6edbca88ae",
     "motionVersion": 3,
     "triangles": 20188,
     "joints": 47,
@@ -1615,7 +1615,7 @@
     "file": "astro-nova.glb",
     "generated": true,
     "base": "atlas-prism",
-    "version": "59124ee7e8646806",
+    "version": "086aaa61385d7719",
     "motionVersion": 3,
     "triangles": 15160,
     "joints": 47,
@@ -1754,7 +1754,7 @@
     "file": "kosmo-alien.glb",
     "generated": true,
     "base": "rio-carnival",
-    "version": "0dbd7ead1afe7f3a",
+    "version": "80190e58cf9ce2eb",
     "motionVersion": 3,
     "triangles": 17336,
     "joints": 45,
@@ -1893,7 +1893,7 @@
     "file": "punk-rocker.glb",
     "generated": true,
     "base": "rio-carnival",
-    "version": "2728cc2f7648cb92",
+    "version": "6da6f95fc224396e",
     "motionVersion": 3,
     "triangles": 22808,
     "joints": 45,
@@ -2032,7 +2032,7 @@
     "file": "glitzer-diva.glb",
     "generated": true,
     "base": "rio-carnival",
-    "version": "c76045eca4008949",
+    "version": "41c38ee33c9a5f76",
     "motionVersion": 3,
     "triangles": 17936,
     "joints": 45,
@@ -2171,7 +2171,7 @@
     "file": "cowboy-joe.glb",
     "generated": true,
     "base": "rio-carnival",
-    "version": "960917028a485a71",
+    "version": "31423ab29188d570",
     "motionVersion": 3,
     "triangles": 23348,
     "joints": 45,
@@ -2310,7 +2310,7 @@
     "file": "knochen-kalle.glb",
     "generated": true,
     "base": "rio-carnival",
-    "version": "0a19d820422b3202",
+    "version": "d6bad64b0f2e9d01",
     "motionVersion": 3,
     "triangles": 22408,
     "joints": 45,
@@ -2449,7 +2449,7 @@
     "file": "mietz-katze.glb",
     "generated": true,
     "base": "aurora-synth",
-    "version": "1a6a8ab2a07ed031",
+    "version": "bb6782c0387a1dd3",
     "motionVersion": 3,
     "triangles": 16460,
     "joints": 45,
@@ -2588,7 +2588,7 @@
     "file": "eisen-ritter.glb",
     "generated": true,
     "base": "ember-rock",
-    "version": "a68523a65905db1e",
+    "version": "f485471802ddd260",
     "motionVersion": 3,
     "triangles": 18616,
     "joints": 44,
@@ -2711,7 +2711,7 @@
     "file": "frack-pinguin.glb",
     "generated": true,
     "base": "rio-carnival",
-    "version": "477abc122aa73061",
+    "version": "09226e3950c9f9a9",
     "motionVersion": 3,
     "triangles": 14160,
     "joints": 45,
@@ -2850,7 +2850,7 @@
     "file": "mc-flow.glb",
     "generated": true,
     "base": "luna-flow",
-    "version": "5c447d915e7b19c9",
+    "version": "9a69a69124f53043",
     "motionVersion": 3,
     "triangles": 24592,
     "joints": 45,
@@ -2973,7 +2973,7 @@
     "file": "dirndl-vroni.glb",
     "generated": true,
     "base": "aurora-synth",
-    "version": "d54803430d92a17c",
+    "version": "65f76a69b7e4ace2",
     "motionVersion": 3,
     "triangles": 21092,
     "joints": 45,
@@ -3112,7 +3112,7 @@
     "file": "lederhosn-sepp.glb",
     "generated": true,
     "base": "rio-carnival",
-    "version": "50da9caef4c96d5e",
+    "version": "e71ce99b65b14389",
     "motionVersion": 3,
     "triangles": 22092,
     "joints": 45,
@@ -3251,7 +3251,7 @@
     "file": "tolle-teddy.glb",
     "generated": true,
     "base": "rio-carnival",
-    "version": "1ae29b17e978fdc9",
+    "version": "2cf87a3e52a9c82a",
     "motionVersion": 3,
     "triangles": 19964,
     "joints": 45,
@@ -3390,7 +3390,7 @@
     "file": "disco-king.glb",
     "generated": true,
     "base": "aurora-synth",
-    "version": "680bde7a67bd52a1",
+    "version": "fc17435b9cc2ea15",
     "motionVersion": 3,
     "triangles": 18576,
     "joints": 45,
@@ -3529,7 +3529,7 @@
     "file": "mariachi-miguel.glb",
     "generated": true,
     "base": "rio-carnival",
-    "version": "9231c5d4a44b20de",
+    "version": "f855ab8a4b93efb4",
     "motionVersion": 3,
     "triangles": 31004,
     "joints": 45,
@@ -3668,7 +3668,7 @@
     "file": "weihnachtsmann.glb",
     "generated": true,
     "base": "rio-carnival",
-    "version": "0d075071bf71e97c",
+    "version": "b2fa2390fd48da91",
     "motionVersion": 3,
     "triangles": 20236,
     "joints": 45,
@@ -3807,7 +3807,7 @@
     "file": "rentier.glb",
     "generated": true,
     "base": "rio-carnival",
-    "version": "4e33ce47490823b7",
+    "version": "0aa151b94b82cff9",
     "motionVersion": 3,
     "triangles": 18388,
     "joints": 45,
@@ -3946,7 +3946,7 @@
     "file": "schneemann.glb",
     "generated": true,
     "base": "rio-carnival",
-    "version": "51596b9143bf8d4f",
+    "version": "035a5b67acfc6ce1",
     "motionVersion": 3,
     "triangles": 12464,
     "joints": 45,
@@ -4085,7 +4085,7 @@
     "file": "kuerbis-kopf.glb",
     "generated": true,
     "base": "rio-carnival",
-    "version": "05dc0e0a7dc3a989",
+    "version": "891162632d757839",
     "motionVersion": 3,
     "triangles": 18112,
     "joints": 45,
@@ -4224,7 +4224,7 @@
     "file": "vampir-vlad.glb",
     "generated": true,
     "base": "aurora-synth",
-    "version": "1e049f0289f24a3b",
+    "version": "7845470356fc5ad4",
     "motionVersion": 3,
     "triangles": 18400,
     "joints": 45,
@@ -4363,7 +4363,7 @@
     "file": "dino-rex.glb",
     "generated": true,
     "base": "rio-carnival",
-    "version": "3638aa2022a0a96a",
+    "version": "e8ec8095121d7175",
     "motionVersion": 3,
     "triangles": 20020,
     "joints": 45,
@@ -4502,7 +4502,7 @@
     "file": "einhorn.glb",
     "generated": true,
     "base": "aurora-synth",
-    "version": "6d5f53148acbc824",
+    "version": "3a71b8797a42af1c",
     "motionVersion": 3,
     "triangles": 19236,
     "joints": 45,
@@ -4641,7 +4641,7 @@
     "file": "fuchs-fritzi.glb",
     "generated": true,
     "base": "aurora-synth",
-    "version": "8471a91cb7e8698e",
+    "version": "a90dbe1859f79113",
     "motionVersion": 3,
     "triangles": 18680,
     "joints": 45,
@@ -4780,7 +4780,7 @@
     "file": "hai-kostuem.glb",
     "generated": true,
     "base": "rio-carnival",
-    "version": "c5954de6d955dd67",
+    "version": "e339281dfc5d142f",
     "motionVersion": 3,
     "triangles": 23620,
     "joints": 45,
@@ -4919,7 +4919,7 @@
     "file": "zauberer-zarko.glb",
     "generated": true,
     "base": "aurora-synth",
-    "version": "94b51701b5ce4dac",
+    "version": "8a7b7212454a5bb1",
     "motionVersion": 3,
     "triangles": 24808,
     "joints": 45,
@@ -5058,7 +5058,7 @@
     "file": "pirat-paula.glb",
     "generated": true,
     "base": "luna-flow",
-    "version": "a560721b645524ec",
+    "version": "9620029112df3c5b",
     "motionVersion": 3,
     "triangles": 25808,
     "joints": 45,
@@ -5181,9 +5181,1399 @@
     "file": "ninja-nori.glb",
     "generated": true,
     "base": "rio-carnival",
-    "version": "26d1082cb48dfb6a",
+    "version": "5572bb06d6fd7829",
     "motionVersion": 3,
     "triangles": 17648,
+    "joints": 45,
+    "clips": [
+      {
+        "name": "Dance_Groove",
+        "seconds": 2
+      },
+      {
+        "name": "Dance_Techno",
+        "seconds": 2
+      },
+      {
+        "name": "Idle_Breathe",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_House",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_HipHop",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Disco",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Shuffle",
+        "seconds": 2
+      },
+      {
+        "name": "Dance_Robot",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_FestivalBounce",
+        "seconds": 2
+      },
+      {
+        "name": "Gesture_Wave",
+        "seconds": 3
+      },
+      {
+        "name": "Dance_FestivalFlow",
+        "seconds": 12
+      },
+      {
+        "name": "Dance_DiscoStar",
+        "seconds": 12
+      },
+      {
+        "name": "Dance_RockDrive",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_LatinSway",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_JazzSwing",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_LiquidWave",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_AfroPulse",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Waltz",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_PowerHit",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Ripple",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Turnout",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Stomp",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_SideGlide",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_DiagonalStep",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_HeelToe",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_PivotStep",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_RobotGroove",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_FluidArc",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_FrontmanDrive",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_JazzRebound",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_CrossStep",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_TurnPhrase",
+        "seconds": 4
+      }
+    ]
+  },
+  {
+    "file": "chibi-mika.glb",
+    "generated": true,
+    "base": "aurora-synth",
+    "version": "5fe196299e699f0e",
+    "motionVersion": 3,
+    "triangles": 23840,
+    "joints": 45,
+    "clips": [
+      {
+        "name": "Dance_Groove",
+        "seconds": 2
+      },
+      {
+        "name": "Dance_Techno",
+        "seconds": 2
+      },
+      {
+        "name": "Idle_Breathe",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_House",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_HipHop",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Disco",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Shuffle",
+        "seconds": 2
+      },
+      {
+        "name": "Dance_Robot",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_FestivalBounce",
+        "seconds": 2
+      },
+      {
+        "name": "Gesture_Wave",
+        "seconds": 3
+      },
+      {
+        "name": "Dance_FestivalFlow",
+        "seconds": 12
+      },
+      {
+        "name": "Dance_DiscoStar",
+        "seconds": 12
+      },
+      {
+        "name": "Dance_RockDrive",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_LatinSway",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_JazzSwing",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_LiquidWave",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_AfroPulse",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Waltz",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_PowerHit",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Ripple",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Turnout",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Stomp",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_SideGlide",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_DiagonalStep",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_HeelToe",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_PivotStep",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_RobotGroove",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_FluidArc",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_FrontmanDrive",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_JazzRebound",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_CrossStep",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_TurnPhrase",
+        "seconds": 4
+      }
+    ]
+  },
+  {
+    "file": "chibi-fuchsi.glb",
+    "generated": true,
+    "base": "aurora-synth",
+    "version": "de0a7c79370eb9a8",
+    "motionVersion": 3,
+    "triangles": 23016,
+    "joints": 45,
+    "clips": [
+      {
+        "name": "Dance_Groove",
+        "seconds": 2
+      },
+      {
+        "name": "Dance_Techno",
+        "seconds": 2
+      },
+      {
+        "name": "Idle_Breathe",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_House",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_HipHop",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Disco",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Shuffle",
+        "seconds": 2
+      },
+      {
+        "name": "Dance_Robot",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_FestivalBounce",
+        "seconds": 2
+      },
+      {
+        "name": "Gesture_Wave",
+        "seconds": 3
+      },
+      {
+        "name": "Dance_FestivalFlow",
+        "seconds": 12
+      },
+      {
+        "name": "Dance_DiscoStar",
+        "seconds": 12
+      },
+      {
+        "name": "Dance_RockDrive",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_LatinSway",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_JazzSwing",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_LiquidWave",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_AfroPulse",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Waltz",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_PowerHit",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Ripple",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Turnout",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Stomp",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_SideGlide",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_DiagonalStep",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_HeelToe",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_PivotStep",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_RobotGroove",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_FluidArc",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_FrontmanDrive",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_JazzRebound",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_CrossStep",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_TurnPhrase",
+        "seconds": 4
+      }
+    ]
+  },
+  {
+    "file": "chibi-hana.glb",
+    "generated": true,
+    "base": "aurora-synth",
+    "version": "e192acdcdacd0d07",
+    "motionVersion": 3,
+    "triangles": 26608,
+    "joints": 45,
+    "clips": [
+      {
+        "name": "Dance_Groove",
+        "seconds": 2
+      },
+      {
+        "name": "Dance_Techno",
+        "seconds": 2
+      },
+      {
+        "name": "Idle_Breathe",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_House",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_HipHop",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Disco",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Shuffle",
+        "seconds": 2
+      },
+      {
+        "name": "Dance_Robot",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_FestivalBounce",
+        "seconds": 2
+      },
+      {
+        "name": "Gesture_Wave",
+        "seconds": 3
+      },
+      {
+        "name": "Dance_FestivalFlow",
+        "seconds": 12
+      },
+      {
+        "name": "Dance_DiscoStar",
+        "seconds": 12
+      },
+      {
+        "name": "Dance_RockDrive",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_LatinSway",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_JazzSwing",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_LiquidWave",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_AfroPulse",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Waltz",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_PowerHit",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Ripple",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Turnout",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Stomp",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_SideGlide",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_DiagonalStep",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_HeelToe",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_PivotStep",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_RobotGroove",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_FluidArc",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_FrontmanDrive",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_JazzRebound",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_CrossStep",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_TurnPhrase",
+        "seconds": 4
+      }
+    ]
+  },
+  {
+    "file": "chibi-momo.glb",
+    "generated": true,
+    "base": "aurora-synth",
+    "version": "9c95b8fffbba3f46",
+    "motionVersion": 3,
+    "triangles": 23072,
+    "joints": 45,
+    "clips": [
+      {
+        "name": "Dance_Groove",
+        "seconds": 2
+      },
+      {
+        "name": "Dance_Techno",
+        "seconds": 2
+      },
+      {
+        "name": "Idle_Breathe",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_House",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_HipHop",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Disco",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Shuffle",
+        "seconds": 2
+      },
+      {
+        "name": "Dance_Robot",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_FestivalBounce",
+        "seconds": 2
+      },
+      {
+        "name": "Gesture_Wave",
+        "seconds": 3
+      },
+      {
+        "name": "Dance_FestivalFlow",
+        "seconds": 12
+      },
+      {
+        "name": "Dance_DiscoStar",
+        "seconds": 12
+      },
+      {
+        "name": "Dance_RockDrive",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_LatinSway",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_JazzSwing",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_LiquidWave",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_AfroPulse",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Waltz",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_PowerHit",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Ripple",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Turnout",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Stomp",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_SideGlide",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_DiagonalStep",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_HeelToe",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_PivotStep",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_RobotGroove",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_FluidArc",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_FrontmanDrive",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_JazzRebound",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_CrossStep",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_TurnPhrase",
+        "seconds": 4
+      }
+    ]
+  },
+  {
+    "file": "chibi-rin.glb",
+    "generated": true,
+    "base": "aurora-synth",
+    "version": "82703dabf2915108",
+    "motionVersion": 3,
+    "triangles": 26208,
+    "joints": 45,
+    "clips": [
+      {
+        "name": "Dance_Groove",
+        "seconds": 2
+      },
+      {
+        "name": "Dance_Techno",
+        "seconds": 2
+      },
+      {
+        "name": "Idle_Breathe",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_House",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_HipHop",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Disco",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Shuffle",
+        "seconds": 2
+      },
+      {
+        "name": "Dance_Robot",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_FestivalBounce",
+        "seconds": 2
+      },
+      {
+        "name": "Gesture_Wave",
+        "seconds": 3
+      },
+      {
+        "name": "Dance_FestivalFlow",
+        "seconds": 12
+      },
+      {
+        "name": "Dance_DiscoStar",
+        "seconds": 12
+      },
+      {
+        "name": "Dance_RockDrive",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_LatinSway",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_JazzSwing",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_LiquidWave",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_AfroPulse",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Waltz",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_PowerHit",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Ripple",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Turnout",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Stomp",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_SideGlide",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_DiagonalStep",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_HeelToe",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_PivotStep",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_RobotGroove",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_FluidArc",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_FrontmanDrive",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_JazzRebound",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_CrossStep",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_TurnPhrase",
+        "seconds": 4
+      }
+    ]
+  },
+  {
+    "file": "chibi-sora.glb",
+    "generated": true,
+    "base": "aurora-synth",
+    "version": "0452f933b0f63632",
+    "motionVersion": 3,
+    "triangles": 22184,
+    "joints": 45,
+    "clips": [
+      {
+        "name": "Dance_Groove",
+        "seconds": 2
+      },
+      {
+        "name": "Dance_Techno",
+        "seconds": 2
+      },
+      {
+        "name": "Idle_Breathe",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_House",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_HipHop",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Disco",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Shuffle",
+        "seconds": 2
+      },
+      {
+        "name": "Dance_Robot",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_FestivalBounce",
+        "seconds": 2
+      },
+      {
+        "name": "Gesture_Wave",
+        "seconds": 3
+      },
+      {
+        "name": "Dance_FestivalFlow",
+        "seconds": 12
+      },
+      {
+        "name": "Dance_DiscoStar",
+        "seconds": 12
+      },
+      {
+        "name": "Dance_RockDrive",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_LatinSway",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_JazzSwing",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_LiquidWave",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_AfroPulse",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Waltz",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_PowerHit",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Ripple",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Turnout",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Stomp",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_SideGlide",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_DiagonalStep",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_HeelToe",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_PivotStep",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_RobotGroove",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_FluidArc",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_FrontmanDrive",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_JazzRebound",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_CrossStep",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_TurnPhrase",
+        "seconds": 4
+      }
+    ]
+  },
+  {
+    "file": "chibi-tora.glb",
+    "generated": true,
+    "base": "aurora-synth",
+    "version": "bb89c1de550f5e67",
+    "motionVersion": 3,
+    "triangles": 28776,
+    "joints": 45,
+    "clips": [
+      {
+        "name": "Dance_Groove",
+        "seconds": 2
+      },
+      {
+        "name": "Dance_Techno",
+        "seconds": 2
+      },
+      {
+        "name": "Idle_Breathe",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_House",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_HipHop",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Disco",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Shuffle",
+        "seconds": 2
+      },
+      {
+        "name": "Dance_Robot",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_FestivalBounce",
+        "seconds": 2
+      },
+      {
+        "name": "Gesture_Wave",
+        "seconds": 3
+      },
+      {
+        "name": "Dance_FestivalFlow",
+        "seconds": 12
+      },
+      {
+        "name": "Dance_DiscoStar",
+        "seconds": 12
+      },
+      {
+        "name": "Dance_RockDrive",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_LatinSway",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_JazzSwing",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_LiquidWave",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_AfroPulse",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Waltz",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_PowerHit",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Ripple",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Turnout",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Stomp",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_SideGlide",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_DiagonalStep",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_HeelToe",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_PivotStep",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_RobotGroove",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_FluidArc",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_FrontmanDrive",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_JazzRebound",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_CrossStep",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_TurnPhrase",
+        "seconds": 4
+      }
+    ]
+  },
+  {
+    "file": "chibi-kai.glb",
+    "generated": true,
+    "base": "aurora-synth",
+    "version": "e9849adeb712cd08",
+    "motionVersion": 3,
+    "triangles": 22224,
+    "joints": 45,
+    "clips": [
+      {
+        "name": "Dance_Groove",
+        "seconds": 2
+      },
+      {
+        "name": "Dance_Techno",
+        "seconds": 2
+      },
+      {
+        "name": "Idle_Breathe",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_House",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_HipHop",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Disco",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Shuffle",
+        "seconds": 2
+      },
+      {
+        "name": "Dance_Robot",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_FestivalBounce",
+        "seconds": 2
+      },
+      {
+        "name": "Gesture_Wave",
+        "seconds": 3
+      },
+      {
+        "name": "Dance_FestivalFlow",
+        "seconds": 12
+      },
+      {
+        "name": "Dance_DiscoStar",
+        "seconds": 12
+      },
+      {
+        "name": "Dance_RockDrive",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_LatinSway",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_JazzSwing",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_LiquidWave",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_AfroPulse",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Waltz",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_PowerHit",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Ripple",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Turnout",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Stomp",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_SideGlide",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_DiagonalStep",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_HeelToe",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_PivotStep",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_RobotGroove",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_FluidArc",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_FrontmanDrive",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_JazzRebound",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_CrossStep",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_TurnPhrase",
+        "seconds": 4
+      }
+    ]
+  },
+  {
+    "file": "chibi-leo.glb",
+    "generated": true,
+    "base": "aurora-synth",
+    "version": "376956d99d366da3",
+    "motionVersion": 3,
+    "triangles": 21584,
+    "joints": 45,
+    "clips": [
+      {
+        "name": "Dance_Groove",
+        "seconds": 2
+      },
+      {
+        "name": "Dance_Techno",
+        "seconds": 2
+      },
+      {
+        "name": "Idle_Breathe",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_House",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_HipHop",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Disco",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Shuffle",
+        "seconds": 2
+      },
+      {
+        "name": "Dance_Robot",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_FestivalBounce",
+        "seconds": 2
+      },
+      {
+        "name": "Gesture_Wave",
+        "seconds": 3
+      },
+      {
+        "name": "Dance_FestivalFlow",
+        "seconds": 12
+      },
+      {
+        "name": "Dance_DiscoStar",
+        "seconds": 12
+      },
+      {
+        "name": "Dance_RockDrive",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_LatinSway",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_JazzSwing",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_LiquidWave",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_AfroPulse",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Waltz",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_PowerHit",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Ripple",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Turnout",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_Stomp",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_SideGlide",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_DiagonalStep",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_HeelToe",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_PivotStep",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_RobotGroove",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_FluidArc",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_FrontmanDrive",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_JazzRebound",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_CrossStep",
+        "seconds": 4
+      },
+      {
+        "name": "Dance_TurnPhrase",
+        "seconds": 4
+      }
+    ]
+  },
+  {
+    "file": "chibi-pixel.glb",
+    "generated": true,
+    "base": "aurora-synth",
+    "version": "7c7a944af9329d48",
+    "motionVersion": 3,
+    "triangles": 25824,
     "joints": 45,
     "clips": [
       {

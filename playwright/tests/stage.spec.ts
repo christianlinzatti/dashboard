@@ -174,6 +174,8 @@ test.describe("Bühne & Licht", () => {
     ["tracht-disco-mariachi", "lederhosn-sepp,dirndl-vroni,disco-king", "festival"],
     ["weihnachts-crew", "weihnachtsmann,rentier,schneemann", "stadion"],
     ["dino-einhorn-ninja", "dino-rex,einhorn,ninja-nori", "club"],
+    ["chibi-pixel-mika-kai", "chibi-pixel,chibi-mika,chibi-kai", "synthwave"],
+    ["chibi-fuchsi-hana-tora", "chibi-fuchsi,chibi-hana,chibi-tora", "strand"],
   ] as const) {
     test(`Neue Avatare tanzen: ${name}`, async ({ page }) => {
       const errors = collectErrors(page);

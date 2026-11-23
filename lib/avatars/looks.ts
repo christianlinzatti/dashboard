@@ -69,11 +69,22 @@ export const OWN_HEADWEAR: ReadonlySet<string> = new Set([
   "zauberer-zarko",
   "pirat-paula",
   "ninja-nori",
+  // Chibis mit Ohren, Kapuze, Mütze, Zöpfen oder Haarknoten
+  "chibi-mika",
+  "chibi-fuchsi",
+  "chibi-hana",
+  "chibi-momo",
+  "chibi-rin",
+  "chibi-sora",
+  "chibi-tora",
+  "chibi-pixel",
 ]);
 
 export function lookForAvatar(avatarId: string, seed: string): Look {
   const look = lookFor(seed);
-  return OWN_HEADWEAR.has(avatarId) ? { ...look, hat: undefined, headphones: false } : look;
+  // Chibis: keine Sonnenbrille über den großen Augen
+  const own = avatarId.startsWith("chibi-") ? { ...look, glasses: false } : look;
+  return OWN_HEADWEAR.has(avatarId) ? { ...own, hat: undefined, headphones: false } : own;
 }
 
 /** Schlüssel des Looks: Künstler stabil, Crew je Song anders, Band je Musiker */

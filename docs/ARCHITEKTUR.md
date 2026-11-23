@@ -211,7 +211,10 @@ Für das Konzert-Erlebnis wurde die Bühne in vier Schichten gegliedert. Jede Sc
   bisher 29 Figuren in Gruppen (`scripts/avatars/figuren/*.mjs`): Bühne (Bär, Retro-Bot, Astronautin, Alien, Punk,
   Diva), Genres (Cowboy, Skelett, Katze, Ritter, Pinguin, Rapperin), Stile (Dirndl, Lederhose, Rock'n'Roll, Disco-King,
   Mariachi), Saison (Weihnachtsmann, Rentier, Schneemann, Kürbiskopf, Vampir), Fantasie (Dino, Einhorn, Fuchs,
-  Hai-Kostüm, Zauberer, Pirat, Ninja). Die GLBs entstehen beim Build (`prebuild`) unter `avatars/generated/` (nicht im
+  Hai-Kostüm, Zauberer, Pirat, Ninja) und 10 Chibis (Mika, Fuchsi, Hana, Momo, Rin, Sora, Tora, Kai, Leo, Pixel). Chibis
+  ändern die Proportionen am Skelett (`spec.proportions`: Beine, Arme, Rumpf kürzer, Hüfte sinkt mit – die Tänze
+  bleiben stimmig, Bind-Matrizen werden neu berechnet) und bekommen große Anime-Augen mit Glanzlichtern,
+  Wangenröte, Pony und Tierohren/Kapuzen (`scripts/avatars/chibi.mjs`). Die GLBs entstehen beim Build (`prebuild`) unter `avatars/generated/` (nicht im
   Repo, byte-gleich, Version aus den Quellen im Manifest). Skelett, Gesichtsknochen und alle 32 Tanz-Clips
   stammen von einem vorhandenen Modell; der Körper entsteht aus abgerundeten Formen (Superellipsoide, Röhren
   zwischen Gelenken), die weich an die Knochen gebunden sind (Ellbogen, Knie, Rumpf, Rock folgt den Beinen).

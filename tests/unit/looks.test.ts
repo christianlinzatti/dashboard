@@ -42,5 +42,9 @@ describe("Figuren mit eigener Kopfbedeckung", () => {
       expect(look.height).toBe(lookFor(seed).height);
     }
     expect(lookForAvatar("punk-rocker", seed).hat).toBe(lookFor(seed).hat);
+    // Chibis tragen nie eine Sonnenbrille
+    const glassy = Array.from({ length: 200 }, (_, i) => `crew:y:${i}`).find((k) => lookFor(k).glasses)!;
+    expect(lookForAvatar("chibi-leo", glassy).glasses).toBe(false);
+    expect(lookForAvatar("punk-rocker", glassy).glasses).toBe(true);
   });
 });
