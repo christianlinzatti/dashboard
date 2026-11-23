@@ -6,6 +6,7 @@ import type { LogEntry } from "@/lib/live/log-schema";
 import { diagnose } from "@/lib/debug/diagnose";
 import { Findings } from "./Findings";
 import { AiTraceView, parseTraceInfo } from "./AiTraceView";
+import { LyricsStatus } from "./LyricsStatus";
 
 type State = { kind: "laden" } | { kind: "login" } | { kind: "fehler"; text: string } | { kind: "ok"; entry: DebugEntry | null };
 
@@ -126,6 +127,8 @@ export function DebugViewer() {
           </p>
         )}
         {state.kind === "fehler" && <p className="mt-6 text-red-300">{state.text}</p>}
+
+        {state.kind !== "login" && <LyricsStatus auto={auto} />}
         {state.kind === "ok" && !entry && (
           <p className="mt-6 text-white/70" data-testid="viewer-empty">
             Noch nichts gesendet (oder älter als eine Stunde).

@@ -152,14 +152,37 @@ test.describe("Dashboard", () => {
       r.fulfill({ json: { entry: { ...sent!, sentAt: Date.now(), receivedAt: Date.now(), device: "1280×800" } } }),
     );
     await phone.route("**/api/log", (r) => r.fulfill({ json: { entries: [] } }));
+    // Lyrics-Provider-Status: spotify-color pausiert mit Grund
+    await phone.route("**/api/lyrics-status", (r) =>
+      r.fulfill({
+        json: {
+          now: Date.now(),
+          providers: [
+            {
+              id: "spotify-color",
+              configured: true,
+              paused: true,
+              pausedUntil: Date.now() + 12 * 60_000,
+              reason: "TOTP oder sp_dc abgelehnt (HTTP 400)",
+            },
+          ],
+        },
+      }),
+    );
     await phone.goto("/debug");
+    const status = phone.getByTestId("lyrics-status-spotify-color");
+    await expect(status.getByText("pausiert")).toBeVisible();
+    await expect(status).toContainText("TOTP oder sp_dc abgelehnt");
     await expect(phone.getByTestId("viewer-sections")).toContainText("demo-neonlicht");
     await expect(phone.getByTestId("viewer-age")).toContainText("gesendet vor");
     await expect(phone.getByTestId("viewer-ai")).toContainText('"motto": "Neonnacht"');
     // ohne Anmeldung: Hinweis mit Anmelde-Link
     await phone.unroute("**/api/debug-context");
+    await phone.unroute("**/api/lyrics-status");
+    await phone.route("**/api/lyrics-status", (r) => r.fulfill({ status: 401, json: { error: "Nicht angemeldet." } }));
     await phone.reload();
     await expect(phone.getByTestId("viewer-login")).toContainText("Mit Spotify anmelden");
+    await expect(phone.getByTestId("lyrics-status")).toHaveCount(0);
     await phone.close();
   });
 

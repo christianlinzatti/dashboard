@@ -3,7 +3,7 @@ import { isSameTrack, overlap } from "@/lib/lyrics/match";
 import { netease, parseYrc } from "@/lib/lyrics/providers/netease";
 import { musixmatchDesktop } from "@/lib/lyrics/providers/musixmatch";
 import { spotifyColor, totp, totpKey } from "@/lib/lyrics/providers/spotify-color";
-import { activeProviders } from "@/lib/lyrics/service";
+import { activeProviders, lyricsProviderStatus } from "@/lib/lyrics/service";
 import type { TrackQuery } from "@/lib/lyrics/types";
 
 const q: TrackQuery = {
@@ -278,6 +278,26 @@ describe("Spotify Color-Lyrics", () => {
   });
 });
 
+it("status(): konfiguriert, läuft; nach Ablehnung pausiert mit Grund", async () => {
+  let t = 1_000_000;
+  const f = vi.fn<typeof fetch>(async (url) =>
+    String(url).endsWith("/server-time")
+      ? json({ serverTime: 1 })
+      : json({ accessToken: "x", accessTokenExpirationTimestampMs: 0, isAnonymous: true }),
+  );
+  const p = spotifyColor({ spDc: "x", totpSecret: "k", now: () => t }, f);
+  expect(p.status!()).toMatchObject({ id: "spotify-color", configured: true, paused: false });
+  await p.search(q, signal());
+  const st = p.status!();
+  expect(st.paused).toBe(true);
+  expect(st.reason).toMatch(/sp_dc/);
+  expect(st.pausedUntil).toBe(t + 15 * 60_000);
+  t += 16 * 60_000;
+  expect(p.status!().paused).toBe(false);
+  // ohne Secret: nicht konfiguriert
+  expect(spotifyColor({}, f).status!()).toMatchObject({ configured: false, paused: false });
+});
+
 describe("Provider-Auswahl", () => {
   it("Standard: alle Provider, unbekannte werden ignoriert", () => {
     expect(activeProviders({}).map((p) => p.id)).toEqual([
@@ -288,5 +308,11 @@ describe("Provider-Auswahl", () => {
       "lrclib",
     ]);
     expect(activeProviders({ LYRICS_PROVIDERS: "lrclib, unbekannt" }).map((p) => p.id)).toEqual(["lrclib"]);
+  });
+
+  it("Betriebszustand meldet nur Provider mit Circuit-Breaker", () => {
+    const status = lyricsProviderStatus();
+    expect(status.map((p) => p.id)).toContain("spotify-color");
+    expect(status.every((p) => typeof p.paused === "boolean")).toBe(true);
   });
 });

@@ -11,7 +11,7 @@ import { lrclib } from "./providers/lrclib";
 import { musixmatchDesktop } from "./providers/musixmatch";
 import { netease } from "./providers/netease";
 import { spotifyColor } from "./providers/spotify-color";
-import type { LyricsProvider, TrackQuery } from "./types";
+import type { LyricsProvider, ProviderStatus, TrackQuery } from "./types";
 
 const CACHE_VERSION = "v2";
 export const DEFAULT_PROVIDERS = "better-lyrics,musixmatch-desktop,spotify-color,netease,lrclib";
@@ -132,15 +132,30 @@ function withoutConfig(s: Stored): Omit<LyricsResponse, "cached"> {
 }
 
 let shared: ReturnType<typeof createLyricsService> | undefined;
+let sharedProviders: LyricsProvider[] = [];
 
 /** Lyrics für einen Song (Standard-Instanz mit Umgebungs-Konfiguration). */
 export function lyricsFor(q: TrackQuery) {
-  shared ??= createLyricsService({
-    providers: activeProviders(),
-    cache: getCache(),
-    local: localOverrides(),
-    breaker: createBreaker(),
-    spDcConfigured: !!process.env.SPOTIFY_SP_DC,
-  });
+  if (!shared) {
+    sharedProviders = activeProviders();
+    shared = createLyricsService({
+      providers: sharedProviders,
+      cache: getCache(),
+      local: localOverrides(),
+      breaker: createBreaker(),
+      spDcConfigured: !!process.env.SPOTIFY_SP_DC,
+    });
+  }
   return shared(q);
+}
+
+/**
+ * Betriebszustand der Provider der Standard-Instanz (für /debug): welche pausieren gerade und warum. Nur Provider
+ * mit einem Circuit-Breaker (z. B. Spotify Color-Lyrics) melden etwas.
+ */
+export function lyricsProviderStatus(): ProviderStatus[] {
+  if (!shared) {
+    sharedProviders = activeProviders();
+  }
+  return sharedProviders.flatMap((p) => (p.status ? [p.status()] : []));
 }

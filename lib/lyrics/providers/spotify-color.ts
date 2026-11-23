@@ -1,6 +1,6 @@
 import { createHmac } from "node:crypto";
 import { z } from "zod";
-import type { LyricsProvider } from "../types";
+import type { LyricsProvider, ProviderStatus } from "../types";
 
 /**
  * Spotify Color-Lyrics (inoffiziell, Ansatz wie simonroedig/SpotifyLyrics): Web-Player-Token über das
@@ -96,10 +96,12 @@ export function spotifyColor(
   /** laufende Token-Anfrage – gleichzeitige Suchen teilen sie */
   let pending: Promise<string> | null = null;
   let circuitOpenUntil = 0;
+  let lastReason: string | undefined;
 
   const tripCircuit = (reason: string, pauseMs = cooldownMs) => {
     cached = null;
     circuitOpenUntil = now() + pauseMs;
+    lastReason = reason;
     cfg.onCircuitOpen?.(reason, pauseMs);
   };
 
@@ -147,9 +149,18 @@ export function spotifyColor(
     return pending;
   };
 
+  const status = (): ProviderStatus => ({
+    id: "spotify-color",
+    configured: !!(cfg.spDc && cfg.totpSecret),
+    paused: now() < circuitOpenUntil,
+    ...(circuitOpenUntil > now() ? { pausedUntil: circuitOpenUntil } : {}),
+    ...(lastReason ? { reason: lastReason } : {}),
+  });
+
   return {
     id: "spotify-color",
     priority: 25,
+    status,
     async search(q, signal) {
       if (!q.spotifyId || q.spotifyId.startsWith("local:")) return null;
       const lyricsFor = (token: string) =>

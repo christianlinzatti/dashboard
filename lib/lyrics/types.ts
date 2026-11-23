@@ -32,6 +32,19 @@ export type ProviderResult = {
   sections?: Section[];
 };
 
+/** Betriebszustand eines Providers (für /debug) */
+export type ProviderStatus = {
+  id: string;
+  /** false = aus der Konfiguration genommen (z. B. kein Secret gesetzt) */
+  configured: boolean;
+  /** true = pausiert (Circuit-Breaker), antwortet solange nicht */
+  paused: boolean;
+  /** bis wann pausiert (Unix-ms) */
+  pausedUntil?: number;
+  /** Grund der letzten Pause */
+  reason?: string;
+};
+
 export interface LyricsProvider {
   id: string;
   /** kleiner = bevorzugt bei gleicher Sync-Qualität */
@@ -39,4 +52,6 @@ export interface LyricsProvider {
   /** true = Ergebnis gewinnt immer (eigene Korrekturen) */
   authoritative?: boolean;
   search(q: TrackQuery, signal: AbortSignal): Promise<ProviderResult | null>;
+  /** Betriebszustand (nur Provider mit Circuit-Breaker o. Ä.) */
+  status?(): ProviderStatus;
 }

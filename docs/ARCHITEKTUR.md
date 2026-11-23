@@ -85,6 +85,7 @@ Geprüft: `/api/remote`, `/api/commands`, `/api/song-memory`, `/api/prefs` (Avat
 | Missbrauch | Befehlswarteschlange höchstens 20 Einträge, 5 min gültig; schneller Abruf nur solange die Fernbedienung sich meldet |
 | Bridge | nur `127.0.0.1`, nur erlaubte Herkunft, Nachrichten ≤ 4 kB; Bildschirmbefehle stehen in der lokalen `config.json`, nicht in der Nachricht |
 | Abhängigkeiten | `npm audit --omit=dev`: 0 bekannte Schwachstellen |
+| Lyrics-Provider | Spotify Color-Lyrics mit Circuit-Breaker: bei Ablehnung/Drosselung 15 min Pause, Status unter `/debug` (`/api/lyrics-status`) |
 
 Ergebnis: kein Handlungsbedarf.
 
