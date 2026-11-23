@@ -199,13 +199,82 @@ describe("Spotify Color-Lyrics", () => {
     expect(f).toHaveBeenCalledTimes(1);
   });
 
-  it("anonymes Token (sp_dc ungültig) ist ein Fehler", async () => {
+  it("anonymes Token (sp_dc ungültig): kein Ergebnis, Pause statt Fehler, keine weiteren Anfragen", async () => {
+    let t = 1_000_000;
+    const reasons: string[] = [];
     const f = vi.fn<typeof fetch>(async (url) =>
       String(url).endsWith("/server-time")
         ? json({ serverTime: 1 })
         : json({ accessToken: "x", accessTokenExpirationTimestampMs: 0, isAnonymous: true }),
     );
-    await expect(spotifyColor({ spDc: "x", totpSecret: "k", totpVersion: "1" }, f).search(q, signal())).rejects.toThrow(/sp_dc/);
+    const p = spotifyColor({ spDc: "x", totpSecret: "k", onCircuitOpen: (r) => reasons.push(r), now: () => t }, f);
+    expect(await p.search(q, signal())).toBeNull();
+    expect(reasons[0]).toMatch(/sp_dc/);
+    const calls = f.mock.calls.length;
+    expect(await p.search(q, signal())).toBeNull();
+    expect(f.mock.calls.length).toBe(calls); // pausiert: Spotify wird nicht erneut gefragt
+    t += 16 * 60_000; // nach der Pause wieder ein Versuch
+    await p.search(q, signal());
+    expect(f.mock.calls.length).toBeGreaterThan(calls);
+  });
+
+  const lyricsOk = () => json({ lyrics: { syncType: "LINE_SYNCED", lines: [{ startTimeMs: "1000", words: "Eins" }] } });
+
+  it("abgelaufenes Token: einmal frisch holen, erst bei erneuter Ablehnung pausieren", async () => {
+    let tokens = 0;
+    let lyricsCalls = 0;
+    const f = vi.fn<typeof fetch>(async (url) => {
+      const u = String(url);
+      if (u.endsWith("/server-time")) return json({ serverTime: 1_700_000_000_000 }); // Millisekunden
+      if (u.includes("/api/token"))
+        return json({ accessToken: `t${++tokens}`, accessTokenExpirationTimestampMs: Date.now() + 3_600_000 });
+      lyricsCalls++;
+      return lyricsCalls === 2 ? new Response("", { status: 401 }) : lyricsOk();
+    });
+    const p = spotifyColor({ spDc: "x", totpSecret: "k" }, f);
+    expect((await p.search(q, signal()))?.lines).toHaveLength(1); // Token 1
+    expect((await p.search(q, signal()))?.lines).toHaveLength(1); // 401 mit Token 1 → Token 2
+    expect(tokens).toBe(2);
+  });
+
+  it("Drosselung (429) pausiert für Retry-After; kaputtes Secret pausiert mit klarem Grund", async () => {
+    const t = 0;
+    const pauses: Array<[string, number]> = [];
+    const f = vi.fn<typeof fetch>(async (url) =>
+      String(url).endsWith("/server-time") ? new Response("", { status: 429, headers: { "retry-after": "120" } }) : lyricsOk(),
+    );
+    const p = spotifyColor({ spDc: "x", totpSecret: "k", onCircuitOpen: (r, ms) => pauses.push([r, ms]), now: () => t }, f);
+    expect(await p.search(q, signal())).toBeNull();
+    expect(pauses[0]).toEqual(["Spotify drosselt (server-time 429)", 120_000]);
+    const kaputt = spotifyColor(
+      { spDc: "x", totpSecret: "[1, 2", onCircuitOpen: (r, ms) => pauses.push([r, ms]), now: () => t },
+      f,
+    );
+    expect(await kaputt.search(q, signal())).toBeNull();
+    expect(pauses[1]![0]).toMatch(/SPOTIFY_TOTP_SECRET/);
+  });
+
+  it("gleichzeitige Suchen teilen eine Token-Anfrage; Netzwerkfehler pausieren nicht", async () => {
+    let tokens = 0;
+    const f = vi.fn<typeof fetch>(async (url) => {
+      const u = String(url);
+      if (u.endsWith("/server-time")) return json({ serverTime: 1 });
+      if (u.includes("/api/token")) {
+        tokens++;
+        return json({ accessToken: "t", accessTokenExpirationTimestampMs: Date.now() + 3_600_000 });
+      }
+      return lyricsOk();
+    });
+    const p = spotifyColor({ spDc: "x", totpSecret: "k" }, f);
+    await Promise.all([p.search(q, signal()), p.search(q, signal()), p.search(q, signal())]);
+    expect(tokens).toBe(1);
+
+    const reasons: string[] = [];
+    const offline = spotifyColor({ spDc: "x", totpSecret: "k", onCircuitOpen: (r) => reasons.push(r) }, async () => {
+      throw new TypeError("fetch failed");
+    });
+    await expect(offline.search(q, signal())).rejects.toThrow(/fetch failed/);
+    expect(reasons).toEqual([]);
   });
 });
 

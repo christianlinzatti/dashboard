@@ -42,21 +42,81 @@ const lyricsSchema = z.object({
 
 const UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0 Safari/537.36";
 
+/** Ablehnung, die sich durch Wiederholen nicht bessert (TOTP/sp_dc ungültig, Konfiguration kaputt) – oder Drosselung */
+class AuthCircuitError extends Error {
+  constructor(
+    message: string,
+    /** so lange pausieren (ms); ohne Angabe die Standard-Pause */
+    readonly pauseMs?: number,
+  ) {
+    super(message);
+    this.name = "AuthCircuitError";
+  }
+}
+
+/** Standard-Pause nach einer Ablehnung (TOTP-Wechsel, sp_dc abgelaufen) */
+export const SPOTIFY_COLOR_COOLDOWN_MS = 15 * 60_000;
+/** Mindestpause bei Drosselung (HTTP 429), falls Spotify kein Retry-After schickt */
+const RATE_LIMIT_MIN_MS = 60_000;
+
+/** Retry-After (Sekunden oder HTTP-Datum) → ms; mindestens RATE_LIMIT_MIN_MS */
+function retryAfterMs(res: Response, now: number): number {
+  const v = res.headers.get("retry-after");
+  const secs = v ? Number(v) : NaN;
+  const ms = Number.isFinite(secs) ? secs * 1000 : v ? Date.parse(v) - now : NaN;
+  return Math.max(RATE_LIMIT_MIN_MS, Number.isFinite(ms) ? ms : 0);
+}
+
 /**
  * Reihenfolge: 1. Token der Dashboard-Anmeldung (falls Spotify es für Lyrics akzeptiert),
  * 2. Web-Player-Token über sp_dc (falls konfiguriert). Ohne beides: kein Ergebnis.
+ *
+ * Stabilität: Lehnt Spotify das Web-Player-Token ab (TOTP gewechselt, sp_dc abgelaufen, anonymes Token) oder drosselt
+ * (429), pausiert der Provider (Circuit-Breaker) und liefert solange `null` – die Suche fällt ohne Fehler auf die
+ * übrigen Provider zurück, und Spotify wird nicht bei jedem Song erneut angefragt. Netzwerkfehler und Abbrüche
+ * lösen keine Pause aus (sie sind vorübergehend) und werden wie bisher weitergereicht.
  */
 export function spotifyColor(
-  cfg: { spDc?: string; totpSecret?: string; totpVersion?: string },
+  cfg: {
+    spDc?: string;
+    totpSecret?: string;
+    totpVersion?: string;
+    /** Pause nach einer Ablehnung (Standard 15 min) */
+    cooldownMs?: number;
+    /** Meldung, wenn der Provider pausiert (Protokoll) */
+    onCircuitOpen?: (reason: string, pauseMs: number) => void;
+    /** Uhr (Tests) */
+    now?: () => number;
+  },
   fetchImpl: typeof fetch = fetch,
 ): LyricsProvider {
+  const now = cfg.now ?? Date.now;
+  const cooldownMs = cfg.cooldownMs ?? SPOTIFY_COLOR_COOLDOWN_MS;
   let cached: { token: string; until: number } | null = null;
+  /** laufende Token-Anfrage – gleichzeitige Suchen teilen sie */
+  let pending: Promise<string> | null = null;
+  let circuitOpenUntil = 0;
 
-  const accessToken = async (signal: AbortSignal) => {
-    if (cached && cached.until > Date.now() + 30_000) return cached.token;
+  const tripCircuit = (reason: string, pauseMs = cooldownMs) => {
+    cached = null;
+    circuitOpenUntil = now() + pauseMs;
+    cfg.onCircuitOpen?.(reason, pauseMs);
+  };
+
+  const fetchToken = async (signal: AbortSignal): Promise<string> => {
+    let key: Buffer;
+    try {
+      key = totpKey(cfg.totpSecret!);
+    } catch {
+      throw new AuthCircuitError("SPOTIFY_TOTP_SECRET ist kein gültiges Secret");
+    }
     const st = await fetchImpl("https://open.spotify.com/api/server-time", { headers: { "User-Agent": UA }, signal });
-    const serverTime = z.object({ serverTime: z.number() }).parse(await st.json()).serverTime;
-    const code = totp(totpKey(cfg.totpSecret!), serverTime);
+    if (st.status === 429) throw new AuthCircuitError("Spotify drosselt (server-time 429)", retryAfterMs(st, now()));
+    if (!st.ok) throw new Error(`Spotify server-time ${st.status}`);
+    const rawTime = z.object({ serverTime: z.number() }).parse(await st.json()).serverTime;
+    // manche Antworten liefern Millisekunden statt Sekunden
+    const serverSeconds = rawTime > 1e11 ? Math.floor(rawTime / 1000) : rawTime;
+    const code = totp(key, serverSeconds);
     const qs = new URLSearchParams({
       reason: "init",
       productType: "web-player",
@@ -68,11 +128,23 @@ export function spotifyColor(
       headers: { Cookie: `sp_dc=${cfg.spDc}`, "User-Agent": UA },
       signal,
     });
+    if (res.status === 429) throw new AuthCircuitError("Spotify drosselt (Token 429)", retryAfterMs(res, now()));
+    if (res.status === 400 || res.status === 401 || res.status === 403)
+      throw new AuthCircuitError(`TOTP oder sp_dc abgelehnt (HTTP ${res.status})`);
     if (!res.ok) throw new Error(`Spotify-Token ${res.status}`);
     const t = tokenSchema.parse(await res.json());
-    if (t.isAnonymous) throw new Error("Spotify: sp_dc ungültig oder abgelaufen");
+    if (t.isAnonymous) throw new AuthCircuitError("Anonymes Token erhalten – sp_dc abgelaufen oder TOTP ungültig");
     cached = { token: t.accessToken, until: t.accessTokenExpirationTimestampMs };
     return t.accessToken;
+  };
+
+  const accessToken = (signal: AbortSignal): Promise<string> => {
+    if (now() < circuitOpenUntil) return Promise.reject(new AuthCircuitError("pausiert"));
+    if (cached && cached.until > now() + 30_000) return Promise.resolve(cached.token);
+    pending ??= fetchToken(signal).finally(() => {
+      pending = null;
+    });
+    return pending;
   };
 
   return {
@@ -87,24 +159,46 @@ export function spotifyColor(
         );
 
       let res: Response | null = null;
+      // 1. Token der Anmeldung: Ablehnung ist erwartbar und löst keine Pause aus
       if (q.userAccessToken) {
         res = await lyricsFor(q.userAccessToken);
-        if (res.status === 401 || res.status === 403) res = null; // Spotify akzeptiert App-Tokens nicht → sp_dc
+        if (res.status === 401 || res.status === 403) res = null;
       }
+      // 2. Web-Player-Token über sp_dc + TOTP (mit Circuit-Breaker)
       if (!res) {
-        if (!cfg.spDc || !cfg.totpSecret) return null;
-        res = await lyricsFor(await accessToken(signal));
+        if (!cfg.spDc || !cfg.totpSecret || now() < circuitOpenUntil) return null;
+        try {
+          const hadCache = !!cached;
+          res = await lyricsFor(await accessToken(signal));
+          // abgelaufenes Token aus dem Cache: einmal mit frischem Token nachfragen, erst dann pausieren
+          if (res.status === 401 && hadCache) {
+            cached = null;
+            res = await lyricsFor(await accessToken(signal));
+          }
+          if (res.status === 401 || res.status === 403)
+            throw new AuthCircuitError(`Color-Lyrics verweigert das Token (HTTP ${res.status})`);
+          if (res.status === 429) throw new AuthCircuitError("Spotify drosselt (Lyrics 429)", retryAfterMs(res, now()));
+        } catch (err) {
+          if (err instanceof AuthCircuitError) {
+            if (err.message !== "pausiert") tripCircuit(err.message, err.pauseMs);
+            return null; // weiter mit den übrigen Providern
+          }
+          throw err; // Abbrüche und vorübergehende Netzwerkfehler wie bisher (keine Pause)
+        }
       }
+
       if (res.status === 404) return null;
       if (!res.ok) throw new Error(`Spotify-Lyrics ${res.status}`);
       const body = lyricsSchema.parse(await res.json());
-      const raw = body.lyrics.lines.filter((l) => l.words.trim() && l.words.trim() !== "♪");
+      const all = [...body.lyrics.lines].sort((a, b) => a.startTimeMs - b.startTimeMs);
+      const raw = all.filter((l) => l.words.trim() && l.words.trim() !== "♪");
       if (!raw.length) return null;
       if (body.lyrics.syncType === "UNSYNCED") {
-        return { provider: "spotify", sync: "plain", lines: raw.map((l) => ({ startMs: 0, endMs: 0, text: l.words })) };
+        return { provider: "spotify", sync: "plain", lines: raw.map((l) => ({ startMs: 0, endMs: 0, text: l.words.trim() })) };
       }
       const lines = raw.map((l) => {
-        const next = body.lyrics.lines.find((n) => n.startTimeMs > l.startTimeMs);
+        // Ende: eigene Angabe, sonst Beginn der nächsten Zeile (auch einer „♪“-Pause), sonst 4 s
+        const next = all.find((n) => n.startTimeMs > l.startTimeMs);
         const end = l.endTimeMs && l.endTimeMs > l.startTimeMs ? l.endTimeMs : (next?.startTimeMs ?? l.startTimeMs + 4000);
         return { startMs: l.startTimeMs, endMs: Math.max(end, l.startTimeMs + 200), text: l.words.trim() };
       });

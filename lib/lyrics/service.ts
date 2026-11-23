@@ -27,7 +27,13 @@ export function activeProviders(env: Record<string, string | undefined> = proces
     netease: () => netease(),
     "musixmatch-desktop": () => musixmatchDesktop(),
     "spotify-color": () =>
-      spotifyColor({ spDc: env.SPOTIFY_SP_DC, totpSecret: env.SPOTIFY_TOTP_SECRET, totpVersion: env.SPOTIFY_TOTP_VERSION }),
+      spotifyColor({
+        spDc: env.SPOTIFY_SP_DC,
+        totpSecret: env.SPOTIFY_TOTP_SECRET,
+        totpVersion: env.SPOTIFY_TOTP_VERSION,
+        // im Server-Log sichtbar: Secret/Version oder sp_dc erneuern
+        onCircuitOpen: (reason, ms) => console.warn(`[lyrics] spotify-color pausiert ${Math.round(ms / 60_000)} min: ${reason}`),
+      }),
   };
   const wanted = (env.LYRICS_PROVIDERS ?? DEFAULT_PROVIDERS).split(",").map((x) => x.trim());
   return wanted.flatMap((id) => {
