@@ -33,6 +33,7 @@ import type { Vec2 } from "@/lib/dance/formations";
 import { Guitar } from "./Band";
 import type { BandRole } from "@/lib/stage/band";
 import { headNodAt, keysAt, scratchAt } from "@/lib/stage/musicians";
+import { grooveAt } from "@/lib/stage/groove";
 import { findArms, reach, reachPartly, sideOf } from "./pose";
 import { singAlongAt } from "@/lib/show/singalong";
 import { addMicrophone, dressUp } from "./Accessories";
@@ -75,18 +76,35 @@ const Q_PARENT = new Quaternion();
 const Q_BEND = new Quaternion();
 
 /**
- * Oberkörper nach vorn beugen: Drehung um die Links-rechts-Achse des Modells, in den lokalen Raum jedes
- * Rückenglieds umgerechnet (die Knochen haben eigene Achsen). Positiv = Kopf Richtung Publikum (+z).
+ * Glieder um eine Achse des Modells beugen (x: links-rechts → nach vorn, z: vorn-hinten → zur Seite), in den
+ * lokalen Raum jedes Glieds umgerechnet (die Knochen haben eigene Achsen); die Beugung verteilt sich auf alle.
  */
-function bendForward(root: Object3D, bones: Object3D[], angle: number) {
+function bend(root: Object3D, bones: Object3D[], axis: "x" | "z", angle: number) {
   root.updateMatrixWorld(true);
   root.getWorldQuaternion(Q_ROOT);
   for (const b of bones) {
     b.parent!.getWorldQuaternion(Q_PARENT);
-    AXIS.set(1, 0, 0).applyQuaternion(Q_ROOT).applyQuaternion(Q_PARENT.invert());
+    AXIS.set(axis === "x" ? 1 : 0, 0, axis === "z" ? 1 : 0)
+      .applyQuaternion(Q_ROOT)
+      .applyQuaternion(Q_PARENT.invert());
     b.quaternion.premultiply(Q_BEND.setFromAxisAngle(AXIS, angle / bones.length));
     b.updateMatrixWorld(true);
   }
+}
+
+/** Oberkörper nach vorn beugen. Positiv = Kopf Richtung Publikum (+z). */
+const bendForward = (root: Object3D, bones: Object3D[], angle: number) => bend(root, bones, "x", angle);
+
+/** Ruhehaltung aller Knochen, um sie vor jedem Bild wiederherzustellen */
+type RestPose = Array<{ bone: Object3D; p: Vector3; q: Quaternion; s: Vector3 }>;
+
+function captureRest(model: Object3D): RestPose {
+  const rest: RestPose = [];
+  model.traverse((o) => {
+    if ((o as Object3D & { isBone?: boolean }).isBone)
+      rest.push({ bone: o, p: o.position.clone(), q: o.quaternion.clone(), s: o.scale.clone() });
+  });
+  return rest;
 }
 
 const HAND = new Vector3();
@@ -169,7 +187,7 @@ function AvatarModel({ url, member, song, choreo, frameRef, band }: AvatarProps 
     [member.avatarId, member.artistId, song.trackKey, isBand, member.look],
   );
   const sings = !isBand && !!member.artistId;
-  const { root, mixer, leds, dyed, spine, smile, mouth, extras, arms, neck } = useMemo(() => {
+  const { root, mixer, leds, dyed, spine, smile, mouth, extras, arms, neck, rest, body } = useMemo(() => {
     const model = cloneSkinned(scene) as Group;
     // Outfit: Anzug, Rüstung und Leuchtstreifen umfärben (Materialien sind zwischen Kopien geteilt → erst kopieren)
     const outfit = member.outfit ? outfitById.get(member.outfit) : undefined;
@@ -234,7 +252,11 @@ function AvatarModel({ url, member, song, choreo, frameRef, band }: AvatarProps 
       comic: !!smile,
     });
     if (sings) addMicrophone(model, extras);
-    return { root: model, mixer: new AnimationMixer(model), leds, dyed, spine, smile, mouth, extras, arms, neck };
+    // Ruhehaltung merken: Clips ohne Spur für einen Knochen (steht dort still) lassen ihn sonst, wie ihn das letzte
+    // Bild hinterlassen hat – Beugen und Nicken würden sich aufaddieren
+    const rest = captureRest(model);
+    const body = { scale, minY: box.min.y };
+    return { root: model, mixer: new AnimationMixer(model), leds, dyed, spine, smile, mouth, extras, arms, neck, rest, body };
   }, [scene, member.outfit, member.trim, look, sings, song.album.palette.accent]);
   useEffect(
     () => () => {
@@ -277,8 +299,15 @@ function AvatarModel({ url, member, song, choreo, frameRef, band }: AvatarProps 
   };
 
   // Clip-Ebenen aus dem Plan setzen (zustandslos: gleiche Songzeit → gleiche Pose)
+  const chibi = member.avatarId.startsWith("chibi-");
+  const mirror = choreo.order.indexOf(member.avatarId) % 2 === 1;
   useFrame(() => {
     const f = frameRef.current;
+    for (const r of rest) {
+      r.bone.position.copy(r.p);
+      r.bone.quaternion.copy(r.q);
+      r.bone.scale.copy(r.s);
+    }
     const layers: Layer[] = !f.playing
       ? [{ clip: IDLE_CLIP, time: performance.now() / 1000, weight: 1 }]
       : band
@@ -330,6 +359,16 @@ function AvatarModel({ url, member, song, choreo, frameRef, band }: AvatarProps 
     // Verbeugung am Songende: Oberkörper nach vorn beugen (über die Grundhaltung gelegt)
     const bow = f.playing ? bowAngleAt(choreo, f.t) : 0;
     if (bow > 0.001) bendForward(root, spine, bow);
+
+    // Groove über dem Tanz: im Takt federn, nicken, wiegen (nicht während der Verbeugung)
+    const g = f.playing && bow <= 0.001 ? grooveAt(choreo, f.t, { anchorMs: f.anchorMs, chibi, mirror }) : null;
+    const squash = g?.squash ?? 0;
+    root.scale.set(body.scale * (1 + squash / 2), body.scale * (1 - squash), body.scale * (1 + squash / 2));
+    root.position.setY(-body.minY * body.scale * (1 - squash)); // Füße bleiben am Boden
+    if (g) {
+      if (Math.abs(g.sway) > 0.001) bend(root, spine, "z", g.sway);
+      if (g.nod > 0.001) bendForward(root, neck.slice(-1), g.nod);
+    }
 
     const p = f.positions[member.avatarId];
     if (group.current && p) {

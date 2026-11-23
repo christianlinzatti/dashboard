@@ -13,7 +13,7 @@ const DECAY_MS = 140;
 const pulse = (sinceMs: number, decay = DECAY_MS) => (sinceMs < 0 ? 0 : Math.exp(-sinceMs / decay));
 
 /** Schlag-Raster: Schlag im Takt (0..3), Zeit seit dem Schlag und Takt seit Phrasenbeginn */
-function grid(c: Choreography, t: number, anchorMs: number | null) {
+export function grid(c: Choreography, t: number, anchorMs: number | null) {
   const base = anchorMs ?? 0;
   const beats = (t - base) / c.beatMs;
   const beat = Math.floor(beats);
