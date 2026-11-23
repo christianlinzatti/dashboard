@@ -187,6 +187,18 @@ test.describe("Bühne & Licht", () => {
     });
   }
 
+  test("Spotify Canvas ersetzt die 3D-Bühne, HUD liegt darüber", async ({ page }) => {
+    const errors = collectErrors(page);
+    await page.goto("/?demo=neonlicht&t=46000&canvas=/demo/pulsar.svg&lyrics=karaoke");
+    await page.locator("[data-testid=canvas-background]").waitFor();
+    await page.evaluate(() => document.fonts.ready);
+    // keine 3D-Bühne gemountet
+    await expect(page.locator("[data-testid=stage]")).toHaveCount(0);
+    await expect(page.getByTestId("now-playing")).toBeVisible();
+    await expect(page).toHaveScreenshot("canvas-hintergrund.png");
+    expect(errors).toEqual([]);
+  });
+
   test("Avatar-Stil „nur Chibis“: alle Figuren auf der Bühne sind Chibis", async ({ page }) => {
     const errors = collectErrors(page);
     await page.goto("/?demo=neonlicht&t=24000&stil=chibi&buehne=festival&qualitaet=hoch");

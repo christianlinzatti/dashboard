@@ -245,6 +245,7 @@ describe("Geräte-Einstellungen", () => {
       lamps: true,
       secondLine: "auto",
       stage: "auto",
+      canvas: false,
     });
     settings.getState().set({ secondLine: "uebersetzung", stage: "jazz" });
     settings.getState().hydrate();

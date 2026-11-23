@@ -173,6 +173,7 @@ test.describe("Dashboard", () => {
     const status = phone.getByTestId("lyrics-status-spotify-color");
     await expect(status.getByText("pausiert")).toBeVisible();
     await expect(status).toContainText("TOTP oder sp_dc abgelehnt");
+    await expect(phone.getByTestId("lyrics-status-spotify-canvas").getByText("läuft")).toBeVisible();
     await expect(phone.getByTestId("viewer-sections")).toContainText("demo-neonlicht");
     await expect(phone.getByTestId("viewer-age")).toContainText("gesendet vor");
     await expect(phone.getByTestId("viewer-ai")).toContainText('"motto": "Neonnacht"');

@@ -25,6 +25,7 @@ export default async function Page({ searchParams }: { searchParams: Search }) {
       quietHours={quietHoursFromParam(one(sp.ruhe))}
       avatars={one(sp.avatare)?.split(",").slice(0, 7)}
       avatarStyle={one(sp.stil) === "chibi" ? "chibi" : undefined}
+      canvasDemo={one(sp.canvas)}
       lyricsMode={lyricsModes.includes(one(sp.lyrics) as LyricsMode) ? (one(sp.lyrics) as LyricsMode) : undefined}
     />
   );

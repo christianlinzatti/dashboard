@@ -5,6 +5,7 @@ import { useEveningTracker } from "./live/useEveningTracker";
 import { SongTransition, type TransitionKind } from "./hud/SongTransition";
 import dynamic from "next/dynamic";
 import { useEffect, type CSSProperties } from "react";
+import { useStore } from "zustand";
 import { fixtures } from "@/lib/song-context/fixtures";
 import { songContext, useSongContext } from "@/lib/song-context/store";
 import { NowPlayingBar } from "./hud/NowPlayingBar";
@@ -27,6 +28,8 @@ import { useConcertLoader } from "./concerts/useConcertLoader";
 import { useTempoLoader } from "./audio/useTempoLoader";
 import { useShowLoader } from "./show/useShowLoader";
 import { useArtistAvatars } from "./avatars/useArtistAvatars";
+import { useCanvas } from "./canvas/useCanvas";
+import { CanvasBackground } from "./canvas/CanvasBackground";
 import { useSongMemory } from "./memory/useSongMemory";
 import { useAutoOffset } from "./lyrics/useAutoOffset";
 import { installTelemetry, report } from "@/lib/live/telemetry";
@@ -48,6 +51,8 @@ type Props = {
   avatars?: string[];
   /** Demo: Avatar-Stil (?stil=chibi) */
   avatarStyle?: AvatarStyle;
+  /** Demo: Canvas-Vorschau (?canvas=<url>) ohne Spotify */
+  canvasDemo?: string;
   t?: number;
   debug: boolean;
   loginError?: string;
@@ -70,6 +75,7 @@ export function Dashboard({
   demo,
   avatars: castIds,
   avatarStyle,
+  canvasDemo,
   t,
   debug,
   loginError,
@@ -84,6 +90,12 @@ export function Dashboard({
 }: Props) {
   const song = useSongContext((s) => s.song);
   const frozen = useSongContext((s) => s.frozen);
+  // Spotify Canvas statt der 3D-Bühne (Geräte-Einstellung, nur bei echter Wiedergabe)
+  const canvasEnabled = useStore(settings, (st) => st.canvas);
+  const liveCanvas = useCanvas(canvasEnabled && demo === undefined);
+  const canvas = canvasDemo
+    ? ({ url: canvasDemo, kind: /\.(mp4|webm)$/i.test(canvasDemo) ? "video" : "image" } as const)
+    : liveCanvas;
   const unknownDemo = demo !== undefined && !fixtures[demo];
   // Ohne Demo: Live-Betrieb mit Spotify
   const status = useSpotifySync(demo === undefined);
@@ -174,9 +186,13 @@ export function Dashboard({
     >
       {song ? (
         <>
-          <div className="absolute inset-0">
-            <Stage forceQuality={quality} forceTheme={theme} forceWeather={weather} />
-          </div>
+          {canvas ? (
+            <CanvasBackground canvas={canvas} />
+          ) : (
+            <div className="absolute inset-0">
+              <Stage forceQuality={quality} forceTheme={theme} forceWeather={weather} />
+            </div>
+          )}
           {/* Verlauf für Lesbarkeit der Lyrics vor der 3D-Szene */}
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,rgb(0_0_0/0.55)_100%)]" />
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />

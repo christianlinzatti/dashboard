@@ -47,6 +47,7 @@ export function Controls({ live, mic }: { live: boolean; mic?: { state: MicState
   const secondLine = useSettings((s) => s.secondLine);
   const secondAvailable = useSongContext((s) => hasSecondLine(s.song?.lyrics));
   const lamps = useSettings((s) => s.lamps);
+  const canvas = useSettings((s) => s.canvas);
   const bridge = useBridgeState((s) => s.state);
   const setSettings = useSettings((s) => s.set);
 
@@ -172,6 +173,17 @@ export function Controls({ live, mic }: { live: boolean; mic?: { state: MicState
             }
           >
             2. Zeile: {secondLineLabel[secondLine]}
+          </button>
+        )}
+        {live && (
+          <button
+            className={btn}
+            data-testid="canvas-toggle"
+            aria-pressed={canvas}
+            onClick={() => setSettings({ canvas: !canvas })}
+            title="Spotify Canvas (Loop-Video des Künstlers) statt der Bühne"
+          >
+            Canvas {canvas ? "an" : "aus"}
           </button>
         )}
         <button

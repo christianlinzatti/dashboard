@@ -42,7 +42,7 @@ export function LyricsStatus({ auto }: { auto: boolean }) {
 
   return (
     <section className="mt-4 rounded-lg bg-white/5 p-3" data-testid="lyrics-status">
-      <h2 className="mb-2 text-sm font-bold">Lyrics-Provider</h2>
+      <h2 className="mb-2 text-sm font-bold">Spotify-Zugriff (Lyrics &amp; Canvas)</h2>
       <ul className="space-y-1 text-sm">
         {data.providers.map((p) => {
           const state = !p.configured ? "aus" : p.paused ? "pausiert" : "läuft";
@@ -65,7 +65,7 @@ export function LyricsStatus({ auto }: { auto: boolean }) {
       </ul>
       <p className="mt-2 text-xs text-white/40">
         „pausiert“ heißt: Spotify hat Token/Cookie abgelehnt – <code>SPOTIFY_TOTP_SECRET</code>, <code>SPOTIFY_TOTP_VERSION</code>{" "}
-        oder <code>SPOTIFY_SP_DC</code> erneuern. Solange liefern die anderen Provider die Lyrics.
+        oder <code>SPOTIFY_SP_DC</code> erneuern. Solange liefern andere Provider die Lyrics; Canvas bleibt aus.
       </p>
     </section>
   );
