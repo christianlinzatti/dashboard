@@ -8,7 +8,7 @@ import { LampController } from "../../bridge/controller.ts";
 import { buildConfig, resolveLamps, suggestRole, type BridgeConfig } from "../../bridge/config.ts";
 import { createBridgeServer } from "../../bridge/server.ts";
 import { createWatchdog } from "../../bridge/watchdog.ts";
-import { discover } from "../../bridge/discovery.ts";
+import { discover, lanAddresses } from "../../bridge/discovery.ts";
 
 const signal: LightSignal = { base: "#7b2cff", accent: "#ff4fd8", brightness: 0.8, pulse: 1 };
 
@@ -192,6 +192,30 @@ describe("Pi-Bridge (Integration)", () => {
     cleanups.push(dev.close);
     const found = await discover({ scanHost: "127.0.0.1", scanPort: dev.port, listenPort: 0, timeoutMs: 300 });
     expect(found).toEqual([{ ip: "127.0.0.1", id: "AA:BB", sku: "H61A2" }]);
+  });
+
+  it("Suche zusätzlich über jede Netzwerkkarte: dasselbe Gerät nur einmal", async () => {
+    const dev = await fakeGovee(0);
+    cleanups.push(dev.close);
+    const found = await discover({
+      scanHost: "127.0.0.1",
+      scanPort: dev.port,
+      listenPort: 0,
+      timeoutMs: 300,
+      interfaces: ["127.0.0.1", "203.0.113.9"], // zweite Adresse gibt es nicht: Fehler wird geschluckt
+    });
+    expect(found).toEqual([{ ip: "127.0.0.1", id: "AA:BB", sku: "H61A2" }]);
+    expect(lanAddresses().every((a) => /^\d+\.\d+\.\d+\.\d+$/.test(a) && a !== "127.0.0.1")).toBe(true);
+  });
+
+  it("belegter Antwort-Port: verständliche Meldung statt Hänger", async () => {
+    const blocker = dgram.createSocket("udp4");
+    await new Promise<void>((r) => blocker.bind(0, "0.0.0.0", r));
+    cleanups.push(() => blocker.close());
+    const port = blocker.address().port;
+    await expect(discover({ scanHost: "127.0.0.1", scanPort: 9, listenPort: port, timeoutMs: 300 })).rejects.toThrow(
+      new RegExp(`Port ${port} ist belegt`),
+    );
   });
 
   it("Dashboard → WebSocket → Govee-Befehle; fremde Herkunft wird abgewiesen", async () => {
