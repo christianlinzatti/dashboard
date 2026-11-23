@@ -75,3 +75,23 @@ describe("Avatar-Bausteine (scripts/avatars)", () => {
     }
   });
 });
+
+describe("Kompakter Avatar-Katalog", () => {
+  it("lib/avatars/catalog.json passt zum Manifest (sonst: node scripts/avatar-catalog.mjs)", async () => {
+    // @ts-expect-error – Bauskript ohne Typen
+    const { compactCatalog } = await import("../../scripts/avatar-catalog.mjs");
+    const catalog = (await import("@/lib/avatars/catalog.json")).default;
+    expect(compactCatalog(manifest)).toEqual(catalog);
+  });
+
+  it("Client-Katalog: jede ID mit Version und Clips, gleiche Clip-Listen nur einmal", async () => {
+    const { avatars } = await import("@/lib/avatars/catalog");
+    const catalog = (await import("@/lib/avatars/catalog.json")).default;
+    expect(avatars).toHaveLength(manifest.length);
+    for (const a of avatars) {
+      expect(a.url, a.id).toMatch(/^\/avatars\/[a-z0-9-]+\.glb\?v=[0-9a-f]{12}$/);
+      expect(a.clips.length, a.id).toBeGreaterThan(0);
+    }
+    expect(catalog.clipSets.length).toBeLessThan(avatars.length / 3);
+  });
+});

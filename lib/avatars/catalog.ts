@@ -1,4 +1,4 @@
-import manifest from "@/avatars/manifest.json";
+import catalog from "./catalog.json";
 
 export type AvatarInfo = {
   id: string;
@@ -15,19 +15,19 @@ function displayName(id: string) {
     .join(" ");
 }
 
-/** Alle Avatare aus /avatars/manifest.json (optimierte GLBs liegen unter /public/avatars). */
-export const avatars: AvatarInfo[] = manifest.map((m) => {
-  const id = m.file.replace(/\.glb$/, "");
-  return {
-    id,
-    name: displayName(id),
-    // Version aus der Prüfsumme: Avatare werden ein Jahr „immutable“ gecacht – ein Update braucht eine neue Adresse
-    // erzeugte Figuren: Version aus ihren Quellen (scripts/avatars/build-characters.mjs)
-    url: `/avatars/${m.file}?v=${("sha256" in m && m.sha256 ? m.sha256 : (m as { version?: string }).version ?? "").slice(0, 12)}`,
-    preview: `/avatars/${id}.png`,
-    clips: m.clips.map((c) => c.name),
-  };
-});
+/**
+ * Alle Avatare aus dem kompakten Katalog (lib/avatars/catalog.json, erzeugt aus avatars/manifest.json durch
+ * scripts/avatar-catalog.mjs – das volle Manifest mit Prüfsummen ist ~120 kB und gehört nicht in den Client).
+ * Die Version in der Adresse kommt aus der Prüfsumme bzw. den Quellen der Figur: Avatare werden ein Jahr
+ * „immutable“ gecacht, ein Update braucht eine neue Adresse.
+ */
+export const avatars: AvatarInfo[] = catalog.avatars.map((a) => ({
+  id: a.id,
+  name: displayName(a.id),
+  url: `/avatars/${a.id}.glb?v=${a.v}`,
+  preview: `/avatars/${a.id}.png`,
+  clips: catalog.clipSets[a.c]!,
+}));
 
 export const avatarById = new Map(avatars.map((a) => [a.id, a]));
 

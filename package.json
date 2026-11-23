@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "prebuild": "node scripts/avatars/build-characters.mjs && node scripts/optimize-avatars.mjs",
+    "prebuild": "node scripts/avatars/build-characters.mjs && node scripts/avatar-catalog.mjs && node scripts/optimize-avatars.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
@@ -17,7 +17,7 @@
     "test:watch": "vitest",
     "e2e": "playwright test --trace off",
     "e2e:update": "playwright test --trace off --update-snapshots=all",
-    "avatars": "node scripts/avatars/build-characters.mjs && node scripts/optimize-avatars.mjs",
+    "avatars": "node scripts/avatars/build-characters.mjs && node scripts/avatar-catalog.mjs && node scripts/optimize-avatars.mjs",
     "mixamo": "tsx --no-deprecation scripts/mixamo/convert.ts",
     "mesh2motion": "tsx --no-deprecation scripts/mixamo/fetch-mesh2motion.ts",
     "cmu": "tsx --no-deprecation scripts/mixamo/fetch-cmu.ts",
