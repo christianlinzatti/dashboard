@@ -39,7 +39,7 @@ test.describe("Konzerte", () => {
       album: { name: "A", images: [{ url: "/demo/pulsar.svg", width: 300, height: 300 }] },
     };
     await page.route("**/api/now-playing", (r) =>
-      r.fulfill({ json: { state: "playing", progressMs: 12_000, fetchedAt: 0, track, user: "T" } }),
+      r.fulfill({ json: { state: "playing", progressMs: 6_000, fetchedAt: 0, track, user: "T" } }),
     );
     await page.route("**/api/lyrics?*", (r) =>
       r.fulfill({ json: { lyrics: null, instrumental: true, cached: false, attempts: [] } }),

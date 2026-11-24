@@ -403,7 +403,9 @@ describe("Konzertanzeige", () => {
     expect(countdown("2027-05-14", "2026-11-14")).toBe("in 6 Monaten");
     expect(todayLocal(new Date(2026, 0, 3))).toBe("2026-01-03");
   });
-  it("Karte in den letzten 15 s, Umkreis zuerst, Info-Karte weicht", () => {
+  it("Karte gegen Songende (18 bis 5 s vor Schluss), Umkreis zuerst, Info-Karte weicht", () => {
+    // in den letzten 5 s verbeugt sich die Band – dann keine Karte
+    expect(concertCardAt(song, d(), song.track.durationMs - 3000)).toBeNull();
     expect(concertCardAt(song, d(), 180_000)).toBeNull();
     expect(infoCardAt(song, d(), 180_000)).not.toBeNull();
     const card = concertCardAt(song, d(), 190_000)!;

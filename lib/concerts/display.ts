@@ -1,7 +1,9 @@
 import type { Concert, Derived, SongStatic } from "@/lib/song-context/schema";
 
-/** Konzertkarte in den letzten 15 s des Songs (ruhiger Teil, keine aktive Zeile). */
-export const CONCERT_WINDOW_MS = 15_000;
+/** Konzertkarte gegen Songende (ruhiger Teil, keine aktive Zeile): ab 18 s vor Schluss … */
+export const CONCERT_WINDOW_MS = 18_000;
+/** … bis 5 s vor Schluss – dann verbeugt sich die Band und das Publikum applaudiert, das soll man sehen */
+export const CONCERT_HIDE_LAST_MS = 5_000;
 const WEEKDAYS = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
 const MONTHS = ["Jän.", "Feb.", "März", "Apr.", "Mai", "Juni", "Juli", "Aug.", "Sep.", "Okt.", "Nov.", "Dez."];
 
@@ -72,7 +74,8 @@ export function liveHint(song: SongStatic): string | null {
 
 export function concertCardAt(song: SongStatic, d: Derived, t: number): ConcertCard | null {
   if (!song.concerts?.length) return null;
-  if (t < song.track.durationMs - CONCERT_WINDOW_MS || d.lineActive) return null;
+  const left = song.track.durationMs - t;
+  if (left > CONCERT_WINDOW_MS || left <= CONCERT_HIDE_LAST_MS || d.lineActive) return null;
   const { list, near } = topConcerts(song);
   return { concerts: list, near, liveHint: liveHint(song), ...(song.concertArea ? { area: song.concertArea } : {}) };
 }
