@@ -290,7 +290,28 @@ export function cameraAt(c: Choreography, t: number, focus?: Vec2): Cam {
     target: ((tg) => [tg[0] + shake * n(3) * 0.6, tg[1] + shake * n(4) * 0.6, tg[2]] as const)(mix3(a.target, b.target, w)),
     fov: a.fov + (b.fov - a.fov) * w,
   };
-  return finaleFlight(c, t, cam);
+  return openingFlight(c, t, finaleFlight(c, t, cam));
+}
+
+/** Eröffnung: so viele Takte (höchstens 8 s) fliegt die Kamera zum Songstart über das Publikum auf die Bühne */
+export const OPENING_BARS = 3;
+/** Startpunkt der Drohne: hoch und seitlich hinter dem Publikum */
+const OPENING_START: Cam = { pos: [-5.5, 7.5, 21], target: [0, 1.4, 0], fov: 34 };
+
+/** Songstart wie im Konzertfilm: Drohnenflug im Bogen über die Menge, während die Band die Bühne betritt. */
+function openingFlight(c: Choreography, t: number, cam: Cam): Cam {
+  const len = Math.min(OPENING_BARS * c.barMs, 8000);
+  if (t < 0 || t >= len) return cam;
+  const u = t / len;
+  const w = easeInOut(u);
+  // Bogen: seitlich hereinschwenken, nicht geradeaus
+  const arc = Math.sin(Math.PI * u) * 2.5;
+  const pos = mix3(OPENING_START.pos, cam.pos, w);
+  return {
+    pos: [pos[0] + arc * (1 - w), pos[1], pos[2]],
+    target: mix3(OPENING_START.target, cam.target, w),
+    fov: OPENING_START.fov + (cam.fov - OPENING_START.fov) * w,
+  };
 }
 
 /** Schnitt-Raster: so viele Takte zwischen zwei Einstellungen einer Phrase */
@@ -306,6 +327,8 @@ export function shotAt(c: Choreography, t: number): CameraPreset {
   if (!p) return "totale";
   // Mitsing-Moment: aus dem Publikum über die Köpfe – man sieht die Menge singen und den Sänger, der ihr das Mikro hinhält
   if (c.singAlong && t >= c.singAlong.startMs && t < c.singAlong.endMs) return "ueberkopf";
+  // großer Einsatz (mit Countdown, nicht das Finale – das hat seinen Kameraflug): einen Takt lang nah auf den Sänger
+  if (c.climaxes?.some((k) => k.countdown && !k.finale && t >= k.atMs && t < k.atMs + c.barMs)) return "nah";
   if (!p.cut) return p.camera;
   return Math.floor((t - p.startMs) / (cutBarsFor(p) * c.barMs)) % 2 === 1 ? p.cut : p.camera;
 }

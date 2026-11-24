@@ -72,8 +72,10 @@ describe("Auftritt und Abgang", () => {
 describe("Kamera wie ein Konzertmitschnitt", () => {
   const all = Object.values(fixtures).map((s) => planChoreography(s, s.music.bpmHint ?? 120));
   it("bei hoher Energie Schnitte im 4-Takt-Raster zwischen zwei stehenden Einstellungen", () => {
-    // (Mitsing-Moment ausgenommen: dort filmt die Kamera immer über die Köpfe – eigener Test)
-    const withCut = all.flatMap((k) => k.phrases.filter((p) => p.cut).map((p) => ({ k: { ...k, singAlong: null }, p })));
+    // (Mitsing-Moment und Nahaufnahme beim großen Einsatz ausgenommen – eigene Tests)
+    const withCut = all.flatMap((k) =>
+      k.phrases.filter((p) => p.cut).map((p) => ({ k: { ...k, singAlong: null, climaxes: [] }, p })),
+    );
     expect(withCut.length).toBeGreaterThan(0);
     for (const { k, p } of withCut) {
       expect(p.energy).toBeGreaterThanOrEqual(2);
@@ -123,5 +125,33 @@ describe("Publikum nach Stil", () => {
       sections: [{ kind: "chorus", energy: "hoch", lyrics: "neon", crowd: "moshpit", effects: [] }],
     };
     expect(sanitizeBrief(brief)?.sections[0]?.crowd).toBe("moshpit");
+  });
+});
+
+describe("Konzertfilm: Eröffnung und Einsätze", () => {
+  const all = Object.values(fixtures).map((s) => planChoreography(s, s.music.bpmHint ?? 120));
+  it("Songstart: Drohnenflug von hoch hinter dem Publikum auf die erste Einstellung", async () => {
+    const { OPENING_BARS } = await import("@/lib/dance/evaluate");
+    const k = all[0]!;
+    const len = Math.min(OPENING_BARS * k.barMs, 8000);
+    const start = cameraAt(k, 0);
+    expect(start.pos[1]).toBeGreaterThan(6); // hoch
+    expect(start.pos[2]).toBeGreaterThan(18); // hinter der Menge
+    const mid = cameraAt(k, len / 2);
+    expect(mid.pos[2]).toBeLessThan(start.pos[2]);
+    // danach ohne Sprung in der normalen Einstellung
+    const end = cameraAt(k, len + 1);
+    const before = cameraAt(k, len - 30);
+    expect(Math.hypot(...end.pos.map((v, i) => v - before.pos[i]!))).toBeLessThan(0.3);
+  });
+
+  it("großer Einsatz mit Countdown: einen Takt nah auf den Sänger, das Finale behält seinen Kameraflug", () => {
+    const withBig = all.find((k) => k.climaxes.some((c) => c.countdown && !c.finale));
+    expect(withBig).toBeDefined();
+    const hit = withBig!.climaxes.find((c) => c.countdown && !c.finale)!;
+    expect(shotAt({ ...withBig!, singAlong: null }, hit.atMs + 10)).toBe("nah");
+    expect(shotAt({ ...withBig!, singAlong: null }, hit.atMs + withBig!.barMs + 10)).not.toBe("nah");
+    const finale = withBig!.climaxes.find((c) => c.finale);
+    if (finale) expect(shotAt({ ...withBig!, singAlong: null }, finale.atMs + 10)).not.toBe("nah");
   });
 });

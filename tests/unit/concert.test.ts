@@ -156,9 +156,17 @@ describe("Totale mit Tele-Optik", () => {
     expect(cam.pos[1]).toBeGreaterThan(2);
     expect(cam.fov).toBeCloseTo(24, 0);
     const p2 = planChoreography(hoshizora, 132);
-    const zoom = p2.phrases.find((p) => p.camera === "zoom")!;
-    expect(cameraAt(p2, zoom.startMs + 50).fov).toBeLessThan(26);
-    expect(cameraAt(p2, zoom.endMs - 1).fov).toBeGreaterThan(35);
+    // Zoom öffnet über die Phrase (die Drohnen-Eröffnung der ersten 8 s ausgenommen – eigener Test)
+    // dafür die Phrasen um 20 s nach hinten schieben (der Zoom liegt sonst ganz in der Eröffnung)
+    const shift = 20_000;
+    const later = {
+      ...p2,
+      climaxes: [],
+      phrases: p2.phrases.map((p) => ({ ...p, startMs: p.startMs + shift, endMs: p.endMs + shift })),
+    };
+    const zoom = later.phrases.find((p) => p.camera === "zoom")!;
+    expect(cameraAt(later, zoom.startMs + 50).fov).toBeLessThan(26);
+    expect(cameraAt(later, zoom.endMs - 1).fov).toBeGreaterThan(35);
     for (let t = 0; t < 150_000; t += 2500) expect(Number.isFinite(cameraAt(p2, t).fov)).toBe(true);
   });
 });
