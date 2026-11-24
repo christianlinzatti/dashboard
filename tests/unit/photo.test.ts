@@ -86,6 +86,14 @@ describe("Erinnerungsfoto: Server", () => {
     expect((await post(jpeg(), "image/png")).status).toBe(415);
     expect((await post(new Uint8Array(2000).fill(1))).status).toBe(400);
     expect((await post(jpeg(800_000))).status).toBe(413);
+    // angekündigte Größe zu groß: abgewiesen, ohne den Inhalt zu lesen
+    const { POST } = await import("@/app/api/photo/route");
+    const big = new Request("http://x/api/photo", {
+      method: "POST",
+      headers: { "content-type": "image/jpeg", "content-length": "5000000" },
+      body: jpeg() as BodyInit,
+    });
+    expect((await POST(big)).status).toBe(413);
     expect((await post(jpeg())).status).toBe(200);
     expect((await post(jpeg())).status).toBe(429);
   });

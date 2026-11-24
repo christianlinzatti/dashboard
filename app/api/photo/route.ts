@@ -15,6 +15,8 @@ export async function POST(req: Request) {
   if (!req.headers.get("content-type")?.startsWith("image/jpeg")) return json({ error: "Nur JPEG." }, 415);
   const now = Date.now();
   if (now - (last.get(session.uid) ?? 0) < MIN_GAP_MS) return json({ error: "Zu schnell hintereinander." }, 429);
+  // angekündigte Größe zuerst prüfen: zu große Anfragen gar nicht erst einlesen
+  if (Number(req.headers.get("content-length") ?? 0) > PHOTO_MAX_BYTES) return json({ error: "Foto zu groß." }, 413);
   const bytes = new Uint8Array(await req.arrayBuffer());
   if (bytes.length > PHOTO_MAX_BYTES) return json({ error: "Foto zu groß." }, 413);
   if (!isJpeg(bytes)) return json({ error: "Kein JPEG." }, 400);
