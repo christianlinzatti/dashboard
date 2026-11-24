@@ -75,3 +75,33 @@ describe("Qualitätsstufen", () => {
     expect(PRESETS.hoch.liveScreens!.width).toBeGreaterThan(PRESETS.mittel.liveScreens!.width);
   });
 });
+
+describe("Applaus am Songende und Raumlicht (Govee) nach Show-Moment", () => {
+  it("während Winken und Verbeugung: Danke-Licht, warm, Lampen im Raum warm-orange und ruhig", async () => {
+    const { APPLAUSE_WARM, APPLAUSE_BASE } = await import("@/lib/stage/lights");
+    const end = neonlicht.track.durationMs;
+    const l = at(end - plan.barMs * 0.5);
+    expect(l.scene).toBe("applaus");
+    expect(l.heads.every((h) => h.color === APPLAUSE_WARM && h.intensity > 0)).toBe(true);
+    expect(l.lasers.on).toBe(false);
+    expect(l.signal).toMatchObject({ base: APPLAUSE_BASE, accent: APPLAUSE_WARM, pulse: 0, chase: -1 });
+    expect(at(end - 3 * plan.barMs).scene).not.toBe("applaus"); // davor noch das normale Outro
+  });
+
+  it("Publikum jubelt beim Abgang, nicht vorher", async () => {
+    const { crowdAt, APPLAUSE } = await import("@/lib/stage/crowd");
+    const end = neonlicht.track.durationMs;
+    expect(crowdAt(plan, end - plan.barMs * 0.3)).toMatchObject({ hands: APPLAUSE.hands, clap: APPLAUSE.clap });
+    expect(crowdAt(plan, end - 3 * plan.barMs).clap).toBeLessThan(APPLAUSE.clap);
+  });
+
+  it("Ballade mit Feuerzeugen: Lampen glimmen warm und flimmern unregelmäßig", async () => {
+    const ballad = { ...plan, crowdStyle: "ballade" as const };
+    const t0 = 3000; // Intro: Handy-/Feuerzeug-Meer
+    const sig = (t: number) => lightsAt(neonlicht, ballad, 6, { ...base, t }).signal;
+    expect(sig(t0).accent).toBe("#ffa040");
+    const levels = [0, 400, 900, 1700, 2600].map((d) => sig(t0 + d).pulse);
+    expect(new Set(levels.map((v) => v.toFixed(2))).size).toBeGreaterThan(3);
+    expect(Math.max(...levels)).toBeLessThanOrEqual(0.5);
+  });
+});

@@ -1,9 +1,16 @@
 import type { Choreography } from "@/lib/dance/plan";
-import { phraseIndexAt } from "@/lib/dance/evaluate";
+import { exitAt, phraseIndexAt } from "@/lib/dance/evaluate";
 import type { SectionKind, SongStatic } from "@/lib/song-context/schema";
 import { climaxAt } from "./climax";
+import { crowdProfile } from "./crowd";
 
-export type LightScene = "intro" | "strophe" | "refrain" | "bridge" | "instrumental" | "drop" | "outro";
+export type LightScene = "intro" | "strophe" | "refrain" | "bridge" | "instrumental" | "drop" | "outro" | "applaus";
+
+/** Danke-Licht beim Applaus am Songende: warmes Weiß-Orange auf Bühne, Publikum und Lampen im Raum */
+export const APPLAUSE_WARM = "#ffb066";
+export const APPLAUSE_BASE = "#ff7a2e";
+/** Feuerzeug-Glut für die Lampen im Raum (Balladen) */
+const LIGHTER_GLOW = "#ffa040";
 
 export type HeadState = {
   /** Schwenk (Rad, um Y) und Neigung (Rad, 0 = senkrecht nach unten) */
@@ -75,6 +82,7 @@ const PROFILE: Record<
   instrumental: { share: 1, amp: 0.55, period: 8, base: 0.75, lasers: true, fog: 0.6, wall: 1 },
   drop: { share: 1, amp: 0.9, period: 2, base: 1, lasers: true, fog: 0.4, wall: 1 },
   outro: { share: 0.25, amp: 0.15, period: 32, base: 0.4, lasers: false, fog: 0.9, wall: 0 },
+  applaus: { share: 1, amp: 0.2, period: 16, base: 0.8, lasers: false, fog: 0.5, wall: 0 },
 };
 
 /**
@@ -91,7 +99,9 @@ export function lightsAt(song: SongStatic, c: Choreography, heads: number, input
   const inDrop = micDrop || climax?.phase === "hit";
   // Blackout blendet über den ersten Schlag ab
   const blackout = climax?.phase === "blackout" ? Math.min(1, climax.beats) : 0;
-  let scene: LightScene = inDrop ? "drop" : SCENE_OF[phrase?.section ?? "verse"];
+  // Abgang (Winken, Verbeugung): Danke-Licht, warm über alles
+  const applause = !inDrop && exitAt(c, t) !== null;
+  let scene: LightScene = inDrop ? "drop" : applause ? "applaus" : SCENE_OF[phrase?.section ?? "verse"];
   // Energie aus dem Plan (+ Mikro) kann Strophen anheben / Refrains dämpfen
   const energy = input.micActive ? input.energy : ((phrase?.energy ?? 1) + 0.5) / 4;
   if (scene === "refrain" && energy < 0.3) scene = "strophe";
@@ -118,7 +128,14 @@ export function lightsAt(song: SongStatic, c: Choreography, heads: number, input
     const mirror = center < 0 ? -1 : 1;
     const pan = Math.sin(phase) * prof.amp * mirror + center * 0.12;
     const tilt = 0.35 + Math.cos(phase * 0.5) * prof.amp * 0.4;
-    const color = scene === "bridge" || scene === "intro" ? (input.singerColor ?? pal.accent) : i % 2 === 0 ? barColor : alt;
+    const color =
+      scene === "applaus"
+        ? APPLAUSE_WARM
+        : scene === "bridge" || scene === "intro"
+          ? (input.singerColor ?? pal.accent)
+          : i % 2 === 0
+            ? barColor
+            : alt;
     const intensity =
       (on ? Math.min(1, prof.base * (0.75 + 0.25 * pulse) * (0.7 + energy * 0.5)) * (input.headLevel ?? 1) : 0) * (1 - blackout);
     return { pan, tilt, color, intensity };
@@ -166,7 +183,28 @@ export function lightsAt(song: SongStatic, c: Choreography, heads: number, input
     fog: prof.fog,
     blackout,
     countdown: climax?.countdown ?? null,
-    signal: {
+    signal: roomSignal(),
+  };
+
+  /**
+   * Lampen im Raum (Govee) folgen den Show-Momenten: Blackout vor dem Einsatz (fast aus), Einschlag voll mit Lauflicht,
+   * Applaus warm-orange und ruhig, Balladen mit Handy-/Feuerzeug-Meer: sanftes, unregelmäßiges Flimmern.
+   */
+  function roomSignal(): LightFrame["signal"] {
+    if (scene === "applaus") return { base: APPLAUSE_BASE, accent: APPLAUSE_WARM, brightness: 0.85, pulse: 0, chase: -1 };
+    const crowd = phrase && !inDrop && !blackout ? crowdProfile(phrase, c.crowdStyle) : null;
+    if (crowd && (crowd.lighter > 0.5 || crowd.phones > 0.7)) {
+      // zwei langsame, gegeneinander laufende Schwingungen: wirkt wie viele kleine Lichter, nie im Takt
+      const shimmer = 0.5 + 0.5 * Math.sin(t / 730) * Math.sin(t / 1310 + 1.7);
+      return {
+        base: crowd.lighter > 0.5 ? LIGHTER_GLOW : pal.dominant,
+        accent: crowd.lighter > 0.5 ? LIGHTER_GLOW : pal.accent,
+        brightness: 0.35 + 0.15 * shimmer,
+        pulse: 0.15 + 0.35 * shimmer,
+        chase: -1,
+      };
+    }
+    return {
       base: pal.dominant,
       accent: barColor,
       // Blackout: Lampen fast aus; Einschlag: volle Helligkeit
@@ -174,6 +212,6 @@ export function lightsAt(song: SongStatic, c: Choreography, heads: number, input
       pulse: blackout ? 0 : scene === "intro" || scene === "outro" ? pulse * 0.2 : pulse,
       // Lauflicht über die Lampen beim großen Einsatz: einmal pro Schlag von links nach rechts
       chase: climax?.phase === "hit" && climax.big ? flashPhase : -1,
-    },
-  };
+    };
+  }
 }

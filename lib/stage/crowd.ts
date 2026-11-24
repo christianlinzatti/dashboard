@@ -1,4 +1,4 @@
-import { phraseIndexAt } from "@/lib/dance/evaluate";
+import { exitAt, phraseIndexAt } from "@/lib/dance/evaluate";
 import type { Choreography, CrowdStyle, Phrase } from "@/lib/dance/plan";
 import { singAlongAt } from "@/lib/show/singalong";
 
@@ -10,6 +10,7 @@ import { singAlongAt } from "@/lib/show/singalong";
  * - Refrain / hohe Energie: Hände oben, Springen im Takt, Armbänder pulsieren gemeinsam
  * - Instrumentalteile mit Energie: La-Ola-Welle läuft im Takt von links nach rechts durch die Menge
  * - Drop: alles auf Anschlag
+ * - Songende (Band winkt, verbeugt sich): Applaus und Jubel
  */
 export type CrowdFrame = {
   /** Anteil der Leute mit erhobenen Händen 0..1 */
@@ -110,6 +111,20 @@ const SINGALONG: CrowdFrame = {
   wave: 0,
 };
 
+/** Applaus am Songende (Band winkt und verbeugt sich): Jubel mit erhobenen Armen, Klatschen, ein paar Handys filmen */
+export const APPLAUSE: CrowdFrame = {
+  hands: 0.9,
+  jump: 0.35,
+  phones: 0.35,
+  bands: 1,
+  bandMode: 1,
+  sway: 0.2,
+  mosh: 0,
+  lighter: 0,
+  clap: 0.6,
+  wave: 0,
+};
+
 const DROP: CrowdFrame = { hands: 1, jump: 1, phones: 0, bands: 1, bandMode: 1, sway: 0, mosh: 0, lighter: 0, clap: 0, wave: 0 };
 
 const mix = (a: CrowdFrame, b: CrowdFrame, w: number): CrowdFrame => ({
@@ -136,6 +151,12 @@ export function crowdAt(c: Choreography, t: number, input: CrowdInput = {}): Cro
   let frame = prev ? mix(crowdProfile(prev, style), crowdProfile(p, style), w) : crowdProfile(p, style);
   const sing = singAlongAt(c.singAlong, t, c.beatMs);
   if (sing > 0) frame = mix(frame, SINGALONG, sing);
+  // Abgang: Applaus setzt mit dem Winken ein (über einen Schlag)
+  const exit = exitAt(c, t);
+  if (exit) {
+    const into = exit.phase === "verbeugen" ? 1 : Math.min(1, (exit.u * c.barMs) / c.beatMs);
+    frame = mix(frame, APPLAUSE, into);
+  }
   const drop = input.dropMs;
   if (drop != null && t >= drop && t < drop + 2 * c.barMs) {
     const out = Math.min((drop + 2 * c.barMs - t) / c.beatMs, 1);
