@@ -7,6 +7,7 @@ import { NodeIO } from "@gltf-transform/core";
 import { ALL_EXTENSIONS } from "@gltf-transform/extensions";
 import { cloneDocument, dedup, prune, quantize, resample, weld, meshopt } from "@gltf-transform/functions";
 import { MeshoptEncoder, MeshoptDecoder } from "meshoptimizer";
+import { mergeStaticMaterials } from "./avatar-merge.mjs";
 import { comparePoses, dropStaticChannels, packRotations, sharedSignature, splitSharedClips } from "./avatar-anim.mjs";
 import { OPTIMIZE_VERSION } from "./avatar-catalog.mjs";
 
@@ -52,6 +53,8 @@ for (const entry of manifest) {
     const doc = await io.readBinary(buf);
     await doc.transform(dedup(), prune(), weld(), resample());
     const before = cloneDocument(doc);
+    // Teile mit gleichartigem Material zu einem Teil (Werte je Eckpunkt) – weniger Zeichenaufrufe
+    const parts = mergeStaticMaterials(doc);
     // Tanz-Spuren verschlanken: stillstehende Spuren weg, Drehungen als Int16 (Bewegung bleibt gleich)
     const dropped = dropStaticChannels(doc);
     packRotations(doc);
@@ -74,7 +77,7 @@ for (const entry of manifest) {
     if (!(await stat(path.join(outDir, tanz)).catch(() => null))) await writeFile(path.join(outDir, tanz), tanzBin);
     await writeFile(dst, bin);
     await writeFile(dst + ".sha", `${stamp}\n${tanz}`);
-    note = `  (${dropped} stille Spuren weg, ${moved} in ${tanz}, Abweichung ≤ ${diff.rotationDeg.toFixed(3)}°)`;
+    note = `  (${parts.before}→${parts.after} Teile, ${dropped} stille Spuren weg, ${moved} in ${tanz}, Abweichung ≤ ${diff.rotationDeg.toFixed(3)}°)`;
   }
   tanzFiles.add(tanz);
   await copyFile(path.join(srcDir, png), path.join(outDir, png));

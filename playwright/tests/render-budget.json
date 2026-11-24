@@ -3,75 +3,75 @@
   "stand": "2026-11-24",
   "budgets": {
     "club/niedrig": {
-      "drawcalls": 80,
+      "drawcalls": 74,
       "triangles": 100000
     },
     "festival/niedrig": {
-      "drawcalls": 85,
+      "drawcalls": 79,
       "triangles": 109000
     },
     "synthwave/niedrig": {
-      "drawcalls": 70,
+      "drawcalls": 64,
       "triangles": 93000
     },
     "jazz/niedrig": {
-      "drawcalls": 63,
+      "drawcalls": 57,
       "triangles": 81000
     },
     "weltraum/niedrig": {
-      "drawcalls": 64,
+      "drawcalls": 58,
       "triangles": 87000
     },
     "stadion/niedrig": {
-      "drawcalls": 84,
+      "drawcalls": 78,
       "triangles": 111000
     },
     "strand/niedrig": {
-      "drawcalls": 82,
+      "drawcalls": 75,
       "triangles": 105000
     },
     "lagerhalle/niedrig": {
-      "drawcalls": 74,
+      "drawcalls": 68,
       "triangles": 99000
     },
     "kathedrale/niedrig": {
-      "drawcalls": 74,
+      "drawcalls": 68,
       "triangles": 92000
     },
     "club/mittel": {
-      "drawcalls": 204,
+      "drawcalls": 192,
       "triangles": 254000
     },
     "festival/mittel": {
-      "drawcalls": 214,
+      "drawcalls": 202,
       "triangles": 290000
     },
     "synthwave/mittel": {
-      "drawcalls": 108,
+      "drawcalls": 102,
       "triangles": 115000
     },
     "jazz/mittel": {
-      "drawcalls": 100,
+      "drawcalls": 94,
       "triangles": 92000
     },
     "weltraum/mittel": {
-      "drawcalls": 102,
+      "drawcalls": 95,
       "triangles": 103000
     },
     "stadion/mittel": {
-      "drawcalls": 210,
+      "drawcalls": 198,
       "triangles": 294000
     },
     "strand/mittel": {
-      "drawcalls": 119,
+      "drawcalls": 113,
       "triangles": 131000
     },
     "lagerhalle/mittel": {
-      "drawcalls": 112,
+      "drawcalls": 105,
       "triangles": 129000
     },
     "kathedrale/mittel": {
-      "drawcalls": 112,
+      "drawcalls": 105,
       "triangles": 110000
     }
   }

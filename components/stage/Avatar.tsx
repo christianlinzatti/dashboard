@@ -20,6 +20,7 @@ import {
 import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js";
 import { avatarById } from "@/lib/avatars/catalog";
 import { mergeClips } from "@/lib/avatars/merge-clips";
+import { applyVertexPbrTo } from "@/lib/avatars/vertex-pbr";
 import { materialRole, outfitById } from "@/lib/avatars/outfits";
 import { IDLE_CLIP } from "@/lib/dance/clips";
 import { fallbackFor } from "@/lib/dance/mixamo";
@@ -201,6 +202,8 @@ function AvatarModel({ url, member, song, choreo, frameRef, band }: AvatarProps 
   const sings = !isBand && !!member.artistId;
   const { root, mixer, leds, dyed, spine, smile, mouth, extras, arms, neck, rest, body } = useMemo(() => {
     const model = cloneSkinned(scene) as Group;
+    // zusammengelegte Figurenteile: Farbe/Rauheit/Metall/Leuchten je Eckpunkt (Materialien sind geteilt → nur einmal)
+    applyVertexPbrTo(model);
     // Outfit: Anzug, Rüstung und Leuchtstreifen umfärben (Materialien sind zwischen Kopien geteilt → erst kopieren)
     const outfit = member.outfit ? outfitById.get(member.outfit) : undefined;
     const dyed: Material[] = [];
