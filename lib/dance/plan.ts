@@ -9,7 +9,7 @@ import { briefFor, energyLevel, type CrowdMode, type ShowMoment } from "@/lib/sh
 import type { EffectKind } from "@/lib/stage/themes";
 import { slots, type Formation, type Vec2 } from "./formations";
 import { planClimaxes, type Climax } from "@/lib/stage/climax";
-import { bandKind } from "@/lib/stage/band";
+import { bandKind, type BandKind, type BandRole } from "@/lib/stage/band";
 import { rng } from "./rng";
 import { crowdProfile } from "@/lib/stage/crowd";
 import { planSingAlong, type SingAlong } from "@/lib/show/singalong";
@@ -63,6 +63,8 @@ export type Phrase = {
   effects?: EffectKind[];
   /** Drehbühne: Podest mit Tänzern dreht sich während der Phrase einmal um 360° */
   turn: boolean;
+  /** Band-Solo (Instrumentalteil mit Schwung): Kamera und Spot auf diesen Musiker, er tritt nach vorn */
+  solo?: BandRole;
   moves: Record<string, Move>;
   positions: Record<string, Vec2>;
 };
@@ -202,6 +204,9 @@ export function planChoreography(
 
   const phrases: Phrase[] = [];
   let prevFormation: Formation | undefined;
+  // Band (nach Genre): Instrumentalteile mit Schwung werden zum Solo eines Musikers
+  const band = bandKind(genres);
+  let solos = 0;
 
   for (const sec of sections) {
     let t = sec.startMs;
@@ -230,6 +235,8 @@ export function planChoreography(
         if (!["nah", "halbnah", "zoom"].includes(camera)) camera = rMoment.pick(["nah", "halbnah"] as const);
       }
       prevFormation = formation;
+      const solo = sec.kind === "instrumental" && energy >= 2 && band ? soloRole(band, solos++) : undefined;
+      if (solo) camera = "nah"; // nah auf den Solisten (Director richtet sie auf ihn aus)
       // Aus dem Publikum: manchmal statt der Totale über die Köpfe filmen
       if (camera === "totale" && (sec.kind === "chorus" || sec.kind === "instrumental") && rCam.next() < 0.4)
         camera = "ueberkopf";
@@ -296,6 +303,7 @@ export function planChoreography(
           ? { cut: rCam.pick(STATIC_SHOTS.filter((x) => x !== camera && x !== "vogel")) }
           : {}),
         turn,
+        ...(solo ? { solo } : {}),
         ...directives(song, sec.kind),
         moves: Object.fromEntries(
           order.map((id, i) => {
@@ -318,7 +326,7 @@ export function planChoreography(
   }
 
   const climaxes = planClimaxes(phrases, barMs);
-  const kind = bandKind(genres);
+  const kind = band;
   const crowdStyle: CrowdStyle = kind === "rock" ? "rock" : kind === "keys" || song.music.mood === "ruhig" ? "ballade" : null;
   return {
     trackKey: song.trackKey,
@@ -386,6 +394,12 @@ export function momentFor(
 function directives(song: SongStatic, kind: SectionKind): Pick<Phrase, "crowd" | "effects"> {
   const d = briefFor(song.show, kind);
   return d ? { crowd: d.crowd, effects: d.effects } : {};
+}
+
+/** Wer das Solo spielt: Rock abwechselnd Gitarre und Schlagzeug, sonst Keyboard bzw. DJ */
+function soloRole(kind: BandKind, n: number): BandRole {
+  if (kind === "rock") return n % 2 === 0 ? "gitarre" : "schlagzeug";
+  return kind === "keys" ? "keyboard" : "dj";
 }
 
 function rankOf(c: CastMember) {

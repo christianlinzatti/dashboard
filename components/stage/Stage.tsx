@@ -323,6 +323,7 @@ function Scene({
           countdownRef={countdown}
           glareRef={hasBlinders(theme) ? glare : undefined}
           theme={theme}
+          band={quality !== "niedrig" ? band : null}
         />
         {weather && <Weather kind={weather} frameRef={frame} lightsRef={lights} scale={preset.particles} />}
         <Effects

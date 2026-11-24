@@ -155,3 +155,40 @@ describe("Konzertfilm: Eröffnung und Einsätze", () => {
     if (finale) expect(shotAt({ ...withBig!, singAlong: null }, finale.atMs + 10)).not.toBe("nah");
   });
 });
+
+describe("Band-Solo im Instrumentalteil", () => {
+  it("Rock: erst Gitarre, dann Schlagzeug; Kamera nah; Solist tritt nach vorn und wieder zurück", async () => {
+    const { soloAt, SOLO_STEP } = await import("@/lib/stage/musicians");
+    const plans = Object.values(fixtures).map((s) =>
+      planChoreography({ ...s, music: { ...s.music, genres: ["rock"] } }, s.music.bpmHint ?? 120),
+    );
+    const solos = plans.flatMap((k) => k.phrases.filter((p) => p.solo).map((p) => ({ k, p })));
+    expect(solos.length).toBeGreaterThan(0);
+    for (const { p } of solos) {
+      expect(p.section).toBe("instrumental");
+      expect(p.energy).toBeGreaterThanOrEqual(2);
+      expect(p.camera).toBe("nah");
+      expect(p.turn).toBe(false);
+    }
+    const first = plans.find((k) => k.phrases.some((p) => p.solo))!;
+    expect(first.phrases.find((p) => p.solo)!.solo).toBe("gitarre");
+    const { k, p } = solos[0]!;
+    expect(soloAt(k, p.startMs)!.w).toBe(0);
+    expect(soloAt(k, p.startMs + k.beatMs * 2)).toMatchObject({ role: p.solo, w: 1 });
+    expect(soloAt(k, p.endMs - 1)!.w).toBeLessThan(0.01);
+    expect(SOLO_STEP).toBeGreaterThan(0);
+  });
+
+  it("ohne Band (kein passendes Genre) kein Solo; Jazz: Keyboard", () => {
+    const none = Object.values(fixtures).map((s) =>
+      planChoreography(
+        { ...s, music: { ...s.music, genres: ["schlager"] }, artists: s.artists.map((a) => ({ ...a, genres: [] })) },
+        120,
+      ),
+    );
+    expect(none.every((k) => k.phrases.every((p) => !p.solo))).toBe(true);
+    const jazz = Object.values(fixtures).map((s) => planChoreography({ ...s, music: { ...s.music, genres: ["jazz"] } }, 120));
+    const roles = new Set(jazz.flatMap((k) => k.phrases.flatMap((p) => (p.solo ? [p.solo] : []))));
+    expect([...roles].every((r) => r === "keyboard")).toBe(true);
+  });
+});

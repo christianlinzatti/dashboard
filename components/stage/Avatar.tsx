@@ -34,7 +34,7 @@ import { TARGET_HEIGHT, type Frame } from "./types";
 import type { Vec2 } from "@/lib/dance/formations";
 import { Guitar } from "./Band";
 import type { BandRole } from "@/lib/stage/band";
-import { headNodAt, keysAt, scratchAt } from "@/lib/stage/musicians";
+import { headNodAt, keysAt, scratchAt, SOLO_STEP, soloAt } from "@/lib/stage/musicians";
 import { grooveAt } from "@/lib/stage/groove";
 import { findArms, reach, reachPartly, sideOf } from "./pose";
 import { singAlongAt } from "@/lib/show/singalong";
@@ -368,8 +368,12 @@ function AvatarModel({ url, member, song, choreo, frameRef, band }: AvatarProps 
     if (band) {
       // Band steht fest hinten (dreht sich nicht mit der Drehbühne)
       const g = group.current;
-      g?.position.set(band.position[0], band.lift ?? 0, band.position[1]);
-      if (g && f.playing) playInstrument(g, band, arms, neck, root, choreo, f.t, f.anchorMs);
+      // Solo: tritt nach vorn an die Podestkante und spielt mit vollem Einsatz (headbangen)
+      const solo = f.playing ? soloAt(choreo, f.t) : null;
+      const step = solo?.role === band.role ? solo.w : 0;
+      g?.position.set(band.position[0], band.lift ?? 0, band.position[1] + SOLO_STEP * step);
+      if (g && f.playing)
+        playInstrument(g, step > 0.5 ? { ...band, rock: true } : band, arms, neck, root, choreo, f.t, f.anchorMs);
       return;
     }
     // Verbeugung am Songende: Oberkörper nach vorn beugen (über die Grundhaltung gelegt)

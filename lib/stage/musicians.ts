@@ -1,5 +1,5 @@
 import { phraseIndexAt } from "@/lib/dance/evaluate";
-import type { Choreography } from "@/lib/dance/plan";
+import type { Choreography, Phrase } from "@/lib/dance/plan";
 
 /**
  * Was die Band gerade spielt – zustandslos aus Songzeit und Choreografie (gleiche Zeit → gleiches Bild):
@@ -84,4 +84,18 @@ export function headNodAt(c: Choreography, t: number, anchorMs: number | null = 
   const hard = rock && (phrase.section === "chorus" || phrase.energy >= 3);
   const down = Math.sin(Math.PI * Math.min(since / c.beatMs, 1));
   return down * (hard ? 0.45 : 0.12);
+}
+
+/** so weit tritt der Solist auf dem Podest nach vorn (m) */
+export const SOLO_STEP = 0.45;
+
+/**
+ * Band-Solo zur Zeit t: welcher Musiker und wie weit er vorgetreten ist (0..1; einen Schlag hinein, einen hinaus).
+ * null außerhalb eines Solos.
+ */
+export function soloAt(c: Choreography, t: number): { role: NonNullable<Phrase["solo"]>; w: number } | null {
+  const p = c.phrases[phraseIndexAt(c, t)];
+  if (!p?.solo) return null;
+  const w = Math.min(1, (t - p.startMs) / c.beatMs, (p.endMs - t) / c.beatMs);
+  return { role: p.solo, w: Math.max(0, w) };
 }

@@ -22,6 +22,8 @@ import type { SongStatic } from "@/lib/song-context/schema";
 import { songContext } from "@/lib/song-context/store";
 import { lightsAt, type LightFrame } from "@/lib/stage/lights";
 import { lightBus } from "@/lib/stage/light-bus";
+import type { Band } from "@/lib/stage/band";
+import { SOLO_STEP, soloAt } from "@/lib/stage/musicians";
 import type { Theme } from "@/lib/stage/themes";
 import type { Frame } from "./types";
 
@@ -42,7 +44,12 @@ type DirectorProps = {
   /** warmer Schein der Blinder über dem Bild (sie strahlen in die Kamera) */
   glareRef?: React.RefObject<HTMLDivElement | null>;
   theme: Theme;
+  /** Band hinten (für Soli: Kamera und Verfolger auf den Musiker) */
+  band?: Band;
 };
+
+/** Verfolger beim Solo: warmweiß */
+const SOLO_SPOT = "#fff1dc";
 
 /** Bekannter (a) und live gemessener Drop (b): derselbe Drop (knapp danach gemessen) zählt nur einmal, sonst der jüngere */
 const latestDrop = (a: number | null, b: number | null) =>
@@ -59,6 +66,7 @@ export function Director({
   countdownRef,
   glareRef,
   theme,
+  band,
 }: DirectorProps) {
   const spot = useRef<SpotLight>(null);
   const back = useRef<PointLight>(null);
@@ -135,8 +143,12 @@ export function Director({
     }
 
     // Handy hochkant: zurücktreten, bis dieselbe Bühnenbreite im Bild ist; Nebel rückt mit
+    // Band-Solo: Kamera (Nahaufnahme) und Verfolger auf den Musiker statt auf den Sänger
+    const solo = soloAt(choreo, t);
+    const soloist = solo && band?.members.find((m) => m.role === solo.role);
+    const soloPos = soloist ? ([soloist.position[0], soloist.position[1] + SOLO_STEP * solo.w] as [number, number]) : undefined;
     const aspect = "aspect" in camera ? (camera.aspect as number) : REF_ASPECT;
-    const { cam, distance } = fitAspect(cameraAt(choreo, t, focus ? positions[focus] : undefined), aspect);
+    const { cam, distance } = fitAspect(cameraAt(choreo, t, soloPos ?? (focus ? positions[focus] : undefined)), aspect);
     if (scene.fog && "near" in scene.fog) {
       scene.fog.near = FOG_NEAR * distance;
       scene.fog.far = theme.fogFar * distance;
@@ -153,14 +165,15 @@ export function Director({
     if (label !== shot.current) gl.domElement.dataset.camera = shot.current = label;
     if (phrase && gl.domElement.dataset.moment !== phrase.moment) gl.domElement.dataset.moment = phrase.moment;
 
-    // Spotlight folgt dem aktiven Sänger (sonst dem Lead)
-    const p = focus ? positions[focus] : undefined;
+    // Spotlight folgt dem aktiven Sänger (sonst dem Lead), beim Band-Solo dem Musiker (warmweiß, heller)
+    const p = soloPos ?? (focus ? positions[focus] : undefined);
     if (spot.current && p) {
       target.position.set(p[0], 0.9, p[1]);
       spot.current.position.set(p[0] * 0.6, 5.5, p[1] + 2.5);
-      spot.current.color.set(singerColor(derived.activeSingerId));
-      spot.current.intensity = 45 + frameRef.current.energy * 30 + pulse * 25;
+      spot.current.color.set(soloPos ? SOLO_SPOT : singerColor(derived.activeSingerId));
+      spot.current.intensity = (soloPos ? 70 : 45) + frameRef.current.energy * 30 + pulse * 25;
     }
+    if (gl.domElement.dataset.solo !== (soloist ? solo!.role : "")) gl.domElement.dataset.solo = soloist ? solo!.role : "";
   }, -1);
 
   return (
