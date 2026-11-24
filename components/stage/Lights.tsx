@@ -21,6 +21,7 @@ import {
 } from "three";
 import type { LightFrame } from "@/lib/stage/lights";
 import { songContext } from "@/lib/song-context/store";
+import { Instances, mat } from "./instances";
 import { TRUSS_Y, TRUSS_Z } from "./layout";
 
 const BEAM_LENGTH = 7;
@@ -356,6 +357,11 @@ export function Lasers({ count, lightsRef }: { count: number; lightsRef: React.R
 }
 
 const BLINDER_X = [-3.6, -1.2, 1.2, 3.6];
+const BLINDER_BOXES = BLINDER_X.map((x) => mat({ p: [x, 0, 0] }));
+/** vier Glühlampen je Blinder */
+const BLINDER_BULBS = BLINDER_X.flatMap((x) =>
+  [-0.11, 0.11].flatMap((dx) => [-0.09, 0.09].map((dy) => mat({ p: [x + dx, dy, 0.072] }))),
+);
 const WARM = new Color("#ffb45a");
 
 /** Lichthof um einen Blinder (zur Kamera gedreht) */
@@ -401,19 +407,17 @@ export function Blinders({ lightsRef }: { lightsRef: React.RefObject<LightFrame 
   });
   return (
     <group position={[0, TRUSS_Y + 0.24, TRUSS_Z + 0.3]}>
+      {/* Gehäuse und Glühlampen aller Blinder: je ein Zeichenaufruf */}
+      <Instances matrices={BLINDER_BOXES}>
+        <boxGeometry args={[0.5, 0.42, 0.14]} />
+        <meshStandardMaterial color="#17171c" metalness={0.6} roughness={0.45} />
+      </Instances>
+      <Instances matrices={BLINDER_BULBS}>
+        <circleGeometry args={[0.085, 16]} />
+        <primitive object={bulbs} attach="material" />
+      </Instances>
       {BLINDER_X.map((x, i) => (
         <group key={x} position-x={x}>
-          <mesh>
-            <boxGeometry args={[0.5, 0.42, 0.14]} />
-            <meshStandardMaterial color="#17171c" metalness={0.6} roughness={0.45} />
-          </mesh>
-          {[-0.11, 0.11].map((dx) =>
-            [-0.09, 0.09].map((dy) => (
-              <mesh key={`${dx}${dy}`} position={[dx, dy, 0.072]} material={bulbs}>
-                <circleGeometry args={[0.085, 16]} />
-              </mesh>
-            )),
-          )}
           <mesh ref={(m) => void (flares.current[i] = m)} position-z={0.12} visible={false}>
             <planeGeometry args={[2.4, 2.4]} />
             <shaderMaterial

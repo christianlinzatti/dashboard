@@ -224,7 +224,12 @@ function Keyboard({ x, z, accent, choreo, frameRef }: { x: number; z: number; ac
   useFrame(() => {
     const f = frameRef.current;
     const k = f.playing ? keysAt(choreo, f.t, f.anchorMs) : { zones: [false, false, false, false], press: 0 };
-    zones.current.forEach((m, i) => m && (m.opacity = k.zones[i] ? 0.35 + 0.65 * k.press : 0));
+    zones.current.forEach((m, i) => {
+      if (!m) return;
+      m.opacity = k.zones[i] ? 0.35 + 0.65 * k.press : 0;
+      // dunkle Tastengruppen gar nicht erst zeichnen (durchsichtig kostet trotzdem einen Zeichenaufruf)
+      m.visible = m.opacity > 0.005;
+    });
   });
   return (
     <group position={[x, 0, z + 0.45]}>

@@ -13,6 +13,7 @@ import { Beach, Cathedral, Stadium, StadiumRoof, Warehouse } from "./venues";
 import { songContext, useSongContext } from "@/lib/song-context/store";
 import { chorusKeyword, forcedWallPattern, keywordAmount, wallPattern, wallPatterns } from "@/lib/stage/wall";
 
+import { Instances, mat } from "./instances";
 import { TRUSS_Y, TRUSS_Z } from "./layout";
 
 export { TRUSS_Y, TRUSS_Z };
@@ -142,29 +143,26 @@ function Sky({ theme, accent }: { theme: Theme; accent: string }) {
   }
 }
 
+const FESTIVAL_TOWERS = [-5.6, 5.6];
+const FESTIVAL_LEGS = FESTIVAL_TOWERS.flatMap((x) => [-0.35, 0.35].map((dz) => mat({ p: [x, 2.9, dz] })));
+/** PA-Line-Array je Turm: fünf Boxen, leicht gebogen */
+const FESTIVAL_PA = FESTIVAL_TOWERS.flatMap((x) =>
+  [0, 1, 2, 3, 4].map((i) => mat({ p: [x * 0.86, 3.7 - i * 0.3, 0.9 + i * 0.03], r: [i * 0.05, 0, 0] })),
+);
+
 /** Festival: Bühnendach auf zwei Türmen, PA-Boxen links und rechts. */
 function FestivalRoof() {
   const steel = <meshStandardMaterial color="#3a3a44" metalness={0.8} roughness={0.35} />;
-  const box = <meshStandardMaterial color="#111116" roughness={0.7} />;
   return (
     <group position={[0, 0, TRUSS_Z]}>
-      {[-5.6, 5.6].map((x) => (
-        <group key={x}>
-          {[-0.35, 0.35].map((dz) => (
-            <mesh key={dz} position={[x, 2.9, dz]}>
-              <boxGeometry args={[0.16, 5.8, 0.16]} />
-              {steel}
-            </mesh>
-          ))}
-          {/* PA-Line-Array: leicht gebogen */}
-          {[0, 1, 2, 3, 4].map((i) => (
-            <mesh key={i} position={[x * 0.86, 3.7 - i * 0.3, 0.9 + i * 0.03]} rotation-x={i * 0.05}>
-              <boxGeometry args={[0.6, 0.27, 0.4]} />
-              {box}
-            </mesh>
-          ))}
-        </group>
-      ))}
+      <Instances matrices={FESTIVAL_LEGS}>
+        <boxGeometry args={[0.16, 5.8, 0.16]} />
+        {steel}
+      </Instances>
+      <Instances matrices={FESTIVAL_PA}>
+        <boxGeometry args={[0.6, 0.27, 0.4]} />
+        <meshStandardMaterial color="#111116" roughness={0.7} />
+      </Instances>
       <mesh position={[0, 5.4, 0]}>
         <boxGeometry args={[12, 0.3, 0.9]} />
         {steel}

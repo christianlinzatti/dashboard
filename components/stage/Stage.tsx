@@ -270,7 +270,7 @@ function Scene({
         <TurntableMarks frameRef={frame} color={song.album.palette.accent} />
         {crowdCount > 0 && (
           <Crowd
-            key={theme.id}
+            key={`publikum-${theme.id}`}
             count={crowdCount}
             choreo={shown ?? choreo}
             theme={theme}
@@ -307,7 +307,7 @@ function Scene({
         />
         {weather && <Weather kind={weather} frameRef={frame} lightsRef={lights} scale={preset.particles} />}
         <Effects
-          key={theme.id}
+          key={`effekte-${theme.id}`}
           cues={cues}
           choreo={choreo}
           theme={theme}

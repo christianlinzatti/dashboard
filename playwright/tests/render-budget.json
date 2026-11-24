@@ -1,78 +1,78 @@
 {
   "_hinweis": "Höchstwerte je Bühne und Qualitätsstufe (Demo neonlicht, Refrain, 1280×800), gemessen als teuerstes Bild seit dem Laden: Zeichenaufrufe +25 % (stabil, strenge Grenze), Dreiecke +50 % (schwanken je nach Bild, fängt nur große Sprünge). Wird eine Szene bewusst schwerer, hier anheben – sonst bremst sie den Pi.",
-  "stand": "2026-11-23",
+  "stand": "2026-11-24",
   "budgets": {
     "club/niedrig": {
-      "drawcalls": 115,
-      "triangles": 324000
+      "drawcalls": 95,
+      "triangles": 98000
     },
     "festival/niedrig": {
-      "drawcalls": 122,
-      "triangles": 258000
+      "drawcalls": 99,
+      "triangles": 107000
     },
     "synthwave/niedrig": {
-      "drawcalls": 87,
-      "triangles": 223000
+      "drawcalls": 79,
+      "triangles": 93000
     },
     "jazz/niedrig": {
-      "drawcalls": 79,
-      "triangles": 212000
+      "drawcalls": 68,
+      "triangles": 81000
     },
     "weltraum/niedrig": {
-      "drawcalls": 80,
-      "triangles": 199000
+      "drawcalls": 73,
+      "triangles": 87000
     },
     "stadion/niedrig": {
-      "drawcalls": 105,
-      "triangles": 313000
+      "drawcalls": 93,
+      "triangles": 111000
     },
     "strand/niedrig": {
-      "drawcalls": 100,
-      "triangles": 233000
+      "drawcalls": 93,
+      "triangles": 103000
     },
     "lagerhalle/niedrig": {
-      "drawcalls": 92,
-      "triangles": 236000
+      "drawcalls": 83,
+      "triangles": 99000
     },
     "kathedrale/niedrig": {
-      "drawcalls": 87,
-      "triangles": 202000
+      "drawcalls": 79,
+      "triangles": 91000
     },
     "club/mittel": {
-      "drawcalls": 347,
-      "triangles": 836000
+      "drawcalls": 302,
+      "triangles": 252000
     },
     "festival/mittel": {
-      "drawcalls": 382,
-      "triangles": 1196000
+      "drawcalls": 310,
+      "triangles": 288000
     },
     "synthwave/mittel": {
-      "drawcalls": 142,
-      "triangles": 349000
+      "drawcalls": 119,
+      "triangles": 115000
     },
     "jazz/mittel": {
-      "drawcalls": 128,
-      "triangles": 209000
+      "drawcalls": 105,
+      "triangles": 91000
     },
     "weltraum/mittel": {
-      "drawcalls": 139,
-      "triangles": 308000
+      "drawcalls": 113,
+      "triangles": 103000
     },
     "stadion/mittel": {
-      "drawcalls": 327,
-      "triangles": 1201000
+      "drawcalls": 282,
+      "triangles": 294000
     },
     "strand/mittel": {
-      "drawcalls": 149,
-      "triangles": 397000
+      "drawcalls": 130,
+      "triangles": 129000
     },
     "lagerhalle/mittel": {
-      "drawcalls": 143,
-      "triangles": 404000
+      "drawcalls": 123,
+      "triangles": 128000
     },
     "kathedrale/mittel": {
-      "drawcalls": 139,
-      "triangles": 303000
+      "drawcalls": 117,
+      "triangles": 109000
     }
   }
 }
