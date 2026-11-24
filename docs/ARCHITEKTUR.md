@@ -320,3 +320,20 @@ deutsch sind (Sprache grob aus dem Text geschätzt, fremde Schrift zählt als ni
 Übersetzung mitbringen. Der Server übersetzt mit derselben KI wie die Show-Regie (Claude oder OpenAI) den Text, der
 für diesen Song im Lyrics-Cache liegt – jede Zeile einmal, Cache 30 Tage, Ablehnung 3 Tage; ohne KI-Schlüssel bleibt es
 bei mitgelieferten Übersetzungen. Angezeigt als zweite Zeile mit dem Hinweis „KI-Übersetzung“.
+
+## 7. Konzert-Dramaturgie (Stand 2026-11-24)
+
+Alles zustandslos aus Songzeit, Choreografie und Abend-Gedächtnis (`lib/stage/setlist.ts`):
+
+- **Songstart:** Drohnenflug über das Publikum auf die erste Einstellung (`openingFlight`, 3 Takte, höchstens 8 s),
+  Tour-Banner über dem Motto („Künstler · Tour“ bzw. „· Live in <Heimatort>“), danach die Ansage des Sängers
+  (`lib/show/announce.ts`, 7,5–14,5 s, nur ohne Gesang; Vorlagen je Abendphase).
+- **Im Song:** Nahaufnahme beim großen Einsatz mit Countdown; Band-Solo in Instrumentalteilen (`Phrase.solo`,
+  Kamera und Verfolger auf den Musiker, er tritt vor); Fan-Schilder in den vorderen Reihen
+  (`components/stage/crowd/FanSigns.tsx`, ein Draw-Call, Texte aus `lib/stage/fan-signs.ts`).
+- **Songende:** Band winkt und verbeugt sich, Publikum applaudiert (`APPLAUSE` in `lib/stage/crowd.ts`), Lichtszene
+  „applaus“ (warm), Govee warm-orange; optional Applaus-Geräusch (`lib/live/crowd-sound.ts`, Einstellung, Standard aus).
+- **Raumlicht (Govee):** Blackout vor dem Einsatz, Lauflicht beim Einschlag, Applaus warm, Balladen mit Handy-/
+  Feuerzeug-Meer flimmern unregelmäßig (`roomSignal` in `lib/stage/lights.ts`).
+- **Abend:** derselbe Künstler kommt auf dieselbe Bühne zurück (Tour-Look, `tourTheme`); nach dem letzten Song rollt
+  einmal der Abspann (`lib/show/credits.ts`), danach der Rückblick.
