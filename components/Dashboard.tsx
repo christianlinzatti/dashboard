@@ -32,6 +32,7 @@ import { InfoOverlay } from "./info/InfoOverlay";
 import { useUserLoader } from "./personal/useUserLoader";
 import { ConcertOverlay } from "./concerts/ConcertOverlay";
 import { useConcertLoader } from "./concerts/useConcertLoader";
+import { useConcertReminders } from "./concerts/useConcertReminders";
 import { useTempoLoader } from "./audio/useTempoLoader";
 import { useShowLoader } from "./show/useShowLoader";
 import { useArtistAvatars } from "./avatars/useArtistAvatars";
@@ -120,6 +121,7 @@ export function Dashboard({
   useUserLoader(demo === undefined);
   // Bevorstehende Konzerte (Ticketmaster, Bandsintown) und letzte Setlist (setlist.fm)
   useConcertLoader(demo === undefined);
+  useConcertReminders(demo === undefined);
   // Tempo-Startwert (Deezer), bis das Mikrofon eingerastet ist
   useTempoLoader(demo === undefined);
   // Regie: Genres/Stimmung aus offenen Quellen und – wenn eingerichtet – die Regieanweisung der KI

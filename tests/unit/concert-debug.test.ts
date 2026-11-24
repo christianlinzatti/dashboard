@@ -60,6 +60,12 @@ describe("Konzerttermine in /debug", () => {
     ).toEqual(["oeticket (A, B): oeticket 403"]);
   });
 
+  it("fehlende Schlüssel werden genannt", async () => {
+    const { missingConcertSources } = await vi.importActual<typeof import("@/lib/concerts/service")>("@/lib/concerts/service");
+    expect(missingConcertSources({}).map((m) => m.id)).toEqual(["ticketmaster", "setlist.fm"]);
+    expect(missingConcertSources({ TICKETMASTER_API_KEY: "k", SETLISTFM_API_KEY: "s" })).toEqual([]);
+  });
+
   it("Fehlertext: Bot-Sperre erklärt, Zeitüberschreitung, keine Schlüssel", () => {
     expect(errorText(new Error("oeticket 403"))).toBe("oeticket 403 – Zugriff gesperrt (Bot-Schutz der Quelle)");
     expect(errorText(Object.assign(new Error("x"), { name: "TimeoutError" }))).toBe("Zeitüberschreitung (8 s)");
@@ -91,7 +97,10 @@ describe("/api/concerts/debug", () => {
   beforeEach(() => {
     vi.resetModules();
     concertsFor.mockReset();
-    vi.doMock("@/lib/concerts/service", () => ({ concertsFor }));
+    vi.doMock("@/lib/concerts/service", () => ({
+      concertsFor,
+      missingConcertSources: () => [{ id: "ticketmaster", hint: "fehlt" }],
+    }));
     vi.doMock("@/lib/server/session", () => ({ readSession: async () => ({ uid: "u" }) }));
     vi.doMock("@/lib/server/prefs-store", () => ({
       prefsStore: () => ({ get: async () => null }),
@@ -121,6 +130,7 @@ describe("/api/concerts/debug", () => {
     expect(concertsFor.mock.calls[0]![0].map((a: { name: string }) => a.name)).toEqual(["Wanda", "B", "C", "D", "E"]);
     expect(concertsFor.mock.calls[0]![3]).toEqual({ raw: true, fresh: true });
     expect(body.fresh).toBe(true);
+    expect(body.missing).toEqual([{ id: "ticketmaster", hint: "fehlt" }]);
     expect(body.raw[0].rows[0].outcome).toBe("nicht unter den ersten 5");
     const again = await (await call("names=Wanda&fresh=1")).json();
     expect(again.fresh).toBe(false); // zu schnell: aus dem Cache
@@ -132,5 +142,25 @@ describe("/api/concerts/debug", () => {
     vi.doMock("@/lib/server/session", () => ({ readSession: async () => null }));
     vi.resetModules();
     expect((await call("names=A")).status).toBe(401);
+  });
+});
+
+describe("Kurzdiagnose: Infos & Fotos", () => {
+  const find = (song: object) => diagnose({ song } as Parameters<typeof diagnose>[0]).find((f) => f.label === "Infos & Fotos");
+  it("Fotos je Quelle, ausgefallene Quelle mit Tipp", () => {
+    expect(find({})).toMatchObject({ value: "noch nicht geladen", level: "info" });
+    expect(
+      find({
+        status: { info: { state: "ok" } },
+        info: { photos: [{ source: "commons" }, { source: "theaudiodb" }, { source: "theaudiodb" }] },
+      }),
+    ).toMatchObject({ value: "3 Fotos (Wikipedia 1, TheAudioDB 2)", level: "ok" });
+    const throttled = find({
+      status: { info: { state: "ok", detail: "Quelle fehlt: Wanda – Wikipedia: de.wikipedia.org ausgelastet (429)" } },
+      info: { photos: [{ source: "theaudiodb" }] },
+    });
+    expect(throttled?.level).toBe("warnung");
+    expect(throttled?.value).toContain("INFO_CONTACT");
+    expect(find({ status: { info: { state: "missing" } } })?.value).toBe("nichts gefunden");
   });
 });

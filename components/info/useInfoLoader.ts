@@ -32,10 +32,15 @@ export function useInfoLoader(enabled: boolean) {
       try {
         const res = await fetch(infoUrl(song), { signal: ctrl.signal });
         if (!res.ok) throw new Error(String(res.status));
-        const { info, complete } = (await res.json()) as { info: Info; complete: boolean };
+        const { info, complete, issues = [] } = (await res.json()) as { info: Info; complete: boolean; issues?: string[] };
         if (songContext.getState().song?.trackKey !== song.trackKey) return;
         const found = Object.keys(info.artists).length > 0;
-        mergeSong({ ...(found ? { info } : {}), status: { info: { state: found ? "ok" : "missing", provider: "musicbrainz" } } });
+        // ausgefallene Quellen (z. B. Wikipedia drosselt) sichtbar machen – Kurzdiagnose in /debug
+        const detail = issues.length ? `Quelle fehlt: ${issues.join(" · ")}` : undefined;
+        mergeSong({
+          ...(found ? { info } : {}),
+          status: { info: { state: found ? "ok" : "missing", provider: "musicbrainz", ...(detail ? { detail } : {}) } },
+        });
         if (!complete && attempt === 0) retry = setTimeout(() => void load(song, 1), RETRY_MS);
       } catch (e) {
         if ((e as Error).name === "AbortError") return;

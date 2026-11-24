@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { LogEntry } from "@/lib/live/log-schema";
-import { parsePerfSample, perfGrade, summarizePerf, type PerfSample } from "@/lib/live/perf-samples";
+import { parsePerfSample, perfAdvice, perfGrade, summarizePerf, type PerfSample } from "@/lib/live/perf-samples";
 
 const GRADE_COLOR = { flüssig: "text-emerald-300", knapp: "text-amber-300", ruckelt: "text-red-300" } as const;
 
@@ -115,6 +115,11 @@ export function PerfHistory({ auto }: { auto: boolean }) {
               ))}
             </tbody>
           </table>
+          <ul className="mt-3 space-y-1 text-sm text-white/80" data-testid="perf-advice">
+            {perfAdvice(groups).map((a) => (
+              <li key={a}>→ {a}</li>
+            ))}
+          </ul>
           <Sparkline samples={samples.slice(-60)} />
         </>
       )}

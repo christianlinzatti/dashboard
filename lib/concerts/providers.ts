@@ -52,8 +52,11 @@ export function ticketmaster(apiKey: string, http: Http = fetch): ConcertProvide
         apikey: apiKey,
         keyword: artist,
         classificationName: "music",
-        size: "50",
+        // 200 = Höchstwert je Seite: große Welttourneen haben mehr als 50 Termine, die nahen kämen sonst nicht vor
+        size: "200",
         sort: "date,asc",
+        // alle Sprachen/Märkte (Standard ist nur „en“ – österreichische und deutsche Termine fehlen dann teils)
+        locale: "*",
       });
       const res = await http(`https://app.ticketmaster.com/discovery/v2/events.json?${q}`, { signal });
       if (!res.ok) throw new Error(`Ticketmaster ${res.status}`);

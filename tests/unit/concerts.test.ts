@@ -142,6 +142,8 @@ describe("Ticketmaster (Discovery v2)", () => {
     const url = new URL(http.mock.calls[0]![0]);
     expect(url.searchParams.get("apikey")).toBe("KEY");
     expect(url.searchParams.get("classificationName")).toBe("music");
+    expect(url.searchParams.get("size")).toBe("200");
+    expect(url.searchParams.get("locale")).toBe("*");
     expect(out).toHaveLength(2);
     expect(out[0]).toMatchObject({ date: "2026-12-05", time: "20:00", city: "Wien", lat: 48.2, country: "AT", cancelled: false });
     expect(out[1]!.cancelled).toBe(true);

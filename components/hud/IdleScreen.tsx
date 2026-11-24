@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { idleBrightness } from "@/lib/live/idle-dim";
 import type { SpotifyStatus } from "../spotify/useSpotifySync";
 import { RecentList } from "../personal/RecentList";
+import { ConcertReminder } from "@/components/concerts/ConcertReminder";
 import { EveningRecap, useEveningRecap } from "./EveningRecap";
 
 const loginErrors: Record<string, string> = {
@@ -88,6 +89,7 @@ export function IdleScreen({ status, unknownDemo, loginError }: Props) {
           Mit Spotify anmelden
         </a>
       )}
+      {status.kind === "idle" && <ConcertReminder />}
       {/* nach einem Abend mit Musik: der Rückblick statt „Zuletzt gehört“ (beides passt nicht ohne Scrollen) */}
       {status.kind === "idle" && (recap ? <EveningRecap recap={recap} /> : <RecentList />)}
       {status.kind === "idle" && (

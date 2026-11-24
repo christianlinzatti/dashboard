@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server";
 import { z } from "zod";
 import { classifyRaw } from "@/lib/concerts/debug";
-import { concertsFor } from "@/lib/concerts/service";
+import { concertsFor, missingConcertSources } from "@/lib/concerts/service";
 import { effectiveArea, prefsStore } from "@/lib/server/prefs-store";
 import { readSession } from "@/lib/server/session";
 import { json } from "@/lib/server/spotify-route";
@@ -64,6 +64,7 @@ export async function GET(req: NextRequest) {
     fresh,
     area: result.area,
     providers: result.providers,
+    missing: missingConcertSources(),
     sources: result.sources,
     concerts: result.concerts,
     raw,

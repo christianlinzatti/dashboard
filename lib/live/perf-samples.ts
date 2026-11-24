@@ -49,3 +49,30 @@ export function summarizePerf(samples: readonly PerfSample[]): PerfGroup[] {
 
 /** Bewertung für die Anzeige: flüssig ab 28 fps, ruckelt sichtbar unter 20 */
 export const perfGrade = (fps: number) => (fps >= 28 ? "flüssig" : fps >= 20 ? "knapp" : "ruckelt");
+
+/**
+ * Konkrete Empfehlungen aus dem Verlauf (nur Gruppen mit mindestens zwei Proben, also ≥ 10 Minuten Musik):
+ * ruckelnde Bühnen eine Stufe tiefer oder – wenn schon „niedrig“ – aus der Auswahl; sehr flüssig auf „mittel“ → „hoch“
+ * ausprobieren. Ohne genug Daten ein Hinweis, wie lange es noch dauert.
+ */
+export function perfAdvice(groups: readonly PerfGroup[]): string[] {
+  const solid = groups.filter((g) => g.samples >= 2);
+  if (!solid.length) return ["Noch zu wenig Daten – nach etwa 10 Minuten Musik je Bühne gibt es hier Empfehlungen."];
+  const out: string[] = [];
+  for (const g of solid) {
+    if (g.avgFps < 20)
+      out.push(
+        g.quality === "niedrig"
+          ? `Bühne „${g.theme}“ ruckelt selbst auf „niedrig“ (Ø ${g.avgFps} fps) – in den Einstellungen eine andere Bühne wählen.`
+          : `Bühne „${g.theme}“ ruckelt auf „${g.quality}“ (Ø ${g.avgFps} fps) – Qualität „niedrig“ einstellen (oder „Automatisch“).`,
+      );
+    else if (g.minFps < 15)
+      out.push(
+        `Bühne „${g.theme}“ (${g.quality}) läuft meist ${perfGrade(g.avgFps)}, hat aber Einbrüche bis ${g.minFps} fps – meist beim Songwechsel, wenn neue Figuren laden.`,
+      );
+  }
+  const mittel = solid.filter((g) => g.quality === "mittel");
+  if (mittel.length && mittel.every((g) => g.avgFps >= 45 && g.minFps >= 30))
+    out.push("Auf „mittel“ läuft alles sehr flüssig – „hoch“ ausprobieren (mehr Lichter, Live-Bildschirme schärfer).");
+  return out.length ? out : ["Alles im grünen Bereich – keine Änderung nötig."];
+}

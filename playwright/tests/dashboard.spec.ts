@@ -406,3 +406,27 @@ test("Startbildschirm: Rückblick auf den Abend nach der Musik", async ({ page }
   expect(uploaded!.length).toBeGreaterThan(20_000);
   if (process.env.RECAP_IMAGE_OUT) (await import("node:fs")).writeFileSync(process.env.RECAP_IMAGE_OUT, uploaded!);
 });
+
+test("Startbildschirm: Erinnerung an ein Konzert im Umkreis", async ({ page }) => {
+  const day = (n: number) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10);
+  const reminder = (n: number, city: string) => ({
+    key: `Wanda|${day(n)}|${city.toLowerCase()}`,
+    artistName: "Wanda",
+    date: day(n),
+    city,
+    venue: "Wiener Stadthalle",
+    distanceKm: 3,
+    reason: "folgst",
+  });
+  await page.addInitScript(
+    (list) => localStorage.setItem("ss_konzert_erinnerung", JSON.stringify(list)),
+    [reminder(-3, "Graz"), reminder(25, "Wien"), reminder(40, "Linz"), reminder(400, "Berlin")],
+  );
+  await page.goto("/?demo=gibtsnicht");
+  const line = page.getByTestId("concert-reminder");
+  // Vergangenes fällt weg, das nächste zuerst, ferne Termine (über 120 Tage) zählen nicht
+  await expect(line).toContainText("Demnächst live: Wanda");
+  await expect(line).toContainText("Wiener Stadthalle, Wien · in 25 Tagen");
+  await expect(line).toContainText("+1 weitere");
+  if (process.env.SHOT_OUT) await page.screenshot({ path: process.env.SHOT_OUT });
+});

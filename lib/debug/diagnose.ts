@@ -14,7 +14,9 @@ type Ctx = {
       lyrics?: { state?: string; provider?: string; detail?: string };
       show?: { state?: string; provider?: string; detail?: string };
       concerts?: { state?: string; detail?: string };
+      info?: { state?: string; detail?: string };
     };
+    info?: { photos?: Array<{ source?: string }> };
     concerts?: Array<{ distanceKm?: number }>;
     concertArea?: { name?: string; radiusKm?: number };
     show?: { motto?: string };
@@ -79,6 +81,7 @@ export function diagnose(ctx: Ctx): Finding[] {
     level: LYRICS_LEVEL[l?.state ?? ""] ?? "warnung",
   });
   out.push(showFinding(song.status?.show, !!song.show));
+  out.push(infoFinding(song));
   out.push(concertFinding(song));
   const mem = song.memory;
   out.push({
@@ -164,4 +167,31 @@ function concertFinding(song: NonNullable<Ctx["song"]>): Finding {
     st?.detail,
   ];
   return { label: "Konzerte", value: parts.filter(Boolean).join(" · "), level: st?.detail ? "warnung" : "ok" };
+}
+
+const SOURCE_NAME: Record<string, string> = { commons: "Wikipedia", theaudiodb: "TheAudioDB", flickr: "Flickr", demo: "Demo" };
+
+/** Infos und Fotos: wie viele Fotos aus welcher Quelle, welche Quelle ausgefallen ist (mit Abhilfe) */
+function infoFinding(song: NonNullable<Ctx["song"]>): Finding {
+  const st = song.status?.info;
+  if (!st || st.state === "idle" || st.state === "loading")
+    return { label: "Infos & Fotos", value: st?.state === "loading" ? "lädt …" : "noch nicht geladen", level: "info" };
+  const photos = song.info?.photos ?? [];
+  const bySource = new Map<string, number>();
+  for (const p of photos)
+    bySource.set(SOURCE_NAME[p.source ?? ""] ?? "andere", (bySource.get(SOURCE_NAME[p.source ?? ""] ?? "andere") ?? 0) + 1);
+  const counts = [...bySource].map(([k, n]) => `${k} ${n}`).join(", ");
+  const throttled = /\b429\b|ausgelastet/.test(st.detail ?? "");
+  const parts = [
+    st.state === "missing"
+      ? "nichts gefunden"
+      : `${photos.length} Foto${photos.length === 1 ? "" : "s"}${counts ? ` (${counts})` : ""}`,
+    st.detail,
+    throttled ? "Tipp: INFO_CONTACT (E-Mail) setzen – Wikimedia/MusicBrainz drosseln anonyme Server seltener" : null,
+  ];
+  return {
+    label: "Infos & Fotos",
+    value: parts.filter(Boolean).join(" · "),
+    level: st.detail ? "warnung" : st.state === "missing" ? "info" : "ok",
+  };
 }

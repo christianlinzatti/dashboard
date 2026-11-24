@@ -10,8 +10,22 @@ export const PROXIED_IMAGE_HOSTS = [
 /** Breiten, die der Bildoptimierer ausliefert – müssen in next.config.ts (deviceSizes/imageSizes) stehen */
 export const PROXY_WIDTHS = [128, 640, 1280] as const;
 
-/** Bild-URL für Anzeige und WebGL-Textur; Fremd-Hosts ohne CORS über /_next/image. */
+/**
+ * Standardgrößen der Wikimedia-Vorschaubilder: die liegen fertig im Cache (andere Breiten rechnet Wikimedia erst und
+ * drosselt sie eher).
+ */
+export const COMMONS_STEPS = [250, 330, 500, 960, 1280, 1920] as const;
+const COMMONS_THUMB = /^(https:\/\/upload\.wikimedia\.org\/wikipedia\/commons\/thumb\/.+\/)(\d+)px-([^/]+)$/;
+
+/** Bild-URL für Anzeige und WebGL-Textur; Fremd-Hosts ohne CORS über /_next/image, Wikimedia in passender Größe. */
 export function displayUrl(url: string, width: (typeof PROXY_WIDTHS)[number] = 1280): string {
+  const thumb = url.match(COMMONS_THUMB);
+  if (thumb) {
+    // nie größer als geliefert (das Original könnte kleiner sein)
+    const have = Number(thumb[2]);
+    const step = COMMONS_STEPS.find((w) => w >= width) ?? have;
+    return step < have ? `${thumb[1]}${step}px-${thumb[3]}` : url;
+  }
   try {
     const u = new URL(url);
     if (u.protocol === "https:" && PROXIED_IMAGE_HOSTS.includes(u.hostname)) {
@@ -66,4 +80,12 @@ export function diversify(ranked: Photo[]): Photo[] {
     return true;
   });
   return [...first, ...ranked.filter((p) => !first.includes(p))];
+}
+
+/**
+ * Breite fürs Foto auf der LED-Wand: auf kleinen Bildschirmen (Pi-Display bis 1366 px) und außer in „hoch“ reichen
+ * 640 px – die Wand ist dort kaum breiter, und das spart Speicher und Ladezeit. Sonst 1280 px.
+ */
+export function wallPhotoWidth(quality: "niedrig" | "mittel" | "hoch", screenWidth: number): (typeof PROXY_WIDTHS)[number] {
+  return quality === "hoch" || screenWidth > 1366 ? 1280 : 640;
 }

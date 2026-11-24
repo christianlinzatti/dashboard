@@ -23,6 +23,8 @@ export default defineConfig({
   use: {
     baseURL,
     trace: "off",
+    // Bild vom Moment des Fehlers (im Bericht und in test-results/, wird in der CI hochgeladen)
+    screenshot: "only-on-failure",
     locale: "de-DE",
     timezoneId: "Europe/Berlin",
     colorScheme: "dark",

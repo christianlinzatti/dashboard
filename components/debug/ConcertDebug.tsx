@@ -11,6 +11,7 @@ type Answer = {
   fresh: boolean;
   area: { name: string; radiusKm: number };
   providers: string[];
+  missing?: Array<{ id: string; hint: string }>;
   sources: SourceReport[];
   concerts: Concert[];
   raw: Array<{ artist: string; rows: RawRow[] }>;
@@ -109,6 +110,15 @@ export function ConcertDebug({ initialArtists }: { initialArtists: string[] }) {
             {data.fresh ? " · frisch abgefragt" : ""}
           </p>
 
+          {!!data.missing?.length && (
+            <ul className="space-y-0.5 text-xs text-amber-200/80" data-testid="concert-debug-missing">
+              {data.missing.map((m) => (
+                <li key={m.id}>
+                  <span className="font-mono">{m.id}</span>: {m.hint}
+                </li>
+              ))}
+            </ul>
+          )}
           <table className="w-full text-left text-xs" data-testid="concert-debug-sources">
             <thead className="text-white/50">
               <tr>

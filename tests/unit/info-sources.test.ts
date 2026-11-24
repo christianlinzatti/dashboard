@@ -274,12 +274,14 @@ describe("Info-Service mit allen Quellen", () => {
     const f = withWiki({ "wikidata.org": () => new Response("zu viele", { status: 429 }) });
     const info = (await lookupArtist("Coldplay", f.http))!;
     expect(info.partial).toBe(true);
+    expect(info.failed).toEqual([expect.stringMatching(/^Wikidata: .*429/)]);
     expect(info.photos).toHaveLength(6);
     expect(info.textSource).toBe("theaudiodb");
     const cache = memoryCache();
     const set = vi.spyOn(cache, "set");
-    await createInfoService({ cache, http: f.http })([{ id: "sp", name: "Coldplay" }]);
+    const res = await createInfoService({ cache, http: f.http })([{ id: "sp", name: "Coldplay" }]);
     expect(set).toHaveBeenCalledWith("info:v3:coldplay|sp", expect.anything(), CACHE_TTL.infoPartial);
+    expect(res.issues).toEqual([expect.stringMatching(/^Coldplay – Wikidata: .*429/)]);
     // alles ausgefallen: nicht als „gibt es nicht“ cachen
     const dead = withWiki({ "wikidata.org": () => new Response("", { status: 429 }), "theaudiodb.com": () => ok({}, 503) });
     const cache2 = memoryCache();
@@ -346,5 +348,29 @@ describe("Bild-Proxy", () => {
       coverOf([{ "#text": "https://lastfm.freetls.fastly.net/i/u/300x300/2a96cbd8b46e442fc41c2b86b821562f.png" }]),
     ).toBeUndefined();
     expect(coverOf([])).toBeUndefined();
+  });
+});
+
+describe("Fotos in passender Größe", () => {
+  const commons =
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Queen_A_Night_At_The_Opera.jpg/1280px-Queen_A_Night_At_The_Opera.jpg";
+  it("Wikimedia-Vorschaubilder in Standardgröße, nie größer als geliefert", async () => {
+    const { displayUrl } = await import("@/lib/info/photos");
+    expect(displayUrl(commons, 640)).toBe(commons.replace("/1280px-", "/960px-"));
+    expect(displayUrl(commons, 128)).toBe(commons.replace("/1280px-", "/250px-"));
+    expect(displayUrl(commons)).toBe(commons);
+    const small = commons.replace("/1280px-", "/800px-");
+    expect(displayUrl(small, 1280)).toBe(small);
+    // Original ohne Vorschau-Pfad bleibt unverändert
+    expect(displayUrl("https://upload.wikimedia.org/wikipedia/commons/a/a5/X.jpg", 640)).toBe(
+      "https://upload.wikimedia.org/wikipedia/commons/a/a5/X.jpg",
+    );
+  });
+  it("Wandfoto: 640 px auf dem Pi-Bildschirm, 1280 px in „hoch“ oder auf großen Bildschirmen", async () => {
+    const { wallPhotoWidth } = await import("@/lib/info/photos");
+    expect(wallPhotoWidth("mittel", 1280)).toBe(640);
+    expect(wallPhotoWidth("niedrig", 1024)).toBe(640);
+    expect(wallPhotoWidth("hoch", 1024)).toBe(1280);
+    expect(wallPhotoWidth("mittel", 1920)).toBe(1280);
   });
 });

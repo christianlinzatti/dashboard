@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parsePerfSample, perfGrade, perfMessage, summarizePerf } from "@/lib/live/perf-samples";
+import { parsePerfSample, perfGrade, perfMessage, summarizePerf, perfAdvice } from "@/lib/live/perf-samples";
 
 describe("Leistungsproben (Bildrate je Bühne)", () => {
   it("schreibt und liest eine Probe; ältere Proben ohne Mindestwert/Bühne bleiben lesbar", () => {
@@ -31,5 +31,27 @@ describe("Leistungsproben (Bildrate je Bühne)", () => {
       { theme: "jazz", quality: "mittel", samples: 1, avgFps: 45, minFps: 40, lastAt: 2 },
     ]);
     expect([perfGrade(30), perfGrade(22), perfGrade(12)]).toEqual(["flüssig", "knapp", "ruckelt"]);
+  });
+});
+
+describe("Empfehlungen aus dem Bildratenverlauf", () => {
+  const g = (theme: string, quality: string, avgFps: number, minFps: number, samples = 3) => ({
+    theme,
+    quality,
+    avgFps,
+    minFps,
+    samples,
+    lastAt: 0,
+  });
+  it("ruckelnde Bühne: Stufe runter bzw. andere Bühne; Einbrüche; sehr flüssig → hoch probieren", () => {
+    expect(perfAdvice([])[0]).toMatch(/zu wenig Daten/);
+    expect(perfAdvice([g("club", "mittel", 17, 9, 1)])[0]).toMatch(/zu wenig Daten/); // nur eine Probe
+    expect(perfAdvice([g("club", "mittel", 17, 9)])).toEqual([expect.stringMatching(/„club“ ruckelt auf „mittel“.*„niedrig“/)]);
+    expect(perfAdvice([g("stadion", "niedrig", 15, 9)])[0]).toMatch(/selbst auf „niedrig“.*andere Bühne/);
+    expect(perfAdvice([g("jazz", "mittel", 29, 12)])[0]).toMatch(/Einbrüche bis 12 fps/);
+    expect(perfAdvice([g("jazz", "mittel", 55, 40), g("club", "mittel", 50, 33)])).toEqual([
+      expect.stringMatching(/„hoch“ ausprobieren/),
+    ]);
+    expect(perfAdvice([g("jazz", "mittel", 31, 25)])).toEqual(["Alles im grünen Bereich – keine Änderung nötig."]);
   });
 });

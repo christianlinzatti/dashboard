@@ -22,6 +22,18 @@ export function concertProviders(env: Record<string, string | undefined> = proce
   ];
 }
 
+/** Optionale Quellen ohne Zugangsdaten – für /debug („so käme mehr dazu“) */
+export function missingConcertSources(
+  env: Record<string, string | undefined> = process.env,
+): Array<{ id: string; hint: string }> {
+  return [
+    ...(env.TICKETMASTER_API_KEY
+      ? []
+      : [{ id: "ticketmaster", hint: "TICKETMASTER_API_KEY fehlt – kostenloser Schlüssel unter developer.ticketmaster.com" }]),
+    ...(env.SETLISTFM_API_KEY ? [] : [{ id: "setlist.fm", hint: "SETLISTFM_API_KEY fehlt – ohne ihn kein „Zuletzt live“" }]),
+  ];
+}
+
 export type ConcertArea = { name: string; lat: number; lon: number; radiusKm: number };
 
 /** Wie eine Quelle für einen Künstler geantwortet hat (für /debug und das Kiosk-Protokoll) */

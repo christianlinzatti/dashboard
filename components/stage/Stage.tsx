@@ -37,7 +37,7 @@ import { PhotoWall } from "./PhotoWall";
 import { chorusKeyword, forcedWallPattern, wallPattern } from "@/lib/stage/wall";
 import { LogoWall } from "./LogoWall";
 import { wallPhotoAt, wallPhotoCredit } from "@/lib/info/display";
-import { displayUrl } from "@/lib/info/photos";
+import { displayUrl, wallPhotoWidth } from "@/lib/info/photos";
 import { Fog, StageSet, TurntableMarks, WallFrame, wallScale } from "./StageSet";
 import { Crowd, CrowdFlags } from "./crowd";
 import { Effects } from "./effects";
@@ -89,6 +89,9 @@ function Backdrop({ song }: { song: SongStatic | null }) {
  * Robust: ohne WebGL oder bei Fehlern in der Szene erscheint ein 2D-Hintergrund; nach einem
  * Verlust des Grafikkontexts (z. B. GPU-Reset auf dem Pi) wird die Szene neu aufgebaut.
  */
+/** Bildschirmbreite in Gerätepixeln (für die Größe des Wandfotos) */
+const screenWidth = () => (typeof window === "undefined" ? 1280 : window.innerWidth * Math.min(2, window.devicePixelRatio || 1));
+
 export function Stage({
   forceQuality,
   forceTheme,
@@ -340,7 +343,7 @@ function Scene({
                 <ErrorBoundary key={photoUrl} fallback={null} label="Wandfoto">
                   <PhotoWall
                     key={photoUrl}
-                    url={displayUrl(photoUrl)}
+                    url={displayUrl(photoUrl, wallPhotoWidth(quality, screenWidth()))}
                     dark={song.album.palette.dark}
                     accent={song.album.palette.accent}
                     lightsRef={lights}

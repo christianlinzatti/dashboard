@@ -25,6 +25,8 @@ export type ArtistInfo = {
   photos: Array<Omit<Photo, "artistId">>;
   /** eine Quelle (Wikipedia/Wikidata, TheAudioDB, Flickr, Commons) ist ausgefallen → nur kurz cachen */
   partial?: boolean;
+  /** welche („Wikipedia: de.wikipedia.org ausgelastet (429)“) – für die Kurzdiagnose */
+  failed?: string[];
 };
 
 export type SourceKeys = {
@@ -61,31 +63,33 @@ export async function lookupArtist(
   const mb = await findArtist(name, http, signal, spotifyId);
   if (!mb) return null;
   let partial = false;
-  const optional = async <T>(p: Promise<T>, fallback: T): Promise<T> => {
+  const failed: string[] = [];
+  const optional = async <T>(p: Promise<T>, fallback: T, label: string): Promise<T> => {
     try {
       return await p;
     } catch (e) {
       if ((e as Error).name === "AbortError") throw e;
       partial = true;
+      failed.push(`${label}: ${(e as Error).message.slice(0, 120)}`);
       return fallback;
     }
   };
 
   // Wikidata/Wikipedia optional: drosselt Wikimedia (429), bleiben TheAudioDB-Fotos und -Text trotzdem sichtbar
   const wikiPart = (async () => {
-    const wd: WikidataInfo = mb.wikidataId ? await optional(wikidataEntity(mb.wikidataId, http, signal), {}) : {};
+    const wd: WikidataInfo = mb.wikidataId ? await optional(wikidataEntity(mb.wikidataId, http, signal), {}, "Wikidata") : {};
     const summary =
-      (wd.dewiki ? await optional(wikipediaSummary("de", wd.dewiki, http, signal), null) : null) ??
-      (wd.enwiki ? await optional(wikipediaSummary("en", wd.enwiki, http, signal), null) : null);
+      (wd.dewiki ? await optional(wikipediaSummary("de", wd.dewiki, http, signal), null, "Wikipedia") : null) ??
+      (wd.enwiki ? await optional(wikipediaSummary("en", wd.enwiki, http, signal), null, "Wikipedia") : null);
     const file = mb.imageFile ?? wd.image;
-    const photo = file ? await optional(commonsImage(file, http, signal), null) : null;
+    const photo = file ? await optional(commonsImage(file, http, signal), null, "Commons") : null;
     return { summary, photo };
   })();
   const audioKey = keys.audioDb === undefined ? AUDIODB_TEST_KEY : keys.audioDb;
   const [{ summary, photo }, adb, flickr] = await Promise.all([
     wikiPart,
-    audioKey ? optional(audioDbArtist({ mbid: mb.mbid, name: mb.name }, http, audioKey, signal), null) : null,
-    keys.flickr ? optional(flickrPhotos(mb.name, keys.flickr, http, signal), []) : [],
+    audioKey ? optional(audioDbArtist({ mbid: mb.mbid, name: mb.name }, http, audioKey, signal), null, "TheAudioDB") : null,
+    keys.flickr ? optional(flickrPhotos(mb.name, keys.flickr, http, signal), [], "Flickr") : [],
   ]);
 
   const photos: Array<Omit<Photo, "artistId">> = [
@@ -97,7 +101,7 @@ export async function lookupArtist(
     summary ?? (adb?.bioDe ? { text: adb.bioDe, url: `https://musicbrainz.org/artist/${mb.mbid}`, lang: "de" as const } : null);
   // nichts gefunden, weil Quellen ausgefallen sind: nicht als „gibt es nicht“ cachen, beim nächsten Song neu versuchen
   if (!text && !photos.length) {
-    if (partial) throw new SourceBusyError(`Quellen für ${mb.name} ausgefallen`);
+    if (partial) throw new SourceBusyError(`Quellen für ${mb.name} ausgefallen (${failed.join("; ")})`);
     return null;
   }
   const facts = [...new Set([...factsFor(mb), ...(adb?.facts ?? [])])].slice(0, 4);
@@ -110,7 +114,7 @@ export async function lookupArtist(
     facts,
     ...(adb?.logo ? { logo: adb.logo } : {}),
     photos,
-    ...(partial ? { partial: true } : {}),
+    ...(partial ? { partial: true, failed } : {}),
   };
 }
 
@@ -125,9 +129,10 @@ export function createInfoService(deps: {
     artists: Array<{ id: string; name: string }>,
     signal?: AbortSignal,
     song?: { title: string },
-  ): Promise<{ info: Info; complete: boolean }> {
+  ): Promise<{ info: Info; complete: boolean; issues: string[] }> {
     const info: Info = { artists: {}, photos: [] };
     let complete = true;
+    const issues = new Set<string>();
     for (const a of artists.slice(0, 5)) {
       // v3: Künstler über die Spotify-ID (gleichnamige Künstler werden nicht mehr verwechselt oder verworfen)
       const key = `info:v3:${normalizeLine(a.name)}|${a.id}`;
@@ -145,12 +150,14 @@ export function createInfoService(deps: {
         } catch (e) {
           // Überlastung/Netzfehler: nicht cachen, beim nächsten Song erneut versuchen
           complete = false;
+          issues.add(`${a.name}: ${(e as Error).message.slice(0, 200)}`);
           if (!(e instanceof SourceBusyError)) console.warn(`Info für ${a.name} fehlgeschlagen:`, (e as Error).message);
           continue;
         }
       }
       const v = hit.value;
       if (!v) continue;
+      for (const f of v.failed ?? []) issues.add(`${v.name} – ${f}`);
       info.artists[a.id] = {
         name: v.name,
         summary: v.summary,
@@ -202,7 +209,7 @@ export function createInfoService(deps: {
       }
       if (hit?.value) info.song = { ...(info.song ?? { trivia: [] }), wiki: hit.value };
     }
-    return { info, complete };
+    return { info, complete, issues: [...issues] };
   };
 }
 
