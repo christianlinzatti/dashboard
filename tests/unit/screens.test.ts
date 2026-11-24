@@ -33,3 +33,19 @@ describe("Bildregie der Live-Bildschirme", () => {
     for (let i = 0; i < 12; i++) expect(liveShotAt(plan, chorus.startMs + i * slot + 10, undefined).name).not.toBe("saenger");
   });
 });
+
+describe("Live-Bildschirme drosseln", () => {
+  it("unter 26 fps halb so oft, unter 20 fps ein Viertel; zurück erst mit Puffer; ohne Messwert unverändert", async () => {
+    const { screenEvery, screenThrottle } = await import("@/lib/stage/screens");
+    expect(screenThrottle(40, 0)).toBe(0);
+    expect(screenThrottle(25, 0)).toBe(1);
+    expect(screenThrottle(19, 0)).toBe(2);
+    // Puffer: bei 27 fps bleibt die Drosselung (Schwelle 26 + 4), erst ab 30 fps wieder normal
+    expect(screenThrottle(27, 1)).toBe(1);
+    expect(screenThrottle(30, 1)).toBe(0);
+    expect(screenThrottle(22, 2)).toBe(2);
+    expect(screenThrottle(24, 2)).toBe(1);
+    expect(screenThrottle(null, 2)).toBe(2);
+    expect([screenEvery(2, 0), screenEvery(2, 1), screenEvery(2, 2)]).toEqual([2, 4, 8]);
+  });
+});

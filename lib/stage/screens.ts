@@ -53,3 +53,28 @@ export function liveShotAt(c: Choreography, t: number, focus: Vec2 | undefined):
       return { name, pos: [sway[0] * 2, 3.2 + sway[1], 12.5], target: [0, 1.2, 0], fov: 26 };
   }
 }
+
+/**
+ * Live-Bildschirme bei knapper Bildrate drosseln, bevor die ganze Qualitätsstufe sinkt: unter 26 fps nur noch jedes
+ * zweite, unter 20 fps jedes vierte Mal filmen (bezogen auf die Grundrate der Stufe). Zurück erst 4 fps über der
+ * Schwelle, damit es an der Grenze nicht hin- und herspringt. Ohne Messwert: unverändert.
+ */
+export const SCREEN_THROTTLE = [
+  { below: 26, factor: 2 },
+  { below: 20, factor: 4 },
+] as const;
+const HYSTERESIS = 4;
+
+export function screenThrottle(fps: number | null, level: number): number {
+  if (fps === null) return level;
+  let next = 0;
+  SCREEN_THROTTLE.forEach((t, i) => {
+    // im aktuellen oder höheren Level gilt die Schwelle mit Puffer nach oben
+    const limit = level > i ? t.below + HYSTERESIS : t.below;
+    if (fps < limit) next = i + 1;
+  });
+  return next;
+}
+
+/** Jedes wievielte Bild filmen: Grundrate der Stufe mal Drosselung */
+export const screenEvery = (base: number, level: number) => base * (level ? SCREEN_THROTTLE[level - 1]!.factor : 1);

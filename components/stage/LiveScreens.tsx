@@ -13,7 +13,8 @@ import {
   type WebGLRenderTarget,
 } from "three";
 import type { Choreography } from "@/lib/dance/plan";
-import { liveShotAt, SCREEN_ASPECT, type LiveShot } from "@/lib/stage/screens";
+import { liveShotAt, SCREEN_ASPECT, screenEvery, screenThrottle, type LiveShot } from "@/lib/stage/screens";
+import { perf } from "@/lib/stage/perf";
 import { songContext } from "@/lib/song-context/store";
 import type { LightFrame } from "@/lib/stage/lights";
 import { TRUSS_Z } from "./layout";
@@ -87,6 +88,7 @@ export function LiveScreens({
   const group = useRef<Group>(null);
   const mat = useRef<ShaderMaterial>(null);
   const count = useRef(0);
+  const throttle = useRef(0);
   const uniforms = useMemo(
     () => ({ uFeed: { value: fbo.texture }, uLevel: { value: 1 }, uTint: { value: new Color(accent) } }),
     [fbo, accent],
@@ -102,8 +104,10 @@ export function LiveScreens({
     // Erst filmen, wenn die Regie (Director) den Frame gefüllt hat – sonst hinge bei angehaltener Szene (es werden
     // nur wenige Bilder gerendert) ein Bild vom Songanfang auf den Schirmen, je nach Reihenfolge der Komponenten.
     if (!f.focus) return;
+    // knappe Bildrate: seltener filmen (Stufe aus der gemessenen Bildrate, alle 2 s neu)
+    throttle.current = screenThrottle(perf.getState().fps, throttle.current);
     // angehalten: jedes Bild filmen (es gibt nur wenige), damit das letzte sicher zum Stand passt
-    if (count.current++ % every !== 0 && !songContext.getState().frozen) return;
+    if (count.current++ % screenEvery(every, throttle.current) !== 0 && !songContext.getState().frozen) return;
     const focus = f.positions[f.focus];
     const shot = liveShotAt(choreo, f.t, focus);
     film(gl, scene, cam, fbo, g, shot);
