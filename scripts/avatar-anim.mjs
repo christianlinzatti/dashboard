@@ -107,18 +107,18 @@ function angleDeg(a, b) {
 /**
  * Vergleicht alle Spuren von `before` mit `after` in jedem Schlüsselbild. Liefert die größten Abweichungen:
  * Drehung in Grad, Position/Größe absolut. Fehlende Spur in `after` = Ruhehaltung des Knotens.
+ * `after` darf auch eine Liste sein (gemeinsame Tanzdatei + Figur): Spuren aus allen, Ruhehaltung aus der letzten.
  */
 export function comparePoses(before, after) {
+  const docs = Array.isArray(after) ? after : [after];
   const index = new Map();
-  for (const anim of after.getRoot().listAnimations())
-    for (const ch of anim.listChannels())
-      index.set(`${anim.getName()}|${ch.getTargetNode()?.getName()}|${ch.getTargetPath()}`, ch);
-  const nodes = new Map(
-    after
-      .getRoot()
-      .listNodes()
-      .map((n) => [n.getName(), n]),
-  );
+  const nodes = new Map();
+  for (const doc of docs) {
+    for (const anim of doc.getRoot().listAnimations())
+      for (const ch of anim.listChannels())
+        index.set(`${anim.getName()}|${ch.getTargetNode()?.getName()}|${ch.getTargetPath()}`, ch);
+    for (const n of doc.getRoot().listNodes()) nodes.set(n.getName(), n);
+  }
   const worst = { rotationDeg: 0, translation: 0, scale: 0, where: "" };
   for (const anim of before.getRoot().listAnimations())
     for (const ch of anim.listChannels()) {
@@ -149,4 +149,58 @@ export function comparePoses(before, after) {
       }
     }
   return worst;
+}
+
+// ———————————————————————————————————————— gemeinsame Tanzdatei ————————————————————————————————————————
+
+/** Die 39 Knochen, die alle Figuren gleich haben (Gesicht, Haarknoten, Antenne usw. gehören zur Figur) */
+export const SHARED_BONE =
+  /^(Hips|Spine|Chest|Neck|Head|(Left|Right)(Shoulder|Arm|ForeArm|Hand|UpLeg|Leg|Foot|(Index|Middle|Ring|Little|Thumb)[12]))$/;
+
+const isShared = (ch) => SHARED_BONE.test(ch.getTargetNode()?.getName() ?? "");
+
+/**
+ * Fingerabdruck der Skelett-Spuren (Clip, Knochen, Pfad, Interpolation, Zeiten, Werte): Figuren mit gleichem Abdruck
+ * tanzen exakt gleich und können sich eine Tanzdatei teilen.
+ */
+export function sharedSignature(doc, createHash) {
+  const h = createHash("sha256");
+  const rows = [];
+  for (const anim of doc.getRoot().listAnimations())
+    for (const ch of anim.listChannels().filter(isShared)) {
+      const s = ch.getSampler();
+      rows.push([`${anim.getName()}|${ch.getTargetNode().getName()}|${ch.getTargetPath()}|${s.getInterpolation()}`, s]);
+    }
+  rows.sort((a, b) => (a[0] < b[0] ? -1 : 1));
+  for (const [k, s] of rows) {
+    h.update(k);
+    h.update(Buffer.from(s.getInput().getArray().buffer));
+    h.update(Buffer.from(s.getOutput().getArray().buffer));
+  }
+  return h.digest("hex").slice(0, 16);
+}
+
+/**
+ * Teilt die Tänze: `shared` (Kopie) behält nur die Skelett-Spuren und kein Modell, `doc` (die Figur) nur ihre eigenen
+ * Spuren (Gesicht …). Clips, die dadurch leer werden, fallen aus der Figur weg. Gibt die Zahl verschobener Spuren zurück.
+ */
+export function splitSharedClips(doc, shared) {
+  let moved = 0;
+  for (const anim of doc.getRoot().listAnimations()) {
+    for (const ch of anim.listChannels()) if (isShared(ch)) (ch.dispose(), moved++);
+    const used = new Set(anim.listChannels().map((c) => c.getSampler()));
+    for (const smp of anim.listSamplers()) if (!used.has(smp)) smp.dispose();
+    if (!anim.listChannels().length) anim.dispose();
+  }
+  for (const anim of shared.getRoot().listAnimations()) {
+    for (const ch of anim.listChannels()) if (!isShared(ch)) ch.dispose();
+    const used = new Set(anim.listChannels().map((c) => c.getSampler()));
+    for (const smp of anim.listSamplers()) if (!used.has(smp)) smp.dispose();
+    if (!anim.listChannels().length) anim.dispose();
+  }
+  // Tanzdatei: nur Knoten und Spuren – Modell, Haut und Materialien weg (aufräumen erledigt prune danach)
+  for (const node of shared.getRoot().listNodes()) (node.setMesh(null), node.setSkin(null));
+  for (const m of shared.getRoot().listMeshes()) m.dispose();
+  for (const s of shared.getRoot().listSkins()) s.dispose();
+  return moved;
 }

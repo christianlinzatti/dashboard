@@ -13,8 +13,9 @@ const root = path.resolve(import.meta.dirname, "..");
  * Stand des Optimierungsverfahrens (scripts/optimize-avatars.mjs). Erhöhen, wenn sich die ausgelieferten Dateien
  * ändern, obwohl die Quellen gleich bleiben: neue Cache-Adressen (Browser holen die neue Fassung) und neu optimieren.
  * 2: stillstehende Tanz-Spuren entfernt, Drehungen als Int16
+ * 3: Skelett-Tänze in gemeinsamen Tanzdateien (public/avatars/tanz-*.glb), Figur verweist darauf
  */
-export const OPTIMIZE_VERSION = 2;
+export const OPTIMIZE_VERSION = 3;
 
 /** Manifest → { clipSets: string[][], avatars: [{ id, v, c }] } (c = Index der Clip-Liste) */
 export function compactCatalog(manifest) {

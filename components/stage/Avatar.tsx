@@ -19,6 +19,7 @@ import {
 } from "three";
 import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js";
 import { avatarById } from "@/lib/avatars/catalog";
+import { mergeClips } from "@/lib/avatars/merge-clips";
 import { materialRole, outfitById } from "@/lib/avatars/outfits";
 import { IDLE_CLIP } from "@/lib/dance/clips";
 import { fallbackFor } from "@/lib/dance/mixamo";
@@ -179,7 +180,11 @@ export function Avatar(props: AvatarProps) {
 }
 
 function AvatarModel({ url, member, song, choreo, frameRef, band }: AvatarProps & { url: string }) {
-  const { scene, animations } = useGLTF(url);
+  const { scene, animations: own } = useGLTF(url);
+  // Skelett-Tänze liegen in einer gemeinsamen Datei (die Figur nennt sie); ohne Verweis: alles in der Figur
+  const tanz = typeof scene.userData.tanz === "string" ? `/avatars/${scene.userData.tanz}` : null;
+  const shared = useGLTF(tanz ?? url);
+  const animations = useMemo(() => (tanz ? mergeClips(shared.animations, own) : own), [tanz, shared, own]);
   const group = useRef<Group>(null);
   const ledsTouched = useRef(false);
 
