@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { cardShownAt } from "@/lib/info/display";
 import { planLyricsEffects, planLyricsModes, type LyricsEffect, type LyricsMode } from "@/lib/lyrics/director";
-import { usePreviousTheme } from "@/lib/stage/setlist";
+import { usePreviousTheme, useTourTheme } from "@/lib/stage/setlist";
 import { themeFor, type ThemeId } from "@/lib/stage/themes";
 import { secondLineFor } from "@/lib/lyrics/second-line";
 import { useSettings } from "@/lib/settings";
@@ -48,7 +48,8 @@ export function LyricsLayer({
   // Schrift-Effekt je Abschnitt; die Bühne gibt die Richtung vor (Jazz ruhig, Synthwave Neon)
   const stageChoice = useSettings((s) => s.stage);
   const prevTheme = usePreviousTheme(song?.trackKey);
-  const themeId = forceTheme ?? (song ? themeFor(song, stageChoice, prevTheme) : "club");
+  const tour = useTourTheme(song?.artists[0]?.spotifyId, song?.trackKey);
+  const themeId = forceTheme ?? (song ? themeFor(song, stageChoice, prevTheme, tour) : "club");
   const effects = useMemo(
     () => (song ? planLyricsEffects(song, themeId === "jazz" ? "warm" : themeId === "synthwave" ? "neon" : "normal") : []),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- nur bei inhaltlicher Änderung neu planen

@@ -243,8 +243,11 @@ export function themeFor(
   song: Pick<SongStatic, "trackKey" | "music" | "artists"> & Partial<Pick<SongStatic, "show" | "variant">>,
   choice: ThemeChoice = "auto",
   previous?: ThemeId,
+  /** Tour-Look: Bühne, auf der derselbe Künstler heute schon stand – er kommt wieder dorthin */
+  tour?: ThemeId,
 ): ThemeId {
   if (choice !== "auto") return choice;
+  if (tour) return tour;
   const id = baseTheme(song);
   const alt = RELATED[id];
   return id === previous && alt.length ? alt[hash(`${song.trackKey}:setlist`) % alt.length]! : id;

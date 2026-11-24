@@ -10,7 +10,13 @@ import type { Mood } from "@/lib/show/brief";
  * (weich) die Tänze der letzten beiden. Nur im Speicher: ein Neuladen beginnt einen neuen Abend
  * (und Demos/Tests bleiben reproduzierbar).
  */
-export type PlayedSong = { trackKey: string; theme?: ThemeId; clips?: string[] } & EveningEntry;
+export type PlayedSong = {
+  trackKey: string;
+  theme?: ThemeId;
+  clips?: string[];
+  /** Lead-Künstler (Spotify-ID) – für den Tour-Look */
+  artistId?: string;
+} & EveningEntry;
 
 const KEEP = 6;
 /** Tänze der letzten so vielen Songs werden seltener gewählt */
@@ -65,6 +71,23 @@ export function recentClipsKey(played: readonly PlayedSong[], trackKey: string |
   ]
     .sort()
     .join(",");
+}
+
+/**
+ * Tour-Look: Bühne, auf der derselbe Lead-Künstler an diesem Abend zuletzt stand. Kommt er wieder, steht er auf
+ * derselben Bühne – wie eine Tour mit festem Bühnenbild.
+ */
+export function tourTheme(
+  played: readonly PlayedSong[],
+  artistId: string | undefined,
+  trackKey: string | undefined,
+): ThemeId | undefined {
+  if (!artistId) return undefined;
+  return before(played, trackKey).findLast((p) => p.artistId === artistId && p.theme)?.theme;
+}
+
+export function useTourTheme(artistId: string | undefined, trackKey: string | undefined) {
+  return useStore(setlistStore, (s) => tourTheme(s.played, artistId, trackKey));
 }
 
 export function usePreviousTheme(trackKey: string | undefined) {

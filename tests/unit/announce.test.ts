@@ -37,3 +37,32 @@ describe("Ansage des Sängers", () => {
     expect(spokenTitle("(Nur Klammer)")).toBe("(Nur Klammer)");
   });
 });
+
+describe("Tour-Look", () => {
+  it("Banner: Tourname, sonst Live in Heimatort, sonst Live", async () => {
+    const { tourLine } = await import("@/lib/show/announce");
+    const artists = [{ spotifyId: "w", name: "Wanda" }] as never;
+    expect(tourLine({ artists, setlists: { w: { date: "2026-10-01", tour: "Ende nie Tour", songs: [] } } })).toBe(
+      "Wanda · Ende nie Tour",
+    );
+    expect(tourLine({ artists, concertArea: { name: "Wien", radiusKm: 200 } })).toBe("Wanda · Live in Wien");
+    expect(tourLine({ artists })).toBe("Wanda · Live");
+    expect(tourLine({ artists: [] })).toBe("Live");
+  });
+
+  it("derselbe Künstler kommt am Abend auf dieselbe Bühne zurück", async () => {
+    const { tourTheme } = await import("@/lib/stage/setlist");
+    const { themeFor } = await import("@/lib/stage/themes");
+    const { neonlicht } = await import("@/lib/song-context/fixtures/neonlicht");
+    const played = [
+      { trackKey: "a", theme: "strand" as const, artistId: "w" },
+      { trackKey: "b", theme: "club" as const, artistId: "x" },
+      { trackKey: "c", theme: "festival" as const, artistId: "w" },
+    ];
+    expect(tourTheme(played, "w", "neu")).toBe("festival"); // zuletzt
+    expect(tourTheme(played, "w", "c")).toBe("strand"); // der Song selbst zählt nicht
+    expect(tourTheme(played, "y", "neu")).toBeUndefined();
+    expect(themeFor(neonlicht, "auto", "club", "festival")).toBe("festival");
+    expect(themeFor(neonlicht, "jazz", "club", "festival")).toBe("jazz"); // feste Wahl geht vor
+  });
+});

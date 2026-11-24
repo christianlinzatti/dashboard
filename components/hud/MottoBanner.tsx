@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { tourLine } from "@/lib/show/announce";
 import { mottoFor } from "@/lib/show/motto";
 import { useSongContext } from "@/lib/song-context/store";
 
@@ -13,6 +14,7 @@ export function MottoBanner() {
   const song = useSongContext((s) => s.song);
   const visible = useSongContext((s) => s.positionMs >= SHOW_FROM_MS && s.positionMs < SHOW_UNTIL_MS);
   const motto = useMemo(() => (song ? mottoFor(song) : ""), [song]);
+  const tour = useMemo(() => (song ? tourLine(song) : ""), [song]);
   if (!song || !motto) return null;
   return (
     <div
@@ -23,7 +25,13 @@ export function MottoBanner() {
       aria-live="polite"
     >
       <div className="max-w-[80%] text-center">
-        <div className="text-[clamp(10px,1.6vmin,16px)] font-semibold uppercase tracking-[0.4em] text-white/60">Motto</div>
+        {/* Tour-Banner: Künstler und Tour bzw. „Live in <Heimatort>“ */}
+        <div
+          className="text-[clamp(10px,1.6vmin,16px)] font-semibold uppercase tracking-[0.4em] text-white/60"
+          data-testid="tour-line"
+        >
+          {tour}
+        </div>
         <div
           className="mt-[0.6vmin] text-balance text-[clamp(18px,3.6vmin,44px)] font-black leading-tight"
           style={{ color: "var(--c-light, #fff)", textShadow: "0 0 0.5em var(--c-accent, #ff4fd8), 0 2px 12px rgb(0 0 0 / 0.7)" }}

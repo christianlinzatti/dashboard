@@ -18,7 +18,7 @@ import { Band } from "./Band";
 import { planBand } from "@/lib/stage/band";
 import { signTexts } from "@/lib/stage/fan-signs";
 import { avatars } from "@/lib/avatars/catalog";
-import { setlistStore, useEveningPhase, usePreviousTheme, useRecentClipsKey } from "@/lib/stage/setlist";
+import { setlistStore, useEveningPhase, usePreviousTheme, useRecentClipsKey, useTourTheme } from "@/lib/stage/setlist";
 import { hasBlinders, THEMES, themedPalette, themeFor, type Theme, type ThemeId } from "@/lib/stage/themes";
 import { fpsFrom, perf } from "@/lib/stage/perf";
 import { ErrorBoundary } from "../ErrorBoundary";
@@ -142,7 +142,8 @@ function Scene({
   // Gedächtnis des Abends: Bühne des vorigen Songs meiden, Tänze der letzten Songs seltener
   const prevTheme = usePreviousTheme(raw?.trackKey);
   const recentKey = useRecentClipsKey(raw?.trackKey);
-  const theme: Theme | null = raw ? THEMES[forceTheme ?? themeFor(raw, themeChoice, prevTheme)] : null;
+  const tour = useTourTheme(raw?.artists[0]?.spotifyId, raw?.trackKey);
+  const theme: Theme | null = raw ? THEMES[forceTheme ?? themeFor(raw, themeChoice, prevTheme, tour)] : null;
   const song = useMemo(
     () => (raw && theme?.tint ? { ...raw, album: { ...raw.album, palette: themedPalette(raw.album.palette, theme) } } : raw),
     [raw, theme],
@@ -171,7 +172,8 @@ function Scene({
   useEffect(() => {
     if (!choreo || !theme) return;
     const clips = [...new Set(choreo.phrases.flatMap((p) => Object.values(p.moves).map((m) => m.clip)))];
-    setlistStore.getState().record({ trackKey: choreo.trackKey, theme: theme.id, clips });
+    setlistStore.getState().record({ trackKey: choreo.trackKey, theme: theme.id, clips, artistId: raw?.artists[0]?.spotifyId });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Künstler gehört zum Song (choreo)
   }, [choreo, theme]);
   // Durchatmen nach mehreren wilden Songs: das Publikum holt die Feuerzeuge raus
   const shown = useMemo(

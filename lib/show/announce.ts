@@ -1,4 +1,5 @@
 import { hash } from "@/lib/avatars/casting";
+import type { SongStatic } from "@/lib/song-context/schema";
 import type { EveningPhase } from "./evening";
 
 /**
@@ -67,4 +68,16 @@ export function announcementFor(i: AnnounceInput): string {
   const pool = i.city ? lines.mitStadt : lines.ohne;
   const line = pool[hash(`${i.trackKey}:ansage`) % pool.length]!;
   return line.replaceAll("{t}", spokenTitle(i.title)).replaceAll("{s}", i.city ?? "");
+}
+
+/**
+ * Tour-Banner über dem Motto: „Wanda · Tourname“ (setlist.fm kennt die aktuelle Tour), sonst „Wanda · Live in Wien“
+ * (Heimatort) bzw. „Wanda · Live“.
+ */
+export function tourLine(song: Pick<SongStatic, "artists"> & Partial<Pick<SongStatic, "setlists" | "concertArea">>): string {
+  const lead = song.artists[0];
+  if (!lead) return "Live";
+  const tour = song.setlists?.[lead.spotifyId]?.tour?.trim();
+  const city = song.concertArea?.name;
+  return `${lead.name} · ${tour && tour.length <= 40 ? tour : city ? `Live in ${city}` : "Live"}`;
 }
