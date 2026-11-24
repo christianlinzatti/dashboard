@@ -22,6 +22,10 @@ import type { LightFrame } from "@/lib/stage/lights";
 import type { Theme } from "@/lib/stage/themes";
 import type { Frame } from "../types";
 import { BASE_Y, MAX, MOTION, personGeometry } from "./shared";
+import { FanSigns } from "./FanSigns";
+
+/** so viele Fans halten höchstens ein Schild hoch */
+const SIGN_HOLDERS_MAX = 12;
 
 /**
  * Publikum vor der Bühne: Silhouetten (ein Draw-Call, Bewegung im Vertex-Shader) mit Handylichtern und
@@ -35,7 +39,10 @@ export function Crowd({
   accent,
   frameRef,
   lightsRef,
+  signs = [],
 }: {
+  /** Texte der Fan-Schilder (leer: keine) */
+  signs?: string[];
   count: number;
   choreo: Choreography;
   theme: Theme;
@@ -49,7 +56,7 @@ export function Crowd({
   const people = useRef<ShaderMaterial>(null);
   const lights = useRef<ShaderMaterial>(null);
 
-  const { bodies, points } = useMemo(() => {
+  const { bodies, points, holders } = useMemo(() => {
     const spots = crowdSpots(MAX, rng("publikum").next);
     const spot = new Float32Array(MAX * 3);
     const rand = new Float32Array(MAX * 4);
@@ -82,8 +89,26 @@ export function Crowd({
         1,
       ),
     );
-    return { bodies, points };
+    // Schilder-Träger: vordere Reihen (nicht ganz am Rand), feste Auswahl
+    const holderIdx: number[] = [];
+    for (let i = 0; i < MAX && holderIdx.length < SIGN_HOLDERS_MAX; i++) {
+      const [x, z] = [spot[i * 3]!, spot[i * 3 + 1]!];
+      const r = Math.hypot(x, z);
+      if (r > 5.4 && r < 9.5 && Math.abs(x) < 6) holderIdx.push(i);
+    }
+    const holders = {
+      spot: Float32Array.from(holderIdx.flatMap((i) => [...spot.subarray(i * 3, i * 3 + 3)])),
+      rand: Float32Array.from(holderIdx.flatMap((i) => [...rand.subarray(i * 4, i * 4 + 4)])),
+      idx: holderIdx,
+    };
+    return { bodies, points, holders };
   }, []);
+  // nur Träger, die in dieser Qualitätsstufe auch im Publikum stehen; weniger bei kleinem Publikum
+  const signHolders = useMemo(() => {
+    const visible = holders.idx.filter((i) => i < n).length;
+    const count = Math.min(visible, n >= 300 ? SIGN_HOLDERS_MAX : 6);
+    return { spot: holders.spot, rand: holders.rand, count };
+  }, [holders, n]);
   // Anzahl je Qualitätsstufe/Bühne: die Plätze sind zufällig sortiert → jeder Anfangsteil ist gleichmäßig verteilt
   const bodyMesh = useRef<Mesh>(null);
   const lightPoints = useRef<Points>(null);
@@ -271,6 +296,7 @@ export function Crowd({
           ]}
         />
       </mesh>
+      {signs.length > 0 && <FanSigns texts={signs} accent={accent} holders={signHolders} uniforms={peopleUniforms} />}
       <points ref={lightPoints} geometry={points} frustumCulled={false}>
         <shaderMaterial
           ref={lights}

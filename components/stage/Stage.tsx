@@ -16,6 +16,7 @@ import { planEffects } from "@/lib/stage/effects";
 import { SceneLights } from "./SceneLights";
 import { Band } from "./Band";
 import { planBand } from "@/lib/stage/band";
+import { signTexts } from "@/lib/stage/fan-signs";
 import { avatars } from "@/lib/avatars/catalog";
 import { setlistStore, useEveningPhase, usePreviousTheme, useRecentClipsKey } from "@/lib/stage/setlist";
 import { hasBlinders, THEMES, themedPalette, themeFor, type Theme, type ThemeId } from "@/lib/stage/themes";
@@ -189,6 +190,12 @@ function Scene({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- nur bei Song, Besetzung oder Regie neu
     [raw?.trackKey, raw?.cast, showKey],
   );
+  // Fan-Schilder (Künstler, Titel, Heimatort …) – nur Texte; neu bei neuem Song oder Heimatort
+  const signs = useMemo(
+    () => (raw ? signTexts(raw) : []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- nur bei Song oder Heimatort neu
+    [raw?.trackKey, raw?.concertArea?.name],
+  );
   const mixamoIds = useMemo(
     () => [
       ...new Set([
@@ -297,6 +304,7 @@ function Scene({
             accent={song.album.palette.accent}
             frameRef={frame}
             lightsRef={lights}
+            signs={quality !== "niedrig" ? signs : undefined}
           />
         )}
         {crowdCount > 0 && theme.id === "festival" && (
