@@ -7,6 +7,7 @@ import type { ArtistAvatars as AvatarMap, AvatarStyle } from "@/lib/avatars/over
 import { ArtistAvatars, type ArtistAvatarPatch } from "./ArtistAvatars";
 import { AvatarStyleSection } from "./AvatarStyleSection";
 import { QuietHoursSection } from "./QuietHoursSection";
+import { CrowdSoundSection } from "./CrowdSoundSection";
 import type { QuietHours } from "@/lib/live/quiet-hours";
 
 type Area = { name: string; lat: number; lon: number; radiusKm: number; custom: boolean };
@@ -202,6 +203,8 @@ export function SettingsPage() {
         {area && <AvatarStyleSection value={avatarStyle} busy={state === "speichert"} save={(p, done) => void save(p, done)} />}
 
         {area && <ArtistAvatars map={artistAvatars} busy={state === "speichert"} save={(p, done) => void save(p, done)} />}
+
+        <CrowdSoundSection />
       </main>
     </ScrollPage>
   );

@@ -35,6 +35,7 @@ import { ConcertOverlay } from "./concerts/ConcertOverlay";
 import { useConcertLoader } from "./concerts/useConcertLoader";
 import { useConcertReminders } from "./concerts/useConcertReminders";
 import { useLyricsTranslation } from "./lyrics/useLyricsTranslation";
+import { useCrowdSound } from "./live/useCrowdSound";
 import { useTempoLoader } from "./audio/useTempoLoader";
 import { useShowLoader } from "./show/useShowLoader";
 import { useArtistAvatars } from "./avatars/useArtistAvatars";
@@ -125,6 +126,7 @@ export function Dashboard({
   useConcertLoader(demo === undefined);
   useConcertReminders(demo === undefined);
   useLyricsTranslation(demo === undefined);
+  useCrowdSound(demo === undefined);
   // Tempo-Startwert (Deezer), bis das Mikrofon eingerastet ist
   useTempoLoader(demo === undefined);
   // Regie: Genres/Stimmung aus offenen Quellen und – wenn eingerichtet – die Regieanweisung der KI

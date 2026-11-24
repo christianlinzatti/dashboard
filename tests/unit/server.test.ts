@@ -278,10 +278,11 @@ describe("Geräte-Einstellungen", () => {
       secondLine: "auto",
       stage: "auto",
       canvas: false,
+      crowdSound: false,
     });
-    settings.getState().set({ secondLine: "uebersetzung", stage: "jazz" });
+    settings.getState().set({ secondLine: "uebersetzung", stage: "jazz", crowdSound: true });
     settings.getState().hydrate();
-    expect(settings.getState()).toMatchObject({ secondLine: "uebersetzung", stage: "jazz" });
+    expect(settings.getState()).toMatchObject({ secondLine: "uebersetzung", stage: "jazz", crowdSound: true });
     store.set("ss_settings", JSON.stringify({ quality: "ultra", strobe: "ja", secondLine: "klingonisch", stage: "disco" }));
     settings.getState().hydrate();
     expect(settings.getState()).toMatchObject({ quality: "auto", strobe: true, secondLine: "auto", stage: "auto" });

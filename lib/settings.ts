@@ -18,10 +18,20 @@ export type Settings = {
   stage: ThemeChoice;
   /** Spotify Canvas (Loop-Video des Künstlers) statt der 3D-Bühne zeigen, wenn vorhanden */
   canvas: boolean;
+  /** Publikumsgeräusche (Applaus am Songende, Zugabe-Klatschen) aus dem Browser – leise, Standard aus */
+  crowdSound: boolean;
 };
 
 const KEY = "ss_settings";
-const defaults: Settings = { quality: "auto", strobe: true, lamps: true, secondLine: "auto", stage: "auto", canvas: false };
+const defaults: Settings = {
+  quality: "auto",
+  strobe: true,
+  lamps: true,
+  secondLine: "auto",
+  stage: "auto",
+  canvas: false,
+  crowdSound: false,
+};
 
 function load(): Settings {
   try {
@@ -38,6 +48,7 @@ function load(): Settings {
         : defaults.secondLine,
       stage: isThemeChoice(raw.stage) ? raw.stage : defaults.stage,
       canvas: typeof raw.canvas === "boolean" ? raw.canvas : defaults.canvas,
+      crowdSound: typeof raw.crowdSound === "boolean" ? raw.crowdSound : defaults.crowdSound,
     };
   } catch {
     return defaults;
@@ -49,8 +60,8 @@ export const settings = createStore<Settings & { set(p: Partial<Settings>): void
   set(p) {
     set(p);
     try {
-      const { quality, strobe, lamps, secondLine, stage, canvas } = get();
-      localStorage.setItem(KEY, JSON.stringify({ quality, strobe, lamps, secondLine, stage, canvas }));
+      const { quality, strobe, lamps, secondLine, stage, canvas, crowdSound } = get();
+      localStorage.setItem(KEY, JSON.stringify({ quality, strobe, lamps, secondLine, stage, canvas, crowdSound }));
     } catch {
       /* privater Modus */
     }
