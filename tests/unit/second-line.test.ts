@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseTtml, parseWords } from "@/lib/lyrics/parse-ttml";
-import { hasSecondLine, isNonLatin, secondLineFill, secondLineFor } from "@/lib/lyrics/second-line";
+import { guessLyricsLang, hasSecondLine, isNonLatin, secondLineFill, secondLineFor } from "@/lib/lyrics/second-line";
 import { hoshizora } from "@/lib/song-context/fixtures/hoshizora";
 import { neonlicht } from "@/lib/song-context/fixtures/neonlicht";
 import { lyricsSchema, type LyricLine } from "@/lib/song-context/schema";
@@ -78,6 +78,22 @@ describe("Zweite Zeile: Auswahl", () => {
       kind: "uebersetzung",
       text: "Hallo",
     });
+  });
+  it("automatisch: englische Übersetzung nur bei Songs, die weder deutsch noch englisch sind", () => {
+    const song = (text: string) => ({
+      translationLang: "en",
+      lines: Array.from({ length: 8 }, () => l({ text, translation: "Translated" })),
+    });
+    const es = song("Tú eres mi vida y yo te quiero tanto mi amor");
+    const en = song("I love you and you are the one for me tonight");
+    const de = song("Ich will nicht, dass du gehst, du bist mir zu nah");
+    expect(guessLyricsLang(es.lines)).toBe("anders");
+    expect(guessLyricsLang(en.lines)).toBe("en");
+    expect(guessLyricsLang(de.lines)).toBe("de");
+    expect(guessLyricsLang([l({ text: "Hola" })])).toBe("unbekannt");
+    expect(secondLineFor(es, es.lines[0]!, "auto")?.text).toBe("Translated");
+    expect(secondLineFor(en, en.lines[0]!, "auto")).toBeNull();
+    expect(secondLineFor(de, de.lines[0]!, "auto")).toBeNull();
   });
   it("erzwungen und aus", () => {
     const line = l({ transliteration: translit, translation: "Midnight" });

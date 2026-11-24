@@ -18,15 +18,47 @@ export function isNonLatin(text: string): boolean {
   );
 }
 
+const STOP = {
+  de: new Set(
+    "ich du und der die das nicht ist mir mich dich wir ein eine sie es zu mit auf für noch nur wenn wie was".split(" "),
+  ),
+  en: new Set("i you the and to me my it is your in we that on of don't i'm can be all for love".split(" ")),
+};
+
+type Lang = "de" | "en" | "anders" | "unbekannt";
+const langCache = new WeakMap<object, Lang>();
+
+/**
+ * Sprache des Liedtexts grob schätzen (Anteil häufiger deutscher bzw. englischer Wörter) – reicht für die Frage, ob
+ * eine englische Übersetzung hilft: bei Deutsch und Englisch nein, bei Spanisch, Italienisch, Französisch … ja.
+ */
+export function guessLyricsLang(lines: ReadonlyArray<Pick<LyricLine, "text">>): Lang {
+  const words = lines.flatMap((l) => l.text.toLowerCase().match(/[\p{L}']+/gu) ?? []);
+  if (words.length < 30) return "unbekannt"; // zu wenig Text für eine Schätzung
+  const share = (set: Set<string>) => words.filter((w) => set.has(w)).length / words.length;
+  const de = share(STOP.de);
+  const en = share(STOP.en);
+  if (Math.max(de, en) < 0.08) return "anders";
+  return de >= en ? "de" : "en";
+}
+
+function lyricsLang(lyrics: object & { lines?: ReadonlyArray<Pick<LyricLine, "text">> }): Lang {
+  if (!lyrics.lines) return "unbekannt";
+  let lang = langCache.get(lyrics);
+  if (!lang) langCache.set(lyrics, (lang = guessLyricsLang(lyrics.lines)));
+  return lang;
+}
+
 export type SecondLine = { kind: "umschrift" | "uebersetzung"; text: string; words?: LyricWord[]; lang?: string };
 
 /**
  * Was unter der Zeile steht:
- * - automatisch: Umschrift bei nicht-lateinischer Schrift, sonst eine deutsche Übersetzung (falls vorhanden)
+ * - automatisch: Umschrift bei nicht-lateinischer Schrift, sonst eine deutsche Übersetzung (falls vorhanden), eine
+ *   englische nur bei Songs, die weder deutsch noch englisch sind
  * - Umschrift / Übersetzung: erzwungen (Übersetzung in jeder Sprache)
  */
 export function secondLineFor(
-  lyrics: Pick<Lyrics, "transliterationLang" | "translationLang">,
+  lyrics: Pick<Lyrics, "transliterationLang" | "translationLang"> & { lines?: Lyrics["lines"] },
   line: LyricLine,
   mode: SecondLineMode,
 ): SecondLine | null {
@@ -45,7 +77,10 @@ export function secondLineFor(
       return transl;
     default:
       if (translit && isNonLatin(line.text)) return translit;
-      return transl && lyrics.translationLang?.toLowerCase().startsWith("de") ? transl : null;
+      if (!transl) return null;
+      if (lyrics.translationLang?.toLowerCase().startsWith("de")) return transl;
+      // englische Übersetzung, wenn der Song weder deutsch noch englisch ist (Spanisch, Italienisch, Koreanisch …)
+      return lyrics.translationLang?.toLowerCase().startsWith("en") && lyricsLang(lyrics) === "anders" ? transl : null;
   }
 }
 
