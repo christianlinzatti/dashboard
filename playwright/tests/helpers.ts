@@ -1,9 +1,17 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 
-/** Wartet, bis die 3D-Szene gerendert und die Schriften geladen sind. */
+/**
+ * Wartet, bis die 3D-Szene gerendert, die Schriften geladen und die Lyrics eingeblendet sind (Einblenden dauert
+ * 0,45 s – ein Screenshot mittendrin zeigt die Zeile halb durchsichtig und ohne Karaoke-Farben).
+ */
 export async function ready(page: Page, withStage = true) {
   if (withStage) await page.locator("body[data-stage-ready=true]").waitFor({ timeout: 60_000 });
   await page.evaluate(() => document.fonts.ready);
+  await page.waitForFunction(() =>
+    [...document.querySelectorAll("[data-testid=lyrics]")].every((el) =>
+      el.getAnimations().every((a) => a.playState === "finished" || a.effect?.getTiming().iterations === Infinity),
+    ),
+  );
 }
 
 /** Sammelt Laufzeitfehler der Seite (zum Prüfen am Testende). */

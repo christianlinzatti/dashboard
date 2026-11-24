@@ -191,7 +191,7 @@ test.describe("Bühne & Licht", () => {
     const errors = collectErrors(page);
     await page.goto("/?demo=neonlicht&t=46000&canvas=/demo/pulsar.svg&lyrics=karaoke");
     await page.locator("[data-testid=canvas-background]").waitFor();
-    await page.evaluate(() => document.fonts.ready);
+    await ready(page, false);
     // keine 3D-Bühne gemountet
     await expect(page.locator("[data-testid=stage]")).toHaveCount(0);
     await expect(page.getByTestId("now-playing")).toBeVisible();
