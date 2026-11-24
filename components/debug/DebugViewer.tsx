@@ -6,6 +6,7 @@ import type { LogEntry } from "@/lib/live/log-schema";
 import { diagnose } from "@/lib/debug/diagnose";
 import { Findings } from "./Findings";
 import { AiTraceView, parseTraceInfo } from "./AiTraceView";
+import { artistsOf, ConcertDebug } from "./ConcertDebug";
 import { LyricsStatus } from "./LyricsStatus";
 import { PerfHistory } from "./PerfHistory";
 
@@ -131,6 +132,7 @@ export function DebugViewer() {
 
         {state.kind !== "login" && <LyricsStatus auto={auto} />}
         {state.kind !== "login" && <PerfHistory auto={auto} />}
+        {state.kind !== "login" && <ConcertDebug initialArtists={artistsOf(entry?.context)} />}
         {state.kind === "ok" && !entry && (
           <p className="mt-6 text-white/70" data-testid="viewer-empty">
             Noch nichts gesendet (oder älter als eine Stunde).

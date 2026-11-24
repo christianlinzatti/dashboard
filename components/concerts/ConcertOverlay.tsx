@@ -39,7 +39,7 @@ export function ConcertOverlay() {
                 className="w-[16vmin] shrink-0 text-[clamp(11px,1.9vmin,19px)] font-bold"
                 style={{ color: "var(--c-accent)" }}
               >
-                {formatConcertDate(c.date)}
+                {formatConcertDate(c.date, today)}
               </span>
               <span className="min-w-0 flex-1 truncate text-[clamp(11px,1.9vmin,19px)]">
                 {multi && <span className="font-semibold">{c.artistName} · </span>}

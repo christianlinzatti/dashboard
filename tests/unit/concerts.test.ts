@@ -230,15 +230,37 @@ describe("oeticket (echte Antworten der Eventim-Such-API)", () => {
     expect((await oeticket(async () => ok(cancelled)).events("KMFDM"))[0]!.cancelled).toBe(true);
     await expect(oeticket(async () => new Response("Access Denied", { status: 403 })).events("X")).rejects.toThrow("403");
   });
-  it("blättert bis zur letzten Seite (höchstens 2)", async () => {
-    const page = { totalPages: 5, products: [] };
-    const http = vi.fn<Http>(async () => ok(page));
+  it("blättert über alle Seiten (ohne `top`, sonst kommt immer Seite 1), höchstens 8", async () => {
+    const http = vi.fn<Http>(async () => ok({ totalPages: 5, products: [] }));
     await oeticket(http).events("X");
-    expect(http).toHaveBeenCalledTimes(2);
+    const urls = http.mock.calls.map((c) => new URL(c[0]));
+    expect(urls.map((u) => u.searchParams.get("page"))).toEqual(["1", "2", "3", "4", "5"]);
+    expect(urls.every((u) => !u.searchParams.has("top"))).toBe(true);
+    const many = vi.fn<Http>(async () => ok({ totalPages: 30, products: [] }));
+    await oeticket(many).events("X");
+    expect(many).toHaveBeenCalledTimes(8);
   });
 });
 
 describe("Eventim Deutschland (echte Antwort)", () => {
+  it("echte Termine auf späteren Seiten werden gefunden (Wanda: Tour erst ab Seite 5); Ticketarten zählen einmal", async () => {
+    const { eventimSearch } = await import("@/lib/concerts/providers");
+    const pages = (await import("../fixtures/oeticket/eventim-de-wanda-seiten.json")).default;
+    const http = vi.fn<Http>(async (url) => ok(pages[Number(new URL(url).searchParams.get("page")) - 1] ?? { products: [] }));
+    const out = await eventimSearch("eventim", http).events("Wanda");
+    expect(http).toHaveBeenCalledTimes(6);
+    const cities = out.map((e) => e.city);
+    expect(cities).toEqual(expect.arrayContaining(["Wien", "Osnabrück", "Hamburg", "Berlin", "München", "Friedrichshafen"]));
+    expect(out.every((e) => e.artistName === "Wanda")).toBe(true); // „Wandern“, „Wandelhalle“ … verworfen
+    // je Produkt einmal, aber zwei Produkte für denselben Abend bleiben zwei Rohtermine – das Zusammenführen macht eins daraus
+    const merged = mergeEvents({ id: "w", name: "Wanda" }, [{ provider: { id: "eventim", ticketPriority: 1.5 }, events: out }], {
+      today: "2026-11-24",
+      home: WIEN,
+      limit: 100,
+    });
+    expect(new Set(merged.map((c) => `${c.date}|${c.city}`)).size).toBe(merged.length);
+    expect(merged.every((c) => c.providers.length === 1)).toBe(true);
+  });
   it("eigener Shop, Fremdtreffer verworfen, Ticket-Link von eventim.de", async () => {
     const { eventimSearch } = await import("@/lib/concerts/providers");
     const de = (await import("../fixtures/oeticket/eventim-de-roy-bianco.json")).default;
@@ -326,9 +348,22 @@ describe("Konzert-Dienst", () => {
     const r1 = await svc([{ id: "a1", name: "A" }]);
     expect(r1.concerts).toHaveLength(1);
     expect(r1.setlists.a1?.songs).toEqual(["S"]);
-    await svc([{ id: "a1", name: "A" }]);
+    expect(setSpy).toHaveBeenCalledWith("concerts:v2:a", expect.anything(), CACHE_TTL.concertsPartial);
+    // Fehler bleibt auch aus dem Cache sichtbar
+    expect(r1.sources).toEqual([
+      expect.objectContaining({ artist: "A", provider: "g", state: "ok", events: 1, cached: false }),
+      expect.objectContaining({ artist: "A", provider: "b", state: "fehler", error: "x", cached: false }),
+    ]);
+    const r2 = await svc([{ id: "a1", name: "A" }]);
+    expect(r2.sources.map((x) => [x.provider, x.state, x.cached])).toEqual([
+      ["g", "ok", true],
+      ["b", "fehler", true],
+    ]);
     expect(good.events).toHaveBeenCalledTimes(1); // Teilergebnis aus dem Cache
-    expect(setSpy).toHaveBeenCalledWith("concerts:v1:a", expect.anything(), CACHE_TTL.concertsPartial);
+    // ohne Cache neu fragen (/debug)
+    await svc([{ id: "a1", name: "A" }], undefined, undefined, { fresh: true });
+    expect(good.events).toHaveBeenCalledTimes(2);
+    good.events.mockClear();
     expect(setlistFetch).toHaveBeenCalledTimes(1);
 
     const cache2 = memoryCache();
@@ -336,8 +371,8 @@ describe("Konzert-Dienst", () => {
     const svc2 = createConcertService({ providers: [good], cache: cache2, today: () => "2026-11-14" });
     await svc2([{ id: "a1", name: "A" }]);
     await svc2([{ id: "a1", name: "A" }]);
-    expect(good.events).toHaveBeenCalledTimes(2);
-    expect(setSpy2).toHaveBeenCalledWith("concerts:v1:a", expect.anything(), CACHE_TTL.concerts);
+    expect(good.events).toHaveBeenCalledTimes(1);
+    expect(setSpy2).toHaveBeenCalledWith("concerts:v2:a", expect.anything(), CACHE_TTL.concerts);
   });
   it("Setlist-Fehler wird ignoriert", async () => {
     const svc = createConcertService({
@@ -356,6 +391,9 @@ describe("Konzertanzeige", () => {
   it("Datum, Countdown", () => {
     expect(formatConcertDate("2026-12-05")).toBe("Sa, 5. Dez.");
     expect(formatConcertDate("2027-01-10")).toBe("So, 10. Jän.");
+    // mehr als ~10 Monate entfernt mit Jahr – sonst sieht „Mi, 24. Nov.“ in einem Jahr aus wie heute
+    expect(formatConcertDate("2027-11-24", "2026-11-24")).toBe("Mi, 24. Nov. 2027");
+    expect(formatConcertDate("2027-06-23", "2026-11-24")).toBe("Mi, 23. Juni");
     expect(daysUntil("2026-12-05", "2026-11-14")).toBe(21);
     expect(countdown("2026-11-14", "2026-11-14")).toBe("heute");
     expect(countdown("2026-11-15", "2026-11-14")).toBe("morgen");

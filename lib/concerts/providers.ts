@@ -193,6 +193,7 @@ const oeSchema = z.object({
   products: z
     .array(
       z.object({
+        productId: z.union([z.string(), z.number()]).optional(),
         name: z.string(),
         link: z.string().optional(),
         status: z.string().optional(),
@@ -234,48 +235,60 @@ export const EVENTIM_SHOPS = {
   eventim: { webId: "web__eventim-de", retailPartner: undefined, ticketPriority: 1.5 }, // Deutschland
 } as const;
 
-/** Eventim-Suche für einen Shop (oeticket.com, eventim.de). Treffer nur bei echtem Auftritt des Künstlers. */
-export function eventimSearch(id: keyof typeof EVENTIM_SHOPS, http: Http = fetch, maxPages = 2): ConcertProvider {
+/**
+ * Eventim-Suche für einen Shop (oeticket.com, eventim.de). Treffer nur bei echtem Auftritt des Künstlers.
+ *
+ * Die Suche ist unscharf („Wanda“ findet auch „Wandern“, „Coldplay“ jede Tribute-Show) und nach Datum sortiert –
+ * die echten Termine stehen deshalb oft erst auf späteren Seiten. Seite 1 sagt, wie viele Seiten es gibt; die übrigen
+ * kommen parallel. Wichtig: ohne `top` – mit `top` liefert die Schnittstelle immer Seite 1, egal welche Seite verlangt
+ * wird. Eine Vorstellung kann mehrfach vorkommen (Sitzplatz, Stehplatz, VIP) – je Produkt zählt sie nur einmal.
+ */
+export function eventimSearch(id: keyof typeof EVENTIM_SHOPS, http: Http = fetch, maxPages = 8): ConcertProvider {
   const shop = EVENTIM_SHOPS[id];
+  const page = async (artist: string, n: number, signal?: AbortSignal) => {
+    const q = new URLSearchParams({
+      webId: shop.webId,
+      language: "de",
+      ...(shop.retailPartner ? { retail_partner: shop.retailPartner } : {}),
+      page: String(n),
+      sort: "DateAsc",
+      search_term: artist,
+    });
+    const res = await http(`https://public-api.eventim.com/websearch/search/api/exploration/v1/products?${q}`, {
+      signal,
+      headers: { Accept: "application/json" },
+    });
+    if (!res.ok) throw new Error(`${id} ${res.status}`);
+    return oeSchema.parse(await res.json());
+  };
   return {
     id,
     ticketPriority: shop.ticketPriority,
     async events(artist, signal) {
+      const first = await page(artist, 1, signal);
+      // unscharfe Ersatzsuche (keine exakten Treffer): weitere Seiten bringen nichts
+      const last = first.fallbackSearch ? 1 : Math.min(first.totalPages, maxPages);
+      const rest = await Promise.all(Array.from({ length: Math.max(0, last - 1) }, (_, i) => page(artist, i + 2, signal)));
       const out: RawEvent[] = [];
-      for (let page = 1; page <= maxPages; page++) {
-        const q = new URLSearchParams({
-          webId: shop.webId,
-          language: "de",
-          ...(shop.retailPartner ? { retail_partner: shop.retailPartner } : {}),
-          page: String(page),
-          top: "50",
-          sort: "DateAsc",
-          search_term: artist,
+      const seen = new Set<string>();
+      for (const p of [first, ...rest].flatMap((b) => b.products)) {
+        const le = p.typeAttributes.liveEntertainment;
+        if (!le?.location?.city || !isOeticketMatch(p, artist)) continue;
+        const key = p.productId !== undefined ? String(p.productId) : `${p.link}|${le.startDate}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        out.push({
+          provider: id,
+          artistName: artist,
+          date: le.startDate.slice(0, 10), // Ortszeit (mit Zeitzonen-Offset geliefert)
+          time: le.startDate.slice(11, 16) || undefined,
+          venue: le.location.name ?? "",
+          city: le.location.city,
+          lat: le.location.geoLocation?.latitude,
+          lon: le.location.geoLocation?.longitude,
+          ticketUrl: p.link,
+          cancelled: p.status?.toLowerCase() === "cancelled",
         });
-        const res = await http(`https://public-api.eventim.com/websearch/search/api/exploration/v1/products?${q}`, {
-          signal,
-          headers: { Accept: "application/json" },
-        });
-        if (!res.ok) throw new Error(`${id} ${res.status}`);
-        const body = oeSchema.parse(await res.json());
-        for (const p of body.products) {
-          const le = p.typeAttributes.liveEntertainment;
-          if (!le?.location?.city || !isOeticketMatch(p, artist)) continue;
-          out.push({
-            provider: id,
-            artistName: artist,
-            date: le.startDate.slice(0, 10), // Ortszeit (mit Zeitzonen-Offset geliefert)
-            time: le.startDate.slice(11, 16) || undefined,
-            venue: le.location.name ?? "",
-            city: le.location.city,
-            lat: le.location.geoLocation?.latitude,
-            lon: le.location.geoLocation?.longitude,
-            ticketUrl: p.link,
-            cancelled: p.status?.toLowerCase() === "cancelled",
-          });
-        }
-        // unscharfe Ersatzsuche: weitere Seiten bringen nichts
-        if (body.fallbackSearch || page >= body.totalPages) break;
       }
       return out;
     },
@@ -283,4 +296,4 @@ export function eventimSearch(id: keyof typeof EVENTIM_SHOPS, http: Http = fetch
 }
 
 /** oeticket (Eventim Österreich). */
-export const oeticket = (http: Http = fetch, maxPages = 2) => eventimSearch("oeticket", http, maxPages);
+export const oeticket = (http: Http = fetch, maxPages = 8) => eventimSearch("oeticket", http, maxPages);

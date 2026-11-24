@@ -1,5 +1,5 @@
 /** Gesprochene Antworten des Alexa-Skills aus dem Song-Kontext */
-import { daysUntil } from "@/lib/concerts/display";
+import { daysUntil, YEAR_AFTER_DAYS } from "@/lib/concerts/display";
 import { home } from "@/lib/concerts/geo";
 import { normalizeLine } from "@/lib/lyrics/text";
 import type { Snapshot } from "@/lib/song-context/snapshot";
@@ -28,10 +28,12 @@ const MONTHS = [
 ];
 
 /** „Samstag, 5. Dezember“ (gesprochen, österreichisch). */
-export function spokenDate(iso: string): string {
+/** „Samstag, 5. Dezember“; mehr als ~10 Monate entfernt mit Jahr (sonst klingt es nach diesem Jahr) */
+export function spokenDate(iso: string, today?: string): string {
   const [y, m, d] = iso.split("-").map(Number);
   const dt = new Date(Date.UTC(y!, m! - 1, d!));
-  return `${WEEKDAYS[dt.getUTCDay()]}, ${d}. ${MONTHS[m! - 1]}`;
+  const year = today && daysUntil(iso, today) > YEAR_AFTER_DAYS ? ` ${y}` : "";
+  return `${WEEKDAYS[dt.getUTCDay()]}, ${d}. ${MONTHS[m! - 1]}${year}`;
 }
 
 /** Heutiges Datum in Wien (JJJJ-MM-TT), unabhängig von der Server-Zeitzone. */
@@ -66,7 +68,7 @@ export function concertAnswer(s: Snapshot, spoken: string | undefined, today: st
     .sort((a, b) => a.date.localeCompare(b.date));
   // Ort ohne Artikel („im/in der“ hängt vom unbekannten Geschlecht des Veranstaltungsorts ab)
   const say = (c: (typeof list)[number]) =>
-    `${c.artistName} spielt am ${spokenDate(c.date)} in ${c.city}${c.venue ? `, ${c.venue}` : ""}. Das ist ${inDays(daysUntil(c.date, today))}${c.soldOut ? ", leider ausverkauft" : ""}.`;
+    `${c.artistName} spielt am ${spokenDate(c.date, today)} in ${c.city}${c.venue ? `, ${c.venue}` : ""}. Das ist ${inDays(daysUntil(c.date, today))}${c.soldOut ? ", leider ausverkauft" : ""}.`;
   if (near.length) {
     const more =
       near.length > 1 ? ` Danach noch ${near.length - 1} weitere${near.length === 2 ? "r Termin" : " Termine"} in der Nähe.` : "";

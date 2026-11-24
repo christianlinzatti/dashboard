@@ -1,0 +1,904 @@
+[
+  {
+    "page": 1,
+    "totalPages": 6,
+    "totalResults": 332,
+    "products": [
+      {
+        "productId": "22030596",
+        "name": "Besichtigung Regentenbau, Arkadenbau und Wandelhalle",
+        "link": "https://www.eventim.de/event/besichtigung-regentenbau-arkadenbau-und-wandelhalle-in-bad-kissingen-regentenbau-bad-kissingen-22030596/",
+        "status": "Available",
+        "attractions": [],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2026-11-24T07:00:00+01:00",
+            "location": {
+              "city": "Bad Kissingen",
+              "geoLocation": { "latitude": 50.2000000285818, "longitude": 10.083299973280445 },
+              "name": "Regentenbau Bad Kissingen"
+            }
+          }
+        }
+      },
+      {
+        "productId": "22030638",
+        "name": "Besichtigung Regentenbau, Arkadenbau und Wandelhalle",
+        "link": "https://www.eventim.de/event/besichtigung-regentenbau-arkadenbau-und-wandelhalle-in-bad-kissingen-regentenbau-bad-kissingen-22030638/",
+        "status": "Available",
+        "attractions": [],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2026-11-25T07:00:00+01:00",
+            "location": {
+              "city": "Bad Kissingen",
+              "geoLocation": { "latitude": 50.2000000285818, "longitude": 10.083299973280445 },
+              "name": "Regentenbau Bad Kissingen"
+            }
+          }
+        }
+      },
+      {
+        "productId": "21528703",
+        "name": "Freche Möwe - Comedy Wandsbek",
+        "link": "https://www.eventim.de/event/freche-moewe-stand-up-comedy-kulturschloss-wandsbek-kulturschloss-wandsbek-21528703/",
+        "status": "Available",
+        "attractions": [{ "name": "Freche Möwe Stand-Up Comedy" }],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2026-11-25T19:00:00+01:00",
+            "location": {
+              "city": "Hamburg",
+              "geoLocation": { "latitude": 53.559399977502764, "longitude": 10.085800017323717 },
+              "name": "Kulturschloss Wandsbek"
+            }
+          }
+        }
+      }
+    ]
+  },
+  {
+    "page": 2,
+    "totalPages": 6,
+    "totalResults": 332,
+    "products": [
+      {
+        "productId": "22429353",
+        "name": "Besichtigung Regentenbau, Arkadenbau und Wandelhalle",
+        "link": "https://www.eventim.de/event/besichtigung-regentenbau-arkadenbau-und-wandelhalle-in-bad-kissingen-regentenbau-bad-kissingen-22429353/",
+        "status": "Available",
+        "attractions": [],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2026-12-01T07:00:00+01:00",
+            "location": {
+              "city": "Bad Kissingen",
+              "geoLocation": { "latitude": 50.2000000285818, "longitude": 10.083299973280445 },
+              "name": "Regentenbau Bad Kissingen"
+            }
+          }
+        }
+      },
+      {
+        "productId": "22313110",
+        "name": "Die Wand",
+        "link": "https://www.eventim.de/event/die-wand-deutsches-theater-goettingen-deutsches-theater-goettingen-22313110/",
+        "status": "Available",
+        "attractions": [{ "name": "Deutsches Theater Göttingen" }],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2026-12-01T19:00:00+01:00",
+            "location": {
+              "city": "Göttingen",
+              "geoLocation": { "latitude": 51.53329997605072, "longitude": 9.933329989278336 },
+              "name": "Deutsches Theater Göttingen"
+            }
+          }
+        }
+      },
+      {
+        "productId": "22429374",
+        "name": "Besichtigung Regentenbau, Arkadenbau und Wandelhalle",
+        "link": "https://www.eventim.de/event/besichtigung-regentenbau-arkadenbau-und-wandelhalle-in-bad-kissingen-regentenbau-bad-kissingen-22429374/",
+        "status": "Available",
+        "attractions": [],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2026-12-03T07:00:00+01:00",
+            "location": {
+              "city": "Bad Kissingen",
+              "geoLocation": { "latitude": 50.2000000285818, "longitude": 10.083299973280445 },
+              "name": "Regentenbau Bad Kissingen"
+            }
+          }
+        }
+      }
+    ]
+  },
+  {
+    "page": 3,
+    "totalPages": 6,
+    "totalResults": 332,
+    "products": [
+      {
+        "productId": "22429375",
+        "name": "Besichtigung Regentenbau, Arkadenbau und Wandelhalle",
+        "link": "https://www.eventim.de/event/besichtigung-regentenbau-arkadenbau-und-wandelhalle-in-bad-kissingen-regentenbau-bad-kissingen-22429375/",
+        "status": "Available",
+        "attractions": [],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2026-12-10T07:00:00+01:00",
+            "location": {
+              "city": "Bad Kissingen",
+              "geoLocation": { "latitude": 50.2000000285818, "longitude": 10.083299973280445 },
+              "name": "Regentenbau Bad Kissingen"
+            }
+          }
+        }
+      },
+      {
+        "productId": "22422022",
+        "name": "Der Wanderer - David Geringas, Cello",
+        "link": "https://www.eventim.de/event/der-wanderer-david-geringas-cello-blackmores-berlins-musikzimmer-22422022/",
+        "status": "Available",
+        "attractions": [],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2026-12-10T19:02:00+01:00",
+            "location": {
+              "city": "Berlin",
+              "geoLocation": { "latitude": 52.51669998383651, "longitude": 13.400000013336157 },
+              "name": "BLACKMORE’S Berlins Musikzimmer"
+            }
+          }
+        }
+      },
+      {
+        "productId": "21463426",
+        "name": "Lukas Wandke - Lachen",
+        "link": "https://www.eventim.de/event/lukas-wandke-lachen-comedy-club-duesseldorf-21463426/",
+        "status": "Available",
+        "attractions": [{ "name": "Lukas Wandke" }],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2026-12-10T20:00:00+01:00",
+            "location": { "city": "Düsseldorf", "name": "Comedy Club Düsseldorf" }
+          }
+        }
+      },
+      {
+        "productId": "20973660",
+        "name": "Weihnachten mit Wanda",
+        "link": "https://www.eventim.de/event/weihnachten-mit-wanda-2026-wiener-stadthalle-20973660/",
+        "status": "Available",
+        "attractions": [{ "name": "Wanda" }],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2026-12-19T19:30:00+01:00",
+            "location": {
+              "city": "Wien",
+              "geoLocation": { "latitude": 48.20899999461727, "longitude": 16.370000025698776 },
+              "name": "WIENER STADTHALLE"
+            }
+          }
+        }
+      }
+    ]
+  },
+  {
+    "page": 4,
+    "totalPages": 6,
+    "totalResults": 332,
+    "products": [
+      {
+        "productId": "22429356",
+        "name": "Besichtigung Regentenbau, Arkadenbau und Wandelhalle",
+        "link": "https://www.eventim.de/event/besichtigung-regentenbau-arkadenbau-und-wandelhalle-in-bad-kissingen-regentenbau-bad-kissingen-22429356/",
+        "status": "Available",
+        "attractions": [],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2026-12-21T07:00:00+01:00",
+            "location": {
+              "city": "Bad Kissingen",
+              "geoLocation": { "latitude": 50.2000000285818, "longitude": 10.083299973280445 },
+              "name": "Regentenbau Bad Kissingen"
+            }
+          }
+        }
+      },
+      {
+        "productId": "21763497",
+        "name": "Drache Kokosnuss feiert Weihnachten",
+        "link": "https://www.eventim.de/event/drache-kokosnuss-feiert-weihnachten-kammerpuppenspiele-bielefeld-theater-am-wandsbeker-marktplatz-21763497/",
+        "status": "Available",
+        "attractions": [{ "name": "Kammerpuppenspiele Bielefeld" }, { "name": "Theater am Wandsbeker Marktplatz" }],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2026-12-21T16:30:00+01:00",
+            "location": {
+              "city": "Hamburg",
+              "geoLocation": { "latitude": 53.559399977502764, "longitude": 10.085800017323717 },
+              "name": "Theater am Wandsbeker Marktplatz"
+            }
+          }
+        }
+      },
+      {
+        "productId": "22429357",
+        "name": "Besichtigung Regentenbau, Arkadenbau und Wandelhalle",
+        "link": "https://www.eventim.de/event/besichtigung-regentenbau-arkadenbau-und-wandelhalle-in-bad-kissingen-regentenbau-bad-kissingen-22429357/",
+        "status": "Available",
+        "attractions": [],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2026-12-22T07:00:00+01:00",
+            "location": {
+              "city": "Bad Kissingen",
+              "geoLocation": { "latitude": 50.2000000285818, "longitude": 10.083299973280445 },
+              "name": "Regentenbau Bad Kissingen"
+            }
+          }
+        }
+      }
+    ]
+  },
+  {
+    "page": 5,
+    "totalPages": 6,
+    "totalResults": 332,
+    "products": [
+      {
+        "productId": "22361463",
+        "name": "Alpaka-Wanderung in der Weilachmühle",
+        "link": "https://www.eventim.de/event/alpaka-wanderung-in-der-weilachmuehle-wellness-fuer-die-seele-weilachmuehle-22361463/",
+        "status": "Available",
+        "attractions": [],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2027-03-07T14:00:00+01:00",
+            "location": {
+              "city": "Altomünster",
+              "geoLocation": { "latitude": 11.250000008630916, "longitude": 48.38330000113604 },
+              "name": "Weilachmühle"
+            }
+          }
+        }
+      },
+      {
+        "productId": "21939097",
+        "name": "Das Wandern",
+        "link": "https://www.eventim.de/event/zeughaus-neuss-zeughauskonzerte-in-neuss-zeughaus-21939097/",
+        "status": "Available",
+        "attractions": [{ "name": "Zeughaus Neuss" }],
+        "typeAttributes": {
+          "liveEntertainment": { "startDate": "2027-03-07T18:00:00+01:00", "location": { "city": "Neuss", "name": "Zeughaus" } }
+        }
+      },
+      {
+        "productId": "22381404",
+        "name": "Be-Flügelt Tour 2027 - Ein Konzert, das dein Herz öffnet",
+        "link": "https://www.eventim.de/event/be-fluegelt-tour-2027-ein-konzert-das-dein-herz-oeffnet-andreas-guestel-julian-eilenberger-kulturbuehne-goldener-loewe-22381404/",
+        "status": "Available",
+        "attractions": [{ "name": "Be-Flügelt - Andreas Güstel / Julian Eilenberger" }],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2027-03-08T19:00:00+01:00",
+            "location": { "city": "Wandlitz", "name": "Kulturbühne Goldener Löwe" }
+          }
+        }
+      },
+      {
+        "productId": "22198172",
+        "name": "Wanda - Was mich umbringt macht mich schwächer Tour 2027",
+        "link": "https://www.eventim.de/event/wanda-was-mich-umbringt-macht-mich-schwaecher-tour-2027-hyde-park-osnabrueck-22198172/",
+        "status": "Available",
+        "attractions": [{ "name": "Wanda" }],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2027-04-09T20:00:00+02:00",
+            "location": {
+              "city": "Osnabrück",
+              "geoLocation": { "latitude": 52.266699991284156, "longitude": 8.050000012287452 },
+              "name": "Hyde Park Osnabrück"
+            }
+          }
+        }
+      },
+      {
+        "productId": "22244907",
+        "name": "CD/Vinyl Bundle | WANDA - Was mich umbringt macht mich schwächer | im Artistshop",
+        "link": "https://www.eventim.de/event/wanda-was-mich-umbringt-macht-mich-schwaecher-tour-2027-hyde-park-osnabrueck-22244907/",
+        "status": "Available",
+        "attractions": [{ "name": "Wanda" }],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2027-04-09T20:00:00+02:00",
+            "location": {
+              "city": "Osnabrück",
+              "geoLocation": { "latitude": 52.266699991284156, "longitude": 8.050000012287452 },
+              "name": "Hyde Park Osnabrück"
+            }
+          }
+        }
+      },
+      {
+        "productId": "22190579",
+        "name": "Wanda - Was mich umbringt macht mich schwächer Tour 2027",
+        "link": "https://www.eventim.de/event/wanda-was-mich-umbringt-macht-mich-schwaecher-tour-2027-moya-kulturbuehne-rostock-22190579/",
+        "status": "Available",
+        "attractions": [{ "name": "Wanda" }],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2027-04-10T19:30:00+02:00",
+            "location": {
+              "city": "Rostock",
+              "geoLocation": { "latitude": 54.099999981153566, "longitude": 12.01669998714268 },
+              "name": "moya Kulturbühne Rostock"
+            }
+          }
+        }
+      },
+      {
+        "productId": "22204340",
+        "name": "Wanda - Was mich umbringt macht mich schwächer Tour 2027",
+        "link": "https://www.eventim.de/event/wanda-was-mich-umbringt-macht-mich-schwaecher-tour-2027-grosse-freiheit-36-22204340/",
+        "status": "Available",
+        "attractions": [{ "name": "Wanda" }],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2027-04-12T20:00:00+02:00",
+            "location": {
+              "city": "Hamburg",
+              "geoLocation": { "latitude": 53.55029997532159, "longitude": 9.935279993838286 },
+              "name": "Grosse Freiheit 36"
+            }
+          }
+        }
+      },
+      {
+        "productId": "22158205",
+        "name": "Wanda - Was mich umbringt macht mich schwächer Tour 2027",
+        "link": "https://www.eventim.de/event/wanda-was-mich-umbringt-macht-mich-schwaecher-tour-2027-factory-22158205/",
+        "status": "SoldOut",
+        "attractions": [{ "name": "Wanda" }],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2027-04-13T20:00:00+02:00",
+            "location": {
+              "city": "Magdeburg",
+              "geoLocation": { "latitude": 52.13330000401301, "longitude": 11.616699987599747 },
+              "name": "Factory"
+            }
+          }
+        }
+      },
+      {
+        "productId": "22158448",
+        "name": "Wanda - Was mich umbringt macht mich schwächer Tour 2027",
+        "link": "https://www.eventim.de/event/wanda-was-mich-umbringt-macht-mich-schwaecher-tour-2027-columbiahalle-22158448/",
+        "status": "SoldOut",
+        "attractions": [{ "name": "Wanda" }],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2027-04-14T20:00:00+02:00",
+            "location": {
+              "city": "Berlin",
+              "geoLocation": { "latitude": 52.51669998383651, "longitude": 13.400000013336157 },
+              "name": "Columbiahalle"
+            }
+          }
+        }
+      },
+      {
+        "productId": "22158187",
+        "name": "Wanda - Was mich umbringt macht mich schwächer Tour 2027",
+        "link": "https://www.eventim.de/event/wanda-was-mich-umbringt-macht-mich-schwaecher-tour-2027-central-club-22158187/",
+        "status": "SoldOut",
+        "attractions": [{ "name": "Wanda" }],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2027-04-16T20:00:00+02:00",
+            "location": { "city": "Erfurt", "name": "Central Club" }
+          }
+        }
+      },
+      {
+        "productId": "22195237",
+        "name": "Wanda - Was mich umbringt macht mich schwächer Tour 2027",
+        "link": "https://www.eventim.de/event/wanda-was-mich-umbringt-macht-mich-schwaecher-tour-2027-live-music-hall-22195237/",
+        "status": "Available",
+        "attractions": [{ "name": "Wanda" }],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2027-04-19T20:00:00+02:00",
+            "location": {
+              "city": "Köln",
+              "geoLocation": { "latitude": 50.9553179681971, "longitude": 6.91253656178859 },
+              "name": "Live Music Hall"
+            }
+          }
+        }
+      },
+      {
+        "productId": "22244970",
+        "name": "CD/Vinyl Bundle | WANDA - Was mich umbringt macht mich schwächer | im Artistshop",
+        "link": "https://www.eventim.de/event/wanda-was-mich-umbringt-macht-mich-schwaecher-tour-2027-fzw-freizeitzentrum-west-22244970/",
+        "status": "Available",
+        "attractions": [{ "name": "Wanda" }],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2027-04-20T20:00:00+02:00",
+            "location": {
+              "city": "Dortmund",
+              "geoLocation": { "latitude": 51.516111127605235, "longitude": 7.468333315966418 },
+              "name": "FZW / Freizeitzentrum West"
+            }
+          }
+        }
+      },
+      {
+        "productId": "22157028",
+        "name": "Wanda - Was mich umbringt macht mich schwächer Tour 2027",
+        "link": "https://www.eventim.de/event/wanda-was-mich-umbringt-macht-mich-schwaecher-tour-2027-fzw-freizeitzentrum-west-22157028/",
+        "status": "Available",
+        "attractions": [{ "name": "Wanda" }],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2027-04-20T20:00:00+02:00",
+            "location": {
+              "city": "Dortmund",
+              "geoLocation": { "latitude": 51.516111127605235, "longitude": 7.468333315966418 },
+              "name": "FZW / Freizeitzentrum West"
+            }
+          }
+        }
+      },
+      {
+        "productId": "22164702",
+        "name": "Wanda - Was mich umbringt macht mich schwächer Tour 2027",
+        "link": "https://www.eventim.de/event/wanda-was-mich-umbringt-macht-mich-schwaecher-tour-2027-halle02-22164702/",
+        "status": "SoldOut",
+        "attractions": [{ "name": "Wanda" }],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2027-04-23T20:00:00+02:00",
+            "location": {
+              "city": "Heidelberg",
+              "geoLocation": { "latitude": 49.41669997305483, "longitude": 8.700000004382744 },
+              "name": "halle02"
+            }
+          }
+        }
+      },
+      {
+        "productId": "22160849",
+        "name": "Wanda - Was mich umbringt macht mich schwächer Tour 2027",
+        "link": "https://www.eventim.de/event/wanda-was-mich-umbringt-macht-mich-schwaecher-tour-2027-kulturzentrum-schlachthof-e-v--22160849/",
+        "status": "SoldOut",
+        "attractions": [{ "name": "Wanda" }],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2027-04-24T20:00:00+02:00",
+            "location": {
+              "city": "Wiesbaden",
+              "geoLocation": { "latitude": 50.083299984869555, "longitude": 8.249999983411028 },
+              "name": "Kulturzentrum Schlachthof e.V."
+            }
+          }
+        }
+      },
+      {
+        "productId": "22275479",
+        "name": "Wanda - Was mich umbringt macht mich schwächer Tour 2027",
+        "link": "https://www.eventim.de/event/wanda-was-mich-umbringt-macht-mich-schwaecher-tour-2027-den-atelier-22275479/",
+        "status": "Available",
+        "attractions": [{ "name": "Wanda" }],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2027-04-25T20:00:00+02:00",
+            "location": { "city": "Luxembourg-City", "name": "DEN ATELIER" }
+          }
+        }
+      },
+      {
+        "productId": "22160581",
+        "name": "Wanda - Was mich umbringt macht mich schwächer Tour 2027",
+        "link": "https://www.eventim.de/event/wanda-was-mich-umbringt-macht-mich-schwaecher-tour-2027-roxy-ulm-22160581/",
+        "status": "Available",
+        "attractions": [{ "name": "Wanda" }],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2027-04-27T20:00:00+02:00",
+            "location": {
+              "city": "Ulm",
+              "geoLocation": { "latitude": 48.40000000199071, "longitude": 9.999999988573334 },
+              "name": "ROXY Ulm"
+            }
+          }
+        }
+      },
+      {
+        "productId": "22244878",
+        "name": "CD/Vinyl Bundle | WANDA - Was mich umbringt macht mich schwächer | im Artistshop",
+        "link": "https://www.eventim.de/event/wanda-was-mich-umbringt-macht-mich-schwaecher-tour-2027-capitol-22244878/",
+        "status": "Available",
+        "attractions": [{ "name": "Wanda" }],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2027-04-28T20:00:00+02:00",
+            "location": {
+              "city": "Hannover",
+              "geoLocation": { "latitude": 52.36669997684594, "longitude": 9.71667000975418 },
+              "name": "Capitol"
+            }
+          }
+        }
+      },
+      {
+        "productId": "22177105",
+        "name": "Wanda - Was mich umbringt macht mich schwächer Tour 2027",
+        "link": "https://www.eventim.de/event/wanda-was-mich-umbringt-macht-mich-schwaecher-tour-2027-capitol-22177105/",
+        "status": "Available",
+        "attractions": [{ "name": "Wanda" }],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2027-04-28T20:00:00+02:00",
+            "location": {
+              "city": "Hannover",
+              "geoLocation": { "latitude": 52.36669997684594, "longitude": 9.71667000975418 },
+              "name": "Capitol"
+            }
+          }
+        }
+      },
+      {
+        "productId": "22225373",
+        "name": "Wanda - Was mich umbringt macht mich schwächer Tour 2027",
+        "link": "https://www.eventim.de/event/wanda-was-mich-umbringt-macht-mich-schwaecher-tour-2027-toscanapark-gmunden-22225373/",
+        "status": "Available",
+        "attractions": [{ "name": "Wanda" }],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2027-05-28T20:30:00+02:00",
+            "location": {
+              "city": "Gmunden",
+              "geoLocation": { "latitude": 47.856999992727665, "longitude": 13.731000023414415 },
+              "name": "Toscanapark Gmunden"
+            }
+          }
+        }
+      },
+      {
+        "productId": "22180170",
+        "name": "Wanda - Was mich umbringt macht mich schwächer Tour 2027",
+        "link": "https://www.eventim.de/event/wanda-was-mich-umbringt-macht-mich-schwaecher-tour-2027-open-air-am-marktplatz-22180170/",
+        "status": "Available",
+        "attractions": [{ "name": "Wanda" }],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2027-05-29T19:30:00+02:00",
+            "location": {
+              "city": "Rankweil",
+              "geoLocation": { "latitude": 47.265999985811284, "longitude": 9.702999981607494 },
+              "name": "Open Air am Marktplatz"
+            }
+          }
+        }
+      }
+    ]
+  },
+  {
+    "page": 6,
+    "totalPages": 6,
+    "totalResults": 332,
+    "products": [
+      {
+        "productId": "22361514",
+        "name": "Alpaka-Wanderung in der Weilachmühle",
+        "link": "https://www.eventim.de/event/alpaka-wanderung-in-der-weilachmuehle-wellness-fuer-die-seele-weilachmuehle-22361514/",
+        "status": "Available",
+        "attractions": [],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2027-05-30T14:00:00+02:00",
+            "location": {
+              "city": "Altomünster",
+              "geoLocation": { "latitude": 11.250000008630916, "longitude": 48.38330000113604 },
+              "name": "Weilachmühle"
+            }
+          }
+        }
+      },
+      {
+        "productId": "22204412",
+        "name": "Wanda - Was mich umbringt macht mich schwächer Tour 2027",
+        "link": "https://www.eventim.de/event/wanda-was-mich-umbringt-macht-mich-schwaecher-tour-2027-kufstein-festung-22204412/",
+        "status": "Available",
+        "attractions": [{ "name": "Wanda" }],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2027-06-04T20:00:00+02:00",
+            "location": {
+              "city": "Kufstein",
+              "geoLocation": { "latitude": 47.63000001576212, "longitude": 12.214999992488103 },
+              "name": "Kufstein Festung"
+            }
+          }
+        }
+      },
+      {
+        "productId": "22204411",
+        "name": "Wanda - Was mich umbringt macht mich schwächer Tour 2027",
+        "link": "https://www.eventim.de/event/wanda-was-mich-umbringt-macht-mich-schwaecher-tour-2027-kufstein-festung-22204411/",
+        "status": "Available",
+        "attractions": [{ "name": "Wanda" }],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2027-06-05T20:00:00+02:00",
+            "location": {
+              "city": "Kufstein",
+              "geoLocation": { "latitude": 47.63000001576212, "longitude": 12.214999992488103 },
+              "name": "Kufstein Festung"
+            }
+          }
+        }
+      },
+      {
+        "productId": "21713284",
+        "name": "Onkel Wanja",
+        "link": "https://www.eventim.de/event/onkel-wanja-schauspiel-leipzig-schauspiel-leipzig-21713284/",
+        "status": "Available",
+        "attractions": [{ "name": "Schauspiel Leipzig" }],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2027-06-10T19:30:00+02:00",
+            "location": {
+              "city": "Leipzig",
+              "geoLocation": { "latitude": 51.3667000066365, "longitude": 12.383299984976256 },
+              "name": "Schauspiel Leipzig"
+            }
+          }
+        }
+      },
+      {
+        "productId": "22350697",
+        "name": "Wanda - Was mich umbringt macht mich schwächer Tour 2027",
+        "link": "https://www.eventim.de/event/wanda-was-mich-umbringt-macht-mich-schwaecher-tour-2027-freilichtbuehne-grosser-garten-junge-garde-22350697/",
+        "status": "Available",
+        "attractions": [{ "name": "Wanda" }],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2027-06-11T19:00:00+02:00",
+            "location": {
+              "city": "Dresden",
+              "geoLocation": { "latitude": 51.03306731158859, "longitude": 13.774519774509802 },
+              "name": "Freilichtbühne Großer Garten Junge Garde"
+            }
+          }
+        }
+      },
+      {
+        "productId": "22382230",
+        "name": "Wanda - Was mich umbringt macht mich schwächer Tour 2027",
+        "link": "https://www.eventim.de/event/wanda-was-mich-umbringt-macht-mich-schwaecher-tour-2027-waschhaus-potsdam-22382230/",
+        "status": "Available",
+        "attractions": [{ "name": "Wanda" }],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2027-06-12T20:00:00+02:00",
+            "location": {
+              "city": "Potsdam",
+              "geoLocation": { "latitude": 52.399999997420046, "longitude": 13.066699978780907 },
+              "name": "Waschhaus Potsdam"
+            }
+          }
+        }
+      },
+      {
+        "productId": "22287148",
+        "name": "Freche Möwe - Comedy Wandsbek",
+        "link": "https://www.eventim.de/event/freche-moewe-stand-up-comedy-kulturschloss-wandsbek-kulturschloss-wandsbek-22287148/",
+        "status": "Available",
+        "attractions": [{ "name": "Freche Möwe Stand-Up Comedy" }],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2027-06-19T19:00:00+02:00",
+            "location": {
+              "city": "Hamburg",
+              "geoLocation": { "latitude": 53.559399977502764, "longitude": 10.085800017323717 },
+              "name": "Kulturschloss Wandsbek"
+            }
+          }
+        }
+      },
+      {
+        "productId": "22222887",
+        "name": "Wanda - Was mich umbringt macht mich schwächer Tour 2027",
+        "link": "https://www.eventim.de/event/wanda-was-mich-umbringt-macht-mich-schwaecher-tour-2027-arena-wien-open-air-22222887/",
+        "status": "Available",
+        "attractions": [{ "name": "Wanda" }],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2027-06-23T19:30:00+02:00",
+            "location": {
+              "city": "Wien",
+              "geoLocation": { "latitude": 48.20899999461727, "longitude": 16.370000025698776 },
+              "name": "Arena Wien Open Air"
+            }
+          }
+        }
+      },
+      {
+        "productId": "22223989",
+        "name": "Wanda - Was mich umbringt macht mich schwächer Tour 2027",
+        "link": "https://www.eventim.de/event/wanda-was-mich-umbringt-macht-mich-schwaecher-tour-2027-arena-wien-open-air-22223989/",
+        "status": "Available",
+        "attractions": [{ "name": "Wanda" }],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2027-06-25T19:30:00+02:00",
+            "location": {
+              "city": "Wien",
+              "geoLocation": { "latitude": 48.20899999461727, "longitude": 16.370000025698776 },
+              "name": "Arena Wien Open Air"
+            }
+          }
+        }
+      },
+      {
+        "productId": "22223991",
+        "name": "Wanda - Was mich umbringt macht mich schwächer Tour 2027",
+        "link": "https://www.eventim.de/event/wanda-was-mich-umbringt-macht-mich-schwaecher-tour-2027-arena-wien-open-air-22223991/",
+        "status": "Available",
+        "attractions": [{ "name": "Wanda" }],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2027-06-26T19:30:00+02:00",
+            "location": {
+              "city": "Wien",
+              "geoLocation": { "latitude": 48.20899999461727, "longitude": 16.370000025698776 },
+              "name": "Arena Wien Open Air"
+            }
+          }
+        }
+      },
+      {
+        "productId": "22223988",
+        "name": "Wanda - Was mich umbringt macht mich schwächer Tour 2027",
+        "link": "https://www.eventim.de/event/wanda-was-mich-umbringt-macht-mich-schwaecher-tour-2027-arena-wien-open-air-22223988/",
+        "status": "Available",
+        "attractions": [{ "name": "Wanda" }],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2027-06-27T19:30:00+02:00",
+            "location": {
+              "city": "Wien",
+              "geoLocation": { "latitude": 48.20899999461727, "longitude": 16.370000025698776 },
+              "name": "Arena Wien Open Air"
+            }
+          }
+        }
+      },
+      {
+        "productId": "22277037",
+        "name": "Wanda - Was mich umbringt macht mich schwächer Tour 2027 | Tollwood 2027",
+        "link": "https://www.eventim.de/event/wanda-was-mich-umbringt-macht-mich-schwaecher-tour-2027-tollwood-22277037/",
+        "status": "Available",
+        "attractions": [{ "name": "Wanda" }],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2027-07-15T19:00:00+02:00",
+            "location": {
+              "city": "München",
+              "geoLocation": { "latitude": 48.1808528236713, "longitude": 11.5521747423574 },
+              "name": "Tollwood"
+            }
+          }
+        }
+      },
+      {
+        "productId": "22244746",
+        "name": "Wanda - Was mich umbringt macht mich schwächer Tour 2027",
+        "link": "https://www.eventim.de/event/wanda-was-mich-umbringt-macht-mich-schwaecher-tour-2027-tollwood-22244746/",
+        "status": "Available",
+        "attractions": [{ "name": "Wanda" }],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2027-07-16T19:00:00+02:00",
+            "location": {
+              "city": "München",
+              "geoLocation": { "latitude": 48.1808528236713, "longitude": 11.5521747423574 },
+              "name": "Tollwood"
+            }
+          }
+        }
+      },
+      {
+        "productId": "22351217",
+        "name": "Wanda - Was mich umbringt macht mich schwächer Tour 2027",
+        "link": "https://www.eventim.de/event/wanda-was-mich-umbringt-macht-mich-schwaecher-tour-2027-kulturinsel-woehrmuehle-22351217/",
+        "status": "Available",
+        "attractions": [{ "name": "Wanda" }],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2027-07-17T19:30:00+02:00",
+            "location": { "city": "Erlangen", "name": "Kulturinsel Wöhrmühle" }
+          }
+        }
+      },
+      {
+        "productId": "22390338",
+        "name": "Wanda - Was mich umbringt macht mich schwächer Tour 2027",
+        "link": "https://www.eventim.de/event/wanda-was-mich-umbringt-macht-mich-schwaecher-tour-2027-festung-ehrenbreitstein-22390338/",
+        "status": "Available",
+        "attractions": [{ "name": "Wanda" }],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2027-08-05T19:00:00+02:00",
+            "location": {
+              "city": "Koblenz",
+              "geoLocation": { "latitude": 50.3499999782766, "longitude": 7.599999991315733 },
+              "name": "Festung Ehrenbreitstein"
+            }
+          }
+        }
+      },
+      {
+        "productId": "22231242",
+        "name": "Wanda - Was mich umbringt macht mich schwächer",
+        "link": "https://www.eventim.de/event/wanda-was-mich-umbringt-macht-mich-schwaecher-tour-2027-karmeliterplatz-22231242/",
+        "status": "Available",
+        "attractions": [{ "name": "Wanda" }],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2027-08-12T20:00:00+02:00",
+            "location": {
+              "city": "Graz",
+              "geoLocation": { "latitude": 47.07233131291546, "longitude": 15.439072696002434 },
+              "name": "Karmeliterplatz"
+            }
+          }
+        }
+      },
+      {
+        "productId": "22391644",
+        "name": "Wanda - Was mich umbringt macht mich schwächer - Präs. von All Artists Agency",
+        "link": "https://www.eventim.de/event/wanda-was-mich-umbringt-macht-mich-schwaecher-tour-2027-facc-sky-dome-messe-ried-22391644/",
+        "status": "Available",
+        "attractions": [{ "name": "Wanda" }],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2027-08-13T20:30:00+02:00",
+            "location": { "city": "Ried im Innkreis", "name": "FACC Sky Dome, Messe Ried" }
+          }
+        }
+      },
+      {
+        "productId": "22407835",
+        "name": "WANDA, BIBIZA, JULI, THE SUBWAYS, TIAVO | FN:POP - AM SEE",
+        "link": "https://www.eventim.de/event/fnpop-festival-friedrichshafen-graf-zeppelin-haus-22407835/",
+        "status": "Available",
+        "attractions": [
+          { "name": "FN:POP" },
+          { "name": "The Subways" },
+          { "name": "Bibiza" },
+          { "name": "Tiavo" },
+          { "name": "Wanda" },
+          { "name": "Juli" }
+        ],
+        "typeAttributes": {
+          "liveEntertainment": {
+            "startDate": "2027-08-20T14:00:00+02:00",
+            "location": {
+              "city": "Friedrichshafen",
+              "geoLocation": { "latitude": 9.483330025602397, "longitude": 47.65000002433363 },
+              "name": "Graf-Zeppelin-Haus"
+            }
+          }
+        }
+      }
+    ]
+  }
+]

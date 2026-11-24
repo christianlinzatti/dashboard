@@ -18,7 +18,7 @@ const SECRET = "x".repeat(40);
 const session: Session = {
   uid: "nutzer-1",
   name: "Test",
-  accessToken: "at",
+  accessToken: "geheimes-zugangs-token-42",
   expiresAt: Date.now() + 3_600_000,
   refreshToken: "rt",
   scope: "user-read-currently-playing",
@@ -41,7 +41,7 @@ describe("Sitzung (verschlüsseltes Cookie)", () => {
     const { readSession, writeSession, SESSION_COOKIE } = await import("@/lib/server/session");
     await writeSession(session);
     const c = jar.get(SESSION_COOKIE)!;
-    expect(c.value).not.toContain("at"); // Token steht nicht im Klartext im Cookie
+    expect(c.value).not.toContain("geheimes-zugangs-token"); // Token steht nicht im Klartext im Cookie
     expect(c.options).toMatchObject({ httpOnly: true, sameSite: "lax", path: "/", maxAge: 60 * 60 * 24 * 365 });
     expect(await readSession()).toEqual(session);
   });

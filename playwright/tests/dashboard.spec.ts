@@ -249,6 +249,86 @@ test.describe("Dashboard", () => {
     await expect(page.getByTestId("perf-line")).toBeVisible();
   });
 
+  test("/debug: Konzerttermine mit Quellen, Fehlern und Rohterminen", async ({ page }) => {
+    const now = Date.now();
+    await page.route("**/api/debug-context", (r) =>
+      r.fulfill({
+        json: { entry: { receivedAt: now, context: { song: { track: { title: "Bussi Baby" }, artists: [{ name: "Wanda" }] } } } },
+      }),
+    );
+    await page.route("**/api/lyrics-status", (r) => r.fulfill({ json: { now, providers: [] } }));
+    await page.route("**/api/log", (r) => r.fulfill({ json: { entries: [] } }));
+    let asked = "";
+    await page.route("**/api/concerts/debug?*", (r) => {
+      asked = new URL(r.request().url()).search;
+      return r.fulfill({
+        json: {
+          today: "2026-11-24",
+          fresh: asked.includes("fresh=1"),
+          area: { name: "Wien", radiusKm: 200 },
+          providers: ["oeticket", "eventim"],
+          sources: [
+            { artist: "Wanda", provider: "oeticket", state: "ok", events: 11, cached: false, ms: 640 },
+            {
+              artist: "Wanda",
+              provider: "eventim",
+              state: "fehler",
+              events: 0,
+              cached: false,
+              ms: 210,
+              error: "eventim 403 – Zugriff gesperrt (Bot-Schutz der Quelle)",
+            },
+          ],
+          concerts: [
+            {
+              artistId: "Wanda",
+              artistName: "Wanda",
+              date: "2027-11-24",
+              time: "19:30",
+              venue: "Stadthalle",
+              city: "Wien",
+              distanceKm: 3,
+              providers: ["oeticket"],
+            },
+          ],
+          raw: [
+            {
+              artist: "Wanda",
+              rows: [
+                { provider: "oeticket", artistName: "Wanda", date: "2026-11-01", venue: "", city: "Graz", outcome: "vergangen" },
+                {
+                  provider: "oeticket",
+                  artistName: "Wanda",
+                  date: "2027-11-24",
+                  venue: "Stadthalle",
+                  city: "Wien",
+                  lat: 48.2,
+                  lon: 16.3,
+                  outcome: "gezeigt",
+                },
+              ],
+            },
+          ],
+          setlists: {},
+        },
+      });
+    });
+    await page.goto("/debug");
+    // Künstler des zuletzt gesendeten Songs sind vorbelegt
+    await expect(page.getByTestId("concert-debug-names")).toHaveValue("Wanda");
+    await page.getByTestId("concert-debug-load").click();
+    const sources = page.getByTestId("concert-debug-sources");
+    await expect(sources.locator('tbody[data-state="fehler"]')).toContainText("Bot-Schutz");
+    await expect(sources.locator('tbody[data-state="ok"]')).toContainText("640 ms");
+    // Datum mehr als 10 Monate entfernt: mit Jahr
+    await expect(page.getByTestId("concert-debug-result")).toContainText("Mi, 24. Nov. 2027");
+    await page.getByText(/Rohtermine Wanda/).click();
+    await expect(page.getByTestId("concert-debug-raw")).toContainText("→ vergangen");
+    expect(asked).toContain("names=Wanda");
+    await page.getByRole("button", { name: "Ohne Cache" }).click();
+    await expect.poll(() => asked).toContain("fresh=1");
+  });
+
   test("laufende Wiedergabe bewegt den Fortschritt", async ({ page }) => {
     // geprüft wird die Zeitanzeige, nicht die Bühne: niedrige Qualität, damit langsame CI-Rechner (ohne GPU) mithalten
     await page.goto("/?demo=neonlicht&qualitaet=niedrig");

@@ -13,7 +13,10 @@ type Ctx = {
     status?: {
       lyrics?: { state?: string; provider?: string; detail?: string };
       show?: { state?: string; provider?: string; detail?: string };
+      concerts?: { state?: string; detail?: string };
     };
+    concerts?: Array<{ distanceKm?: number }>;
+    concertArea?: { name?: string; radiusKm?: number };
     show?: { motto?: string };
     memory?: { drops?: Array<{ ms?: number; seen?: number }>; bpm?: number; plays?: number };
   } | null;
@@ -76,6 +79,7 @@ export function diagnose(ctx: Ctx): Finding[] {
     level: LYRICS_LEVEL[l?.state ?? ""] ?? "warnung",
   });
   out.push(showFinding(song.status?.show, !!song.show));
+  out.push(concertFinding(song));
   const mem = song.memory;
   out.push({
     label: "Song-Gedächtnis",
@@ -145,4 +149,19 @@ export function browserEnv() {
     origin: location.origin,
     userAgent: navigator.userAgent,
   };
+}
+
+/** Konzerttermine: wie viele, wie viele im Umkreis, fehlende Quellen (Details unter „Konzerttermine“) */
+function concertFinding(song: NonNullable<Ctx["song"]>): Finding {
+  const st = song.status?.concerts;
+  if (!st && !song.concerts) return { label: "Konzerte", value: "noch nicht geladen", level: "info" };
+  const list = song.concerts ?? [];
+  const radius = song.concertArea?.radiusKm ?? 200;
+  const near = list.filter((c) => c.distanceKm !== undefined && c.distanceKm <= radius).length;
+  const parts = [
+    `${list.length} Termin${list.length === 1 ? "" : "e"}`,
+    `${near} im Umkreis von ${radius} km${song.concertArea?.name ? ` um ${song.concertArea.name}` : ""}`,
+    st?.detail,
+  ];
+  return { label: "Konzerte", value: parts.filter(Boolean).join(" · "), level: st?.detail ? "warnung" : "ok" };
 }

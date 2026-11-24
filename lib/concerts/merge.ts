@@ -3,10 +3,13 @@ import type { Concert } from "@/lib/song-context/schema";
 import { distanceKm } from "./geo";
 import type { ConcertProvider, RawEvent } from "./types";
 
-const cityKey = (c: string) =>
+export const cityKey = (c: string) =>
   normalizeLine(c)
     .replace(/\b(wien|vienna)\b/, "wien")
     .replace(/\b(munchen|munich)\b/, "munchen");
+
+/** Gleicher Tag + gleiche Stadt = dasselbe Konzert */
+export const concertKey = (e: Pick<RawEvent, "date" | "city">) => `${e.date}|${cityKey(e.city)}`;
 
 /**
  * Termine aus mehreren Quellen zusammenführen: gleicher Tag + gleiche Stadt = ein Konzert.
@@ -22,7 +25,7 @@ export function mergeEvents(
   for (const { provider, events } of lists) {
     for (const e of events) {
       if (e.date < opts.today) continue;
-      const key = `${e.date}|${cityKey(e.city)}`;
+      const key = concertKey(e);
       const dist =
         e.lat !== undefined && e.lon !== undefined
           ? Math.round(distanceKm(opts.home, { lat: e.lat, lon: e.lon }))
@@ -51,7 +54,7 @@ export function mergeEvents(
         });
         continue;
       }
-      prev.c.providers.push(provider.id);
+      if (!prev.c.providers.includes(provider.id)) prev.c.providers.push(provider.id);
       prev.cancelled ||= !!e.cancelled;
       if (e.soldOut) prev.c.soldOut = true;
       if (prev.c.distanceKm === undefined && dist !== undefined) {

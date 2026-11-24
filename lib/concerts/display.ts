@@ -10,10 +10,14 @@ const utc = (iso: string) => {
   return Date.UTC(y!, (m ?? 1) - 1, d ?? 1);
 };
 
-/** „Sa, 14. März“ (österreichisch: Jänner). */
-export function formatConcertDate(iso: string): string {
+/** Ab so vielen Tagen steht das Jahr dabei – sonst sieht „Mi, 24. Nov.“ in einem Jahr aus wie heute */
+export const YEAR_AFTER_DAYS = 300;
+
+/** „Sa, 14. März“ (österreichisch: Jänner); mehr als ~10 Monate entfernt mit Jahr: „Mi, 24. Nov. 2027“. */
+export function formatConcertDate(iso: string, today?: string): string {
   const d = new Date(utc(iso));
-  return `${WEEKDAYS[d.getUTCDay()]}, ${d.getUTCDate()}. ${MONTHS[d.getUTCMonth()]}`;
+  const year = today && daysUntil(iso, today) > YEAR_AFTER_DAYS ? ` ${d.getUTCFullYear()}` : "";
+  return `${WEEKDAYS[d.getUTCDay()]}, ${d.getUTCDate()}. ${MONTHS[d.getUTCMonth()]}${year}`;
 }
 
 export function daysUntil(iso: string, today: string): number {
