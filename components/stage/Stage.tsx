@@ -1,32 +1,22 @@
 "use client";
 
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas } from "@react-three/fiber";
 import { PerformanceMonitor } from "@react-three/drei";
 import { Bloom, EffectComposer } from "@react-three/postprocessing";
-import { Suspense, use, useEffect, useMemo, useRef, useState } from "react";
-import { loadMixamo, mixamoIdsIn } from "@/lib/dance/mixamo-loader";
-import { planChoreography } from "@/lib/dance/plan";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useSettings } from "@/lib/settings";
-import type { SongStatic } from "@/lib/song-context/schema";
 import { useSongContext } from "@/lib/song-context/store";
-import { isBigNight } from "@/lib/show/evening";
 import type { LightFrame } from "@/lib/stage/lights";
 import { PRESETS, stepQuality, type Quality } from "@/lib/stage/quality";
-import { planEffects } from "@/lib/stage/effects";
 import { SceneLights } from "./SceneLights";
 import { Band } from "./Band";
-import { planBand } from "@/lib/stage/band";
-import { signTexts } from "@/lib/stage/fan-signs";
-import { avatars } from "@/lib/avatars/catalog";
-import { setlistStore, useEveningPhase, usePreviousTheme, useRecentClipsKey, useTourTheme } from "@/lib/stage/setlist";
-import { hasBlinders, THEMES, themedPalette, themeFor, type Theme, type ThemeId } from "@/lib/stage/themes";
-import { fpsFrom, perf } from "@/lib/stage/perf";
+import { hasBlinders, type ThemeId } from "@/lib/stage/themes";
 import { ErrorBoundary } from "../ErrorBoundary";
 import { Avatar } from "./Avatar";
 import { Director, FOG_NEAR } from "./Director";
 import { Blinders, Lasers, MovingHeads } from "./Lights";
 import { NOT_ON_SCREENS } from "./layout";
-import { dayPhaseAt, type DayPhase } from "@/lib/stage/daylight";
+import { type DayPhase } from "@/lib/stage/daylight";
 import { LiveScreens } from "./LiveScreens";
 import { PhotoCapture } from "./PhotoCapture";
 import { Weather } from "./Weather";
@@ -43,55 +33,17 @@ import { Fog, StageSet, TurntableMarks, WallFrame, wallScale } from "./StageSet"
 import { Crowd, CrowdFlags } from "./crowd";
 import { Effects } from "./effects";
 import { initialFrame, type Frame } from "./types";
-import type { SingAlong } from "@/lib/show/singalong";
-import { stageInfo } from "@/lib/stage/stage-info";
 import { RenderStats } from "./RenderStats";
+import { FpsMeter, hasWebGL, MixamoClips, screenWidth, useDayPhase } from "./scene-parts";
+import { Backdrop, StageOverlays } from "./StageOverlays";
+import { useStagePlan } from "./useStagePlan";
 import { ChorusSign } from "./ChorusSign";
-
-function hasWebGL() {
-  try {
-    const c = document.createElement("canvas");
-    return !!(c.getContext("webgl2") ?? c.getContext("webgl"));
-  } catch {
-    return false;
-  }
-}
-
-/** Misst die Bildrate (alle 2 s) für Debug-Panel und Leistungsproben. */
-function FpsMeter({ quality }: { quality: Quality }) {
-  const times = useRef<number[]>([]);
-  const last = useRef(0);
-  useFrame((state, dt) => {
-    times.current.push(dt);
-    if (state.clock.elapsedTime - last.current < 2) return;
-    last.current = state.clock.elapsedTime;
-    perf.setState({ fps: fpsFrom(times.current), quality });
-    times.current = [];
-  });
-  return null;
-}
-
-/** Ersatz ohne 3D (kein WebGL, Grafikfehler): ruhiger Farbverlauf aus der Cover-Palette. */
-function Backdrop({ song }: { song: SongStatic | null }) {
-  const p = song?.album.palette;
-  return (
-    <div
-      className="absolute inset-0"
-      data-testid="stage-fallback"
-      style={{
-        background: p ? `radial-gradient(ellipse at 50% 35%, ${p.dominant}55 0%, ${p.dark} 65%), ${p.dark}` : "#05030a",
-      }}
-    />
-  );
-}
 
 /**
  * 3D-Bühne. Lädt nur die Avatare der aktuellen Besetzung.
  * Robust: ohne WebGL oder bei Fehlern in der Szene erscheint ein 2D-Hintergrund; nach einem
  * Verlust des Grafikkontexts (z. B. GPU-Reset auf dem Pi) wird die Szene neu aufgebaut.
  */
-/** Bildschirmbreite in Gerätepixeln (für die Größe des Wandfotos) */
-const screenWidth = () => (typeof window === "undefined" ? 1280 : window.innerWidth * Math.min(2, window.devicePixelRatio || 1));
 
 export function Stage({
   forceQuality,
@@ -136,81 +88,7 @@ function Scene({
   forceDaylight?: DayPhase;
   onContextLost: () => void;
 }) {
-  const raw = useSongContext((s) => s.song);
-  // Bühnen-Thema: URL > Einstellung > Genre/Track; die Cover-Palette wird in Richtung Thema verschoben
-  const themeChoice = useSettings((s) => s.stage);
-  // Gedächtnis des Abends: Bühne des vorigen Songs meiden, Tänze der letzten Songs seltener
-  const prevTheme = usePreviousTheme(raw?.trackKey);
-  const recentKey = useRecentClipsKey(raw?.trackKey);
-  const tour = useTourTheme(raw?.artists[0]?.spotifyId, raw?.trackKey);
-  const theme: Theme | null = raw ? THEMES[forceTheme ?? themeFor(raw, themeChoice, prevTheme, tour)] : null;
-  const song = useMemo(
-    () => (raw && theme?.tint ? { ...raw, album: { ...raw.album, palette: themedPalette(raw.album.palette, theme) } } : raw),
-    [raw, theme],
-  );
-  const bpm = useSongContext((s) => Math.round(s.live.bpm));
-  const frozen = useSongContext((s) => s.frozen);
-  const dark = song?.album.palette.dark ?? "#0b0712";
-
-  // Neu planen nur, wenn sich Song, Abschnitte, Besetzung oder Tempo ändern
-  const sectionsKey = song?.lyrics?.sections.map((s) => `${s.kind}${s.startMs}`).join() ?? "";
-  // gefolgte Artists winken beim Songstart – die Daten kommen kurz nach dem Songwechsel
-  const followKey = Object.entries(song?.user?.artists ?? {})
-    .filter(([, a]) => a.following)
-    .map(([id]) => id)
-    .join();
-  // Regie (Genres, Stimmung, KI-Brief, Tagesform) kommt kurz nach dem Songwechsel
-  const showKey = `${raw?.variant}|${raw?.music.mood}|${raw?.music.genres.join()}|${raw?.show?.motto}|${raw?.memory?.drops.map((d) => d.ms).join()}|${raw?.memory?.energySeen ?? 0}`;
-  const choreo = useMemo(
-    () => (raw ? planChoreography(raw, bpm, { avoidClips: new Set(recentKey ? recentKey.split(",") : []) }) : null),
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- bewusst nur bei inhaltlichen Änderungen
-    [raw?.trackKey, sectionsKey, bpm, raw?.cast, followKey, showKey, recentKey],
-  );
-  // Spannungsbogen des Abends (aufgezeichnet von useEveningTracker im Dashboard – auch ohne 3D-Szene)
-  const phase = useEveningPhase(raw?.trackKey, raw?.show?.mood ?? raw?.music.mood);
-  // Bühne und getanzte Clips dieses Songs fürs Gedächtnis des Abends ergänzen
-  useEffect(() => {
-    if (!choreo || !theme) return;
-    const clips = [...new Set(choreo.phrases.flatMap((p) => Object.values(p.moves).map((m) => m.clip)))];
-    setlistStore.getState().record({ trackKey: choreo.trackKey, theme: theme.id, clips, artistId: raw?.artists[0]?.spotifyId });
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- Künstler gehört zum Song (choreo)
-  }, [choreo, theme]);
-  // Durchatmen nach mehreren wilden Songs: das Publikum holt die Feuerzeuge raus
-  const shown = useMemo(
-    () => (choreo && phase === "durchatmen" ? { ...choreo, crowdStyle: "ballade" as const } : choreo),
-    [choreo, phase],
-  );
-  // Band hinten (DJ / Rock / Keys nach Genre) – nicht auf der niedrigsten Qualitätsstufe
-  const band = useMemo(
-    () =>
-      raw
-        ? planBand(
-            raw,
-            avatars.map((a) => a.id),
-          )
-        : null,
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- nur bei Song, Besetzung oder Regie neu
-    [raw?.trackKey, raw?.cast, showKey],
-  );
-  // Fan-Schilder (Künstler, Titel, Heimatort …) – nur Texte; neu bei neuem Song oder Heimatort
-  const signs = useMemo(
-    () => (raw ? signTexts(raw) : []),
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- nur bei Song oder Heimatort neu
-    [raw?.trackKey, raw?.concertArea?.name],
-  );
-  const mixamoIds = useMemo(
-    () => [
-      ...new Set([
-        ...(choreo ? mixamoIdsIn(choreo) : []),
-        ...(band?.members.map((m) => m.clip).filter((c) => c.startsWith("Mixamo_")) ?? []),
-      ]),
-    ],
-    [choreo, band],
-  );
-  const cues = useMemo(
-    () => (choreo && theme ? planEffects(choreo, theme, { bigNight: isBigNight(phase) }) : []),
-    [choreo, theme, phase],
-  );
+  const { raw, theme, song, choreo, phase, shown, band, signs, mixamoIds, cues, frozen, dark } = useStagePlan(forceTheme);
   // Wetter auf Freiluftbühnen (Regen, Schnee) – Demos rechnen mit festem Datum
   const weather =
     forceWeather === "aus"
@@ -236,11 +114,6 @@ function Scene({
   const preset = PRESETS[quality];
 
   useEffect(() => () => document.body.removeAttribute("data-stage-ready"), []);
-  // Fernbedienung: welche Bühne steht und welche Effekte sie hat
-  useEffect(() => {
-    stageInfo.getState().set(theme ? { id: theme.id, effects: theme.effects } : null);
-  }, [theme]);
-  useEffect(() => () => stageInfo.getState().set(null), []);
 
   if (!song || !choreo || !theme) return null;
   const crowdCount = Math.round(preset.crowd * theme.crowd);
@@ -396,90 +269,12 @@ function Scene({
           </EffectComposer>
         )}
       </Canvas>
-      {/* Bildnachweis fürs Foto auf der LED-Wand (Wikipedia/Commons verlangt Urheber und Lizenz) */}
-      {theme?.wall === "led" && photoUrl && photoCredit && (
-        <p
-          className="pointer-events-none absolute bottom-[6vmin] right-[3vmin] max-w-[45vw] truncate rounded bg-black/55 px-1.5 py-px text-right text-[clamp(8px,1.2vmin,11px)] text-white/70"
-          data-testid="wall-photo-credit"
-        >
-          LED-Wand · {photoCredit}
-        </p>
-      )}
-      {/* Stroboskop (nur bei Drops, abschaltbar) */}
-      <div ref={strobe} className="pointer-events-none absolute inset-0 bg-white opacity-0" aria-hidden />
-      {/* Blinder strahlen beim Einsatz warm in die Kamera */}
-      <div
-        ref={glare}
-        className="pointer-events-none absolute inset-0 opacity-0 mix-blend-screen"
-        style={{
-          background:
-            "radial-gradient(ellipse 70% 45% at 50% 0%, rgba(255,190,110,0.85), rgba(255,150,70,0.25) 55%, rgba(0,0,0,0) 80%)",
-        }}
-        aria-hidden
+      <StageOverlays
+        refs={{ strobe, glare, blackout, countdown }}
+        accent={song.album.palette.accent}
+        photoCredit={theme.wall === "led" && photoUrl ? photoCredit : null}
+        singAlong={choreo.singAlong}
       />
-      {/* Blackout vor einem großen Einsatz: Raum dunkel, Lichtkegel in der Mitte, Countdown 4-3-2-1 */}
-      <div
-        ref={blackout}
-        className="pointer-events-none absolute inset-0 opacity-0"
-        style={{ background: "radial-gradient(ellipse 38% 55% at 50% 52%, rgba(0,0,0,0.25), rgba(0,0,0,0.92) 75%)" }}
-        aria-hidden
-      />
-      <div
-        ref={countdown}
-        data-testid="countdown"
-        className="pointer-events-none absolute inset-x-0 top-[12%] text-center font-black leading-none opacity-0"
-        style={{
-          fontSize: "min(28vh, 22vw)",
-          color: song?.album.palette.accent ?? "#ff4fd8",
-          textShadow: `0 0 0.18em ${song?.album.palette.accent ?? "#ff4fd8"}`,
-        }}
-        aria-hidden
-      />
-      <SingAlongBadge window={choreo.singAlong} accent={song.album.palette.accent} />
     </div>
   );
-}
-
-/** Mitsing-Moment: kurze Einblendung über der Bühne, solange die Menge allein singt */
-function SingAlongBadge({ window, accent }: { window: SingAlong | null | undefined; accent: string }) {
-  const on = useSongContext((s) => !!window && s.positionMs > window.startMs && s.positionMs < window.endMs);
-  if (!window) return null;
-  return (
-    <div
-      className="pointer-events-none absolute inset-x-0 top-[20%] z-20 flex justify-center transition-opacity duration-500"
-      style={{ opacity: on ? 1 : 0 }}
-      data-testid="singalong"
-      data-visible={on}
-      aria-hidden={!on}
-    >
-      <span
-        className="rounded-full bg-black/55 px-[3vmin] py-[1vmin] text-[clamp(16px,3.4vmin,40px)] font-black uppercase tracking-wide"
-        style={{ color: accent, textShadow: `0 0 0.4em ${accent}` }}
-      >
-        Alle zusammen!
-      </span>
-    </div>
-  );
-}
-
-/** Lädt die Mixamo-Clips des Songs (Suspense: Screenshots warten darauf). */
-function MixamoClips({ ids }: { ids: string[] }) {
-  use(loadMixamo(ids));
-  return null;
-}
-
-/** Tageszeit aus der Uhr, jede Minute neu (aus = keine Uhr, z. B. in Demos) */
-function useDayPhase(on: boolean): DayPhase | undefined {
-  const [phase, setPhase] = useState<DayPhase | undefined>(undefined);
-  useEffect(() => {
-    if (!on) return;
-    const tick = () => setPhase(dayPhaseAt(new Date()));
-    const first = setTimeout(tick, 0);
-    const id = setInterval(tick, 60_000);
-    return () => {
-      clearTimeout(first);
-      clearInterval(id);
-    };
-  }, [on]);
-  return on ? phase : undefined;
 }
