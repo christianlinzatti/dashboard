@@ -70,6 +70,13 @@ function shapeMouth(mouth: Mesh, smile: Object3D, open: number, round: number) {
   smile.scale.setScalar(open > 0 ? 0.001 : 1);
 }
 
+/**
+ * Reihenfolge im Bild: Regie (−1) füllt den Frame, dann die Avatare, dann alles mit 0 (u. a. die Live-Bildschirme,
+ * die die Bühne abfilmen). Sonst filmten die Bildschirme die Pose des vorigen Bildes – bei angehaltener Szene (nur
+ * wenige Bilder) je nach Ladezeit eine andere.
+ */
+const AVATAR_PRIORITY = -0.5;
+
 const AXIS = new Vector3();
 const Q_ROOT = new Quaternion();
 const Q_PARENT = new Quaternion();
@@ -300,6 +307,7 @@ function AvatarModel({ url, member, song, choreo, frameRef, band }: AvatarProps 
 
   // Clip-Ebenen aus dem Plan setzen (zustandslos: gleiche Songzeit → gleiche Pose)
   const chibi = member.avatarId.startsWith("chibi-");
+  // Pose jedes Bildes (Priorität: nach der Regie, vor den Live-Bildschirmen – die filmen so die aktuelle Pose)
   const mirror = choreo.order.indexOf(member.avatarId) % 2 === 1;
   useFrame(() => {
     const f = frameRef.current;
@@ -377,7 +385,7 @@ function AvatarModel({ url, member, song, choreo, frameRef, band }: AvatarProps 
       group.current.rotation.y = f.stageAngle + (f.headings[member.avatarId] ?? 0);
       if (sing > 0) holdOutMic(group.current, arms, sing);
     }
-  });
+  }, AVATAR_PRIORITY);
 
   const artist = song.track.isFeature ? song.artists.find((a) => a.spotifyId === member.artistId) : undefined;
 
