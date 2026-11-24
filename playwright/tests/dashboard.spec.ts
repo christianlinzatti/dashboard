@@ -465,3 +465,39 @@ test("Startbildschirm: Erinnerung an ein Konzert im Umkreis", async ({ page }) =
   await expect(line).toContainText("+1 weitere");
   if (process.env.SHOT_OUT) await page.screenshot({ path: process.env.SHOT_OUT });
 });
+
+test("Abspann nach dem letzten Song: rollt einmal, Antippen überspringt, danach der Rückblick", async ({ page }) => {
+  const now = Date.now();
+  const log = ["Bussi Baby", "Amore", "Columbo"].map((title, i) => ({
+    trackKey: title,
+    title,
+    artist: "Wanda",
+    durationMs: 200_000,
+    // letzter Song endete vor einer Minute
+    at: now - 60_000 - 200_000 - (2 - i) * 200_000,
+    ...(i === 2 ? { phase: "zugabe" } : {}),
+  }));
+  await page.addInitScript((l) => {
+    if (!sessionStorage.getItem("seeded")) {
+      localStorage.setItem("ss_abend", JSON.stringify(l));
+      sessionStorage.setItem("seeded", "1");
+    }
+  }, log);
+  await page.goto("/?demo=gibtsnicht");
+  const credits = page.getByTestId("credits");
+  await expect(credits).toBeVisible();
+  await expect(credits).toContainText("Euer Abend");
+  await expect(credits).toContainText("3. Columbo");
+  await expect(credits).toContainText("Zugabe");
+  if (process.env.SHOT_OUT) {
+    await page.waitForTimeout(9000);
+    await page.screenshot({ path: process.env.SHOT_OUT });
+  }
+  await credits.dispatchEvent("pointerdown");
+  await expect(credits).toHaveCount(0);
+  await expect(page.getByTestId("evening-recap")).toBeVisible();
+  // nicht noch einmal nach dem Neuladen
+  await page.reload();
+  await expect(page.getByTestId("evening-recap")).toBeVisible();
+  await expect(page.getByTestId("credits")).toHaveCount(0);
+});

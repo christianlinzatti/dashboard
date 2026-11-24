@@ -5,6 +5,19 @@ import type { SpotifyStatus } from "../spotify/useSpotifySync";
 import { RecentList } from "../personal/RecentList";
 import { ConcertReminder } from "@/components/concerts/ConcertReminder";
 import { EveningRecap, useEveningRecap } from "./EveningRecap";
+import { Credits } from "./Credits";
+import { shouldRollCredits } from "@/lib/show/credits";
+import { useSettings } from "@/lib/settings";
+
+const CREDITS_KEY = "ss_abspann";
+function creditsShownFor(): number | null {
+  try {
+    const v = Number(localStorage.getItem(CREDITS_KEY));
+    return Number.isFinite(v) && v > 0 ? v : null;
+  } catch {
+    return null;
+  }
+}
 
 const loginErrors: Record<string, string> = {
   abgebrochen: "Die Anmeldung wurde abgebrochen.",
@@ -62,6 +75,27 @@ export function IdleScreen({ status, unknownDemo, loginError }: Props) {
   const { title, text } = texts(status, unknownDemo);
   const { level, wake } = useIdleBrightness();
   const recap = useEveningRecap();
+  const lamps = useSettings((s) => s.lamps);
+  // Abspann: einmal je Abend, kurz nachdem die Musik aufgehört hat (entschieden nach dem Laden, nicht beim Rendern)
+  const [rollFor, setRollFor] = useState<number | null>(null);
+  const idle = status.kind === "idle";
+  useEffect(() => {
+    if (!idle || !recap) return;
+    const id = setTimeout(() => {
+      if (shouldRollCredits(recap, Date.now(), creditsShownFor())) setRollFor(recap.since);
+    }, 0);
+    return () => clearTimeout(id);
+  }, [idle, recap]);
+  const rollCredits = idle && !!recap && rollFor === recap.since;
+  const endCredits = () => {
+    if (recap)
+      try {
+        localStorage.setItem(CREDITS_KEY, String(recap.since));
+      } catch {
+        /* privater Modus: dann ggf. noch einmal */
+      }
+    setRollFor(null);
+  };
   return (
     <div
       className="burnin-drift flex h-full flex-col items-center justify-center gap-[3vmin] px-6 text-center transition-opacity duration-[3000ms]"
@@ -89,6 +123,7 @@ export function IdleScreen({ status, unknownDemo, loginError }: Props) {
           Mit Spotify anmelden
         </a>
       )}
+      {rollCredits && recap && <Credits recap={recap} lamps={lamps} onDone={endCredits} />}
       {status.kind === "idle" && <ConcertReminder />}
       {/* nach einem Abend mit Musik: der Rückblick statt „Zuletzt gehört“ (beides passt nicht ohne Scrollen) */}
       {status.kind === "idle" && (recap ? <EveningRecap recap={recap} /> : <RecentList />)}

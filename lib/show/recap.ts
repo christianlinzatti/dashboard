@@ -87,6 +87,8 @@ export type Recap = {
   tips: string[];
   /** die letzten Songs (neueste zuerst) */
   recent: LogEntry[];
+  /** alle Songs des Abends in Reihenfolge (für den Abspann; höchstens 30) */
+  setlist: LogEntry[];
 };
 
 /** So viele Tipps zeigt der Rückblick höchstens */
@@ -146,5 +148,6 @@ export function summarize(log: readonly LogEntry[], now: number): Recap | null {
     ...(songs >= 2 ? { topArtist: { name, songs } } : {}),
     tips: tipsFor(evening),
     recent: evening.slice(-8).reverse(),
+    setlist: evening.slice(-30),
   };
 }

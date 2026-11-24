@@ -57,7 +57,7 @@ describe("Rückblick auf den Abend", () => {
 describe("Rückblick als Bild", () => {
   it("Eckdaten: Songs, Dauer (ab 60 Min. in Stunden), Lieblingssongs (Einzahl/Mehrzahl, ohne wenn keine)", async () => {
     const { recapFacts } = await import("@/lib/show/recap-image");
-    const r = { songs: 12, minutes: 75, since: 0, highlights: [], encores: [], liked: 1, tips: [], recent: [] };
+    const r = { songs: 12, minutes: 75, since: 0, highlights: [], encores: [], liked: 1, tips: [], recent: [], setlist: [] };
     expect(recapFacts(r)).toBe("12 Songs · 1 Std. 15 Min. · 1 Lieblingssong");
     expect(recapFacts({ ...r, minutes: 40, liked: 3 })).toBe("12 Songs · 40 Min. · 3 Lieblingssongs");
     expect(recapFacts({ ...r, liked: 0 })).toBe("12 Songs · 1 Std. 15 Min.");

@@ -10,7 +10,7 @@ export const ANNOUNCE_FROM_MS = 7500;
 export const ANNOUNCE_UNTIL_MS = 14_500;
 
 /**
- * Ansage des Sängers zum Songstart als Sprechblase oben links (wo in Strophen der Fakten-Ticker steht). Weicht,
+ * Ansage des Sängers zum Songstart als Sprechblase oben links (unter Titel und Abzeichen). Weicht,
  * sobald gesungen wird – der Songtext hat Vorrang.
  */
 export function Announcement() {
@@ -36,7 +36,7 @@ export function Announcement() {
   if (!song || !text || !singer) return null;
   return (
     <div
-      className="pointer-events-none absolute left-[3vmin] top-[15vmin] max-w-[min(62vw,720px)] rounded-2xl rounded-tl-sm bg-black/60 px-[2vmin] py-[1vmin] backdrop-blur transition-opacity duration-500"
+      className="pointer-events-none absolute left-[3vmin] top-[19vmin] max-w-[min(62vw,720px)] rounded-2xl rounded-tl-sm bg-black/60 px-[2vmin] py-[1vmin] backdrop-blur transition-opacity duration-500"
       style={{ opacity: visible ? 1 : 0 }}
       data-testid="announcement"
       data-visible={visible}

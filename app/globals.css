@@ -307,3 +307,23 @@ body {
     animation: none !important;
   }
 }
+
+/* Abspann: rollt von unten durch den Bildschirm nach oben hinaus */
+@keyframes credits-roll {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(calc(-100% - 100vh));
+  }
+}
+.credits-roll {
+  animation-name: credits-roll;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .credits-roll {
+    animation-duration: 0.01s !important;
+  }
+}
