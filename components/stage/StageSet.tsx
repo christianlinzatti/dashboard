@@ -14,7 +14,7 @@ import { songContext, useSongContext } from "@/lib/song-context/store";
 import { chorusKeyword, forcedWallPattern, keywordAmount, wallPattern, wallPatterns } from "@/lib/stage/wall";
 
 import { Instances, mat } from "./instances";
-import { TRUSS_Y, TRUSS_Z } from "./layout";
+import { NOT_ON_SCREENS, TRUSS_Y, TRUSS_Z } from "./layout";
 
 export { TRUSS_Y, TRUSS_Z };
 
@@ -380,7 +380,15 @@ export function Fog({ lightsRef, color }: { lightsRef: React.RefObject<LightFram
   return (
     <group>
       {[0, 1, 2].map((i) => (
-        <mesh key={i} ref={(m) => void (layers.current[i] = m)} position={[0, 0.15 + i * 0.08, -0.5 - i * 1.4]}>
+        <mesh
+          key={i}
+          ref={(m) => {
+            layers.current[i] = m;
+            // Dunstschleier: auf den kleinen Live-Bildschirmen kaum zu sehen – dort nicht mitgefilmt
+            m?.layers.set(NOT_ON_SCREENS);
+          }}
+          position={[0, 0.15 + i * 0.08, -0.5 - i * 1.4]}
+        >
           <planeGeometry args={[14, 1.2]} />
           <meshBasicMaterial
             map={tex}
@@ -411,6 +419,13 @@ export function WallFrame({ scale, children }: { scale: number; children: React.
 
 export const wallScale = (theme: Theme) => (theme.id === "festival" ? 0.74 : 1);
 
+const MARKS = Array.from({ length: 16 }, (_, i) => {
+  const a = (i / 16) * Math.PI * 2;
+  return { long: i % 4 === 0, m: mat({ p: [Math.sin(a) * 4.02, 0, Math.cos(a) * 4.02], r: [-Math.PI / 2, 0, -a] }) };
+});
+const LONG_MARKS = MARKS.filter((k) => k.long).map((k) => k.m);
+const SHORT_MARKS = MARKS.filter((k) => !k.long).map((k) => k.m);
+
 /** Leuchtmarken am Podestrand – drehen sich mit der Drehbühne (sonst sähe man die Drehung kaum). */
 export function TurntableMarks({ frameRef, color }: { frameRef: React.RefObject<Frame>; color: string }) {
   const group = useRef<Group>(null);
@@ -419,38 +434,37 @@ export function TurntableMarks({ frameRef, color }: { frameRef: React.RefObject<
   });
   return (
     <group ref={group} position-y={0.006}>
-      {Array.from({ length: 16 }, (_, i) => {
-        const a = (i / 16) * Math.PI * 2;
-        return (
-          <mesh key={i} position={[Math.sin(a) * 4.02, 0, Math.cos(a) * 4.02]} rotation={[-Math.PI / 2, 0, -a]}>
-            <planeGeometry args={[0.07, i % 4 === 0 ? 0.32 : 0.16]} />
-            <meshBasicMaterial color={color} toneMapped={false} transparent opacity={i % 4 === 0 ? 0.95 : 0.55} />
-          </mesh>
-        );
-      })}
+      <Instances matrices={LONG_MARKS}>
+        <planeGeometry args={[0.07, 0.32]} />
+        <meshBasicMaterial color={color} toneMapped={false} transparent opacity={0.95} />
+      </Instances>
+      <Instances matrices={SHORT_MARKS}>
+        <planeGeometry args={[0.07, 0.16]} />
+        <meshBasicMaterial color={color} toneMapped={false} transparent opacity={0.55} />
+      </Instances>
     </group>
   );
 }
 
 /** Monitorboxen (Wedges) an der Bühnenkante, schräg zu den Künstlern; die Mitte bleibt frei für die Untersicht. */
 const WEDGE_ANGLES = [-0.9, -0.45, 0.45, 0.9];
+const wedge = (a: number) => ({ p: [Math.sin(a) * 3.85, 0, Math.cos(a) * 3.85], r: [0, a + Math.PI, 0] }) as const;
+/** Gehäuse: nach hinten gekippt, Front zu den Tänzern */
+const WEDGE_BOXES = WEDGE_ANGLES.map((a) => mat(wedge(a), { p: [0, 0.17, 0], r: [-0.55, 0, 0] }));
+/** Lautsprechergitter auf der Front (Front zeigt schräg nach oben zu den Tänzern) */
+const WEDGE_GRILLS = WEDGE_ANGLES.map((a) => mat(wedge(a), { p: [0, 0.17 + 0.52 * 0.212, 0.85 * 0.212], r: [-0.55, 0, 0] }));
+
 export function MonitorWedges() {
   return (
     <group>
-      {WEDGE_ANGLES.map((a) => (
-        <group key={a} position={[Math.sin(a) * 3.85, 0, Math.cos(a) * 3.85]} rotation-y={a + Math.PI}>
-          {/* Gehäuse: nach hinten gekippt, Front zu den Tänzern */}
-          <mesh position={[0, 0.17, 0]} rotation-x={-0.55}>
-            <boxGeometry args={[0.62, 0.36, 0.42]} />
-            <meshStandardMaterial color="#121216" metalness={0.3} roughness={0.7} />
-          </mesh>
-          {/* Lautsprechergitter auf der Front (Front zeigt schräg nach oben zu den Tänzern) */}
-          <mesh position={[0, 0.17 + 0.52 * 0.212, 0.85 * 0.212]} rotation-x={-0.55}>
-            <planeGeometry args={[0.54, 0.3]} />
-            <meshStandardMaterial color="#2a2a30" metalness={0.6} roughness={0.5} />
-          </mesh>
-        </group>
-      ))}
+      <Instances matrices={WEDGE_BOXES}>
+        <boxGeometry args={[0.62, 0.36, 0.42]} />
+        <meshStandardMaterial color="#121216" metalness={0.3} roughness={0.7} />
+      </Instances>
+      <Instances matrices={WEDGE_GRILLS}>
+        <planeGeometry args={[0.54, 0.3]} />
+        <meshStandardMaterial color="#2a2a30" metalness={0.6} roughness={0.5} />
+      </Instances>
     </group>
   );
 }

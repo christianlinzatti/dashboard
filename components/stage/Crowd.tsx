@@ -22,6 +22,7 @@ import type { Choreography } from "@/lib/dance/plan";
 import { rng } from "@/lib/dance/rng";
 import { singAlongAt } from "@/lib/show/singalong";
 import { crowdAt, crowdSpots } from "@/lib/stage/crowd";
+import { Instances, mat } from "./instances";
 import type { LightFrame } from "@/lib/stage/lights";
 import type { Theme } from "@/lib/stage/themes";
 import type { Frame } from "./types";
@@ -466,6 +467,8 @@ const flagShader = {
 };
 
 /** Festival: ein paar Fahnen ragen aus der Menge und wehen. */
+const FLAG_POLES = FLAG_SPOTS.map(([x, z]) => mat({ p: [x, 1.1, z] }));
+
 export function CrowdFlags({
   colors,
   frameRef,
@@ -499,12 +502,13 @@ export function CrowdFlags({
   });
   return (
     <group>
+      {/* alle Fahnenmasten: ein Zeichenaufruf */}
+      <Instances matrices={FLAG_POLES}>
+        <cylinderGeometry args={[0.015, 0.015, 2.6, 6]} />
+        <meshStandardMaterial color="#888" metalness={0.6} roughness={0.4} />
+      </Instances>
       {FLAG_SPOTS.map(([x, z], i) => (
         <group key={i} position={[x, 0, z]} rotation-y={(i % 2 ? 1 : -1) * 0.5}>
-          <mesh position-y={1.1}>
-            <cylinderGeometry args={[0.015, 0.015, 2.6, 6]} />
-            <meshStandardMaterial color="#888" metalness={0.6} roughness={0.4} />
-          </mesh>
           <mesh position={[0.45, 2.1, 0]}>
             <planeGeometry args={[0.9, 0.56, 16, 4]} />
             <shaderMaterial

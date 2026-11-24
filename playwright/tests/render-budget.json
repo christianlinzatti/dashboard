@@ -3,76 +3,76 @@
   "stand": "2026-11-24",
   "budgets": {
     "club/niedrig": {
-      "drawcalls": 95,
-      "triangles": 98000
+      "drawcalls": 80,
+      "triangles": 100000
     },
     "festival/niedrig": {
-      "drawcalls": 99,
-      "triangles": 107000
+      "drawcalls": 85,
+      "triangles": 109000
     },
     "synthwave/niedrig": {
-      "drawcalls": 79,
+      "drawcalls": 70,
       "triangles": 93000
     },
     "jazz/niedrig": {
-      "drawcalls": 68,
+      "drawcalls": 63,
       "triangles": 81000
     },
     "weltraum/niedrig": {
-      "drawcalls": 73,
+      "drawcalls": 64,
       "triangles": 87000
     },
     "stadion/niedrig": {
-      "drawcalls": 93,
+      "drawcalls": 84,
       "triangles": 111000
     },
     "strand/niedrig": {
-      "drawcalls": 93,
-      "triangles": 103000
+      "drawcalls": 82,
+      "triangles": 105000
     },
     "lagerhalle/niedrig": {
-      "drawcalls": 83,
+      "drawcalls": 74,
       "triangles": 99000
     },
     "kathedrale/niedrig": {
-      "drawcalls": 79,
-      "triangles": 91000
+      "drawcalls": 74,
+      "triangles": 92000
     },
     "club/mittel": {
-      "drawcalls": 302,
-      "triangles": 252000
+      "drawcalls": 204,
+      "triangles": 254000
     },
     "festival/mittel": {
-      "drawcalls": 310,
-      "triangles": 288000
+      "drawcalls": 214,
+      "triangles": 290000
     },
     "synthwave/mittel": {
-      "drawcalls": 119,
+      "drawcalls": 108,
       "triangles": 115000
     },
     "jazz/mittel": {
-      "drawcalls": 105,
-      "triangles": 91000
+      "drawcalls": 100,
+      "triangles": 92000
     },
     "weltraum/mittel": {
-      "drawcalls": 113,
+      "drawcalls": 102,
       "triangles": 103000
     },
     "stadion/mittel": {
-      "drawcalls": 282,
+      "drawcalls": 210,
       "triangles": 294000
     },
     "strand/mittel": {
-      "drawcalls": 130,
-      "triangles": 129000
+      "drawcalls": 119,
+      "triangles": 131000
     },
     "lagerhalle/mittel": {
-      "drawcalls": 123,
-      "triangles": 128000
+      "drawcalls": 112,
+      "triangles": 129000
     },
     "kathedrale/mittel": {
-      "drawcalls": 117,
-      "triangles": 109000
+      "drawcalls": 112,
+      "triangles": 110000
     }
   }
 }

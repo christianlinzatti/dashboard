@@ -5,9 +5,11 @@ import { useEffect, useMemo, useRef } from "react";
 import {
   Color,
   DoubleSide,
+  Euler,
   IcosahedronGeometry,
   InstancedBufferAttribute,
   InstancedBufferGeometry,
+  type Matrix4,
   PlaneGeometry,
   Quaternion,
   UniformsLib,
@@ -22,6 +24,7 @@ import type { Palette } from "@/lib/song-context/schema";
 import type { ActiveCue } from "@/lib/stage/effects";
 import type { LightFrame } from "@/lib/stage/lights";
 import type { Theme } from "@/lib/stage/themes";
+import { Instances, mat } from "./instances";
 import { TRUSS_Y, TRUSS_Z } from "./layout";
 
 /**
@@ -395,62 +398,77 @@ export function Confetti3D({
   );
 }
 
-/** Die Schaumkanonen selbst: Gehäuse mit Düsenring, vorn auf Dreibein-Stativen, hinten an der Traverse */
+/** Teile aller Schaumkanonen als Instanz-Matrizen (Stative, Beine, Abhängungen, Gehäuse, Düsenringe, Düsen) */
+const FOAM_PARTS = (() => {
+  const parts = {
+    poles: [] as Matrix4[],
+    legs: [] as Matrix4[],
+    hangers: [] as Matrix4[],
+    housings: [] as Matrix4[],
+    rings: [] as Matrix4[],
+    plates: [] as Matrix4[],
+  };
+  const up = new Vector3(0, 1, 0);
+  const e = new Euler();
+  for (const c of FOAM_CANNONS) {
+    const [x, y, z] = c.nozzle;
+    if (c.stand) {
+      parts.poles.push(mat({ p: [x, (y - 0.2) / 2, z], s: [1, y - 0.2, 1] }));
+      for (let i = 0; i < 3; i++) {
+        const a = (i * 2 * Math.PI) / 3;
+        parts.legs.push(
+          mat(
+            { p: [x, 0, z] },
+            { p: [Math.sin(a) * 0.22, 0.24, Math.cos(a) * 0.22], r: [-Math.cos(a) * 0.6, 0, Math.sin(a) * 0.6] },
+          ),
+        );
+      }
+    } else {
+      // Abhängung an der Traverse
+      parts.hangers.push(mat({ p: [x, (TRUSS_Y + y) / 2, z - 0.3], s: [1, TRUSS_Y - y, 1] }));
+    }
+    // Gehäuse: Achse in Schussrichtung, Düse vorn an der Mündung
+    e.setFromQuaternion(new Quaternion().setFromUnitVectors(up, new Vector3(...c.aim).normalize()));
+    const body = { p: [x, y, z], r: [e.x, e.y, e.z] } as const;
+    parts.housings.push(mat(body, { p: [0, -0.22, 0] }));
+    parts.rings.push(mat(body, { p: [0, 0.005, 0], r: [Math.PI / 2, 0, 0] }));
+    parts.plates.push(mat(body, { p: [0, -0.02, 0], r: [Math.PI / 2, 0, 0] }));
+  }
+  return parts;
+})();
+
+/**
+ * Die Schaumkanonen selbst: Gehäuse mit Düsenring, vorn auf Dreibein-Stativen, hinten an der Traverse. Gleiche Teile
+ * aller Kanonen liegen je in einem instancedMesh (6 statt 26 Zeichenaufrufe – doppelt gespart mit den Live-Schirmen).
+ */
 export function FoamCannons({ accent }: { accent: string }) {
-  const units = useMemo(
-    () =>
-      FOAM_CANNONS.map((c) => ({
-        ...c,
-        q: new Quaternion().setFromUnitVectors(new Vector3(0, 1, 0), new Vector3(...c.aim).normalize()),
-      })),
-    [],
-  );
   const metal = <meshStandardMaterial color="#26262c" metalness={0.7} roughness={0.4} />;
   return (
     <group>
-      {units.map(({ nozzle: [x, y, z], q, stand }) => (
-        <group key={`${x}:${z}`}>
-          {stand ? (
-            <group position={[x, 0, z]}>
-              <mesh position-y={(y - 0.2) / 2}>
-                <cylinderGeometry args={[0.03, 0.03, y - 0.2, 8]} />
-                {metal}
-              </mesh>
-              {[0, 1, 2].map((i) => (
-                <mesh
-                  key={i}
-                  position={[Math.sin((i * 2 * Math.PI) / 3) * 0.22, 0.24, Math.cos((i * 2 * Math.PI) / 3) * 0.22]}
-                  rotation={[-Math.cos((i * 2 * Math.PI) / 3) * 0.6, 0, Math.sin((i * 2 * Math.PI) / 3) * 0.6]}
-                >
-                  <cylinderGeometry args={[0.02, 0.02, 0.55, 6]} />
-                  {metal}
-                </mesh>
-              ))}
-            </group>
-          ) : (
-            // Abhängung an der Traverse
-            <mesh position={[x, (TRUSS_Y + y) / 2, z - 0.3]}>
-              <boxGeometry args={[0.04, TRUSS_Y - y, 0.04]} />
-              {metal}
-            </mesh>
-          )}
-          {/* Gehäuse: Achse in Schussrichtung, Düse vorn an der Mündung */}
-          <group position={[x, y, z]} quaternion={q}>
-            <mesh position-y={-0.22}>
-              <cylinderGeometry args={[0.2, 0.17, 0.44, 20]} />
-              {metal}
-            </mesh>
-            <mesh position-y={0.005} rotation-x={Math.PI / 2}>
-              <torusGeometry args={[0.17, 0.025, 8, 24]} />
-              <meshBasicMaterial color={accent} toneMapped={false} />
-            </mesh>
-            <mesh position-y={-0.02} rotation-x={Math.PI / 2}>
-              <circleGeometry args={[0.16, 20]} />
-              <meshStandardMaterial color="#d9dde3" roughness={0.9} side={DoubleSide} />
-            </mesh>
-          </group>
-        </group>
-      ))}
+      <Instances matrices={FOAM_PARTS.poles}>
+        <cylinderGeometry args={[0.03, 0.03, 1, 8]} />
+        {metal}
+      </Instances>
+      <Instances matrices={FOAM_PARTS.legs}>
+        <cylinderGeometry args={[0.02, 0.02, 0.55, 6]} />
+        {metal}
+      </Instances>
+      <Instances matrices={FOAM_PARTS.hangers}>
+        <boxGeometry args={[0.04, 1, 0.04]} />
+        {metal}
+      </Instances>
+      <Instances matrices={FOAM_PARTS.housings}>
+        <cylinderGeometry args={[0.2, 0.17, 0.44, 20]} />
+        {metal}
+      </Instances>
+      <Instances matrices={FOAM_PARTS.rings}>
+        <torusGeometry args={[0.17, 0.025, 8, 24]} />
+        <meshBasicMaterial color={accent} toneMapped={false} />
+      </Instances>
+      <Instances matrices={FOAM_PARTS.plates}>
+        <circleGeometry args={[0.16, 20]} />
+        <meshStandardMaterial color="#d9dde3" roughness={0.9} side={DoubleSide} />
+      </Instances>
     </group>
   );
 }

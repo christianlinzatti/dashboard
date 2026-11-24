@@ -24,6 +24,7 @@ import { ErrorBoundary } from "../ErrorBoundary";
 import { Avatar } from "./Avatar";
 import { Director, FOG_NEAR } from "./Director";
 import { Blinders, Lasers, MovingHeads } from "./Lights";
+import { NOT_ON_SCREENS } from "./layout";
 import { LiveScreens } from "./LiveScreens";
 import { Weather } from "./Weather";
 import { weatherFor } from "@/lib/stage/weather";
@@ -241,12 +242,14 @@ function Scene({
         frameloop={frozen ? "demand" : "always"}
         camera={{ position: [0, 2.2, 10.2], fov: 24 }}
         gl={{ antialias: true, powerPreference: "high-performance" }}
-        onCreated={({ gl }) =>
+        onCreated={({ gl, camera }) => {
+          // Hauptkamera sieht auch die Feinheiten, die die Live-Bildschirme auslassen
+          camera.layers.enable(NOT_ON_SCREENS);
           gl.domElement.addEventListener("webglcontextlost", (e) => {
             e.preventDefault();
             onContextLost();
-          })
-        }
+          });
+        }}
       >
         <color attach="background" args={[dark]} />
         <fog attach="fog" args={[dark, FOG_NEAR, theme.fogFar]} />

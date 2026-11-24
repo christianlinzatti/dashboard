@@ -1,7 +1,7 @@
 "use client";
 
 import { useFrame } from "@react-three/fiber";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { useThree } from "@react-three/fiber";
 import {
   AdditiveBlending,
@@ -9,6 +9,8 @@ import {
   BufferGeometry,
   Color,
   DoubleSide,
+  type InstancedMesh,
+  Matrix4,
   Object3D,
   Vector3,
   type Group,
@@ -22,7 +24,7 @@ import {
 import type { LightFrame } from "@/lib/stage/lights";
 import { songContext } from "@/lib/song-context/store";
 import { Instances, mat } from "./instances";
-import { TRUSS_Y, TRUSS_Z } from "./layout";
+import { NOT_ON_SCREENS, TRUSS_Y, TRUSS_Z } from "./layout";
 
 const BEAM_LENGTH = 7;
 const BEAM_TOP = 0.06;
@@ -159,6 +161,9 @@ function dustGeometry(seed: number) {
   return g;
 }
 
+const HOUSING_OFFSET = new Matrix4().makeTranslation(0, -0.18, 0);
+const LENS_OFFSET = mat({ p: [0, -0.312, 0], r: [Math.PI / 2, 0, 0] });
+
 /** Moving Heads an der Traverse: Schwenk/Neigung/Farbe/Helligkeit aus dem LightDirector. */
 export function MovingHeads({
   count,
@@ -176,8 +181,52 @@ export function MovingHeads({
     () => Array.from({ length: count }, (_, i) => (i - (count - 1) / 2) * (9 / Math.max(count - 1, 1))),
     [count],
   );
+  // Gehäuse aller Lampen: Sockel (fest), Kopf und Linse (schwenken mit) – je ein Zeichenaufruf
+  const bases = useMemo(() => xs.map((x) => mat({ p: [x, 0, 0] })), [xs]);
+  const start = useMemo(() => xs.map(() => new Matrix4()), [xs]);
+  const lensColors = useMemo(() => xs.map(() => new Color(0, 0, 0)), [xs]);
+  const housings = useRef<InstancedMesh>(null);
+  const lenses = useRef<InstancedMesh>(null);
+  const yoke = useMemo(() => new Object3D(), []);
+  const m = useMemo(() => new Matrix4(), []);
+  const c = useMemo(() => new Color(), []);
+  useFrame(() => {
+    const heads = lightsRef.current?.heads;
+    const hm = housings.current;
+    const lm = lenses.current;
+    if (!heads || !hm || !lm) return;
+    xs.forEach((x, i) => {
+      const h = heads[i];
+      if (!h) return;
+      yoke.position.set(x, 0, 0);
+      yoke.rotation.set(h.tilt, h.pan, 0, "YXZ");
+      yoke.updateMatrix();
+      hm.setMatrixAt(i, m.multiplyMatrices(yoke.matrix, HOUSING_OFFSET));
+      // Linse leuchtet in der Strahlfarbe (Bloom macht den Lichthof); aus = nicht sichtbar (Größe 0)
+      const on = h.intensity > 0.01;
+      lm.setMatrixAt(i, on ? m.multiplyMatrices(yoke.matrix, LENS_OFFSET) : m.makeScale(0, 0, 0));
+      lm.setColorAt(i, c.set(h.color).multiplyScalar(0.4 + 1.6 * h.intensity));
+    });
+    hm.instanceMatrix.needsUpdate = true;
+    lm.instanceMatrix.needsUpdate = true;
+    if (lm.instanceColor) lm.instanceColor.needsUpdate = true;
+    hm.computeBoundingSphere();
+    lm.computeBoundingSphere();
+  });
   return (
     <group position={[0, TRUSS_Y - 0.2, TRUSS_Z + 0.25]}>
+      <Instances matrices={bases}>
+        <boxGeometry args={[0.32, 0.18, 0.32]} />
+        <meshStandardMaterial color="#15151b" metalness={0.7} roughness={0.4} />
+      </Instances>
+      <Instances matrices={start} meshRef={housings}>
+        <cylinderGeometry args={[0.12, 0.16, 0.26, 16]} />
+        <meshStandardMaterial color="#1d1d24" metalness={0.6} roughness={0.4} />
+      </Instances>
+      <Instances matrices={start} colors={lensColors} meshRef={lenses}>
+        <circleGeometry args={[0.11, 20]} />
+        <meshBasicMaterial toneMapped={false} side={DoubleSide} />
+      </Instances>
       {xs.map((x, i) => (
         <Head
           key={i}
@@ -225,7 +274,11 @@ function Head({
   const dust = useMemo(() => dustGeometry(index + 1), [index]);
   const dustRef = useRef<Points>(null);
   const pool = useRef<Mesh>(null);
-  const lens = useRef<Mesh>(null);
+  // Staub und Lichtfleck am Boden: zu fein für die Live-Bildschirme – dort nicht mitgefilmt
+  useLayoutEffect(() => {
+    dustRef.current?.layers.set(NOT_ON_SCREENS);
+    pool.current?.layers.set(NOT_ON_SCREENS);
+  }, []);
   const size = useThree((s) => s.size);
   const gl = useThree((s) => s.gl);
   useEffect(() => () => dust.dispose(), [dust]);
@@ -246,10 +299,6 @@ function Head({
     const on = h.intensity > 0.01;
     if (beam.current) beam.current.visible = on;
     if (dustRef.current) dustRef.current.visible = on && dustOn;
-    if (lens.current) {
-      lens.current.visible = on;
-      ((lens.current.material as MeshBasicMaterial).color as Color).set(h.color).multiplyScalar(0.4 + 1.6 * h.intensity);
-    }
     if (pool.current && u) u.uFade!.value = placePool(pool.current, yoke.current, on);
     if (light.current) {
       light.current.color.set(h.color);
@@ -275,20 +324,9 @@ function Head({
           polygonOffsetFactor={-2}
         />
       </mesh>
-      <mesh>
-        <boxGeometry args={[0.32, 0.18, 0.32]} />
-        <meshStandardMaterial color="#15151b" metalness={0.7} roughness={0.4} />
-      </mesh>
+      {/* Sockel, Gehäuse und Linse: gemeinsam für alle Lampen in MovingHeads */}
       <group ref={yoke}>
-        <mesh position-y={-0.18}>
-          <cylinderGeometry args={[0.12, 0.16, 0.26, 16]} />
-          <meshStandardMaterial color="#1d1d24" metalness={0.6} roughness={0.4} />
-        </mesh>
-        {/* Linse: leuchtet in der Strahlfarbe (Bloom macht den Lichthof) */}
-        <mesh ref={lens} position-y={-0.312} rotation-x={Math.PI / 2}>
-          <circleGeometry args={[0.11, 20]} />
-          <meshBasicMaterial toneMapped={false} side={DoubleSide} />
-        </mesh>
+        {/* Staub: zu fein für die Live-Bildschirme – dort nicht mitgefilmt */}
         <points ref={dustRef} geometry={dust} frustumCulled={false}>
           <shaderMaterial
             args={[{ ...dustShader, uniforms }]}
@@ -325,33 +363,39 @@ function Head({
 /** Laser-Fächer von der Traverse – nur bei hoher Energie (Refrain, Drop). */
 export function Lasers({ count, lightsRef }: { count: number; lightsRef: React.RefObject<LightFrame | null> }) {
   const group = useRef<Group>(null);
-  const beams = useRef<Array<Group | null>>([]);
+  const beams = useRef<InstancedMesh>(null);
+  const material = useRef<MeshBasicMaterial>(null);
+  const pivot = useMemo(() => new Object3D(), []);
+  const m = useMemo(() => new Matrix4(), []);
+  // Drehpunkt an der Traverse, Strahl nach unten/vorn: Strahlmitte 7 m unter dem Drehpunkt
+  const down = useMemo(() => new Matrix4().makeTranslation(0, -7, 0), []);
+  const start = useMemo(() => Array.from({ length: count }, () => new Matrix4()), [count]);
   useFrame(() => {
     const l = lightsRef.current?.lasers;
     if (!l || !group.current) return;
     group.current.visible = l.on;
     if (!l.on) return;
     group.current.rotation.z = l.rotation;
-    beams.current.forEach((g, i) => {
-      if (!g) return;
-      const a = ((i / Math.max(count - 1, 1)) * 2 - 1) * l.spread;
-      g.rotation.set(-0.35, 0, a);
-      const mat = (g.children[0] as Mesh).material as MeshBasicMaterial;
-      mat.color.set(l.color);
-      mat.opacity = l.intensity * 0.8;
-    });
+    const b = beams.current;
+    if (b) {
+      for (let i = 0; i < count; i++) {
+        pivot.rotation.set(-0.35, 0, ((i / Math.max(count - 1, 1)) * 2 - 1) * l.spread);
+        pivot.updateMatrix();
+        b.setMatrixAt(i, m.multiplyMatrices(pivot.matrix, down));
+      }
+      b.instanceMatrix.needsUpdate = true;
+      b.computeBoundingSphere();
+    }
+    // alle Strahlen in derselben Farbe: ein Material, ein Zeichenaufruf
+    material.current?.color.set(l.color);
+    if (material.current) material.current.opacity = l.intensity * 0.8;
   });
   return (
     <group ref={group} position={[0, TRUSS_Y - 0.1, TRUSS_Z]}>
-      {Array.from({ length: count }, (_, i) => (
-        // Drehpunkt an der Traverse, Strahl nach unten/vorn
-        <group key={i} ref={(g) => void (beams.current[i] = g)}>
-          <mesh position-y={-7}>
-            <boxGeometry args={[0.025, 14, 0.025]} />
-            <meshBasicMaterial transparent depthWrite={false} blending={AdditiveBlending} toneMapped={false} />
-          </mesh>
-        </group>
-      ))}
+      <Instances matrices={start} meshRef={beams}>
+        <boxGeometry args={[0.025, 14, 0.025]} />
+        <meshBasicMaterial ref={material} transparent depthWrite={false} blending={AdditiveBlending} toneMapped={false} />
+      </Instances>
     </group>
   );
 }
