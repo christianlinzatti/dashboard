@@ -214,7 +214,7 @@ Stroboskop nur bei Drops und abschaltbar.
 **Vogelperspektive**, **Zoom** (Fahrt von der Totale heran); Wechsel weich über 1,5 Takte. Die **Drehbühne** dreht
 Podest und Formation in Refrain/Instrumental/Bridge zufällig (pro Song fest) einmal um 360° – nie zusammen mit
 Kreisfahrt oder Nahaufnahme; Leuchtmarken am Podestrand zeigen die Drehung.
-✅ **Publikum** (`lib/stage/crowd.ts`, `components/stage/Crowd.tsx`): Silhouetten vor der Bühne in einem Draw-Call
+✅ **Publikum** (`lib/stage/crowd.ts`, `components/stage/crowd/`): Silhouetten vor der Bühne in einem Draw-Call
 (Bewegung im Vertex-Shader, zustandslos aus der Songzeit), dicht an der Bühnenkante, bis 520 Personen je nach
 Qualitätsstufe und Bühne. Die Publikums-Regie folgt dem Song: ruhige Teile → Handylichter-Meer und Wiegen,
 Strophen → einzelne Hände und funkelnde LED-Armbänder, Refrain → Hände oben, Springen im Takt, Armbänder

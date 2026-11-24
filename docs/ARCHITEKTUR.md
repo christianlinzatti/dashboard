@@ -159,7 +159,7 @@ Für das Konzert-Erlebnis wurde die Bühne in vier Schichten gegliedert. Jede Sc
 **Regeln für neue Features**
 
 - **Entscheidungen fallen in Schicht 2 und 3, nie im Darsteller.** Ein neuer Effekt ist: ein Eintrag in
-  `effectKinds`, eine Regel in `planEffects`, ein Emitter in `Effects.tsx` (Partikel) oder `Effects3D.tsx` (3D-Körper). Gleiche Songzeit ergibt das gleiche
+  `effectKinds`, eine Regel in `planEffects`, ein Emitter in `effects/emitters.ts` (Partikel) oder `Effects3D.tsx` (3D-Körper). Gleiche Songzeit ergibt das gleiche
   Bild, deshalb bleiben Screenshots reproduzierbar und die Regeln per Unit-Test prüfbar.
 - **Die KI gibt nur die Richtung vor, nie den Takt.** Der Brief wählt Bühne, Stimmung und je Abschnittsart
   Energie, Schrift-Effekt, Publikumsverhalten, Wunsch-Effekte und Choreografie-Moment. Wann genau etwas zündet, bestimmen die Pläne
