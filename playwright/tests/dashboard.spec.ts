@@ -188,6 +188,40 @@ test.describe("Dashboard", () => {
     await phone.close();
   });
 
+  test("/debug: Bildrate am Kiosk je Bühne und Qualität", async ({ page }) => {
+    const now = Date.now();
+    const sample = (min: number, msg: string) => ({
+      level: "info",
+      source: "leistung",
+      message: msg,
+      count: 1,
+      at: now - min * 60_000,
+    });
+    await page.route("**/api/debug-context", (r) => r.fulfill({ json: { entry: null } }));
+    await page.route("**/api/lyrics-status", (r) => r.fulfill({ json: { now, providers: [] } }));
+    await page.route("**/api/log", (r) =>
+      r.fulfill({
+        json: {
+          entries: [
+            sample(30, "31 fps (min 24), Qualität mittel, Bühne jazz, 1280×800"),
+            sample(25, "22 fps (min 14), Qualität mittel, Bühne club, 1280×800"),
+            sample(20, "26 fps (min 17), Qualität mittel, Bühne club, 1280×800"),
+            { level: "fehler", source: "js", message: "irgendwas", count: 1, at: now },
+          ],
+        },
+      }),
+    );
+    await page.goto("/debug");
+    const rows = page.getByTestId("perf-row");
+    await expect(rows).toHaveCount(2);
+    // schwächste Bühne zuerst
+    await expect(rows.first()).toContainText("club");
+    await expect(rows.first()).toContainText("24 fps · knapp");
+    await expect(rows.first()).toContainText("14 fps");
+    await expect(rows.nth(1)).toContainText("31 fps · flüssig");
+    await expect(page.getByTestId("perf-line")).toBeVisible();
+  });
+
   test("laufende Wiedergabe bewegt den Fortschritt", async ({ page }) => {
     // geprüft wird die Zeitanzeige, nicht die Bühne: niedrige Qualität, damit langsame CI-Rechner (ohne GPU) mithalten
     await page.goto("/?demo=neonlicht&qualitaet=niedrig");

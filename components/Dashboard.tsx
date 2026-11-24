@@ -9,6 +9,8 @@ import { useStore } from "zustand";
 import { fixtures } from "@/lib/song-context/fixtures";
 import { songContext, useSongContext } from "@/lib/song-context/store";
 import { UpNextCard } from "./hud/UpNextCard";
+import { perfMessage } from "@/lib/live/perf-samples";
+import { stageInfo } from "@/lib/stage/stage-info";
 import { useUpNext } from "./show/useUpNext";
 import { NowPlayingBar } from "./hud/NowPlayingBar";
 import { Progress } from "./hud/Progress";
@@ -131,13 +133,27 @@ export function Dashboard({
   useEffect(() => {
     if (demo !== undefined) return;
     const uninstall = installTelemetry();
+    // alle 2 s gemessene Bildraten sammeln (nur während Musik läuft): Mittel und schlechtester Wert je 5 Minuten
+    let seen: number[] = [];
+    const unsubscribe = perf.subscribe(({ fps }) => {
+      if (fps !== null && songContext.getState().playback.isPlaying) seen.push(fps);
+    });
     const sample = setInterval(() => {
-      const { fps, quality } = perf.getState();
-      if (fps !== null && songContext.getState().playback.isPlaying)
-        report("info", "leistung", `${fps} fps, Qualität ${quality}, ${window.innerWidth}×${window.innerHeight}`);
+      const { quality } = perf.getState();
+      if (seen.length && quality) {
+        const avg = Math.round(seen.reduce((s, x) => s + x, 0) / seen.length);
+        const theme = stageInfo.getState().current?.id ?? "?";
+        report(
+          "info",
+          "leistung",
+          perfMessage({ fps: avg, minFps: Math.min(...seen), quality, theme }, `${window.innerWidth}×${window.innerHeight}`),
+        );
+      }
+      seen = [];
     }, 5 * 60_000);
     return () => {
       uninstall();
+      unsubscribe();
       clearInterval(sample);
     };
   }, [demo]);
