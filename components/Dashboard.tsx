@@ -1,6 +1,7 @@
 "use client";
 
 import { MottoBanner } from "./hud/MottoBanner";
+import { Announcement } from "./hud/Announcement";
 import { useEveningTracker } from "./live/useEveningTracker";
 import { SongTransition, type TransitionKind } from "./hud/SongTransition";
 import dynamic from "next/dynamic";
@@ -234,6 +235,7 @@ export function Dashboard({
           <UpNextCard />
           <PhotoOverlay />
           <MottoBanner />
+          <Announcement />
           <LyricsLayer forceMode={lyricsMode} forceEffect={lyricsEffect} forceTheme={theme} />
           <Progress />
           <SongTransition force={transition} />
