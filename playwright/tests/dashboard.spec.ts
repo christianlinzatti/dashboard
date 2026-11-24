@@ -407,6 +407,41 @@ test("Startbildschirm: Rückblick auf den Abend nach der Musik", async ({ page }
   if (process.env.RECAP_IMAGE_OUT) (await import("node:fs")).writeFileSync(process.env.RECAP_IMAGE_OUT, uploaded!);
 });
 
+test("Startbildschirm: alle Fotos des Abends unter einem QR-Code", async ({ page }) => {
+  const now = Date.now();
+  await page.addInitScript(
+    ([log, photos]) => {
+      localStorage.setItem("ss_abend", JSON.stringify(log));
+      localStorage.setItem("ss_fotos_abend", JSON.stringify(photos));
+    },
+    [
+      ["Bussi Baby", "Amore", "Columbo"].map((title, i) => ({
+        trackKey: title,
+        title,
+        artist: "Wanda",
+        durationMs: 200_000,
+        at: now - (30 - i * 4) * 60_000,
+      })),
+      [
+        { id: "A".repeat(22), at: now - 20 * 60_000 },
+        { id: "B".repeat(22), at: now - 10 * 60_000 },
+      ],
+    ] as const,
+  );
+  let sent: unknown = null;
+  await page.route("**/api/photo/galerie", async (r) => {
+    sent = r.request().postDataJSON();
+    await r.fulfill({ json: { id: "GaLeRiEgAlErIeGaLeRiE1" } });
+  });
+  await page.goto("/?demo=gibtsnicht");
+  const button = page.getByTestId("gallery-share-button");
+  await expect(button).toContainText("Alle 2 Fotos des Abends");
+  await button.dispatchEvent("click"); // Startbildschirm wandert (Einbrennschutz) – kein „ruhiger“ Klick möglich
+  await expect(page.getByTestId("gallery-share")).toHaveAttribute("data-url", /\/foto\/abend\/GaLeRiEgAlErIeGaLeRiE1$/);
+  expect(sent).toEqual({ ids: ["A".repeat(22), "B".repeat(22)] });
+  if (process.env.SHOT_OUT) await page.screenshot({ path: process.env.SHOT_OUT });
+});
+
 test("Startbildschirm: Erinnerung an ein Konzert im Umkreis", async ({ page }) => {
   const day = (n: number) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10);
   const reminder = (n: number, city: string) => ({

@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { composePhoto, photoDate } from "@/lib/photo/compose";
+import { rememberPhoto } from "@/lib/photo/evening";
 import { photoStore } from "@/lib/photo/store";
 import { songContext } from "@/lib/song-context/store";
 
@@ -41,6 +42,7 @@ export function usePhoto(upload: boolean) {
           const res = await fetch("/api/photo", { method: "POST", headers: { "Content-Type": "image/jpeg" }, body: blob });
           if (!res.ok) throw new Error(res.status === 401 ? "Nicht angemeldet" : `Hochladen fehlgeschlagen (${res.status})`);
           const { id } = (await res.json()) as { id: string };
+          rememberPhoto(id); // für die Galerie des Abends
           photoStore.getState().done(preview, id);
         } catch (e) {
           photoStore.getState().failed(e instanceof Error ? e.message : "Foto fehlgeschlagen");

@@ -53,13 +53,13 @@ export function RecapShare({ recap }: { recap: Recap }) {
   };
   if (state.kind === "fertig")
     return (
-      <div className="mt-[1.5vmin] flex items-center gap-[2vmin]" data-testid="recap-share" data-url={state.url}>
+      <div className="flex items-center gap-[2vmin]" data-testid="recap-share" data-url={state.url}>
         <QrCode text={state.url} size="14vmin" label="QR-Code zum Rückblick" />
         <p className="text-[clamp(12px,2vmin,20px)] text-white/80">Scannen – der Rückblick als Bild, 24 Stunden abrufbar.</p>
       </div>
     );
   return (
-    <div className="mt-[1.5vmin] flex items-center gap-[2vmin]">
+    <div className="flex items-center gap-[2vmin]">
       <button
         type="button"
         onClick={() => void share()}

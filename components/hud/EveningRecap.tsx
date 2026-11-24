@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useStore } from "zustand";
 import { displayUrl } from "@/lib/info/photos";
 import { recapStore, summarize, type Recap } from "@/lib/show/recap";
+import { GalleryShare } from "./GalleryShare";
 import { RecapShare } from "./RecapShare";
 
 const PHASE_BADGE: Record<string, string> = { hoehepunkt: "Höhepunkt", zugabe: "Zugabe", durchatmen: "Durchatmen" };
@@ -100,7 +101,10 @@ export function EveningRecap({ recap }: { recap: Recap }) {
           </li>
         ))}
       </ol>
-      <RecapShare recap={recap} />
+      <div className="mt-[1.5vmin] flex flex-wrap items-center gap-[2vmin]">
+        <RecapShare recap={recap} />
+        <GalleryShare />
+      </div>
     </section>
   );
 }

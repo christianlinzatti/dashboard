@@ -97,4 +97,45 @@ describe("Erinnerungsfoto: Server", () => {
     expect((await post(jpeg())).status).toBe(200);
     expect((await post(jpeg())).status).toBe(429);
   });
+
+  it("Galerie des Abends: anlegen (angemeldet), abrufen, nur gültige Adressen", async () => {
+    const gallery = async (body: unknown) => {
+      const { POST } = await import("@/app/api/photo/galerie/route");
+      const res = await POST(
+        new Request("http://x/api/photo/galerie", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(body),
+        }),
+      );
+      return { status: res.status, body: (await res.json()) as { id?: string } };
+    };
+    expect((await gallery({ ids: ["A".repeat(22)] })).status).toBe(401);
+    login("u3");
+    expect((await gallery({ ids: [] })).status).toBe(400);
+    expect((await gallery({ ids: ["../x"] })).status).toBe(400);
+    expect((await gallery({ ids: Array.from({ length: 31 }, (_, i) => String(i).padStart(22, "A")) })).status).toBe(400);
+    const ok = await gallery({ ids: ["A".repeat(22), "B".repeat(22), "A".repeat(22)] });
+    expect(ok.status).toBe(200);
+    const { photoStore: store } = await import("@/lib/server/photo-store");
+    expect(await store().getGallery(ok.body.id!)).toEqual(["A".repeat(22), "B".repeat(22)]);
+    expect(await store().getGallery("C".repeat(22))).toBeNull();
+    expect(await store().getGallery("../etc")).toBeNull();
+  });
+});
+
+describe("Fotos des Abends (im Browser)", () => {
+  it("nur noch abrufbare Fotos des laufenden Abends", async () => {
+    const { currentEvening } = await import("@/lib/photo/evening");
+    const h = 3600_000;
+    const now = 100 * h;
+    const list = [
+      { id: "alt", at: now - 30 * h }, // abgelaufen
+      { id: "gestern", at: now - 20 * h }, // anderer Abend (lange Pause danach)
+      { id: "a", at: now - 3 * h },
+      { id: "b", at: now - 1 * h },
+    ];
+    expect(currentEvening(list, now).map((p) => p.id)).toEqual(["a", "b"]);
+    expect(currentEvening([], now)).toEqual([]);
+  });
 });
