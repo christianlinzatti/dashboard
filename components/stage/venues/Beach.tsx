@@ -4,28 +4,49 @@ import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import { Color, type InstancedMesh, type Matrix4, type ShaderMaterial } from "three";
 import { rng } from "@/lib/dance/rng";
+import { SKY_BY_PHASE, type DayPhase, type SkyLook } from "@/lib/stage/daylight";
 import { Instances, mat, plainVertex, songSeconds, type VenueProps, type Xf } from "./shared";
 
 /** Meer bis zum Horizont mit Sonnenglitzern, tiefstehende Sonne, Palmen und Lichterketten. */
-export function Beach({ accent, lightsRef }: VenueProps) {
+/** Sonne/Mond je Tageszeit: Höhe über dem Horizont, Größe, Farbe, Lichthof; dazu Farben fürs Meer */
+const SUN_LOOK: Record<
+  SkyLook["sun"],
+  { y: number; r: number; color: string; glow: string; glowOpacity: number; sea: string; deep: string }
+> = {
+  hoch: { y: 15, r: 2.6, color: "#fffbe8", glow: "#fff1b0", glowOpacity: 0.32, sea: "#ffe8b0", deep: "#1d4f8a" },
+  tief: { y: 3.2, r: 5.5, color: "#ffcf6b", glow: "#ff8a4a", glowOpacity: 0.25, sea: "#ffb347", deep: "#1b1440" },
+  // knapp unter dem Horizont: nur noch ein schwacher Schein
+  weg: { y: -7, r: 5.5, color: "#ff9a5a", glow: "#ff6a4a", glowOpacity: 0.16, sea: "#c0507a", deep: "#120d33" },
+  mond: { y: 13, r: 2.2, color: "#e8ecff", glow: "#9fb3ff", glowOpacity: 0.08, sea: "#7f93d6", deep: "#05061a" },
+};
+
+export function Beach({ accent, lightsRef, daylight }: VenueProps & { daylight?: DayPhase }) {
+  const look = SUN_LOOK[daylight ? SKY_BY_PHASE[daylight].sun : "tief"];
   const sea = useRef<ShaderMaterial>(null);
   const uniforms = useMemo(
-    () => ({ uTime: { value: 0 }, uSun: { value: new Color("#ffb347") }, uDeep: { value: new Color("#1b1440") } }),
-    [],
+    () => ({ uTime: { value: 0 }, uSun: { value: new Color(look.sea) }, uDeep: { value: new Color(look.deep) } }),
+    [look],
   );
   useFrame(() => {
     if (sea.current) sea.current.uniforms.uTime!.value = songSeconds();
   });
   return (
     <group>
-      {/* Sonne knapp über dem Horizont */}
-      <mesh position={[0, 3.2, -52]}>
-        <circleGeometry args={[5.5, 48]} />
-        <meshBasicMaterial color="#ffcf6b" toneMapped={false} fog={false} />
+      {/* Sonne (je Tageszeit hoch, tief, untergegangen) oder Mond */}
+      <mesh position={[0, look.y, -52]}>
+        <circleGeometry args={[look.r, 48]} />
+        <meshBasicMaterial color={look.color} toneMapped={false} fog={false} />
       </mesh>
-      <mesh position={[0, 3.2, -52.1]}>
+      <mesh position={[0, Math.max(look.y, 1), -52.1]}>
         <circleGeometry args={[12, 48]} />
-        <meshBasicMaterial color="#ff8a4a" transparent opacity={0.25} toneMapped={false} fog={false} depthWrite={false} />
+        <meshBasicMaterial
+          color={look.glow}
+          transparent
+          opacity={look.glowOpacity}
+          toneMapped={false}
+          fog={false}
+          depthWrite={false}
+        />
       </mesh>
       {/* Meer: Wellen und ein Glitzerstreifen unter der Sonne */}
       <mesh rotation-x={-Math.PI / 2} position={[0, -0.2, -32]}>

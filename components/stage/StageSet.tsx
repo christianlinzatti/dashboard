@@ -15,6 +15,7 @@ import { chorusKeyword, forcedWallPattern, keywordAmount, wallPattern, wallPatte
 
 import { Instances, mat } from "./instances";
 import { NOT_ON_SCREENS, TRUSS_Y, TRUSS_Z } from "./layout";
+import { OUTDOOR_SKIES, SKY_BY_PHASE, type DayPhase } from "@/lib/stage/daylight";
 
 export { TRUSS_Y, TRUSS_Z };
 
@@ -26,6 +27,7 @@ export function StageSet({
   theme,
   beatMs,
   lightsRef,
+  daylight,
 }: {
   preset: QualityPreset;
   dark: string;
@@ -33,11 +35,13 @@ export function StageSet({
   theme: Theme;
   beatMs: number;
   lightsRef: React.RefObject<LightFrame | null>;
+  /** Tageszeit (Freiluftbühnen); ohne: der gestaltete Himmel */
+  daylight?: DayPhase;
 }) {
   const floorTex = useFloorTexture(theme.floor);
   return (
     <group>
-      <Sky theme={theme} accent={accent} />
+      <Sky theme={theme} accent={accent} daylight={daylight} />
       {/* Boden */}
       {theme.floor === "raster" ? (
         <NeonGrid color={theme.colors.dominant} beatMs={beatMs} />
@@ -85,7 +89,7 @@ export function StageSet({
           <Stadium accent={accent} lightsRef={lightsRef} />
         </>
       )}
-      {theme.wall === "meer" && <Beach accent={theme.colors.accent} lightsRef={lightsRef} />}
+      {theme.wall === "meer" && <Beach accent={theme.colors.accent} lightsRef={lightsRef} daylight={daylight} />}
       {theme.wall === "beton" && <Warehouse accent={theme.colors.accent} lightsRef={lightsRef} />}
       {theme.wall === "kirche" && <Cathedral accent={theme.colors.accent} lightsRef={lightsRef} />}
       {theme.wall === "led" && (
@@ -101,7 +105,17 @@ export function StageSet({
 }
 
 /** Himmel hinter der Bühne (nur Open-Air-artige Themen). */
-function Sky({ theme, accent }: { theme: Theme; accent: string }) {
+function Sky({ theme, accent, daylight }: { theme: Theme; accent: string; daylight?: DayPhase }) {
+  // Freiluftbühnen folgen der Tageszeit; am Abend bleibt der gestaltete Himmel der Bühne
+  if (daylight && daylight !== "abend" && (OUTDOOR_SKIES as readonly string[]).includes(theme.sky)) {
+    const look = SKY_BY_PHASE[daylight];
+    return (
+      <>
+        <SkyDome top={look.top} horizon={look.horizon} />
+        {look.stars > 0 && <Stars count={look.stars} size={0.12} />}
+      </>
+    );
+  }
   switch (theme.sky) {
     case "abend":
       return (

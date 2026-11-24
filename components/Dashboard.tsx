@@ -11,6 +11,7 @@ import { songContext, useSongContext } from "@/lib/song-context/store";
 import { UpNextCard } from "./hud/UpNextCard";
 import { perfMessage } from "@/lib/live/perf-samples";
 import { stageInfo } from "@/lib/stage/stage-info";
+import type { DayPhase } from "@/lib/stage/daylight";
 import { useUpNext } from "./show/useUpNext";
 import { PhotoOverlay } from "./photo/PhotoOverlay";
 import { usePhoto } from "./photo/usePhoto";
@@ -71,6 +72,8 @@ type Props = {
   theme?: ThemeId;
   /** Wetter erzwingen (URL `?wetter=`): Demos und Tests */
   weather?: "regen" | "schnee" | "aus";
+  /** Tageszeit der Freiluftbühnen erzwingen (URL `?tageszeit=`): Demos und Tests */
+  daylight?: DayPhase;
   /** Übergang zwischen Songs dauerhaft zeigen (URL `?uebergang=`): Demos und Tests */
   transition?: TransitionKind;
   /** Ruhezeit vorgeben (URL `?ruhe=23:00-07:00`): Demos und Tests */
@@ -91,6 +94,7 @@ export function Dashboard({
   quality,
   theme,
   weather,
+  daylight,
   transition,
   quietHours,
 }: Props) {
@@ -214,7 +218,7 @@ export function Dashboard({
             <CanvasBackground canvas={canvas} />
           ) : (
             <div className="absolute inset-0">
-              <Stage forceQuality={quality} forceTheme={theme} forceWeather={weather} />
+              <Stage forceQuality={quality} forceTheme={theme} forceWeather={weather} forceDaylight={daylight} />
             </div>
           )}
           {/* Verlauf für Lesbarkeit der Lyrics vor der 3D-Szene */}

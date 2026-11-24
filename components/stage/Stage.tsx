@@ -25,6 +25,7 @@ import { Avatar } from "./Avatar";
 import { Director, FOG_NEAR } from "./Director";
 import { Blinders, Lasers, MovingHeads } from "./Lights";
 import { NOT_ON_SCREENS } from "./layout";
+import { dayPhaseAt, type DayPhase } from "@/lib/stage/daylight";
 import { LiveScreens } from "./LiveScreens";
 import { PhotoCapture } from "./PhotoCapture";
 import { Weather } from "./Weather";
@@ -92,10 +93,12 @@ export function Stage({
   forceQuality,
   forceTheme,
   forceWeather,
+  forceDaylight,
 }: {
   forceQuality?: Quality;
   forceTheme?: ThemeId;
   forceWeather?: "regen" | "schnee" | "aus";
+  forceDaylight?: DayPhase;
 }) {
   const song = useSongContext((s) => s.song);
   const [webgl] = useState(() => (typeof document === "undefined" ? true : hasWebGL()));
@@ -109,6 +112,7 @@ export function Stage({
         forceQuality={forceQuality}
         forceTheme={forceTheme}
         forceWeather={forceWeather}
+        forceDaylight={forceDaylight}
         onContextLost={() => setTimeout(() => setGeneration((g) => g + 1), 1500)}
       />
     </ErrorBoundary>
@@ -119,11 +123,13 @@ function Scene({
   forceQuality,
   forceTheme,
   forceWeather,
+  forceDaylight,
   onContextLost,
 }: {
   forceQuality?: Quality;
   forceTheme?: ThemeId;
   forceWeather?: "regen" | "schnee" | "aus";
+  forceDaylight?: DayPhase;
   onContextLost: () => void;
 }) {
   const raw = useSongContext((s) => s.song);
@@ -198,6 +204,9 @@ function Scene({
     forceWeather === "aus"
       ? null
       : (forceWeather ?? (raw && theme ? weatherFor(raw, theme.id, frozen ? DEMO_TODAY : todayLocal()) : null));
+  // Tageszeit der Freiluftbühnen: URL > echte Uhrzeit (minütlich); Demos/Screenshots: gestalteter Himmel
+  const clockPhase = useDayPhase(!frozen && !forceDaylight);
+  const daylight = forceDaylight ?? (frozen ? undefined : clockPhase);
   const frame = useRef<Frame>(initialFrame);
   const lights = useRef<LightFrame | null>(null);
   const strobe = useRef<HTMLDivElement>(null);
@@ -232,6 +241,7 @@ function Scene({
       data-outfits={song.cast.map((c) => c.outfit ?? "original").join(",")}
       data-cast={song.cast.map((c) => c.avatarId).join(",")}
       data-weather={weather ?? "kein"}
+      data-daylight={daylight ?? "gestaltet"}
       data-evening={phase}
       data-wall-logo={logo && theme.wall === "led" ? displayUrl(logo, 640) : undefined}
       data-wall={theme.wall === "led" ? (forcedWallPattern() ?? wallPattern(song)) : undefined}
@@ -270,6 +280,7 @@ function Scene({
           theme={theme}
           beatMs={choreo.beatMs}
           lightsRef={lights}
+          daylight={daylight}
         />
         <TurntableMarks frameRef={frame} color={song.album.palette.accent} />
         {crowdCount > 0 && (
@@ -431,4 +442,20 @@ function SingAlongBadge({ window, accent }: { window: SingAlong | null | undefin
 function MixamoClips({ ids }: { ids: string[] }) {
   use(loadMixamo(ids));
   return null;
+}
+
+/** Tageszeit aus der Uhr, jede Minute neu (aus = keine Uhr, z. B. in Demos) */
+function useDayPhase(on: boolean): DayPhase | undefined {
+  const [phase, setPhase] = useState<DayPhase | undefined>(undefined);
+  useEffect(() => {
+    if (!on) return;
+    const tick = () => setPhase(dayPhaseAt(new Date()));
+    const first = setTimeout(tick, 0);
+    const id = setInterval(tick, 60_000);
+    return () => {
+      clearTimeout(first);
+      clearInterval(id);
+    };
+  }, [on]);
+  return on ? phase : undefined;
 }

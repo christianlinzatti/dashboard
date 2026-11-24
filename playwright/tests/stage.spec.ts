@@ -187,6 +187,15 @@ test.describe("Bühne & Licht", () => {
     });
   }
 
+  test("Freiluftbühnen nach Tageszeit: erzwungen per URL, Demos sonst mit gestaltetem Himmel", async ({ page }) => {
+    await page.goto("/?demo=abendrot&t=50000&buehne=strand&tageszeit=nacht&qualitaet=niedrig");
+    await ready(page);
+    await expect(page.locator("[data-daylight]")).toHaveAttribute("data-daylight", "nacht");
+    await page.goto("/?demo=abendrot&t=50000&buehne=strand&qualitaet=niedrig");
+    await ready(page);
+    await expect(page.locator("[data-daylight]")).toHaveAttribute("data-daylight", "gestaltet");
+  });
+
   test("Spotify Canvas ersetzt die 3D-Bühne, HUD liegt darüber", async ({ page }) => {
     const errors = collectErrors(page);
     await page.goto("/?demo=neonlicht&t=46000&canvas=/demo/pulsar.svg&lyrics=karaoke");

@@ -1,3 +1,4 @@
+import { dayPhases } from "@/lib/stage/daylight";
 import { Dashboard } from "@/components/Dashboard";
 import { lyricsEffects, lyricsModes, type LyricsEffect, type LyricsMode } from "@/lib/lyrics/director";
 import { qualities, type Quality } from "@/lib/stage/quality";
@@ -21,6 +22,7 @@ export default async function Page({ searchParams }: { searchParams: Search }) {
       theme={themeIds.includes(one(sp.buehne) as ThemeId) ? (one(sp.buehne) as ThemeId) : undefined}
       lyricsEffect={lyricsEffects.includes(one(sp.effekt) as LyricsEffect) ? (one(sp.effekt) as LyricsEffect) : undefined}
       weather={(["regen", "schnee", "aus"] as const).find((w) => w === one(sp.wetter))}
+      daylight={dayPhases.find((d) => d === one(sp.tageszeit))}
       transition={(["umbau", "zugabe"] as const).find((w) => w === one(sp.uebergang))}
       quietHours={quietHoursFromParam(one(sp.ruhe))}
       avatars={one(sp.avatare)?.split(",").slice(0, 7)}
