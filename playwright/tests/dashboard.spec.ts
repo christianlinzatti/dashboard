@@ -312,4 +312,17 @@ test("Startbildschirm: Rückblick auf den Abend nach der Musik", async ({ page }
   await expect(recap).toContainText("Zugabe: Columbo");
   await expect(recap).toContainText("Meistgespielt: Wanda (3 Songs)");
   await expect(page.getByTestId("recap-songs").locator("li").first()).toContainText("Columbo");
+
+  // als Bild aufs Handy: Hochformat-JPEG hochladen, QR-Code zur Foto-Seite
+  let uploaded: Buffer | null = null;
+  await page.route("**/api/photo", async (r) => {
+    uploaded = r.request().postDataBuffer();
+    await r.fulfill({ json: { id: "AbCdEfGhIjKlMnOpQrStUv" } });
+  });
+  // der Startbildschirm wandert langsam (Schutz vor Einbrennen) – nie „ruhig“ genug für einen Playwright-Klick
+  await page.getByTestId("recap-share-button").dispatchEvent("click");
+  await expect(page.getByTestId("recap-share")).toHaveAttribute("data-url", /\/foto\/AbCdEfGhIjKlMnOpQrStUv$/);
+  expect(uploaded!.subarray(0, 3)).toEqual(Buffer.from([0xff, 0xd8, 0xff]));
+  expect(uploaded!.length).toBeGreaterThan(20_000);
+  if (process.env.RECAP_IMAGE_OUT) (await import("node:fs")).writeFileSync(process.env.RECAP_IMAGE_OUT, uploaded!);
 });

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useStore } from "zustand";
 import { displayUrl } from "@/lib/info/photos";
 import { recapStore, summarize, type Recap } from "@/lib/show/recap";
+import { RecapShare } from "./RecapShare";
 
 const PHASE_BADGE: Record<string, string> = { hoehepunkt: "Höhepunkt", zugabe: "Zugabe", durchatmen: "Durchatmen" };
 
@@ -99,6 +100,7 @@ export function EveningRecap({ recap }: { recap: Recap }) {
           </li>
         ))}
       </ol>
+      <RecapShare recap={recap} />
     </section>
   );
 }
