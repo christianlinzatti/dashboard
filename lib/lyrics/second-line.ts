@@ -33,6 +33,9 @@ const langCache = new WeakMap<object, Lang>();
  * eine englische Übersetzung hilft: bei Deutsch und Englisch nein, bei Spanisch, Italienisch, Französisch … ja.
  */
 export function guessLyricsLang(lines: ReadonlyArray<Pick<LyricLine, "text">>): Lang {
+  // fremde Schrift (Japanisch, Koreanisch, Kyrillisch …): weder deutsch noch englisch
+  const filled = lines.filter((l) => l.text.trim());
+  if (filled.length >= 4 && filled.filter((l) => isNonLatin(l.text)).length * 2 >= filled.length) return "anders";
   const words = lines.flatMap((l) => l.text.toLowerCase().match(/[\p{L}']+/gu) ?? []);
   if (words.length < 30) return "unbekannt"; // zu wenig Text für eine Schätzung
   const share = (set: Set<string>) => words.filter((w) => set.has(w)).length / words.length;
@@ -49,7 +52,14 @@ function lyricsLang(lyrics: object & { lines?: ReadonlyArray<Pick<LyricLine, "te
   return lang;
 }
 
-export type SecondLine = { kind: "umschrift" | "uebersetzung"; text: string; words?: LyricWord[]; lang?: string };
+export type SecondLine = {
+  kind: "umschrift" | "uebersetzung";
+  text: string;
+  words?: LyricWord[];
+  lang?: string;
+  /** maschinell übersetzt (KI) – wird so gekennzeichnet */
+  machine?: boolean;
+};
 
 /**
  * Was unter der Zeile steht:
@@ -58,7 +68,7 @@ export type SecondLine = { kind: "umschrift" | "uebersetzung"; text: string; wor
  * - Umschrift / Übersetzung: erzwungen (Übersetzung in jeder Sprache)
  */
 export function secondLineFor(
-  lyrics: Pick<Lyrics, "transliterationLang" | "translationLang"> & { lines?: Lyrics["lines"] },
+  lyrics: Pick<Lyrics, "transliterationLang" | "translationLang" | "translationSource"> & { lines?: Lyrics["lines"] },
   line: LyricLine,
   mode: SecondLineMode,
 ): SecondLine | null {
@@ -66,7 +76,12 @@ export function secondLineFor(
     ? { kind: "umschrift", text: line.transliteration.text, words: line.transliteration.words, lang: lyrics.transliterationLang }
     : null;
   const transl: SecondLine | null = line.translation
-    ? { kind: "uebersetzung", text: line.translation, lang: lyrics.translationLang }
+    ? {
+        kind: "uebersetzung",
+        text: line.translation,
+        lang: lyrics.translationLang,
+        ...(lyrics.translationSource === "ki" ? { machine: true } : {}),
+      }
     : null;
   switch (mode) {
     case "aus":
@@ -94,4 +109,18 @@ export function secondLineFill(line: LyricLine, second: SecondLine, t: number): 
   const clamp = (x: number) => Math.min(1, Math.max(0, x));
   if (second.words?.length) return second.words.map((w) => clamp((t - w.startMs) / Math.max(w.endMs - w.startMs, 1)));
   return [clamp((t - line.startMs) / Math.max(line.endMs - line.startMs, 1))];
+}
+
+/** Mindestzahl an Zeilen, damit sich eine Übersetzung lohnt (sonst eher Instrumental mit Zwischenruf) */
+const TRANSLATE_MIN_LINES = 4;
+
+/**
+ * Braucht der Song eine deutsche Übersetzung? Nur wenn er nicht deutsch ist (geschätzt aus dem Text) und noch keine
+ * deutsche dabei ist. Englisch zählt mit – übersetzt wird alles außer Deutsch.
+ */
+export function needsGermanTranslation(lyrics: Pick<Lyrics, "lines" | "translationLang"> | null | undefined): boolean {
+  if (!lyrics || lyrics.translationLang?.toLowerCase().startsWith("de")) return false;
+  if (lyrics.lines.filter((l) => l.text.trim()).length < TRANSLATE_MIN_LINES) return false;
+  const lang = guessLyricsLang(lyrics.lines);
+  return lang === "en" || lang === "anders";
 }

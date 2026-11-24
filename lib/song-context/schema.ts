@@ -76,6 +76,8 @@ export const lyricsSchema = z.object({
   /** Sprache der Umschrift (z. B. „ja-Latn“) und der Übersetzung (z. B. „en-US“) */
   transliterationLang: z.string().optional(),
   translationLang: z.string().optional(),
+  /** woher die Übersetzung kommt: mit dem Liedtext geliefert oder von der KI (deutsch, gekennzeichnet) */
+  translationSource: z.enum(["quelle", "ki"]).optional(),
   /** Zuordnung Sänger-Kennung (z. B. TTML-Agent "v1") → Spotify-Artist-ID */
   singers: z.record(z.string(), z.string()).optional(),
 });

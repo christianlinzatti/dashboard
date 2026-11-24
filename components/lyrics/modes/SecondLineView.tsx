@@ -35,6 +35,15 @@ export function SecondLineView({ line, second, color }: { line: LyricLine; secon
           </span>
         </span>
       ))}
+      {second.machine && (
+        <span
+          className="ml-[0.6em] inline-block rounded bg-white/15 px-[0.35em] align-middle text-[0.4em] font-semibold not-italic tracking-wide text-white/70"
+          title="maschinell übersetzt"
+          data-testid="machine-translation"
+        >
+          KI-Übersetzung
+        </span>
+      )}
     </p>
   );
 }

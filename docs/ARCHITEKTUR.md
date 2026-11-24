@@ -314,3 +314,9 @@ Koordinaten über Nominatim (1 Anfrage/s, Cache 1 Jahr). Cache: vollständig 12 
 Erinnerungen im Umkreis von gefolgten/gemochten Künstlern (`ss_konzert_erinnerung`, bis zum Termin, Startbildschirm
 zeigt die nächsten 120 Tage), Erinnerungsfotos des Abends (`ss_fotos_abend`, für die Galerie; Fotos und Galerien
 liegen 24 h auf dem Server).
+
+**Deutsche Übersetzung der Lyrics** (`lib/lyrics/translate.ts`, `/api/lyrics/translate`): nur für Songs, die nicht
+deutsch sind (Sprache grob aus dem Text geschätzt, fremde Schrift zählt als nicht deutsch) und keine deutsche
+Übersetzung mitbringen. Der Server übersetzt mit derselben KI wie die Show-Regie (Claude oder OpenAI) den Text, der
+für diesen Song im Lyrics-Cache liegt – jede Zeile einmal, Cache 30 Tage, Ablehnung 3 Tage; ohne KI-Schlüssel bleibt es
+bei mitgelieferten Übersetzungen. Angezeigt als zweite Zeile mit dem Hinweis „KI-Übersetzung“.
