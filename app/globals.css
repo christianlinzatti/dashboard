@@ -217,6 +217,19 @@ body {
   animation: info-in 0.6s ease-out both;
 }
 
+/* Erinnerungsfoto: kurzer Blitz */
+@keyframes photo-flash {
+  from {
+    opacity: 0.85;
+  }
+  to {
+    opacity: 0;
+  }
+}
+.photo-flash {
+  animation: photo-flash 0.5s ease-out both;
+}
+
 @keyframes ken-burns {
   from {
     transform: scale(1.05) translate(0, 0);

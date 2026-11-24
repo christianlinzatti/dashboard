@@ -116,6 +116,8 @@ export const commandSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("effekt"), kind: z.enum(effectKinds) }),
   /** Bildschirm jetzt aus (bis zum Antippen oder „an“) bzw. wieder an */
   z.object({ type: z.literal("bildschirm"), on: z.boolean() }),
+  /** Erinnerungsfoto der Bühne (mit QR-Code zum Handy) */
+  z.object({ type: z.literal("foto") }),
 ]);
 export type CommandInput = z.infer<typeof commandSchema>;
 export type Command = CommandInput & { id: string; createdAt: number };

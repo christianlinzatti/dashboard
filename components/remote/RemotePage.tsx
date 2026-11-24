@@ -264,6 +264,13 @@ export function RemotePage() {
               <button type="button" className={btn} onClick={() => void send({ type: "bildschirm", on: true }, "Bildschirm an")}>
                 Bildschirm an
               </button>
+              <button
+                type="button"
+                className={btn}
+                onClick={() => void send({ type: "foto" }, "Foto! QR-Code erscheint auf dem Bildschirm")}
+              >
+                📸 Foto
+              </button>
             </section>
 
             <p className="text-sm text-white/50">

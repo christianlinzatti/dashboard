@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { collectErrors, ready } from "./helpers";
+import { collectErrors, ready, tapControl } from "./helpers";
 
 test.describe("Dashboard", () => {
   test("unbekannte Demo zeigt Hinweis", async ({ page }) => {
@@ -186,6 +186,33 @@ test.describe("Dashboard", () => {
     await expect(phone.getByTestId("viewer-login")).toContainText("Mit Spotify anmelden");
     await expect(phone.getByTestId("lyrics-status")).toHaveCount(0);
     await phone.close();
+  });
+
+  test("Erinnerungsfoto: Knopf → Blitz → Vorschau mit Bühne und Songzeile", async ({ page }) => {
+    const errors = collectErrors(page);
+    await page.goto("/?demo=neonlicht&t=46000&qualitaet=mittel");
+    await ready(page);
+    await tapControl(page, page.getByTestId("photo-button"));
+    const card = page.getByTestId("photo-card");
+    // Demo: nicht hochgeladen, aber zusammengesetzt (mit Vorschau)
+    await expect(card).toHaveAttribute("data-phase", "fertig");
+    await expect(card).toContainText("Demo");
+    // das Bild zeigt die Bühne (nicht schwarz/leer – sonst wäre im falschen Moment gelesen worden)
+    const stats = await card.locator("img").evaluate(async (img: HTMLImageElement) => {
+      await img.decode();
+      const c = document.createElement("canvas");
+      c.width = img.naturalWidth;
+      c.height = img.naturalHeight;
+      const g = c.getContext("2d")!;
+      g.drawImage(img, 0, 0);
+      const d = g.getImageData(0, 0, c.width, Math.round(c.height * 0.6)).data;
+      let sum = 0;
+      for (let i = 0; i < d.length; i += 4) sum += d[i]! + d[i + 1]! + d[i + 2]!;
+      return { w: img.naturalWidth, mean: sum / (d.length / 4) / 3 };
+    });
+    expect(stats.w).toBeGreaterThan(600);
+    expect(stats.mean).toBeGreaterThan(12);
+    expect(errors).toEqual([]);
   });
 
   test("/debug: Bildrate am Kiosk je Bühne und Qualität", async ({ page }) => {

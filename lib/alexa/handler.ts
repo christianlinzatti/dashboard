@@ -371,6 +371,11 @@ export async function handleAlexa(req: AlexaRequest, deps: HandlerDeps) {
       await deps.pushCommand({ type: "bildschirm", on });
       return speak(on ? "Bildschirm an." : "Bildschirm aus. Antippen oder sag Bildschirm an, dann ist er wieder da.");
     }
+    case "FotoIntent": {
+      if (!(await live())) return speak("Das Dashboard ist gerade nicht aktiv.");
+      await deps.pushCommand({ type: "foto" });
+      return speak("Bitte lächeln! Das Foto erscheint gleich mit QR-Code auf dem Bildschirm.");
+    }
     case "LyricsVersatzIntent": {
       const r = slot(req, "richtung");
       const deltaMs = r === "spaeter" ? 200 : r === "frueher" ? -200 : 0;
@@ -391,7 +396,7 @@ export async function handleAlexa(req: AlexaRequest, deps: HandlerDeps) {
     }
     case "AMAZON.HelpIntent":
       return speak(
-        "Du kannst fragen: Welcher Song läuft? Wer singt gerade? Wann spielen die in der Nähe? Erzähl mir was über die Band. Wie war der Abend? Was klingt ähnlich? Oder sagen: Konfetti, Feuerwerk, Lyrics später, Bildschirm aus, Lampen aus, Bühne Weltraum.",
+        "Du kannst fragen: Welcher Song läuft? Wer singt gerade? Wann spielen die in der Nähe? Erzähl mir was über die Band. Wie war der Abend? Was klingt ähnlich? Oder sagen: Konfetti, Feuerwerk, mach ein Foto, Lyrics später, Bildschirm aus, Lampen aus, Bühne Weltraum.",
         false,
       );
     case "AMAZON.StopIntent":

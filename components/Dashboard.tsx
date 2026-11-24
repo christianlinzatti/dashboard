@@ -12,6 +12,8 @@ import { UpNextCard } from "./hud/UpNextCard";
 import { perfMessage } from "@/lib/live/perf-samples";
 import { stageInfo } from "@/lib/stage/stage-info";
 import { useUpNext } from "./show/useUpNext";
+import { PhotoOverlay } from "./photo/PhotoOverlay";
+import { usePhoto } from "./photo/usePhoto";
 import { NowPlayingBar } from "./hud/NowPlayingBar";
 import { Progress } from "./hud/Progress";
 import { IdleScreen } from "./hud/IdleScreen";
@@ -126,6 +128,8 @@ export function Dashboard({
   useAutoOffset(demo === undefined);
   // „Gleich kommt …“ und Vorladen des nächsten Songs (Demos: nächste Demo der Liste)
   useUpNext({ live: demo === undefined, demo: demo && fixtures[demo] ? demo : undefined });
+  // Erinnerungsfoto: zusammensetzen und hochladen (Demos: nur Vorschau)
+  usePhoto(demo === undefined);
   // Mikrofon: im Live-Betrieb; in Demos nur mit ?mic=1 (Screenshots bleiben reproduzierbar)
   const micCtl = useMicAnalysis(demo === undefined || !!mic);
 
@@ -220,6 +224,7 @@ export function Dashboard({
           <InfoOverlay />
           <ConcertOverlay />
           <UpNextCard />
+          <PhotoOverlay />
           <MottoBanner />
           <LyricsLayer forceMode={lyricsMode} forceEffect={lyricsEffect} forceTheme={theme} />
           <Progress />

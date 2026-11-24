@@ -9,6 +9,7 @@ import { useSongContext } from "@/lib/song-context/store";
 import { POLL_NOW_EVENT } from "../spotify/useSpotifySync";
 import type { MicState } from "@/lib/song-context/schema";
 import { useSettings } from "@/lib/settings";
+import { photoStore } from "@/lib/photo/store";
 import { hasSecondLine, secondLineLabel, secondLineModes } from "@/lib/lyrics/second-line";
 import { useBridgeState } from "../bridge/useBridge";
 import type { Quality } from "@/lib/stage/quality";
@@ -186,6 +187,9 @@ export function Controls({ live, mic }: { live: boolean; mic?: { state: MicState
             Canvas {canvas ? "an" : "aus"}
           </button>
         )}
+        <button className={btn} data-testid="photo-button" onClick={() => photoStore.getState().request()}>
+          📸 Foto
+        </button>
         <button
           className={btn}
           data-testid="strobe-toggle"

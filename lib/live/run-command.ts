@@ -6,6 +6,7 @@ import { songContext } from "@/lib/song-context/store";
 import { offsetStore } from "@/lib/lyrics/offset-store";
 import { manualCues } from "@/lib/stage/manual-cues";
 import { screenStore } from "./screen";
+import { photoStore } from "@/lib/photo/store";
 
 /** Einen Befehl vom Server (Alexa, Fernbedienung) im Kiosk ausführen. */
 export function runCommand(c: Command) {
@@ -26,6 +27,9 @@ export function runCommand(c: Command) {
     }
     case "bildschirm":
       screenStore.getState().set(c.on);
+      break;
+    case "foto":
+      photoStore.getState().request();
       break;
   }
 }

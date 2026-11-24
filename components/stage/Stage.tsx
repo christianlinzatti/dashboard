@@ -26,6 +26,7 @@ import { Director, FOG_NEAR } from "./Director";
 import { Blinders, Lasers, MovingHeads } from "./Lights";
 import { NOT_ON_SCREENS } from "./layout";
 import { LiveScreens } from "./LiveScreens";
+import { PhotoCapture } from "./PhotoCapture";
 import { Weather } from "./Weather";
 import { weatherFor } from "@/lib/stage/weather";
 import { DEMO_TODAY } from "@/lib/song-context/fixtures";
@@ -361,6 +362,8 @@ function Scene({
           <ReadySignal />
           <RenderStats />
         </Suspense>
+        {/* Erinnerungsfoto: liest das fertige Bild (nach Bloom) */}
+        <PhotoCapture bloom={preset.bloom} />
         {preset.bloom && (
           <EffectComposer multisampling={0} resolutionScale={quality === "hoch" ? 1 : 0.5}>
             <Bloom mipmapBlur luminanceThreshold={0.7} luminanceSmoothing={0.15} intensity={0.7} />

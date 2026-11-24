@@ -302,6 +302,21 @@
             "lass {effekt} los",
             "Zeit für {effekt}"
           ]
+        },
+        {
+          "name": "FotoIntent",
+          "slots": [],
+          "samples": [
+            "mach ein Foto",
+            "Foto",
+            "ein Foto",
+            "Erinnerungsfoto",
+            "mach ein Erinnerungsfoto",
+            "Schnappschuss",
+            "mach einen Schnappschuss",
+            "Foto von der Bühne",
+            "knips ein Foto"
+          ]
         }
       ],
       "types": [

@@ -262,6 +262,11 @@ describe("Alexa-Intents", () => {
     expect(none.cmds).toEqual([]);
     expect(none.text).toBe("Auf der Bühne Club gibt es kein Schaum.");
     expect((await run("EffektIntent", { effekt: { value: "atombombe" } }, club)).text).toMatch(/Welcher Effekt/);
+
+    const foto = await run("FotoIntent", {}, club);
+    expect(foto.cmds).toEqual([{ type: "foto" }]);
+    expect(foto.text).toMatch(/lächeln.*QR-Code/);
+    expect((await run("FotoIntent", {}, null)).cmds).toEqual([]);
   });
 
   it("Start, Hilfe, Stopp", async () => {
