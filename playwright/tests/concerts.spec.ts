@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { ready } from "./helpers";
+import { hideStage, ready } from "./helpers";
 
 test.describe("Konzerte", () => {
   test("Demo: Konzertkarte am Songende mit Countdown, ausverkauft und Ticket-QR", async ({ page }) => {
@@ -18,7 +18,8 @@ test.describe("Konzerte", () => {
     await expect(card.getByTestId("osm-credit")).toHaveCount(0); // Demo-Entfernungen ohne OpenStreetMap
     // Info-Karte und Lyrics machen Platz
     await expect(page.getByTestId("info-card")).toHaveCount(0);
-    await expect(page).toHaveScreenshot("konzertkarte.png");
+    await hideStage(page);
+    await expect(card).toHaveScreenshot("konzertkarte.png");
   });
 
   test("Demo: vor dem Songende keine Konzertkarte", async ({ page }) => {

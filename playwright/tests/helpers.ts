@@ -77,3 +77,11 @@ export async function stageDiagnosis(page: Page): Promise<string> {
     `Seitenfehler:\n${errors.join("\n") || "  –"}`,
   ].join("\n");
 }
+
+/**
+ * Für Screenshots von Karten und Lyrics: die 3D-Bühne ausblenden – dann ändern Umbauten an der Bühne diese
+ * Referenzbilder nicht mehr (dahinter bleibt der schlichte dunkle Hintergrund).
+ */
+export async function hideStage(page: Page) {
+  await page.addStyleTag({ content: "[data-testid=stage] canvas { visibility: hidden !important; }" });
+}

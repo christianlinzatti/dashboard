@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { ready } from "./helpers";
+import { hideStage, ready } from "./helpers";
 
 test.describe("Band-Infos", () => {
   test("Infokarte im Intro mit Foto-Nachweis und Quelle; Lyrics machen Platz", async ({ page }) => {
@@ -11,7 +11,8 @@ test.describe("Band-Infos", () => {
     await expect(page.getByTestId("photo-credit")).toHaveText("Foto: Demo-Grafik · CC0");
     await expect(card).toContainText("Text: Wikipedia");
     await expect(page.getByTestId("lyrics")).toHaveCount(0);
-    await expect(page).toHaveScreenshot("infokarte.png");
+    await hideStage(page);
+    await expect(card).toHaveScreenshot("infokarte.png");
   });
 
   test("Feature-Song: Karte wechselt zum zweiten Artist", async ({ page }) => {

@@ -270,3 +270,47 @@ Für das Konzert-Erlebnis wurde die Bühne in vier Schichten gegliedert. Jede Sc
 
 **Nächste Ausbaustufen** stehen im Konzept, Abschnitt 13 (Stufen 10–14).
 
+
+## 6. Infos, Fotos und Konzerte: Quellen, Cache, Ausfälle (Stand 2026-11-24)
+
+Alle externen Quellen sind optional – fällt eine aus, zeigt die Bühne, was die anderen liefern. Was gerade fehlt,
+steht in `/debug` (Kurzdiagnose „Infos & Fotos“ und „Konzerte“, Abschnitt „Konzerttermine“) und im Kiosk-Protokoll.
+
+**Künstler-Infos und Fotos** (`lib/info/service.ts`, Cache-Schlüssel `info:v3:<name>|<spotify-id>`)
+
+| Schritt | Quelle | liefert | bei Ausfall |
+| --- | --- | --- | --- |
+| 1 | MusicBrainz über den Spotify-Link (`/ws/2/url`), sonst Namenssuche (≥ 90 Punkte) | MBID, Wikidata-ID, Commons-Datei, Gründung/Geburt | Künstler übersprungen, nicht gecacht, nächster Song versucht es neu |
+| 2 | Wikidata → Wikipedia (de, sonst en) | Kurztext, Artikel-Link | optional; Text dann von TheAudioDB |
+| 3 | Wikimedia Commons | Foto mit Urheber und Lizenz (nur freie Lizenzen) | optional |
+| 4 | TheAudioDB (Test-Key oder `THEAUDIODB_API_KEY`) | Bühnenbilder, Porträt, Logo, deutsche Biografie | optional |
+| 5 | Flickr (`FLICKR_API_KEY`) | freie Konzertfotos | optional |
+
+Cache: alles da 30 Tage; eine Quelle ausgefallen 2 Stunden (`infoPartial`); nichts gefunden 3 Tage; alles
+ausgefallen gar nicht. Wikimedia und MusicBrainz drosseln Rechenzentrums-Adressen – `INFO_CONTACT` (E-Mail im
+User-Agent) hilft; die Kurzdiagnose schlägt es vor, sobald eine 429 auftaucht.
+
+**Fotos zeigen** (`lib/info/display.ts`, `lib/info/photos.ts`): LED-Wand mit Fotos aller Artists des Songs (Lead
+zuerst, je Quelle abwechselnd, höchstens 8, kein Hochformat), Wechsel je Songabschnitt, Bildnachweis unten rechts;
+Infokarte wechselt bei jedem Auftritt zum nächsten Foto. Größen: Wandfoto 640 px auf Bildschirmen bis 1366 px (außer
+„hoch“), sonst 1280; Wikimedia-Bilder in deren Standardgrößen (250 … 1920), fremde Hosts ohne CORS über `/_next/image`.
+
+**Konzerte** (`lib/concerts/`, Cache-Schlüssel `concerts:v2:<name>`)
+
+| Quelle | Schlüssel | Hinweis |
+| --- | --- | --- |
+| oeticket (Eventim AT) | keiner (`OETICKET=0` schaltet ab) | inoffizielle Such-API, alle Seiten (ohne `top`, sonst immer Seite 1), höchstens 8; sperrt manche Server-Adressen (403) |
+| eventim.de | keiner (`EVENTIM_DE=0`) | wie oeticket |
+| Ticketmaster | `TICKETMASTER_API_KEY` (kostenlos) | bis 200 Treffer, alle Märkte |
+| Bandsintown | `BANDSINTOWN_APP_ID` | IDs nur für Künstler/Partner |
+| setlist.fm | `SETLISTFM_API_KEY` | „Zuletzt live“, Cache 3 Tage |
+
+Zusammenführen: gleicher Tag + gleiche Stadt = ein Konzert; Ticket-Link von der bevorzugten Quelle (oeticket vor
+eventim.de vor Ticketmaster); abgesagt bei einer Quelle = weg; je Künstler höchstens 5, Umkreis zuerst. Orte ohne
+Koordinaten über Nominatim (1 Anfrage/s, Cache 1 Jahr). Cache: vollständig 12 Stunden, eine Quelle ausgefallen
+30 Minuten (der Fehler wird mitgespeichert und bleibt so in `/debug` sichtbar).
+
+**Im Browser gemerkt** (localStorage, überlebt Neustarts des Kiosks): Rückblick des Abends (`ss_abend`), Konzert-
+Erinnerungen im Umkreis von gefolgten/gemochten Künstlern (`ss_konzert_erinnerung`, bis zum Termin, Startbildschirm
+zeigt die nächsten 120 Tage), Erinnerungsfotos des Abends (`ss_fotos_abend`, für die Galerie; Fotos und Galerien
+liegen 24 h auf dem Server).

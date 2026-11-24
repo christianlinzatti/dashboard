@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { ready } from "./helpers";
+import { hideStage, ready } from "./helpers";
 
 test.describe("LyricsDirector wählt passend zum Abschnitt", () => {
   for (const [t, section, modes] of [
@@ -29,7 +29,8 @@ test.describe("Darstellungsmodi", () => {
       await ready(page);
       await expect(page.getByTestId("lyrics")).toHaveAttribute("data-mode", mode);
       await expect(page.getByTestId("lyrics-current").first()).toBeVisible();
-      await expect(page).toHaveScreenshot(`modus-${mode}.png`);
+      await hideStage(page);
+      await expect(page.getByTestId("lyrics")).toHaveScreenshot(`modus-${mode}.png`);
     });
   }
 
@@ -59,7 +60,8 @@ test.describe("Schrift-Effekte und Songstruktur", () => {
       await ready(page);
       await expect(page.getByTestId("lyrics")).toHaveAttribute("data-effect", effect);
       await expect(page.getByTestId("lyrics-current")).toHaveText("bis der Morgen uns zerbricht");
-      await expect(page).toHaveScreenshot(`effekt-${effect}.png`);
+      await hideStage(page);
+      await expect(page.getByTestId("lyrics")).toHaveScreenshot(`effekt-${effect}.png`);
     });
   }
 

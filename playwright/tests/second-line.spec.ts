@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { ready, tapControl } from "./helpers";
+import { hideStage, ready, tapControl } from "./helpers";
 
 test.describe("Umschrift und Übersetzung", () => {
   test("japanischer Song: Umschrift automatisch, Umschalten auf Übersetzung und aus", async ({ page }) => {
@@ -10,7 +10,8 @@ test.describe("Umschrift und Übersetzung", () => {
     await expect(second).toHaveAttribute("data-kind", "umschrift");
     await expect(second).toHaveAttribute("lang", "ja-Latn");
     await expect(second).toHaveText("yozora ni hikaru hoshi no kakera");
-    await expect(page).toHaveScreenshot("umschrift.png");
+    await hideStage(page);
+    await expect(page.getByTestId("lyrics")).toHaveScreenshot("umschrift.png");
 
     const toggle = page.getByTestId("second-line-toggle");
     await tapControl(page, toggle);
