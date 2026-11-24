@@ -157,7 +157,7 @@ describe("Konzertfilm: Eröffnung und Einsätze", () => {
 });
 
 describe("Band-Solo im Instrumentalteil", () => {
-  it("Rock: erst Gitarre, dann Schlagzeug; Kamera nah; Solist tritt nach vorn und wieder zurück", async () => {
+  it("Rock: erst Gitarre, dann Schlagzeug; Solo-Kamera über die Köpfe; Solist tritt nach vorn und wieder zurück", async () => {
     const { soloAt, SOLO_STEP } = await import("@/lib/stage/musicians");
     const plans = Object.values(fixtures).map((s) =>
       planChoreography({ ...s, music: { ...s.music, genres: ["rock"] } }, s.music.bpmHint ?? 120),
@@ -167,7 +167,7 @@ describe("Band-Solo im Instrumentalteil", () => {
     for (const { p } of solos) {
       expect(p.section).toBe("instrumental");
       expect(p.energy).toBeGreaterThanOrEqual(2);
-      expect(p.camera).toBe("nah");
+      expect(p.camera).toBe("solo");
       expect(p.turn).toBe(false);
     }
     const first = plans.find((k) => k.phrases.some((p) => p.solo))!;

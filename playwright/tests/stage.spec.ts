@@ -293,4 +293,16 @@ test.describe("Robustheit der Bühne", () => {
     // nur der absichtlich provozierte Ladefehler, sonst nichts
     expect(errors.filter((e) => !/Could not load \/avatars\/atlas-prism\.glb/.test(e))).toEqual([]);
   });
+
+  test("Band-Solo im Instrumentalteil: Gitarre, dann Schlagzeug im Verfolger", async ({ page }) => {
+    await page.goto("/?demo=funkenflug&t=47000&qualitaet=mittel");
+    await ready(page);
+    const canvas = page.locator("[data-testid=stage] canvas");
+    await expect(canvas).toHaveAttribute("data-solo", "gitarre");
+    await expect(canvas).toHaveAttribute("data-camera", "solo");
+    await expect(page).toHaveScreenshot("band-solo.png");
+    await page.goto("/?demo=funkenflug&t=61000&qualitaet=mittel");
+    await ready(page);
+    await expect(canvas).toHaveAttribute("data-solo", "schlagzeug");
+  });
 });

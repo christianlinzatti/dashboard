@@ -233,6 +233,11 @@ function presetAt(preset: CameraPreset, p: Phrase, t: number, focus: Vec2 | unde
       const [x, z] = focus ?? [0, 0];
       return { pos: [x * 0.6, 1.55, z + 2.3], target: [x, 1.42, z], fov: FOV };
     }
+    case "solo": {
+      // der Musiker steht hinten auf dem Podest: von schräg oben über die Köpfe der Tänzer, die davor stehen
+      const [x, z] = focus ?? [0, -2.2];
+      return { pos: [x * 0.8, 2.75, z + 3.4], target: [x, 1.45, z], fov: FOV };
+    }
     case "kreisfahrt": {
       const a = 2 * Math.PI * phraseProgress(p, t);
       return { pos: [Math.sin(a) * 6.2, 1.7, Math.cos(a) * 6.2], target: [0, 0.8, 0], fov: FOV };

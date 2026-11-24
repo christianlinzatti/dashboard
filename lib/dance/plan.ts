@@ -23,6 +23,8 @@ export type CameraPreset =
   | "seite"
   /** Nahaufnahme des aktiven Sängers */
   | "nah"
+  /** Band-Solo: von schräg oben über die Köpfe der Tänzer auf den Musiker hinten auf dem Podest */
+  | "solo"
   /** 360°-Fahrt einmal um die Bühne (über die ganze Phrase) */
   | "kreisfahrt"
   /** hoch von oben */
@@ -236,7 +238,7 @@ export function planChoreography(
       }
       prevFormation = formation;
       const solo = sec.kind === "instrumental" && energy >= 2 && band ? soloRole(band, solos++) : undefined;
-      if (solo) camera = "nah"; // nah auf den Solisten (Director richtet sie auf ihn aus)
+      if (solo) camera = "solo"; // auf den Solisten (Director richtet sie auf ihn aus)
       // Aus dem Publikum: manchmal statt der Totale über die Köpfe filmen
       if (camera === "totale" && (sec.kind === "chorus" || sec.kind === "instrumental") && rCam.next() < 0.4)
         camera = "ueberkopf";
@@ -247,6 +249,7 @@ export function planChoreography(
         camera !== "kreisfahrt" &&
         camera !== "kran" &&
         camera !== "nah" &&
+        camera !== "solo" &&
         end - t >= 4 * barMs;
 
       const pool = (id: string, avoid: string[]) => {

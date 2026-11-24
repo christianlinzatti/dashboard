@@ -148,6 +148,9 @@ export function IdleScreen({ status, unknownDemo, loginError }: Props) {
         <Link className="rounded-full bg-white/10 px-4 py-2 hover:bg-white/20" href="/?demo=instrumental">
           Instrumental
         </Link>
+        <Link className="rounded-full bg-white/10 px-4 py-2 hover:bg-white/20" href="/?demo=funkenflug">
+          Rock-Band
+        </Link>
       </nav>
     </div>
   );

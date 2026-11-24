@@ -1,5 +1,6 @@
 import type { SongStatic } from "../schema";
 import { abendrot } from "./abendrot";
+import { funkenflug } from "./funkenflug";
 import { hoshizora } from "./hoshizora";
 import { instrumental } from "./instrumental";
 import { neonlicht } from "./neonlicht";
@@ -13,4 +14,5 @@ export const fixtures: Record<string, SongStatic> = {
   abendrot,
   instrumental,
   hoshizora,
+  funkenflug,
 };
