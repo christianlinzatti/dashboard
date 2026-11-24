@@ -200,6 +200,20 @@ test.describe("Dashboard", () => {
     await expect.poll(seconds, { timeout: 8_000 }).toBeGreaterThanOrEqual(2);
   });
 
+  test("„Gleich kommt …“: Vorschau auf den nächsten Song in den letzten Sekunden", async ({ page }) => {
+    // Demo: der nächste Song ist die nächste Demo der Liste (Neonlicht → Abendrot am Hafen)
+    await page.goto("/?demo=neonlicht&t=190000&qualitaet=niedrig");
+    await ready(page);
+    const card = page.getByTestId("up-next");
+    await expect(card).toHaveAttribute("data-visible", "true");
+    await expect(card).toContainText("Gleich");
+    await expect(card).toContainText("Abendrot am Hafen");
+    // mitten im Song: keine Vorschau
+    await page.goto("/?demo=neonlicht&t=46000&qualitaet=niedrig");
+    await ready(page);
+    await expect(page.getByTestId("up-next")).toHaveCount(0);
+  });
+
   test("Sicherheits-Header sind gesetzt", async ({ request }) => {
     const res = await request.get("/");
     const h = res.headers();

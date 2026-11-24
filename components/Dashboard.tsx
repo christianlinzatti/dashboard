@@ -8,6 +8,8 @@ import { useEffect, type CSSProperties } from "react";
 import { useStore } from "zustand";
 import { fixtures } from "@/lib/song-context/fixtures";
 import { songContext, useSongContext } from "@/lib/song-context/store";
+import { UpNextCard } from "./hud/UpNextCard";
+import { useUpNext } from "./show/useUpNext";
 import { NowPlayingBar } from "./hud/NowPlayingBar";
 import { Progress } from "./hud/Progress";
 import { IdleScreen } from "./hud/IdleScreen";
@@ -120,6 +122,8 @@ export function Dashboard({
   useSongMemory(demo === undefined);
   // Lyrics-Versatz: von Hand (Steuerleiste) + automatisch über das Mikrofon (Lautsprecher-Verzögerung, Songversion)
   useAutoOffset(demo === undefined);
+  // „Gleich kommt …“ und Vorladen des nächsten Songs (Demos: nächste Demo der Liste)
+  useUpNext({ live: demo === undefined, demo: demo && fixtures[demo] ? demo : undefined });
   // Mikrofon: im Live-Betrieb; in Demos nur mit ?mic=1 (Screenshots bleiben reproduzierbar)
   const micCtl = useMicAnalysis(demo === undefined || !!mic);
 
@@ -199,6 +203,7 @@ export function Dashboard({
           <NowPlayingBar />
           <InfoOverlay />
           <ConcertOverlay />
+          <UpNextCard />
           <MottoBanner />
           <LyricsLayer forceMode={lyricsMode} forceEffect={lyricsEffect} forceTheme={theme} />
           <Progress />
