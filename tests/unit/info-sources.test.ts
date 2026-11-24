@@ -214,14 +214,12 @@ describe("Anzeige mit mehreren Fotos und Trivia", () => {
       song: { trivia: ["Produziert von Max Martin"], url: "https://genius.com/x" },
     },
   };
-  it("Wand wechselt je Abschnitt zwischen den Fotos des Leads", () => {
-    expect(wallPhotos(extra).map((x) => x.artistId)).toEqual(["demo-mira", "demo-mira"]);
+  it("Wand wechselt je Abschnitt durch die Fotos aller Artists, Lead zuerst", () => {
+    expect(wallPhotos(extra).map((x) => x.artistId)).toEqual(["demo-mira", "demo-mira", "demo-kai"]);
     const urls = extra.lyrics!.sections.map((s) => wallPhotoAt(extra, s.startMs)!.url);
-    expect(new Set(urls).size).toBe(2);
+    expect(new Set(urls).size).toBe(3);
     expect(wallPhotoAt(extra, 0)!.url).toContain("fanart"); // bestes Querformat zuerst
-    expect(wallPhotoAt({ ...extra, lyrics: undefined }, 61_000)!.url).toBe(
-      wallPhotoAt({ ...extra, lyrics: undefined }, 0)!.url === urls[0] ? urls[1] : urls[0],
-    );
+    expect(wallPhotoAt({ ...extra, lyrics: undefined }, 61_000)!.url).toBe(wallPhotos(extra)[1]!.url);
   });
   it("Logo und Trivia im Fakten-Ticker", () => {
     expect(infoEntries(extra)[0]!.logo).toContain("logo.png");
@@ -261,13 +259,43 @@ describe("Info-Service mit allen Quellen", () => {
     expect(info.facts[0]).toBe("Gegründet 1996");
   });
 
-  it("TheAudioDB ausgefallen → Teilergebnis, nur kurz gecacht; abschaltbar", async () => {
+  it("Wikipedia drosselt (429) → TheAudioDB-Fotos und -Text bleiben, Ergebnis nur 2 h gecacht", async () => {
+    const withWiki = (over: Record<string, () => Response>) =>
+      fake({
+        [`musicbrainz.org/ws/2/artist/${MBID}`]: () =>
+          ok({
+            id: MBID,
+            name: "Coldplay",
+            type: "Group",
+            relations: [{ type: "wikidata", url: { resource: "https://www.wikidata.org/wiki/Q45188" } }],
+          }),
+        ...over,
+      });
+    const f = withWiki({ "wikidata.org": () => new Response("zu viele", { status: 429 }) });
+    const info = (await lookupArtist("Coldplay", f.http))!;
+    expect(info.partial).toBe(true);
+    expect(info.photos).toHaveLength(6);
+    expect(info.textSource).toBe("theaudiodb");
+    const cache = memoryCache();
+    const set = vi.spyOn(cache, "set");
+    await createInfoService({ cache, http: f.http })([{ id: "sp", name: "Coldplay" }]);
+    expect(set).toHaveBeenCalledWith("info:v3:coldplay|sp", expect.anything(), CACHE_TTL.infoPartial);
+    // alles ausgefallen: nicht als „gibt es nicht“ cachen
+    const dead = withWiki({ "wikidata.org": () => new Response("", { status: 429 }), "theaudiodb.com": () => ok({}, 503) });
+    const cache2 = memoryCache();
+    const set2 = vi.spyOn(cache2, "set");
+    const r = await createInfoService({ cache: cache2, http: dead.http })([{ id: "sp", name: "Coldplay" }]);
+    expect(r.complete).toBe(false);
+    expect(set2).not.toHaveBeenCalled();
+  });
+
+  it("TheAudioDB ausgefallen und sonst nichts → nicht cachen (neuer Versuch); abschaltbar", async () => {
     const f = fake({ "theaudiodb.com": () => ok({}, 503) });
     const cache = memoryCache();
     const set = vi.spyOn(cache, "set");
     const svc = createInfoService({ cache, http: f.http });
-    await svc([{ id: "sp", name: "Coldplay" }]);
-    expect(set).toHaveBeenCalledWith("info:v2:coldplay", expect.anything(), CACHE_TTL.infoMissing);
+    expect((await svc([{ id: "sp", name: "Coldplay" }])).complete).toBe(false);
+    expect(set).not.toHaveBeenCalled();
     const off = fake();
     await lookupArtist("Coldplay", off.http, undefined, { audioDb: null });
     expect(off.calls.some((c) => c.includes("theaudiodb"))).toBe(false);

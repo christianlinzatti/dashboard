@@ -1,6 +1,6 @@
 import { concertCardAt } from "@/lib/concerts/display";
 import type { Derived, Info, Photo, SongStatic } from "@/lib/song-context/schema";
-import { rankPhotos } from "./photos";
+import { aspect, diversify, rankPhotos } from "./photos";
 
 export const CARD_ROTATE_MS = 12_000;
 export const FACT_PERIOD_MS = 24_000;
@@ -16,6 +16,8 @@ type ArtistEntry = {
   textSource: "wikipedia" | "theaudiodb";
   logo?: string;
   photo?: Photo;
+  /** alle Fotos des Artists für die Karte (wechseln bei jedem Auftritt der Karte) */
+  photos?: Photo[];
 };
 
 /** Karte zum Song selbst (Wikipedia-Artikel); das Cover steht ohnehin oben in der Leiste */
@@ -50,13 +52,16 @@ export function infoEntries(song: SongStatic): ArtistEntry[] {
         lang: i.lang,
         textSource: i.textSource ?? "wikipedia",
         ...(i.logo ? { logo: i.logo } : {}),
-        photo: rankPhotos(
-          info.photos.filter((p) => p.artistId === a.spotifyId),
-          "card",
-        )[0],
+        ...cardPhotos(info.photos.filter((p) => p.artistId === a.spotifyId)),
       },
     ];
   });
+}
+
+/** Fotos für die Karte: bestes zuerst, dann je Quelle abwechselnd */
+function cardPhotos(list: Photo[]): Pick<ArtistEntry, "photo" | "photos"> {
+  const photos = diversify(rankPhotos(list, "card"));
+  return photos.length ? { photo: photos[0], photos } : {};
 }
 
 /**
@@ -72,7 +77,10 @@ export function infoCardAt(song: SongStatic, d: Derived, t: number): ArtistEntry
   const longGap = !d.lineActive && (d.secondsToNextLyric ?? 0) > 8;
   const noLyricsSlot = !hasLyrics && (t < 20_000 || t % 60_000 < 12_000);
   if (!(calmSection || longGap || noLyricsSlot) || (hasLyrics && d.lineActive)) return null;
-  return entries[Math.floor(t / CARD_ROTATE_MS) % entries.length]!;
+  const entry = entries[Math.floor(t / CARD_ROTATE_MS) % entries.length]!;
+  // bei jedem neuen Auftritt der Karte das nächste Foto dieses Artists
+  const round = Math.floor(t / (CARD_ROTATE_MS * entries.length));
+  return entry.photos && entry.photos.length > 1 ? { ...entry, photo: entry.photos[round % entry.photos.length] } : entry;
 }
 
 /** „Ähnlich wie Queen · Freddie Mercury, David Bowie“ (Last.fm) */
@@ -104,20 +112,46 @@ export function factAt(song: SongStatic, d: Derived, t: number): string | null {
   return facts[ordinal % facts.length]!;
 }
 
-/** Fotos für die LED-Wand: die des Leads (sonst alle), bestes Querformat zuerst. */
+/** Höchstens so viele Fotos im Wechsel auf der Wand (jedes wird einmal geladen) */
+export const WALL_PHOTOS_MAX = 8;
+
+/**
+ * Fotos für die LED-Wand: alle Artists des Songs (Lead zuerst), je Quelle abwechselnd (das Wikipedia-Foto kommt nicht
+ * erst nach vier Bühnenbildern), bestes Querformat vorn. Hochformat nur, wenn es nichts anderes gibt – auf der breiten
+ * Wand bliebe davon nur ein Streifen.
+ */
 export function wallPhotos(song: SongStatic): Photo[] {
-  const photos = song.info?.photos ?? [];
-  const lead = photos.filter((p) => p.artistId === song.artists[0]?.spotifyId);
-  return rankPhotos(lead.length ? lead : photos, "wall");
+  const all = song.info?.photos ?? [];
+  const wide = all.filter((p) => aspect(p) >= 0.95);
+  const pool = wide.length ? wide : all;
+  const order = song.artists.map((a) => a.spotifyId);
+  const rank = (id: string | undefined) => (id && order.includes(id) ? order.indexOf(id) : order.length);
+  const byArtist = [...new Set(pool.map((p) => p.artistId))].sort((a, b) => rank(a) - rank(b));
+  return byArtist
+    .flatMap((id) =>
+      diversify(
+        rankPhotos(
+          pool.filter((p) => p.artistId === id),
+          "wall",
+        ),
+      ),
+    )
+    .slice(0, WALL_PHOTOS_MAX);
 }
 
-/** Foto für die LED-Wand zum Zeitpunkt t: wechselt mit jedem Abschnitt (höchstens 4 Fotos im Wechsel). */
+/** Foto für die LED-Wand zum Zeitpunkt t: wechselt mit jedem Abschnitt (ohne Songtext jede Minute). */
 export function wallPhotoAt(song: SongStatic, t = 0): Photo | null {
-  const list = wallPhotos(song).slice(0, 4);
+  const list = wallPhotos(song);
   if (!list.length) return null;
   const sections = song.lyrics?.sections ?? [];
   const idx = sections.length ? Math.max(0, sections.filter((s) => s.startMs <= t).length - 1) : Math.floor(t / 60_000);
   return list[idx % list.length]!;
+}
+
+/** Bildnachweis fürs Wandfoto („Foto: … · CC BY-SA 4.0“); eigene Demo-Bilder (lokale Pfade) brauchen keinen */
+export function wallPhotoCredit(song: SongStatic, t = 0): string | null {
+  const p = wallPhotoAt(song, t);
+  return p && p.source !== "demo" && !p.url.startsWith("/") ? `Foto: ${p.credit} · ${p.license}` : null;
 }
 
 /** Bisherige Schnittstelle: erstes Wandfoto. */

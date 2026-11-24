@@ -10,7 +10,7 @@ import type { WikiSummary } from "./wikimedia";
 import { createPoliteFetch, SourceBusyError } from "./http";
 import { findArtist, type MbArtist } from "./musicbrainz";
 import { AUDIODB_TEST_KEY, audioDbArtist } from "./theaudiodb";
-import { commonsImage, wikidataEntity, wikipediaSummary } from "./wikimedia";
+import { commonsImage, wikidataEntity, wikipediaSummary, type WikidataInfo } from "./wikimedia";
 
 type Http = (url: string, signal?: AbortSignal) => Promise<Response>;
 
@@ -23,7 +23,7 @@ export type ArtistInfo = {
   facts: string[];
   logo?: string;
   photos: Array<Omit<Photo, "artistId">>;
-  /** eine optionale Quelle (TheAudioDB, Flickr, Commons) ist ausgefallen → nur kurz cachen */
+  /** eine Quelle (Wikipedia/Wikidata, TheAudioDB, Flickr, Commons) ist ausgefallen → nur kurz cachen */
   partial?: boolean;
 };
 
@@ -56,8 +56,9 @@ export async function lookupArtist(
   http: Http,
   signal?: AbortSignal,
   keys: SourceKeys = {},
+  spotifyId?: string,
 ): Promise<ArtistInfo | null> {
-  const mb = await findArtist(name, http, signal);
+  const mb = await findArtist(name, http, signal, spotifyId);
   if (!mb) return null;
   let partial = false;
   const optional = async <T>(p: Promise<T>, fallback: T): Promise<T> => {
@@ -70,11 +71,12 @@ export async function lookupArtist(
     }
   };
 
+  // Wikidata/Wikipedia optional: drosselt Wikimedia (429), bleiben TheAudioDB-Fotos und -Text trotzdem sichtbar
   const wikiPart = (async () => {
-    const wd = mb.wikidataId ? await wikidataEntity(mb.wikidataId, http, signal) : {};
+    const wd: WikidataInfo = mb.wikidataId ? await optional(wikidataEntity(mb.wikidataId, http, signal), {}) : {};
     const summary =
-      (wd.dewiki ? await wikipediaSummary("de", wd.dewiki, http, signal) : null) ??
-      (wd.enwiki ? await wikipediaSummary("en", wd.enwiki, http, signal) : null);
+      (wd.dewiki ? await optional(wikipediaSummary("de", wd.dewiki, http, signal), null) : null) ??
+      (wd.enwiki ? await optional(wikipediaSummary("en", wd.enwiki, http, signal), null) : null);
     const file = mb.imageFile ?? wd.image;
     const photo = file ? await optional(commonsImage(file, http, signal), null) : null;
     return { summary, photo };
@@ -93,7 +95,11 @@ export async function lookupArtist(
   ];
   const text =
     summary ?? (adb?.bioDe ? { text: adb.bioDe, url: `https://musicbrainz.org/artist/${mb.mbid}`, lang: "de" as const } : null);
-  if (!text && !photos.length) return null;
+  // nichts gefunden, weil Quellen ausgefallen sind: nicht als „gibt es nicht“ cachen, beim nächsten Song neu versuchen
+  if (!text && !photos.length) {
+    if (partial) throw new SourceBusyError(`Quellen für ${mb.name} ausgefallen`);
+    return null;
+  }
   const facts = [...new Set([...factsFor(mb), ...(adb?.facts ?? [])])].slice(0, 4);
   return {
     name: mb.name,
@@ -123,14 +129,19 @@ export function createInfoService(deps: {
     const info: Info = { artists: {}, photos: [] };
     let complete = true;
     for (const a of artists.slice(0, 5)) {
-      const key = `info:v2:${normalizeLine(a.name)}`;
+      // v3: Künstler über die Spotify-ID (gleichnamige Künstler werden nicht mehr verwechselt oder verworfen)
+      const key = `info:v3:${normalizeLine(a.name)}|${a.id}`;
       let hit = await deps.cache.get<{ value: ArtistInfo | null }>(key);
       if (!hit) {
         try {
-          const value = await lookupArtist(a.name, deps.http, signal, deps.keys);
+          const value = await lookupArtist(a.name, deps.http, signal, deps.keys, a.id);
           hit = { value };
           // fehlt eine optionale Quelle, nur kurz cachen (dann neuer Versuch)
-          await deps.cache.set(key, hit, value && !value.partial ? CACHE_TTL.infoFound : CACHE_TTL.infoMissing);
+          await deps.cache.set(
+            key,
+            hit,
+            !value ? CACHE_TTL.infoMissing : value.partial ? CACHE_TTL.infoPartial : CACHE_TTL.infoFound,
+          );
         } catch (e) {
           // Überlastung/Netzfehler: nicht cachen, beim nächsten Song erneut versuchen
           complete = false;

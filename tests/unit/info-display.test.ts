@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { factAt, infoCardAt, infoEntries, wallPhoto } from "@/lib/info/display";
+import {
+  CARD_ROTATE_MS,
+  factAt,
+  infoCardAt,
+  infoEntries,
+  wallPhoto,
+  WALL_PHOTOS_MAX,
+  wallPhotoCredit,
+  wallPhotos,
+} from "@/lib/info/display";
+import type { Photo } from "@/lib/song-context/schema";
 import { derive } from "@/lib/song-context/derive";
 import { neonlicht } from "@/lib/song-context/fixtures/neonlicht";
 import { instrumental } from "@/lib/song-context/fixtures/instrumental";
@@ -39,5 +49,59 @@ describe("Info-Anzeige", () => {
   it("Wandfoto gehört dem Lead", () => {
     expect(wallPhoto(neonlicht)?.url).toBe("/demo/mira-sol.svg");
     expect(wallPhoto(instrumental)).toBeNull();
+  });
+});
+
+describe("Fotos: alle kommen dran", () => {
+  const photo = (artistId: string, source: Photo["source"], kind: Photo["kind"], w: number, h: number, n: string): Photo => ({
+    url: `https://x/${n}.jpg`,
+    width: w,
+    height: h,
+    source,
+    kind,
+    credit: `Urheber ${n}`,
+    license: source === "commons" ? "CC BY-SA 4.0" : "TheAudioDB",
+    sourceUrl: "s",
+    artistId,
+  });
+  // wie bei Queen: vier Bühnenbilder und ein Porträt von TheAudioDB, ein Foto von Wikipedia/Commons
+  const photos = [
+    photo("demo-mira", "commons", "photo", 1280, 1000, "wiki"),
+    ...[1, 2, 3, 4].map((i) => photo("demo-mira", "theaudiodb", "fanart", 1280, 720, `fanart${i}`)),
+    photo("demo-mira", "theaudiodb", "thumb", 700, 700, "thumb"),
+    photo("demo-mira", "theaudiodb", "thumb", 600, 900, "hoch"),
+    photo("demo-kai", "commons", "photo", 1200, 800, "kai"),
+  ];
+  const song = { ...neonlicht, info: { ...neonlicht.info!, photos } };
+
+  it("Wikipedia-Foto steht vorn (nicht erst nach vier Bühnenbildern), Feature-Gast danach, kein Hochformat", () => {
+    const names = wallPhotos(song).map((p) => p.url.split("/").pop());
+    expect(names.slice(0, 2)).toEqual(["fanart1.jpg", "wiki.jpg"]);
+    expect(names).toContain("kai.jpg");
+    expect(names.indexOf("kai.jpg")).toBeGreaterThan(names.indexOf("fanart4.jpg")); // Lead zuerst
+    expect(names).not.toContain("hoch.jpg");
+    expect(wallPhotos(song).length).toBeLessThanOrEqual(WALL_PHOTOS_MAX);
+  });
+
+  it("Bildnachweis fürs Wandfoto, nicht für Demo-Bilder", () => {
+    const at = (t: number) => wallPhotoCredit(song, t);
+    expect(at(0)).toBe("Foto: Urheber fanart1 · TheAudioDB");
+    const secondSection = song.lyrics!.sections[1]!.startMs;
+    expect(at(secondSection)).toBe("Foto: Urheber wiki · CC BY-SA 4.0");
+    expect(wallPhotoCredit(neonlicht, 0)).toBeNull();
+  });
+
+  it("Infokarte zeigt bei jedem Auftritt das nächste Foto des Artists, Wikipedia als zweites", () => {
+    const card = (t: number) => infoCardAt(song, derive(song, 3000), t);
+    const seen = [0, 1, 2, 3].map((round) =>
+      card(round * 2 * CARD_ROTATE_MS + 100)
+        ?.photo?.url.split("/")
+        .pop(),
+    );
+    expect(seen[0]).toBe("thumb.jpg");
+    expect(seen[1]).toBe("wiki.jpg");
+    expect(new Set(seen).size).toBe(4);
+    expect(card(CARD_ROTATE_MS + 100)?.name).toBe("Kai Vento");
+    expect(card(CARD_ROTATE_MS + 100)?.photo?.url).toContain("kai.jpg");
   });
 });

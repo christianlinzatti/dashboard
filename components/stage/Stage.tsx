@@ -36,7 +36,7 @@ import { ReadySignal } from "./ReadySignal";
 import { PhotoWall } from "./PhotoWall";
 import { chorusKeyword, forcedWallPattern, wallPattern } from "@/lib/stage/wall";
 import { LogoWall } from "./LogoWall";
-import { wallPhotoAt } from "@/lib/info/display";
+import { wallPhotoAt, wallPhotoCredit } from "@/lib/info/display";
 import { displayUrl } from "@/lib/info/photos";
 import { Fog, StageSet, TurntableMarks, WallFrame, wallScale } from "./StageSet";
 import { Crowd, CrowdFlags } from "./crowd";
@@ -217,6 +217,7 @@ function Scene({
   // Qualität: fest (Einstellung/URL) oder automatisch nach Bildrate; Demos fest „mittel“ (reproduzierbar)
   // Wandfoto wechselt mit jedem Abschnitt (Selektor liefert nur die URL → kein Rerender pro Frame)
   const photoUrl = useSongContext((s) => (s.song ? (wallPhotoAt(s.song, s.positionMs)?.url ?? null) : null));
+  const photoCredit = useSongContext((s) => (s.song ? wallPhotoCredit(s.song, s.positionMs) : null));
   const chosen = useSettings((s) => s.quality);
   const [autoQuality, setAutoQuality] = useState<Quality>("mittel");
   const quality: Quality = forceQuality ?? (frozen ? "mittel" : chosen === "auto" ? autoQuality : chosen);
@@ -381,6 +382,15 @@ function Scene({
           </EffectComposer>
         )}
       </Canvas>
+      {/* Bildnachweis fürs Foto auf der LED-Wand (Wikipedia/Commons verlangt Urheber und Lizenz) */}
+      {theme?.wall === "led" && photoUrl && photoCredit && (
+        <p
+          className="pointer-events-none absolute bottom-[6vmin] right-[3vmin] max-w-[45vw] truncate rounded bg-black/55 px-1.5 py-px text-right text-[clamp(8px,1.2vmin,11px)] text-white/70"
+          data-testid="wall-photo-credit"
+        >
+          LED-Wand · {photoCredit}
+        </p>
+      )}
       {/* Stroboskop (nur bei Drops, abschaltbar) */}
       <div ref={strobe} className="pointer-events-none absolute inset-0 bg-white opacity-0" aria-hidden />
       {/* Blinder strahlen beim Einsatz warm in die Kamera */}

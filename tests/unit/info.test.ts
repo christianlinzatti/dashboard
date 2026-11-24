@@ -109,6 +109,56 @@ describe("MusicBrainz", () => {
   });
 });
 
+describe("MusicBrainz über die Spotify-ID", () => {
+  const SPOTIFY = "6Kg9EvjSnEm5swmrvWCJyB"; // die Band Wanda
+  const WANDA = "06e3bce0-c612-4a5f-b095-9ffed1e4a656";
+  const wanda = {
+    // Namenssuche: die Band hat nur 87 Punkte, „Wanda Jackson“ 100 (echte Antwort, gekürzt)
+    "musicbrainz.org/ws/2/artist?": {
+      artists: [
+        { id: "550fbe01-42e9-4006-bcd0-6a1854dceb8f", name: "Wanda Jackson", score: 100 },
+        { id: WANDA, name: "Wanda", score: 87 },
+      ],
+    },
+    "musicbrainz.org/ws/2/url?": {
+      resource: `https://open.spotify.com/artist/${SPOTIFY}`,
+      relations: [{ type: "free streaming", artist: { id: WANDA, name: "Wanda" } }],
+    },
+    [`musicbrainz.org/ws/2/artist/${WANDA}`]: {
+      id: WANDA,
+      name: "Wanda",
+      type: "Group",
+      "life-span": { begin: "2012", end: null, ended: false },
+      relations: [{ type: "wikidata", url: { resource: "https://www.wikidata.org/wiki/Q18632647" } }],
+    },
+  };
+
+  it("findet gleichnamige Künstler eindeutig über den Spotify-Link", async () => {
+    const { http, calls } = fakeHttp(wanda);
+    expect(await findArtist("Wanda", http)).toBeNull(); // nur mit Namen: kein sicherer Treffer
+    const hit = await findArtist("Wanda", http, undefined, SPOTIFY);
+    expect(hit).toMatchObject({ mbid: WANDA, name: "Wanda", type: "Group", wikidataId: "Q18632647" });
+    const url = new URL(calls.find((c) => c.includes("/ws/2/url?"))!);
+    expect(url.searchParams.get("resource")).toBe(`https://open.spotify.com/artist/${SPOTIFY}`);
+  });
+
+  it("Spotify-Link unbekannt → Namenssuche; Demo-IDs fragen gar nicht erst", async () => {
+    const { http, calls } = fakeHttp(); // /url? → 404
+    expect((await findArtist("Helene Fischer", http, undefined, "0".repeat(22)))?.mbid).toBe(MBID);
+    expect(calls.filter((c) => c.includes("/ws/2/url?"))).toHaveLength(1);
+    const demo = fakeHttp();
+    await findArtist("Helene Fischer", demo.http, undefined, "demo-mira");
+    expect(demo.calls.some((c) => c.includes("/ws/2/url?"))).toBe(false);
+  });
+
+  it("Überlast beim Link-Abruf → Fehler (nicht als „kein Künstler“ cachen)", async () => {
+    const busy = fakeHttp({ "musicbrainz.org/ws/2/url?": { error: "busy" } });
+    await expect(findArtist("Wanda", busy.http, undefined, SPOTIFY)).rejects.toBeInstanceOf(SourceBusyError);
+    const down = fakeHttp({ "musicbrainz.org/ws/2/url?": new Response("x", { status: 502 }) });
+    await expect(findArtist("Wanda", down.http, undefined, SPOTIFY)).rejects.toThrow("502");
+  });
+});
+
 describe("Wikimedia", () => {
   it("Wikidata: Wikipedia-Titel und Bild", async () => {
     expect(await wikidataEntity("Q236549", fakeHttp().http)).toEqual({

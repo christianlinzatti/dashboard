@@ -13,6 +13,8 @@ export const CACHE_TTL = {
   /** Wikipedia-Texte und Fotos ändern sich langsam */
   infoFound: 30 * DAY,
   infoMissing: 3 * DAY,
+  /** eine Quelle ausgefallen (z. B. Wikipedia drosselt Rechenzentrums-IPs): bald neu versuchen */
+  infoPartial: 2 * 3600,
   /** Konzerttermine: neue Termine/Ausverkauft-Status ändern sich laufend */
   concerts: 12 * 3600,
   /** Teilergebnis (eine Konzert-Quelle ausgefallen/gesperrt): bald neu versuchen, aber nicht bei jedem Song */

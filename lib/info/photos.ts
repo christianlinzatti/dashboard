@@ -23,7 +23,7 @@ export function displayUrl(url: string, width: (typeof PROXY_WIDTHS)[number] = 1
   return url;
 }
 
-const aspect = (p: Photo) =>
+export const aspect = (p: Photo) =>
   p.width && p.height ? p.width / p.height : p.kind === "fanart" ? 16 / 9 : p.kind === "thumb" ? 1 : 1.3;
 
 /**
@@ -51,4 +51,19 @@ export function rankPhotos(photos: Photo[], use: "wall" | "card"): Photo[] {
     .map((p, i) => ({ p, s: photoScore(p, use), i }))
     .sort((a, b) => b.s - a.s || a.i - b.i)
     .map((x) => x.p);
+}
+
+/**
+ * Abwechslung: zuerst das beste Foto jeder Quelle (Wikipedia/Commons, TheAudioDB, Flickr), dann der Rest nach Rang.
+ * Sonst stehen z. B. vier Bühnenbilder von TheAudioDB immer vor dem Wikipedia-Foto, und das kommt nie dran.
+ */
+export function diversify(ranked: Photo[]): Photo[] {
+  const seen = new Set<string>();
+  const first = ranked.filter((p) => {
+    const src = p.source ?? "?";
+    if (seen.has(src)) return false;
+    seen.add(src);
+    return true;
+  });
+  return [...first, ...ranked.filter((p) => !first.includes(p))];
 }
