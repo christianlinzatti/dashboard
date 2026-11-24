@@ -1,7 +1,7 @@
 "use client";
 
 import { useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import {
   AdditiveBlending,
   BufferAttribute,
@@ -186,10 +186,14 @@ export function Crowd({
   // Anzahl je Qualitätsstufe/Bühne: die Plätze sind zufällig sortiert → jeder Anfangsteil ist gleichmäßig verteilt
   const bodyMesh = useRef<Mesh>(null);
   const lightPoints = useRef<Points>(null);
-  useEffect(() => {
+  // vor dem ersten Bild setzen und ein neues anfordern: bei angehaltener Szene (nur wenige Bilder) stünde sonst je nach
+  // Zeitpunkt das volle oder das gekürzte Publikum im Bild
+  const invalidate = useThree((s) => s.invalidate);
+  useLayoutEffect(() => {
     if (bodyMesh.current) (bodyMesh.current.geometry as InstancedBufferGeometry).instanceCount = n;
     lightPoints.current?.geometry.setDrawRange(0, n * 2);
-  }, [bodies, points, n]);
+    invalidate();
+  }, [bodies, points, n, invalidate]);
   useEffect(
     () => () => {
       bodies.dispose();
