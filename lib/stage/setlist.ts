@@ -28,6 +28,8 @@ type State = {
   record: (song: PlayedSong) => void;
   /** Song wurde (fast) bis zum Ende gespielt – Voraussetzung für eine Zugabe */
   finish: (trackKey: string) => void;
+  /** Zugabe gerufen: der nächste Song wird zur Zugabe (false = es gab nichts, wonach man rufen könnte) */
+  askEncore: () => boolean;
   reset: () => void;
 };
 
@@ -47,6 +49,12 @@ export const setlistStore = createStore<State>()((set) => ({
       if (!last || last.trackKey !== trackKey || last.finished) return s;
       return { played: [...s.played.slice(0, -1), { ...last, finished: true }] };
     }),
+  askEncore: () => {
+    const last = setlistStore.getState().played.at(-1);
+    if (!last) return false;
+    set((s) => ({ played: [...s.played.slice(0, -1), { ...last, encoreAsked: true }] }));
+    return true;
+  },
   reset: () => set({ played: [] }),
 }));
 

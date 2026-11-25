@@ -196,6 +196,13 @@ export function heartPoint(i: number, n: number): Vec2 {
   return [x / 17, y / 17];
 }
 
+/**
+ * Die großen Auftritte nutzen sich ab, wenn sie bei jedem Song kommen: der Laufsteg-Gang gehört zum Höhepunkt und zur
+ * Zugabe, die Drohnen-Show zur Zugabe (Abschluss des Abends). Hubpodest: Auftakt und Zugabe; Spannungsaufbau immer.
+ */
+export const runwayFor = (phase: EveningPhase | null | undefined) => phase === "hoehepunkt" || phase === "zugabe";
+export const dronesFor = (phase: EveningPhase | null | undefined) => phase === "zugabe";
+
 /** Alles zusammen für einen Song auf einer Bühne */
 export function planStaging(
   c: Choreography,
@@ -204,10 +211,10 @@ export function planStaging(
   daylight: DayPhase | undefined,
 ): Staging {
   return {
-    runway: planRunway(c, theme.id),
+    runway: runwayFor(phase) ? planRunway(c, theme.id) : null,
     lift: liftFor(phase),
     builds: planBuilds(c),
-    drones: dronesFit(theme, daylight) ? planDrones(c) : null,
+    drones: dronesFor(phase) && dronesFit(theme, daylight) ? planDrones(c) : null,
   };
 }
 

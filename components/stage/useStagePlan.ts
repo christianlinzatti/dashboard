@@ -1,5 +1,6 @@
 "use client";
 
+import type { EveningPhase } from "@/lib/show/evening";
 import { useEffect, useMemo } from "react";
 import { avatars } from "@/lib/avatars/catalog";
 import { mixamoIdsIn } from "@/lib/dance/mixamo-loader";
@@ -18,7 +19,7 @@ import { THEMES, themedPalette, themeFor, type Theme, type ThemeId } from "@/lib
  * Was auf der Bühne passiert, bevor gerendert wird: Bühne (Thema, Tour-Look), Choreografie, Abendphase, Band,
  * Fan-Schilder, Spezialeffekte – und das Gedächtnis des Abends (Setlist) sowie die Bühnen-Info für die Fernbedienung.
  */
-export function useStagePlan(forceTheme?: ThemeId) {
+export function useStagePlan(forceTheme?: ThemeId, forceEvening?: EveningPhase) {
   const raw = useSongContext((s) => s.song);
   // Bühnen-Thema: URL > Einstellung > Genre/Track; die Cover-Palette wird in Richtung Thema verschoben
   const themeChoice = useSettings((s) => s.stage);
@@ -50,7 +51,9 @@ export function useStagePlan(forceTheme?: ThemeId) {
     [raw?.trackKey, sectionsKey, bpm, raw?.cast, followKey, showKey, recentKey],
   );
   // Spannungsbogen des Abends (aufgezeichnet von useEveningTracker im Dashboard – auch ohne 3D-Szene)
-  const phase = useEveningPhase(raw?.trackKey, raw?.show?.mood ?? raw?.music.mood);
+  const tracked = useEveningPhase(raw?.trackKey, raw?.show?.mood ?? raw?.music.mood);
+  // Demos und Screenshots können die Abendphase vorgeben (?abend=zugabe)
+  const phase = forceEvening ?? tracked;
   // Bühne und getanzte Clips dieses Songs fürs Gedächtnis des Abends ergänzen
   useEffect(() => {
     if (!choreo || !theme) return;

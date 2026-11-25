@@ -51,6 +51,8 @@ Abschnitte (sections): genau ein Eintrag für jede Abschnittsart, die im Song vo
 
 Außerdem: mood (Grundstimmung des Songs), genres (zwei bis vier englische Genre-Begriffe in Kleinbuchstaben, z. B. "indie rock"), motto (das Motto dieser Show auf Deutsch: kurz und griffig, höchstens 60 Zeichen – es wird zum Songstart groß eingeblendet und von Alexa vorgelesen, z. B. „Neonnacht über der Stadt“).
 
+announcements: was der Sänger zum Songstart ins Publikum ruft – je ein Satz auf Deutsch (höchstens 120 Zeichen) für jede Phase des Abends: auftakt (erster Song: Begrüßung), steigerung (mitten im Abend), hoehepunkt (anheizen, alle springen), durchatmen (ruhiger Moment nach wilden Songs), zugabe (Dank, noch einer). Sprich das Publikum direkt an, nenne den Songtitel oder spiel auf sein Thema an, im Ton des Künstlers. Zitiere keine Zeilen aus dem Songtext. Der Platzhalter {s} steht für den Ort des Konzerts (z. B. „Servus {s}!“); nutze ihn höchstens einmal je Satz und nur so, dass der Satz auch ohne Ort funktioniert.
+
 Kennst du den Song, nutze dein Wissen über ihn. Kennst du ihn nicht, leite alles aus Titel, Tags, Aufbau und Text ab.`;
 
 function describe(f: SongFacts): string {

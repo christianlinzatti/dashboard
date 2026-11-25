@@ -3,6 +3,7 @@ import { useStore } from "zustand";
 import { secondLineModes, type SecondLineMode } from "@/lib/lyrics/second-line";
 import { qualities, type Quality } from "@/lib/stage/quality";
 import { isThemeChoice, type ThemeChoice } from "@/lib/stage/themes";
+import { sharedDiffers, sharedOf, type SharedSettings } from "./settings-sync";
 
 export const canvasModes = ["aus", "buehne", "vollbild"] as const;
 export type CanvasMode = (typeof canvasModes)[number];
@@ -67,22 +68,53 @@ function load(): Settings {
   }
 }
 
-export const settings = createStore<Settings & { set(p: Partial<Settings>): void; hydrate(): void }>()((set, get) => ({
-  ...defaults,
-  set(p) {
-    set(p);
+type Store = Settings & {
+  /** wann eine geteilte Einstellung (alles außer Qualität) zuletzt auf diesem Gerät geändert wurde (0 = nie) */
+  changedAt: number;
+  set(p: Partial<Settings>): void;
+  /** Stand aus dem Konto übernehmen, wenn er jünger ist als der eigene (zählt nicht als eigene Änderung) */
+  applyRemote(shared: SharedSettings, at: number): void;
+  hydrate(): void;
+};
+
+function loadChangedAt(): number {
+  try {
+    const raw = JSON.parse(localStorage.getItem(KEY) ?? "{}") as { changedAt?: unknown };
+    return typeof raw.changedAt === "number" ? raw.changedAt : 0;
+  } catch {
+    return 0;
+  }
+}
+
+export const settings = createStore<Store>()((set, get) => {
+  const persist = () => {
     try {
-      const { quality, strobe, lamps, secondLine, stage, canvas, crowdSound } = get();
-      localStorage.setItem(KEY, JSON.stringify({ quality, strobe, lamps, secondLine, stage, canvas, crowdSound }));
+      const { quality, strobe, lamps, secondLine, stage, canvas, crowdSound, changedAt } = get();
+      localStorage.setItem(KEY, JSON.stringify({ quality, strobe, lamps, secondLine, stage, canvas, crowdSound, changedAt }));
     } catch {
       /* privater Modus */
     }
-  },
-  hydrate() {
-    set(load());
-  },
-}));
+  };
+  return {
+    ...defaults,
+    changedAt: 0,
+    set(p) {
+      const before = sharedOf(get());
+      set(p);
+      if (sharedDiffers(before, sharedOf(get()))) set({ changedAt: Date.now() });
+      persist();
+    },
+    applyRemote(shared, at) {
+      if (at <= get().changedAt) return;
+      set({ ...shared, changedAt: at });
+      persist();
+    },
+    hydrate() {
+      set({ ...load(), changedAt: loadChangedAt() });
+    },
+  };
+});
 
-export function useSettings<T>(sel: (s: Settings & { set(p: Partial<Settings>): void }) => T): T {
+export function useSettings<T>(sel: (s: Store) => T): T {
   return useStore(settings, sel);
 }

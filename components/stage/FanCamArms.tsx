@@ -56,18 +56,18 @@ export function FanCamArms({
         <group key={i}>
           {/* Unterarm und Hand */}
           <mesh position-y={-0.25}>
-            <cylinderGeometry args={[0.035, 0.045, 0.55, 8]} />
+            <cylinderGeometry args={[0.03, 0.04, 0.55, 8]} />
             <meshBasicMaterial color={color} />
           </mesh>
           <mesh position-y={0.06}>
-            <sphereGeometry args={[0.055, 10, 8]} />
+            <sphereGeometry args={[0.042, 10, 8]} />
             <meshBasicMaterial color={color} />
           </mesh>
           {i === 0 && (
             // Handy mit leuchtendem Display
             <mesh position={[x < 0 ? 0.02 : -0.02, 0.15, 0.01]}>
-              <boxGeometry args={[0.06, 0.11, 0.01]} />
-              <meshBasicMaterial color="#cfe3ff" toneMapped={false} />
+              <boxGeometry args={[0.045, 0.085, 0.008]} />
+              <meshBasicMaterial color="#8fb4e8" toneMapped={false} />
             </mesh>
           )}
         </group>

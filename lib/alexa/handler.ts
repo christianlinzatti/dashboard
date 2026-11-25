@@ -178,9 +178,24 @@ export async function handleAlexa(req: AlexaRequest, deps: HandlerDeps) {
       await deps.pushCommand({ type: "effekt", kind });
       return speak(`${EFFECT_NAMES[kind] ?? kind}!`);
     }
+    case "AbspannIntent": {
+      // läuft nichts mehr, ist der letzte Stand der Rückblick des Abends
+      const s = await deps.getSnapshot();
+      const playing = !!(await live())?.isPlaying;
+      if (!s?.evening?.songs) return speak("Heute lief noch nichts – ohne Abend kein Abspann.");
+      await deps.pushCommand({ type: "abspann" });
+      return speak(
+        playing ? "Der Abspann läuft, sobald die Musik aufhört." : "Vorhang auf für den Abspann! Danke für diesen Abend.",
+      );
+    }
+    case "ZugabeIntent": {
+      if (!(await deps.getSnapshot())) return speak("Heute lief noch nichts – wofür soll es eine Zugabe geben?");
+      await deps.pushCommand({ type: "zugabe" });
+      return speak("Zugabe! Zugabe! Der nächste Song wird die Zugabe – mit allem, was die Bühne hat.");
+    }
     case "AMAZON.HelpIntent":
       return speak(
-        "Du kannst fragen: Welcher Song läuft? Wer singt gerade? Wann spielen die in der Nähe? Erzähl mir was über die Band. Wie war der Abend? Was klingt ähnlich? Oder sagen: Konfetti, Feuerwerk, mach ein Foto, Lyrics später, Bildschirm aus, Lampen aus, Bühne Weltraum.",
+        "Du kannst fragen: Welcher Song läuft? Wer singt gerade? Wann spielen die in der Nähe? Erzähl mir was über die Band. Wie war der Abend? Was klingt ähnlich? Oder sagen: Konfetti, Luftschlangen, mach ein Foto, Zugabe, starte den Abspann, Lyrics später, Bildschirm aus, Bühne Weltraum.",
         false,
       );
     case "AMAZON.StopIntent":

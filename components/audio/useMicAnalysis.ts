@@ -11,6 +11,19 @@ import { songContext } from "@/lib/song-context/store";
 const PREF_KEY = "ss_mic";
 /** Verzögerung Lautsprecher → Mikro → Analyse (ms), wird von der Beat-Zeit abgezogen */
 const LATENCY_MS = 40;
+/** so lange auf den Start der Tonverarbeitung warten, bevor das Mikro trotzdem als an gilt */
+const RESUME_WAIT_MS = 1500;
+
+/** Angehaltene Tonverarbeitung bei der nächsten Berührung oder Taste starten (Autoplay-Regeln des Browsers) */
+function resumeOnGesture(h: MicHandle) {
+  const go = () => {
+    void h.resume().catch(() => undefined);
+    window.removeEventListener("pointerdown", go);
+    window.removeEventListener("keydown", go);
+  };
+  window.addEventListener("pointerdown", go);
+  window.addEventListener("keydown", go);
+}
 
 function readPref(): boolean {
   try {
@@ -128,7 +141,13 @@ export function useMicAnalysis(enabled: boolean) {
         unsub();
         origStop();
       };
-      if (h.context.state !== "running") await h.resume().catch(() => undefined);
+      // Der Browser kann den Ton bis zur ersten Berührung anhalten (Autoplay-Regeln): nicht ewig warten – das Mikro gilt
+      // als an, und die nächste Berührung bzw. Taste startet die Auswertung
+      if (h.context.state !== "running") {
+        await Promise.race([h.resume().catch(() => undefined), new Promise((r) => setTimeout(r, RESUME_WAIT_MS))]);
+        // (state ändert sich durch das await – TypeScript verengt den Typ trotzdem)
+        if ((h.context.state as AudioContextState) !== "running") resumeOnGesture(h);
+      }
       setMic("aktiv");
       writePref(true);
     } catch (e) {

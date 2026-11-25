@@ -75,7 +75,8 @@ export function createShowService(deps: Deps) {
 
     // 2. KI-Regie (einmal je Song und Modell)
     const model = deps.model || DEFAULT_SHOW_MODEL;
-    const briefKey = `show:brief:v1:${model}:${q.trackKey}`;
+    // v2: mit Ansagen je Abendphase
+    const briefKey = `show:brief:v2:${model}:${q.trackKey}`;
     const hit = await deps.cache.get<{ brief: ShowBrief | null }>(briefKey);
     if (hit)
       return {

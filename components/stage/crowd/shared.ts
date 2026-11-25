@@ -64,11 +64,15 @@ export const MOTION = /* glsl */ `
   }
   /** Mitte des Circle-Pits (links vor der Bühne, neben dem Laufsteg) */
   const vec2 PIT = vec2(-3.0, 8.4);
+  /** Blickrichtung der Person (in place() gesetzt): zur Bühne, im Circle-Pit in Laufrichtung */
+  vec2 gFace = vec2(0.0, -1.0);
   /**
    * Platz einer Person: Laufsteg und B-Bühne bleiben frei (wer dort stünde, rückt zur Seite); im Circle-Pit rennen
    * alle in gleichem Tempo um eine leere Mitte
    */
   vec2 place(vec2 s) {
+    vec2 runDir = vec2(0.0);
+    float running = 0.0;
     if (uRunway > 0.5) {
       vec2 d = s - vec2(0.0, ${B_STAGE_Z.toFixed(2)});
       float r = length(d);
@@ -85,14 +89,19 @@ export const MOTION = /* glsl */ `
         float rr = max(r, 1.2);
         float a = atan(d.y, d.x) - uTime * 1.5 / rr;
         s = mix(s, PIT + rr * vec2(cos(a), sin(a)), w);
+        // im Uhrzeigersinn: die Läufer schauen tangential nach vorn
+        runDir = vec2(sin(a), -cos(a));
+        running = w;
       }
     }
+    vec2 toStage = normalize(-s);
+    gFace = running > 0.0 ? normalize(mix(toStage, runDir, smoothstep(0.0, 0.6, running))) : toStage;
     return s;
   }
   /** Personen-Koordinaten → Welt: zur Bühnenmitte gedreht, in den Graben gestellt, nahe an der Kamera eingezogen */
   vec3 toWorld(vec3 p, vec3 spot, vec4 r) {
     spot = vec3(place(spot.xy), spot.z);
-    vec2 f = normalize(-spot.xy);
+    vec2 f = gFace;
     float near = smoothstep(1.2, 2.1, distance(spot.xy, uCam.xz));
     p.x += swayX(r, spot, p.y);
     p *= spot.z * near;

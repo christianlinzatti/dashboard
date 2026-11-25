@@ -230,50 +230,74 @@ test.describe("Bühne & Licht", () => {
     expect((await request.get("/api/canvas/video?track=../../etc")).status()).toBe(401);
   });
 
-  test("Große Auftritte: Hubpodest, Spannungsaufbau, Laufsteg mit B-Bühne, Drohnen-Show", async ({ page }) => {
-    const errors = collectErrors(page);
-    const canvas = page.locator("[data-testid=stage] canvas");
-    // erster Song des Abends: der Lead fährt aus dem Boden
-    await page.goto("/?demo=neonlicht&t=2200&buehne=club&qualitaet=mittel");
+  test("Auftakt: der Lead fährt mit dem Hubpodest aus dem Boden", async ({ page }) => {
+    await page.goto("/?demo=neonlicht&t=2200&buehne=club&qualitaet=niedrig");
     await ready(page);
     await expect(page.locator("[data-evening]")).toHaveAttribute("data-evening", "auftakt");
-    // Aufbau vor dem ersten großen Einsatz: Licht, Kamera und Publikum ziehen sich zusammen
+  });
+
+  test("Spannungsaufbau vor dem großen Einsatz: Licht, Kamera und Publikum ziehen sich zusammen", async ({ page }) => {
+    const canvas = page.locator("[data-testid=stage] canvas");
     await page.goto("/?demo=neonlicht&t=36000&buehne=club&qualitaet=mittel");
     await ready(page);
     await expect(canvas).toHaveAttribute("data-scene", "aufbau");
     await expect(canvas).toHaveAttribute("data-camera", "aufbau");
     await expect(page).toHaveScreenshot("aufbau.png");
-    // letzter Refrain: der Lead draußen auf der B-Bühne, Luftschlangen über der Menge
-    await page.goto("/?demo=neonlicht&t=134000&buehne=festival&qualitaet=mittel");
+  });
+
+  test("Zugabe, letzter Refrain: der Lead draußen auf der B-Bühne, Luftschlangen über der Menge", async ({ page }) => {
+    const errors = collectErrors(page);
+    const canvas = page.locator("[data-testid=stage] canvas");
+    await page.goto("/?demo=neonlicht&t=134000&buehne=festival&qualitaet=mittel&abend=zugabe");
     await ready(page);
     await expect(canvas).toHaveAttribute("data-runway", "draussen");
     await expect(canvas).toHaveAttribute("data-camera", "bbuehne");
     await expect(canvas).toHaveAttribute("data-fx", /luftschlangen/);
     await expect(page).toHaveScreenshot("laufsteg-b-buehne.png");
-    // Outro unter freiem Himmel: Drohnen formen ein Herz
-    await page.goto("/?demo=neonlicht&t=155000&buehne=festival&qualitaet=mittel");
+    expect(errors).toEqual([]);
+  });
+
+  test("Zugabe, Outro unter freiem Himmel: Drohnen formen ein Herz", async ({ page }) => {
+    const errors = collectErrors(page);
+    const canvas = page.locator("[data-testid=stage] canvas");
+    await page.goto("/?demo=neonlicht&t=155000&buehne=festival&qualitaet=mittel&abend=zugabe");
     await ready(page);
     await expect(canvas).toHaveAttribute("data-drones", "herz");
     await expect(canvas).toHaveAttribute("data-camera", "himmel");
     await expect(page).toHaveScreenshot("drohnen-herz.png");
-    // drinnen keine Drohnen
-    await page.goto("/?demo=neonlicht&t=155000&buehne=club&qualitaet=niedrig");
-    await ready(page);
-    await expect(canvas).not.toHaveAttribute("data-drones", /.+/);
     expect(errors).toEqual([]);
   });
 
-  test("Publikum: Wasserbälle, Circle-Pit, Handkamera aus der ersten Reihe", async ({ page }) => {
+  test("Drohnen nur draußen: im Club auch zur Zugabe keine", async ({ page }) => {
+    await page.goto("/?demo=neonlicht&t=155000&buehne=club&qualitaet=niedrig&abend=zugabe");
+    await ready(page);
+    await expect(page.locator("[data-testid=stage] canvas")).not.toHaveAttribute("data-drones", /.+/);
+  });
+
+  test("Große Auftritte nur zu besonderen Momenten: sonst kein Laufsteg-Gang und keine Drohnen", async ({ page }) => {
     const canvas = page.locator("[data-testid=stage] canvas");
+    await page.goto("/?demo=neonlicht&t=134000&buehne=festival&qualitaet=niedrig");
+    await ready(page);
+    await expect(canvas).toHaveAttribute("data-runway", "");
+    await expect(canvas).not.toHaveAttribute("data-drones", /.+/);
+  });
+
+  test("Publikum: Wasserbälle im fröhlichen Refrain", async ({ page }) => {
     await page.goto("/?demo=neonlicht&t=48000&buehne=strand&qualitaet=mittel");
     await ready(page);
-    await expect(canvas).toHaveAttribute("data-crowd-props", /baelle/);
+    await expect(page.locator("[data-testid=stage] canvas")).toHaveAttribute("data-crowd-props", /baelle/);
+  });
+
+  test("Publikum: Circle-Pit im Rock-Instrumentalteil", async ({ page }) => {
     await page.goto("/?demo=funkenflug&t=50000&buehne=club&qualitaet=niedrig");
     await ready(page);
-    await expect(canvas).toHaveAttribute("data-crowd", "circlepit");
+    await expect(page.locator("[data-testid=stage] canvas")).toHaveAttribute("data-crowd", "circlepit");
+  });
+
+  test("Handkamera aus der ersten Reihe in der Strophe", async ({ page }) => {
     await page.goto("/?demo=neonlicht&t=70000&buehne=club&qualitaet=niedrig");
     await ready(page);
-    await expect(canvas).toHaveAttribute("data-camera", "fan");
+    await expect(page.locator("[data-testid=stage] canvas")).toHaveAttribute("data-camera", "fan");
   });
 
   test("Avatar-Stil „nur Chibis“: alle Figuren auf der Bühne sind Chibis", async ({ page }) => {

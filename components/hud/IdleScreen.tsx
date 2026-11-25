@@ -6,7 +6,8 @@ import { RecentList } from "../personal/RecentList";
 import { ConcertReminder } from "@/components/concerts/ConcertReminder";
 import { EveningRecap, useEveningRecap } from "./EveningRecap";
 import { Credits } from "./Credits";
-import { shouldRollCredits } from "@/lib/show/credits";
+import { creditsRequest, shouldRollCredits } from "@/lib/show/credits";
+import { useStore } from "zustand";
 import { useSettings } from "@/lib/settings";
 
 const CREDITS_KEY = "ss_abspann";
@@ -79,13 +80,15 @@ export function IdleScreen({ status, unknownDemo, loginError }: Props) {
   // Abspann: einmal je Abend, kurz nachdem die Musik aufgehört hat (entschieden nach dem Laden, nicht beim Rendern)
   const [rollFor, setRollFor] = useState<number | null>(null);
   const idle = status.kind === "idle";
+  // auf Wunsch („Alexa, starte den Abspann“): sobald keine Musik läuft, auch wenn er heute schon lief
+  const asked = useStore(creditsRequest, (s) => s.at);
   useEffect(() => {
     if (!idle || !recap) return;
     const id = setTimeout(() => {
-      if (shouldRollCredits(recap, Date.now(), creditsShownFor())) setRollFor(recap.since);
+      if (asked !== null || shouldRollCredits(recap, Date.now(), creditsShownFor())) setRollFor(recap.since);
     }, 0);
     return () => clearTimeout(id);
-  }, [idle, recap]);
+  }, [idle, recap, asked]);
   const rollCredits = idle && !!recap && rollFor === recap.since;
   const endCredits = () => {
     if (recap)
@@ -95,6 +98,7 @@ export function IdleScreen({ status, unknownDemo, loginError }: Props) {
         /* privater Modus: dann ggf. noch einmal */
       }
     setRollFor(null);
+    creditsRequest.getState().clear();
   };
   return (
     <div

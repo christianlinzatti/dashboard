@@ -28,6 +28,7 @@ export function Announcement() {
             phase,
             liked: !!(song.user?.trackSaved || song.user?.lovedOnLastfm),
             city: song.concertArea?.name,
+            ai: song.show?.announcements,
           })
         : "",
     [song, phase],

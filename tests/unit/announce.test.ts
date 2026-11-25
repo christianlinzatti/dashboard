@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { announcementFor, spokenTitle } from "@/lib/show/announce";
+import { announcementFor, fillCity, spokenTitle } from "@/lib/show/announce";
+import { cleanAnnouncement, sanitizeBrief } from "@/lib/show/brief";
 import { eveningPhases } from "@/lib/show/evening";
 
 describe("Ansage des Sängers", () => {
@@ -64,5 +65,42 @@ describe("Tour-Look", () => {
     expect(tourTheme(played, "y", "neu")).toBeUndefined();
     expect(themeFor(neonlicht, "auto", "club", "festival")).toBe("festival");
     expect(themeFor(neonlicht, "jazz", "club", "festival")).toBe("jazz"); // feste Wahl geht vor
+  });
+});
+
+describe("Ansagen der KI-Regie", () => {
+  it("haben Vorrang vor den Vorlagen, je Abendphase; ohne KI-Zeile die Vorlage", () => {
+    const ai = { hoehepunkt: "{s}, jetzt fliegt das Dach weg – Neonlicht!" };
+    const base = { trackKey: "t1", title: "Neonlicht", liked: false };
+    expect(announcementFor({ ...base, phase: "hoehepunkt", city: "Linz", ai })).toBe(
+      "Linz, jetzt fliegt das Dach weg – Neonlicht!",
+    );
+    expect(announcementFor({ ...base, phase: "hoehepunkt", ai })).toBe("jetzt fliegt das Dach weg – Neonlicht!");
+    expect(announcementFor({ ...base, phase: "auftakt", ai })).toMatch(/Neonlicht/);
+  });
+
+  it("Ort einsetzen oder samt Komma streichen", () => {
+    expect(fillCity("Servus {s}!", "Wien")).toBe("Servus Wien!");
+    expect(fillCity("Servus {s}!", undefined)).toBe("Servus!");
+    expect(fillCity("Danke, {s}, ihr seid großartig!", undefined)).toBe("Danke ihr seid großartig!");
+  });
+
+  it("KI-Ansagen werden aufgeräumt: Länge, fremde Platzhalter, Anführungszeichen", () => {
+    expect(cleanAnnouncement("  „Servus {s}!   Los geht's!“ ")).toBe("Servus {s}! Los geht's!");
+    expect(cleanAnnouncement("Hallo {name}, hier kommt der Song!")).toBe("Hallo , hier kommt der Song!");
+    expect(cleanAnnouncement("Kurz")).toBeUndefined();
+    expect(cleanAnnouncement("x".repeat(200))).toBeUndefined();
+    expect(cleanAnnouncement(undefined)).toBeUndefined();
+    const brief = sanitizeBrief({
+      stage: "club",
+      mood: "energetisch",
+      genres: ["pop"],
+      motto: "Neonnacht",
+      sections: [],
+      announcements: { auftakt: "Guten Abend {s}, los geht's!", zugabe: "x" },
+    });
+    expect(brief?.announcements).toEqual({ auftakt: "Guten Abend {s}, los geht's!" });
+    // ältere Briefs ohne Ansagen bleiben gültig
+    expect(sanitizeBrief({ stage: "club", mood: "mittel", genres: [], motto: "M", sections: [] })?.announcements).toBeUndefined();
   });
 });

@@ -272,6 +272,21 @@ export function RemotePage() {
               >
                 📸 Foto
               </button>
+              <button
+                type="button"
+                className={btn}
+                data-testid="remote-zugabe"
+                onClick={() => void send({ type: "zugabe" }, "Zugabe! Der nächste Song wird die Zugabe")}
+              >
+                Zugabe!
+              </button>
+              <button
+                type="button"
+                className={btn}
+                onClick={() => void send({ type: "abspann" }, "Der Abspann läuft, sobald die Musik aufhört")}
+              >
+                Abspann
+              </button>
             </section>
 
             <p className="text-sm text-white/50">

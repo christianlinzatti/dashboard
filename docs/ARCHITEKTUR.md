@@ -363,4 +363,25 @@ Choreografie gehängt als `Choreography.staging`); alles Weitere liest daraus �
 - **Luftschlangen** (`effects/Streamers.tsx`): vier Takte nach dem Einsatz des letzten Refrains, aus zwei Kanonen an
   der Bühnenkante; auch auf der Fernbedienung auslösbar.
 
+Die großen Auftritte nutzen sich nicht ab: Laufsteg-Gang nur bei Höhepunkt und Zugabe, Drohnen nur zur Zugabe
+(`runwayFor`, `dronesFor`); Demos geben die Abendphase mit `?abend=zugabe` vor. Hinter der Menge stehen auf großen
+Bühnen weitere Reihen, Mischpult- und Delay-Türme (`Hinterland.tsx`, ab „mittel“).
+
 Für Tests und Debug am Canvas: `data-scene`, `data-runway`, `data-drones`, `data-crowd`, `data-crowd-props`.
+
+### Abend steuern und Ansagen (Stand 2026-11-26)
+
+- **Zugabe auf Zuruf** („Alexa, Zugabe!“, Fernbedienung): Befehl `zugabe` markiert den zuletzt gespielten Song
+  (`EveningEntry.encoreAsked`), der nächste wird zur Zugabe – mit großem Programm.
+- **Abspann auf Wunsch** („Alexa, starte den Abspann“): Befehl `abspann` setzt `creditsRequest`
+  (`lib/show/credits.ts`); der Startbildschirm rollt ihn, sobald keine Musik läuft, auch wenn er heute schon lief.
+- **Ansagen von der KI-Regie:** der Brief (`lib/show/brief.ts`, Cache `show:brief:v2`) enthält je Abendphase einen Satz
+  (`announcements`, `{s}` = Heimatort; ohne Ort wird er sauber gestrichen). Ohne KI oder bei älteren Briefs: die Vorlagen.
+
+### Einstellungen im Konto (Stand 2026-11-26)
+
+Strobo, Lampen, zweite Zeile, Bühne, Canvas und Publikumsgeräusche gelten auf allen Geräten
+(`lib/settings-sync.ts`, `Prefs.device`); die Qualitätsstufe bleibt beim Gerät (Hardware). Jede eigene Änderung wird
+datiert (`changedAt`), es gewinnt der jüngere Stand; Zeitstempel aus der Zukunft begrenzt der Server auf „jetzt“.
+`useSettingsSync` holt den Stand beim Start, alle zwei Minuten und beim Sichtbarwerden und lädt eigene Änderungen
+nach 1,5 s hoch. Demos gleichen nicht ab.

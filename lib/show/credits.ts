@@ -1,3 +1,4 @@
+import { createStore } from "zustand/vanilla";
 import type { LogEntry, Recap } from "./recap";
 
 /**
@@ -36,6 +37,13 @@ export function creditsFor(recap: Recap, opts: { date: string; lamps?: boolean }
 }
 
 /** Rollt der Abspann? Abend mit Rückblick, Musik gerade vorbei, für diesen Abend noch nicht gezeigt */
+/** Abspann auf Wunsch (Alexa, Fernbedienung): läuft, sobald keine Musik mehr läuft – auch wenn er schon lief */
+export const creditsRequest = createStore<{ at: number | null; request: () => void; clear: () => void }>()((set) => ({
+  at: null,
+  request: () => set({ at: Date.now() }),
+  clear: () => set({ at: null }),
+}));
+
 export function shouldRollCredits(recap: Recap | null, now: number, shownFor: number | null): boolean {
   const last = recap?.setlist.at(-1);
   if (!recap || !last || shownFor === recap.since) return false;

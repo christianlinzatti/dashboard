@@ -295,9 +295,10 @@ export function Crowd({
                   }
                   gOla = ola(aSpot);
                   if (aPart > 0.5) p = armXform(p, aPart < 1.5 ? -1.0 : 1.0, aRand);
-                  vec2 f = normalize(-aSpot.xy);
-                  vN = vec3(nrm.x * f.y + nrm.z * f.x, nrm.y, -nrm.x * f.x + nrm.z * f.y);
                   vW = toWorld(p, aSpot, aRand);
+                  // gleiche Blickrichtung wie die Position (toWorld setzt sie; im Circle-Pit in Laufrichtung)
+                  vec2 f = gFace;
+                  vN = vec3(nrm.x * f.y + nrm.z * f.x, nrm.y, -nrm.x * f.x + nrm.z * f.y);
                   gl_Position = projectionMatrix * viewMatrix * vec4(vW, 1.0);
                 }
               `,
@@ -325,7 +326,7 @@ export function Crowd({
           ]}
         />
       </mesh>
-      <CrowdProps choreo={choreo} frameRef={frameRef} balls={balls} color={dark} />
+      <CrowdProps choreo={choreo} frameRef={frameRef} balls={balls} color={accent} />
       {signs.length > 0 && <FanSigns texts={signs} accent={accent} holders={signHolders} uniforms={peopleUniforms} />}
       <points ref={lightPoints} geometry={points} frustumCulled={false}>
         <shaderMaterial

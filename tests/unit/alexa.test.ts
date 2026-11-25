@@ -269,6 +269,28 @@ describe("Alexa-Intents", () => {
     expect((await run("FotoIntent", {}, null)).cmds).toEqual([]);
   });
 
+  it("Abspann, Zugabe und Luftschlangen", async () => {
+    const evening = { songs: 9, minutes: 41, since: 0, highlights: [], encores: [], liked: 1 };
+    const playing = await run("AbspannIntent", {}, { ...snap, evening });
+    expect(playing.cmds).toEqual([{ type: "abspann" }]);
+    expect(playing.text).toMatch(/sobald die Musik aufhört/);
+    const after = await run("AbspannIntent", {}, { ...snap, isPlaying: false, evening });
+    expect(after.text).toMatch(/Vorhang auf/);
+    // ohne Abend kein Abspann
+    expect((await run("AbspannIntent", {}, snap)).cmds).toEqual([]);
+    expect((await run("AbspannIntent", {}, null)).text).toMatch(/ohne Abend kein Abspann/);
+
+    const encore = await run("ZugabeIntent");
+    expect(encore.cmds).toEqual([{ type: "zugabe" }]);
+    expect(encore.text).toMatch(/^Zugabe!/);
+    expect((await run("ZugabeIntent", {}, null)).cmds).toEqual([]);
+
+    const festival = { ...snap, stage: { id: "festival" as const, effects: ["luftschlangen" as const] } };
+    const fx = await run("EffektIntent", { effekt: { value: "luftschlangen" } }, festival);
+    expect(fx.cmds).toEqual([{ type: "effekt", kind: "luftschlangen" }]);
+    expect(fx.text).toBe("Luftschlangen!");
+  });
+
   it("Start, Hilfe, Stopp", async () => {
     const launch = await handleAlexa(JSON.parse(request({ type: "LaunchRequest", intent: undefined })), {
       getSnapshot: async () => null,

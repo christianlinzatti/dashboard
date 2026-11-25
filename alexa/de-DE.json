@@ -37,7 +37,12 @@
         {
           "name": "WerSingtIntent",
           "slots": [],
-          "samples": ["wer singt gerade", "wer singt", "wer ist das", "von wem ist das"]
+          "samples": [
+            "wer singt gerade",
+            "wer singt",
+            "wer ist das",
+            "von wem ist das"
+          ]
         },
         {
           "name": "MottoIntent",
@@ -58,7 +63,12 @@
               "type": "ZUSTAND"
             }
           ],
-          "samples": ["Lampen {zustand}", "Lichter {zustand}", "mach die Lampen {zustand}", "schalte die Lichter {zustand}"]
+          "samples": [
+            "Lampen {zustand}",
+            "Lichter {zustand}",
+            "mach die Lampen {zustand}",
+            "schalte die Lichter {zustand}"
+          ]
         },
         {
           "name": "StroboIntent",
@@ -68,7 +78,11 @@
               "type": "ZUSTAND"
             }
           ],
-          "samples": ["Stroboskop {zustand}", "Strobo {zustand}", "schalte das Stroboskop {zustand}"]
+          "samples": [
+            "Stroboskop {zustand}",
+            "Strobo {zustand}",
+            "schalte das Stroboskop {zustand}"
+          ]
         },
         {
           "name": "QualitaetIntent",
@@ -78,7 +92,11 @@
               "type": "STUFE"
             }
           ],
-          "samples": ["Qualität {stufe}", "Bühnenqualität {stufe}", "stell die Qualität auf {stufe}"]
+          "samples": [
+            "Qualität {stufe}",
+            "Bühnenqualität {stufe}",
+            "stell die Qualität auf {stufe}"
+          ]
         },
         {
           "name": "KonzertIntent",
@@ -317,6 +335,33 @@
             "Foto von der Bühne",
             "knips ein Foto"
           ]
+        },
+        {
+          "name": "AbspannIntent",
+          "slots": [],
+          "samples": [
+            "starte den Abspann",
+            "Abspann",
+            "zeig den Abspann",
+            "lass den Abspann laufen",
+            "Abspann bitte",
+            "das war's für heute",
+            "Feierabend",
+            "Ende der Show"
+          ]
+        },
+        {
+          "name": "ZugabeIntent",
+          "slots": [],
+          "samples": [
+            "Zugabe",
+            "Zugabe bitte",
+            "wir wollen eine Zugabe",
+            "noch ein Song",
+            "noch eins",
+            "ruf nach einer Zugabe",
+            "wir wollen mehr"
+          ]
         }
       ],
       "types": [
@@ -327,14 +372,21 @@
               "id": "an",
               "name": {
                 "value": "an",
-                "synonyms": ["ein", "einschalten", "anschalten"]
+                "synonyms": [
+                  "ein",
+                  "einschalten",
+                  "anschalten"
+                ]
               }
             },
             {
               "id": "aus",
               "name": {
                 "value": "aus",
-                "synonyms": ["ausschalten", "abschalten"]
+                "synonyms": [
+                  "ausschalten",
+                  "abschalten"
+                ]
               }
             }
           ]
@@ -346,28 +398,38 @@
               "id": "niedrig",
               "name": {
                 "value": "niedrig",
-                "synonyms": ["gering", "sparsam"]
+                "synonyms": [
+                  "gering",
+                  "sparsam"
+                ]
               }
             },
             {
               "id": "mittel",
               "name": {
                 "value": "mittel",
-                "synonyms": ["normal"]
+                "synonyms": [
+                  "normal"
+                ]
               }
             },
             {
               "id": "hoch",
               "name": {
                 "value": "hoch",
-                "synonyms": ["maximal", "beste"]
+                "synonyms": [
+                  "maximal",
+                  "beste"
+                ]
               }
             },
             {
               "id": "automatisch",
               "name": {
                 "value": "automatisch",
-                "synonyms": ["auto"]
+                "synonyms": [
+                  "auto"
+                ]
               }
             }
           ]
@@ -379,70 +441,114 @@
               "id": "club",
               "name": {
                 "value": "Club",
-                "synonyms": ["Disco", "Nachtclub", "Klub"]
+                "synonyms": [
+                  "Disco",
+                  "Nachtclub",
+                  "Klub"
+                ]
               }
             },
             {
               "id": "festival",
               "name": {
                 "value": "Festival",
-                "synonyms": ["Open Air", "Freiluft", "Festivalbühne"]
+                "synonyms": [
+                  "Open Air",
+                  "Freiluft",
+                  "Festivalbühne"
+                ]
               }
             },
             {
               "id": "synthwave",
               "name": {
                 "value": "Synthwave",
-                "synonyms": ["Retro", "Achtziger", "Neon"]
+                "synonyms": [
+                  "Retro",
+                  "Achtziger",
+                  "Neon"
+                ]
               }
             },
             {
               "id": "jazz",
               "name": {
                 "value": "Jazz",
-                "synonyms": ["Jazzkeller", "Jazz Keller", "Jazzclub", "Theater"]
+                "synonyms": [
+                  "Jazzkeller",
+                  "Jazz Keller",
+                  "Jazzclub",
+                  "Theater"
+                ]
               }
             },
             {
               "id": "weltraum",
               "name": {
                 "value": "Weltraum",
-                "synonyms": ["Weltall", "All", "Space", "Sterne"]
+                "synonyms": [
+                  "Weltall",
+                  "All",
+                  "Space",
+                  "Sterne"
+                ]
               }
             },
             {
               "id": "stadion",
               "name": {
                 "value": "Stadion",
-                "synonyms": ["Arena", "Stadionbühne", "Fußballstadion"]
+                "synonyms": [
+                  "Arena",
+                  "Stadionbühne",
+                  "Fußballstadion"
+                ]
               }
             },
             {
               "id": "strand",
               "name": {
                 "value": "Strand",
-                "synonyms": ["Beach", "Meer", "Sonnenuntergang", "Strandbühne"]
+                "synonyms": [
+                  "Beach",
+                  "Meer",
+                  "Sonnenuntergang",
+                  "Strandbühne"
+                ]
               }
             },
             {
               "id": "lagerhalle",
               "name": {
                 "value": "Lagerhalle",
-                "synonyms": ["Halle", "Warehouse", "Techno Halle", "Fabrik"]
+                "synonyms": [
+                  "Halle",
+                  "Warehouse",
+                  "Techno Halle",
+                  "Fabrik"
+                ]
               }
             },
             {
               "id": "kathedrale",
               "name": {
                 "value": "Kathedrale",
-                "synonyms": ["Kirche", "Dom", "Münster"]
+                "synonyms": [
+                  "Kirche",
+                  "Dom",
+                  "Münster"
+                ]
               }
             },
             {
               "id": "auto",
               "name": {
                 "value": "automatisch",
-                "synonyms": ["auto", "passend", "nach Genre"]
+                "synonyms": [
+                  "auto",
+                  "passend",
+                  "nach Genre"
+                ]
               }
             }
           ]
@@ -454,14 +560,22 @@
               "id": "spaeter",
               "name": {
                 "value": "später",
-                "synonyms": ["verzögert", "langsamer", "nach hinten"]
+                "synonyms": [
+                  "verzögert",
+                  "langsamer",
+                  "nach hinten"
+                ]
               }
             },
             {
               "id": "frueher",
               "name": {
                 "value": "früher",
-                "synonyms": ["schneller", "vorher", "nach vorne"]
+                "synonyms": [
+                  "schneller",
+                  "vorher",
+                  "nach vorne"
+                ]
               }
             }
           ]
@@ -473,56 +587,95 @@
               "id": "konfetti",
               "name": {
                 "value": "Konfetti",
-                "synonyms": ["Konfettiregen", "Konfettikanone", "Konfetti Kanone"]
+                "synonyms": [
+                  "Konfettiregen",
+                  "Konfettikanone",
+                  "Konfetti Kanone"
+                ]
               }
             },
             {
               "id": "feuerwerk",
               "name": {
                 "value": "Feuerwerk",
-                "synonyms": ["Raketen"]
+                "synonyms": [
+                  "Raketen"
+                ]
               }
             },
             {
               "id": "flammen",
               "name": {
                 "value": "Flammen",
-                "synonyms": ["Feuer", "Flammenwerfer"]
+                "synonyms": [
+                  "Feuer",
+                  "Flammenwerfer"
+                ]
               }
             },
             {
               "id": "schaum",
               "name": {
                 "value": "Schaum",
-                "synonyms": ["Schaumparty", "Schaumkanone", "Schaumkanonen"]
+                "synonyms": [
+                  "Schaumparty",
+                  "Schaumkanone",
+                  "Schaumkanonen"
+                ]
               }
             },
             {
               "id": "co2",
               "name": {
                 "value": "Nebel",
-                "synonyms": ["CO2", "Nebelstoß", "Kältenebel"]
+                "synonyms": [
+                  "CO2",
+                  "Nebelstoß",
+                  "Kältenebel"
+                ]
               }
             },
             {
               "id": "pyro",
               "name": {
                 "value": "Funkenfontänen",
-                "synonyms": ["Pyro", "Pyrotechnik", "Fontänen"]
+                "synonyms": [
+                  "Pyro",
+                  "Pyrotechnik",
+                  "Fontänen"
+                ]
               }
             },
             {
               "id": "funken",
               "name": {
                 "value": "kalte Funken",
-                "synonyms": ["Funken", "Funkenregen"]
+                "synonyms": [
+                  "Funken",
+                  "Funkenregen"
+                ]
               }
             },
             {
               "id": "glitzer",
               "name": {
                 "value": "Spiegelkugel",
-                "synonyms": ["Discokugel", "Glitzer"]
+                "synonyms": [
+                  "Discokugel",
+                  "Glitzer"
+                ]
+              }
+            },
+            {
+              "id": "luftschlangen",
+              "name": {
+                "value": "Luftschlangen",
+                "synonyms": [
+                  "Luftschlange",
+                  "Streamer",
+                  "Papierschlangen",
+                  "Luftschlangenkanone"
+                ]
               }
             }
           ]

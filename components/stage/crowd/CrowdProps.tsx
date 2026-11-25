@@ -2,7 +2,7 @@
 
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
-import { CanvasTexture, Matrix4, Object3D, RepeatWrapping, SRGBColorSpace, type InstancedMesh } from "three";
+import { CanvasTexture, Color, Matrix4, Object3D, RepeatWrapping, SRGBColorSpace, type InstancedMesh } from "three";
 import type { Choreography } from "@/lib/dance/plan";
 import { crowdAt } from "@/lib/stage/crowd";
 import { BALL_R, BALLS, SURFERS, ballAt, surferAt } from "@/lib/stage/crowd-props";
@@ -39,7 +39,7 @@ export function CrowdProps({
   frameRef: React.RefObject<Frame>;
   /** Bühne mit Wasserbällen */
   balls: boolean;
-  /** Silhouettenfarbe der Surfer (wie die Menge) */
+  /** Lichtfarbe der Bühne: die Surfer tragen Shirts, die sie auffangen (sonst nur ein dunkler Klotz über der Menge) */
   color: string;
 }) {
   const ballMesh = useRef<InstancedMesh>(null);
@@ -48,6 +48,7 @@ export function CrowdProps({
   const surfer = useMemo(() => personGeometry(), []);
   useEffect(() => () => (tex?.dispose(), surfer.dispose()), [tex, surfer]);
   const o = useMemo(() => new Object3D(), []);
+  const shirt = useMemo(() => new Color("#b9b2c8").lerp(new Color(color), 0.45), [color]);
   const shown = useRef({ balls: 0, surf: 0, t: null as number | null });
 
   useFrame(({ gl }) => {
@@ -109,7 +110,7 @@ export function CrowdProps({
         </instancedMesh>
       )}
       <instancedMesh ref={surfMesh} args={[surfer, undefined, SURFERS]} frustumCulled={false}>
-        <meshStandardMaterial color={color} roughness={0.8} />
+        <meshStandardMaterial color={shirt} emissive={shirt} emissiveIntensity={0.18} roughness={0.7} />
       </instancedMesh>
     </group>
   );

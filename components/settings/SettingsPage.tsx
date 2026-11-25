@@ -8,6 +8,7 @@ import { ArtistAvatars, type ArtistAvatarPatch } from "./ArtistAvatars";
 import { AvatarStyleSection } from "./AvatarStyleSection";
 import { QuietHoursSection } from "./QuietHoursSection";
 import { CrowdSoundSection } from "./CrowdSoundSection";
+import { useSettingsSync } from "./useSettingsSync";
 import type { QuietHours } from "@/lib/live/quiet-hours";
 
 type Area = { name: string; lat: number; lon: number; radiusKm: number; custom: boolean };
@@ -31,6 +32,8 @@ export function SettingsPage() {
   const [artistAvatars, setArtistAvatars] = useState<AvatarMap>({});
   const [quietHours, setQuietHours] = useState<QuietHours | null>(null);
   const [avatarStyle, setAvatarStyle] = useState<AvatarStyle>("gemischt");
+  // Geräte-Einstellungen dieses Browsers mit dem Konto abgleichen (z. B. Publikumsgeräusche vom Handy aus)
+  useSettingsSync(true);
 
   useEffect(() => {
     let alive = true;

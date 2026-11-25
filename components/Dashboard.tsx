@@ -1,5 +1,6 @@
 "use client";
 
+import type { EveningPhase } from "@/lib/show/evening";
 import { MottoBanner } from "./hud/MottoBanner";
 import { Announcement } from "./hud/Announcement";
 import { useEveningTracker } from "./live/useEveningTracker";
@@ -41,6 +42,7 @@ import { useShowLoader } from "./show/useShowLoader";
 import { useArtistAvatars } from "./avatars/useArtistAvatars";
 import { useCanvas } from "./canvas/useCanvas";
 import { CanvasBackground } from "./canvas/CanvasBackground";
+import { useSettingsSync } from "./settings/useSettingsSync";
 import { useSongMemory } from "./memory/useSongMemory";
 import { useAutoOffset } from "./lyrics/useAutoOffset";
 import { installTelemetry, report } from "@/lib/live/telemetry";
@@ -66,6 +68,8 @@ type Props = {
   canvasDemo?: string;
   /** Demo: Canvas auf der LED-Wand statt Vollbild (?canvasort=buehne) */
   canvasDemoOnStage?: boolean;
+  /** Demo: Abendphase vorgeben (?abend=zugabe) – große Auftritte gibt es nur zu bestimmten Phasen */
+  evening?: EveningPhase;
   t?: number;
   debug: boolean;
   loginError?: string;
@@ -92,6 +96,7 @@ export function Dashboard({
   avatarStyle,
   canvasDemo,
   canvasDemoOnStage,
+  evening,
   t,
   debug,
   loginError,
@@ -180,8 +185,10 @@ export function Dashboard({
     };
   }, [demo]);
 
-  // Geräte-Einstellungen (Qualität, Strobe) einmalig aus dem Browser laden
+  // Geräte-Einstellungen (Qualität, Strobe) einmalig aus dem Browser laden, danach mit dem Konto abgleichen
+  // (nicht in Demos: Screenshots und Tests bleiben reproduzierbar)
   useEffect(() => settings.getState().hydrate(), []);
+  useSettingsSync(demo === undefined);
 
   // Demo-Modus: Song-Kontext aus Fixture laden; mit ?t=<ms> eingefroren (Screenshots).
   useEffect(() => {
@@ -238,6 +245,7 @@ export function Dashboard({
                 forceWeather={weather}
                 forceDaylight={daylight}
                 wallCanvas={wallCanvas}
+                forceEvening={evening}
               />
             </div>
           )}

@@ -40,7 +40,9 @@ import { useStagePlan } from "./useStagePlan";
 import { ChorusSign } from "./ChorusSign";
 import { CanvasWall, type WallCanvas } from "./CanvasWall";
 import { planStaging, RUNWAY_THEMES } from "@/lib/stage/staging";
+import type { EveningPhase } from "@/lib/show/evening";
 import { Runway } from "./Runway";
+import { Hinterland } from "./Hinterland";
 import { LiftShaft } from "./LiftShaft";
 import { Drones } from "./Drones";
 import { FanCamArms } from "./FanCamArms";
@@ -60,6 +62,7 @@ export function Stage({
   forceWeather,
   forceDaylight,
   wallCanvas,
+  forceEvening,
 }: {
   forceQuality?: Quality;
   forceTheme?: ThemeId;
@@ -67,6 +70,8 @@ export function Stage({
   forceDaylight?: DayPhase;
   /** Spotify Canvas auf der LED-Wand (statt Wandfoto und Logo) */
   wallCanvas?: WallCanvas | null;
+  /** Abendphase vorgeben (Demos: ?abend=zugabe) */
+  forceEvening?: EveningPhase;
 }) {
   const song = useSongContext((s) => s.song);
   const [webgl] = useState(() => (typeof document === "undefined" ? true : hasWebGL()));
@@ -82,6 +87,7 @@ export function Stage({
         forceWeather={forceWeather}
         forceDaylight={forceDaylight}
         wallCanvas={wallCanvas}
+        forceEvening={forceEvening}
         onContextLost={() => setTimeout(() => setGeneration((g) => g + 1), 1500)}
       />
     </ErrorBoundary>
@@ -94,6 +100,7 @@ function Scene({
   forceWeather,
   forceDaylight,
   wallCanvas,
+  forceEvening,
   onContextLost,
 }: {
   forceQuality?: Quality;
@@ -101,9 +108,10 @@ function Scene({
   forceWeather?: "regen" | "schnee" | "aus";
   forceDaylight?: DayPhase;
   wallCanvas?: WallCanvas | null;
+  forceEvening?: EveningPhase;
   onContextLost: () => void;
 }) {
-  const plan = useStagePlan(forceTheme);
+  const plan = useStagePlan(forceTheme, forceEvening);
   const { raw, theme, song, phase, band, signs, mixamoIds, cues, frozen, dark } = plan;
   // Wetter auf Freiluftbühnen (Regen, Schnee) – Demos rechnen mit festem Datum
   const weather =
@@ -197,6 +205,7 @@ function Scene({
         />
         <TurntableMarks frameRef={frame} color={song.album.palette.accent} />
         {runway && <Runway dark={dark} accent={song.album.palette.accent} frameRef={frame} lightsRef={lights} />}
+        {runway && quality !== "niedrig" && <Hinterland dark={dark} accent={song.album.palette.accent} lightsRef={lights} />}
         {choreo.staging?.lift && <LiftShaft choreo={choreo} frameRef={frame} color={song.album.palette.accent} />}
         {choreo.staging?.drones && (
           <Drones

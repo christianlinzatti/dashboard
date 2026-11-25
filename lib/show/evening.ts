@@ -21,6 +21,8 @@ export type EveningEntry = {
   phase?: EveningPhase;
   /** bis (fast) zum Ende gespielt – sonst wurde geskippt und es gibt keine Zugabe */
   finished?: boolean;
+  /** jemand hat nach einer Zugabe gerufen („Alexa, Zugabe!“, Fernbedienung) – der nächste Song ist sie */
+  encoreAsked?: boolean;
 };
 
 /** Wie viele energiegeladene Songs in Folge zum Höhepunkt führen (der aktuelle mitgezählt) */
@@ -29,6 +31,7 @@ const PEAK_STREAK = 3;
 export function eveningPhase(before: readonly EveningEntry[], mood: Mood | undefined): EveningPhase {
   const last = before.at(-1);
   if (!last) return "auftakt";
+  if (last.encoreAsked && last.phase !== "zugabe") return "zugabe";
   if (last.finished && last.phase !== "zugabe" && (last.liked || last.phase === "hoehepunkt")) return "zugabe";
   let streak = 0;
   for (let i = before.length - 1; i >= 0 && before[i]!.mood === "energetisch"; i--) streak++;

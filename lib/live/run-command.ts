@@ -7,6 +7,8 @@ import { offsetStore } from "@/lib/lyrics/offset-store";
 import { manualCues } from "@/lib/stage/manual-cues";
 import { screenStore } from "./screen";
 import { photoStore } from "@/lib/photo/store";
+import { creditsRequest } from "@/lib/show/credits";
+import { setlistStore } from "@/lib/stage/setlist";
 
 /** Einen Befehl vom Server (Alexa, Fernbedienung) im Kiosk ausführen. */
 export function runCommand(c: Command) {
@@ -30,6 +32,12 @@ export function runCommand(c: Command) {
       break;
     case "foto":
       photoStore.getState().request();
+      break;
+    case "abspann":
+      creditsRequest.getState().request();
+      break;
+    case "zugabe":
+      setlistStore.getState().askEncore();
       break;
   }
 }

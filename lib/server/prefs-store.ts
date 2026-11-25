@@ -4,6 +4,7 @@ import { home } from "@/lib/concerts/geo";
 import { getCache, type Cache } from "@/lib/lyrics/cache";
 import { artistAvatarsSchema, avatarStyles } from "@/lib/avatars/overrides";
 import { quietHoursSchema } from "@/lib/live/quiet-hours";
+import { deviceSettingsSchema } from "@/lib/settings-sync";
 
 /** Einstellungen pro Spotify-Konto (geräteübergreifend, z. B. vom Handy gesetzt). */
 export const prefsSchema = z.object({
@@ -17,6 +18,8 @@ export const prefsSchema = z.object({
   avatarStyle: z.enum(avatarStyles).optional(),
   /** Display-Zeitplan: Bildschirm in dieser Zeit schwarz, solange keine Musik läuft */
   quietHours: quietHoursSchema.optional(),
+  /** Geräte-Einstellungen (Strobo, Lampen, 2. Zeile, Bühne, Canvas, Publikumsgeräusche) – auf allen Geräten gleich */
+  device: deviceSettingsSchema.optional(),
 });
 export type Prefs = z.infer<typeof prefsSchema>;
 

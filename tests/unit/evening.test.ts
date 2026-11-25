@@ -5,6 +5,8 @@ import { planChoreography } from "@/lib/dance/plan";
 import { neonlicht } from "@/lib/song-context/fixtures/neonlicht";
 import { planEffects } from "@/lib/stage/effects";
 import { THEMES } from "@/lib/stage/themes";
+import { runCommand } from "@/lib/live/run-command";
+import { creditsRequest } from "@/lib/show/credits";
 
 const E = { mood: "energetisch" as const };
 const R = { mood: "ruhig" as const };
@@ -56,5 +58,33 @@ describe("Setlist: ausgespielte Songs", () => {
     expect(eveningPhaseFor(setlistStore.getState().played, "b", "mittel")).toBe("zugabe");
     // für den Song selbst zählt nur, was vorher lief
     expect(eveningPhaseFor(setlistStore.getState().played, "a", "energetisch")).toBe("auftakt");
+  });
+});
+
+describe("Zugabe auf Zuruf", () => {
+  it("nach dem Ruf wird der nächste Song die Zugabe – auch ohne Like, auch geskippt; nie zweimal", () => {
+    expect(eveningPhase([{ mood: "mittel", phase: "steigerung", encoreAsked: true }], "mittel")).toBe("zugabe");
+    expect(eveningPhase([{ mood: "mittel", phase: "zugabe", encoreAsked: true }], "mittel")).toBe("steigerung");
+  });
+
+  it("der Setlist-Speicher merkt sich den Ruf am zuletzt gespielten Song", () => {
+    setlistStore.getState().reset();
+    expect(setlistStore.getState().askEncore()).toBe(false);
+    setlistStore.getState().record({ trackKey: "a", mood: "mittel", phase: "auftakt" });
+    expect(setlistStore.getState().askEncore()).toBe(true);
+    expect(eveningPhaseFor(setlistStore.getState().played, "b", "mittel")).toBe("zugabe");
+    setlistStore.getState().reset();
+  });
+
+  it("Befehle aus dem Kiosk: Zugabe und Abspann", () => {
+    setlistStore.getState().reset();
+    setlistStore.getState().record({ trackKey: "a", mood: "mittel", phase: "auftakt" });
+    runCommand({ type: "zugabe", id: "1", createdAt: 0 });
+    expect(setlistStore.getState().played.at(-1)?.encoreAsked).toBe(true);
+    expect(creditsRequest.getState().at).toBeNull();
+    runCommand({ type: "abspann", id: "2", createdAt: 0 });
+    expect(creditsRequest.getState().at).not.toBeNull();
+    creditsRequest.getState().clear();
+    setlistStore.getState().reset();
   });
 });

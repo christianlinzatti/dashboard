@@ -4,6 +4,7 @@ import { createPoliteFetch } from "@/lib/info/http";
 import { effectiveArea, prefsStore, type Prefs } from "@/lib/server/prefs-store";
 import { artistAvatarSchema, artistKey, avatarStyles, MAX_ARTIST_AVATARS } from "@/lib/avatars/overrides";
 import { quietHoursSchema } from "@/lib/live/quiet-hours";
+import { deviceSettingsSchema, mergeDeviceSettings } from "@/lib/settings-sync";
 import { readSession } from "@/lib/server/session";
 import { json } from "@/lib/server/spotify-route";
 
@@ -21,6 +22,7 @@ const view = (p: Prefs) => ({
   artistAvatars: p.artistAvatars ?? {},
   quietHours: p.quietHours ?? null,
   avatarStyle: p.avatarStyle ?? "gemischt",
+  device: p.device ?? null,
 });
 
 const body = z.object({
@@ -32,6 +34,8 @@ const body = z.object({
   quietHours: quietHoursSchema.nullable().optional(),
   /** Avatar-Stil für alle Figuren */
   avatarStyle: z.enum(avatarStyles).optional(),
+  /** Geräte-Einstellungen; übernommen nur, wenn jünger als der gespeicherte Stand */
+  device: deviceSettingsSchema.optional(),
   /** Avatar für einen Künstler festlegen; ohne avatarId: Zuordnung entfernen */
   artistAvatar: z
     .union([artistAvatarSchema, z.object({ name: z.string().trim().min(1).max(120), avatarId: z.null() })])
@@ -57,6 +61,10 @@ export async function PUT(req: Request) {
   else if (b.data.quietHours) prefs.quietHours = b.data.quietHours;
   if (b.data.avatarStyle === "gemischt") delete prefs.avatarStyle;
   else if (b.data.avatarStyle) prefs.avatarStyle = b.data.avatarStyle;
+  if (b.data.device) {
+    const merged = mergeDeviceSettings(prefs.device, b.data.device, Date.now());
+    if (merged) prefs.device = merged;
+  }
   const pick = b.data.artistAvatar;
   if (pick) {
     const map = { ...prefs.artistAvatars };

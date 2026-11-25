@@ -48,7 +48,19 @@ export type AnnounceInput = {
   liked?: boolean;
   /** Heimatort aus den Einstellungen */
   city?: string;
+  /** Ansagen der KI-Regie für diesen Song (je Abendphase) – haben Vorrang vor den Vorlagen */
+  ai?: Partial<Record<EveningPhase, string>>;
 };
+
+/** `{s}` durch den Ort ersetzen – ohne Ort samt Komma/Leerzeichen streichen („Servus {s}!“ → „Servus!“) */
+export function fillCity(line: string, city: string | undefined): string {
+  if (city) return line.replaceAll("{s}", city);
+  return line
+    .replace(/,?\s*\{s\}\s*,?/g, " ")
+    .replace(/\s+([!?.,…])/g, "$1")
+    .replace(/\s+/g, " ")
+    .trim();
+}
 
 /** Titel ohne Zusätze („– Remastered 2011“, „(feat. …)“), damit die Ansage natürlich klingt */
 export function spokenTitle(title: string): string {
@@ -61,13 +73,15 @@ export function spokenTitle(title: string): string {
 }
 
 export function announcementFor(i: AnnounceInput): string {
+  const ai = i.ai?.[i.phase];
+  if (ai) return fillCity(ai, i.city);
   // Lieblingssong (außer bei Auftakt/Zugabe, die haben ihre eigenen Worte): jeder zweite bekommt den Mitsing-Aufruf
   const key =
     i.liked && i.phase !== "auftakt" && i.phase !== "zugabe" && hash(`${i.trackKey}:lieb`) % 2 === 0 ? "lieblingssong" : i.phase;
   const lines = LINES[key];
   const pool = i.city ? lines.mitStadt : lines.ohne;
   const line = pool[hash(`${i.trackKey}:ansage`) % pool.length]!;
-  return line.replaceAll("{t}", spokenTitle(i.title)).replaceAll("{s}", i.city ?? "");
+  return fillCity(line.replaceAll("{t}", spokenTitle(i.title)), i.city);
 }
 
 /**

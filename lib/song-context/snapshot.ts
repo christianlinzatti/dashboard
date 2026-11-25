@@ -118,6 +118,10 @@ export const commandSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("bildschirm"), on: z.boolean() }),
   /** Erinnerungsfoto der Bühne (mit QR-Code zum Handy) */
   z.object({ type: z.literal("foto") }),
+  /** Abspann des Abends rollen lassen (sofort, wenn keine Musik läuft, sonst sobald sie aufhört) */
+  z.object({ type: z.literal("abspann") }),
+  /** Zugabe rufen: der nächste Song wird zur Zugabe */
+  z.object({ type: z.literal("zugabe") }),
 ]);
 export type CommandInput = z.infer<typeof commandSchema>;
 export type Command = CommandInput & { id: string; createdAt: number };

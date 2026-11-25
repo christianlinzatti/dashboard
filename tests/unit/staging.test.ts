@@ -12,6 +12,8 @@ import {
   droneShotAt,
   dronesAt,
   dronesFit,
+  dronesFor,
+  runwayFor,
   heartPoint,
   liftFor,
   liftGlowAt,
@@ -31,7 +33,7 @@ import { planEffects } from "@/lib/stage/effects";
 
 const song = fixtures.neonlicht!;
 const base = planChoreography(song, 124);
-const staged = (theme = THEMES.festival, phase: "auftakt" | "zugabe" | "steigerung" = "steigerung"): Choreography => ({
+const staged = (theme = THEMES.festival, phase: "auftakt" | "zugabe" | "steigerung" = "zugabe"): Choreography => ({
   ...base,
   staging: planStaging(base, theme, phase, undefined),
 });
@@ -92,6 +94,22 @@ describe("Laufsteg mit B-Bühne", () => {
       const cam = cameraAt(c, t, [0, B_STAGE_Z]);
       expect(cam.pos.every(Number.isFinite)).toBe(true);
     }
+  });
+});
+
+describe("Große Auftritte nur zu besonderen Momenten des Abends", () => {
+  it("Laufsteg bei Höhepunkt und Zugabe, Drohnen nur zur Zugabe", () => {
+    expect(runwayFor("hoehepunkt")).toBe(true);
+    expect(runwayFor("zugabe")).toBe(true);
+    expect(runwayFor("steigerung")).toBe(false);
+    expect(runwayFor(undefined)).toBe(false);
+    expect(dronesFor("zugabe")).toBe(true);
+    expect(dronesFor("hoehepunkt")).toBe(false);
+    const normal = staged(THEMES.festival, "steigerung").staging!;
+    expect(normal.runway).toBeNull();
+    expect(normal.drones).toBeNull();
+    // der Spannungsaufbau gehört zu jedem großen Einsatz
+    expect(normal.builds.length).toBeGreaterThan(0);
   });
 });
 

@@ -9,14 +9,14 @@ const context = (page: Page) => debugContext<Ctx>(page);
 test("Mikrofon lässt sich einschalten und liefert Messwerte", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  // geprüft wird das Mikrofon, nicht die Bühne: niedrige Qualität, sonst bremst die 3D-Szene (ohne GPU, große Auflösung)
-  // die Seite so aus, dass das Debug-Panel den Zustand erst nach vielen Sekunden zeigt
-  await page.goto("/?demo=neonlicht&mic=1&debug=1&qualitaet=niedrig");
+  // geprüft wird das Mikrofon, nicht die Bühne: leichteste Bühne auf niedriger Qualität, sonst bremst die laufende
+  // 3D-Szene (ohne GPU, große Auflösung) die Seite so aus, dass das Debug-Panel den Zustand erst nach vielen Sekunden zeigt
+  await page.goto("/?demo=neonlicht&mic=1&debug=1&qualitaet=niedrig&buehne=jazz");
   await expect(page.getByTestId("now-playing")).toBeVisible();
 
   // Berechtigung ist erteilt → Mikro startet automatisch
   const indicator = page.getByTestId("mic-indicator");
-  await expect.poll(async () => (await context(page)).live.micState, { timeout: 10_000 }).toBe("aktiv");
+  await expect.poll(async () => (await context(page)).live.micState, { timeout: 20_000 }).toBe("aktiv");
   await expect(indicator).toBeVisible();
   await expect.poll(async () => (await context(page)).live.bands.length, { timeout: 10_000 }).toBe(6);
   await expect(page.getByTestId("bpm")).toContainText("BPM");

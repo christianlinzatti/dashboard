@@ -181,4 +181,5 @@ export const EFFECT_NAMES: Partial<Record<EffectKind, string>> = {
   pyro: "Funkenfontänen",
   funken: "kalte Funken",
   glitzer: "Spiegelkugel",
+  luftschlangen: "Luftschlangen",
 };

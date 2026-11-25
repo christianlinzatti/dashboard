@@ -4,6 +4,7 @@ import { lyricsEffects, lyricsModes, type LyricsEffect, type LyricsMode } from "
 import { qualities, type Quality } from "@/lib/stage/quality";
 import { themeIds, type ThemeId } from "@/lib/stage/themes";
 import { quietHoursFromParam } from "@/lib/live/quiet-hours";
+import { eveningPhases } from "@/lib/show/evening";
 
 type Search = Promise<Record<string, string | string[] | undefined>>;
 
@@ -29,6 +30,7 @@ export default async function Page({ searchParams }: { searchParams: Search }) {
       avatarStyle={one(sp.stil) === "chibi" ? "chibi" : undefined}
       canvasDemo={one(sp.canvas)}
       canvasDemoOnStage={one(sp.canvasort) === "buehne"}
+      evening={eveningPhases.find((p) => p === one(sp.abend))}
       lyricsMode={lyricsModes.includes(one(sp.lyrics) as LyricsMode) ? (one(sp.lyrics) as LyricsMode) : undefined}
     />
   );

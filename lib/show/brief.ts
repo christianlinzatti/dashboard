@@ -35,16 +35,40 @@ const briefCore = {
   motto: z.string(),
 };
 
+/** Ansage des Sängers zum Songstart je Abendphase (Deutsch, ein Satz; `{s}` = Heimatort, wird ersetzt) */
+export const announcementsSchema = z.object({
+  auftakt: z.string(),
+  steigerung: z.string(),
+  hoehepunkt: z.string(),
+  durchatmen: z.string(),
+  zugabe: z.string(),
+});
+export type Announcements = z.infer<typeof announcementsSchema>;
+
 /** Was die KI liefern muss (strukturierte Ausgabe: alle Felder Pflicht) */
 export const showBriefSchema = z.object({
   ...briefCore,
   sections: z.array(sectionCore.extend({ moment: z.enum(showMoments) })),
+  announcements: announcementsSchema,
 });
-/** Was gespeichert/gelesen wird: ältere Briefs (Cache) haben noch keinen Moment – dann entscheiden die Regeln */
+/** Was gespeichert/gelesen wird: ältere Briefs (Cache) haben noch keinen Moment und keine Ansagen – dann die Regeln */
 export const storedBriefSchema = z.object({
   ...briefCore,
   sections: z.array(sectionCore.extend({ moment: z.enum(showMoments).optional() })),
+  announcements: announcementsSchema.partial().optional(),
 });
+
+/** Ansage aufräumen: ein Satz, nicht zu lang, keine fremden Platzhalter oder Anführungszeichen außen herum */
+export function cleanAnnouncement(raw: string | undefined): string | undefined {
+  if (!raw) return undefined;
+  const t = raw
+    .replace(/\s+/g, " ")
+    .replace(/\{(?!s\})[^}]*\}/g, "")
+    .trim()
+    .replace(/^["\u201E\u201C\u2018']+|["\u201C\u201D\u2019']+$/g, "")
+    .trim();
+  return t.length >= 8 && t.length <= 140 ? t : undefined;
+}
 export type ShowBrief = z.infer<typeof storedBriefSchema>;
 export type BriefSection = ShowBrief["sections"][number];
 
@@ -64,6 +88,15 @@ export function sanitizeBrief(raw: unknown): ShowBrief | null {
     ...p.data,
     genres: [...new Set(p.data.genres.map((g) => g.trim().toLowerCase()).filter(Boolean))].slice(0, 6),
     motto: p.data.motto.replace(/\s+/g, " ").trim().slice(0, 160),
+    ...(p.data.announcements
+      ? {
+          announcements: Object.fromEntries(
+            Object.entries(p.data.announcements)
+              .map(([k, v]) => [k, cleanAnnouncement(v)] as const)
+              .filter(([, v]) => v !== undefined),
+          ),
+        }
+      : {}),
     sections: p.data.sections
       .filter((s) => !seen.has(s.kind) && seen.add(s.kind))
       .map((s) => ({ ...s, effects: [...new Set(s.effects)].slice(0, 4) })),

@@ -279,6 +279,8 @@ describe("Geräte-Einstellungen", () => {
       stage: "auto",
       canvas: "aus",
       crowdSound: false,
+      // Strobo ist eine geteilte Einstellung (Konto): Zeitpunkt der Änderung wird mitgespeichert
+      changedAt: expect.any(Number),
     });
     settings.getState().set({ secondLine: "uebersetzung", stage: "jazz", crowdSound: true });
     settings.getState().hydrate();
@@ -286,6 +288,33 @@ describe("Geräte-Einstellungen", () => {
     store.set("ss_settings", JSON.stringify({ quality: "ultra", strobe: "ja", secondLine: "klingonisch", stage: "disco" }));
     settings.getState().hydrate();
     expect(settings.getState()).toMatchObject({ quality: "auto", strobe: true, secondLine: "auto", stage: "auto" });
+    vi.unstubAllGlobals();
+  });
+
+  it("Abgleich mit dem Konto: eigene Änderungen werden datiert, jüngere Stände aus dem Konto übernommen", async () => {
+    const store = new Map<string, string>();
+    vi.stubGlobal("localStorage", {
+      getItem: (k: string) => store.get(k) ?? null,
+      setItem: (k: string, v: string) => void store.set(k, v),
+    });
+    const { settings } = await import("@/lib/settings");
+    const { sharedOf } = await import("@/lib/settings-sync");
+    settings.getState().hydrate();
+    const before = settings.getState().changedAt;
+    // Qualität gehört zum Gerät: keine Änderung fürs Konto
+    settings.getState().set({ quality: "niedrig" });
+    expect(settings.getState().changedAt).toBe(before);
+    settings.getState().set({ lamps: false });
+    const mine = settings.getState().changedAt;
+    expect(mine).toBeGreaterThan(0);
+    // älterer Stand aus dem Konto: bleibt bei meinem
+    settings.getState().applyRemote({ ...sharedOf(settings.getState()), lamps: true }, mine - 1);
+    expect(settings.getState().lamps).toBe(false);
+    // jüngerer Stand: übernommen, Qualität bleibt
+    settings.getState().applyRemote({ ...sharedOf(settings.getState()), lamps: true, canvas: "buehne" }, mine + 10);
+    expect(settings.getState()).toMatchObject({ lamps: true, canvas: "buehne", quality: "niedrig", changedAt: mine + 10 });
+    settings.getState().hydrate();
+    expect(settings.getState().changedAt).toBe(mine + 10);
     vi.unstubAllGlobals();
   });
 });
