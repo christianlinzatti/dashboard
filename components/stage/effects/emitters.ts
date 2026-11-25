@@ -26,7 +26,7 @@ export type Emitter = {
   additive: boolean;
 };
 
-export const EMITTERS: Record<Exclude<EffectKind, "ringe" | "glitzer" | "konfetti" | "schaum">, Emitter> = {
+export const EMITTERS: Record<Exclude<EffectKind, "ringe" | "glitzer" | "konfetti" | "schaum" | "luftschlangen">, Emitter> = {
   pyro: {
     mode: 0,
     count: 1000,

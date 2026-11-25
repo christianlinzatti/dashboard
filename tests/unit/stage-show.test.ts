@@ -74,7 +74,9 @@ describe("Kamera wie ein Konzertmitschnitt", () => {
   it("bei hoher Energie Schnitte im 4-Takt-Raster zwischen zwei stehenden Einstellungen", () => {
     // (Mitsing-Moment und Nahaufnahme beim großen Einsatz ausgenommen – eigene Tests)
     const withCut = all.flatMap((k) =>
-      k.phrases.filter((p) => p.cut).map((p) => ({ k: { ...k, singAlong: null, climaxes: [] }, p })),
+      k.phrases
+        .filter((p) => p.cut && p.cut !== "fan")
+        .map((p) => ({ k: { ...k, singAlong: null, climaxes: [], staging: undefined }, p })),
     );
     expect(withCut.length).toBeGreaterThan(0);
     for (const { k, p } of withCut) {

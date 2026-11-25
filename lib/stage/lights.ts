@@ -3,8 +3,19 @@ import { exitAt, phraseIndexAt } from "@/lib/dance/evaluate";
 import type { SectionKind, SongStatic } from "@/lib/song-context/schema";
 import { climaxAt } from "./climax";
 import { crowdProfile } from "./crowd";
+import { buildAt } from "./staging";
 
-export type LightScene = "intro" | "strophe" | "refrain" | "bridge" | "instrumental" | "drop" | "outro" | "applaus";
+export type LightScene =
+  | "intro"
+  | "strophe"
+  | "refrain"
+  | "bridge"
+  | "instrumental"
+  | "drop"
+  | "outro"
+  | "applaus"
+  /** Spannungsaufbau vor einem großen Einsatz: alles zieht sich zusammen und wird schneller */
+  | "aufbau";
 
 /** Danke-Licht beim Applaus am Songende: warmes Weiß-Orange auf Bühne, Publikum und Lampen im Raum */
 export const APPLAUSE_WARM = "#ffb066";
@@ -19,6 +30,11 @@ export type HeadState = {
   color: string;
   /** 0..1 */
   intensity: number;
+  /**
+   * Höhe der Lampe an ihrer Hängung (m, 0 = oben an der Traverse, negativ = abgesenkt): in ruhigen Teilen hängen die
+   * Lampen tief und wogen als Welle, im Refrain und Drop schießen sie nach oben
+   */
+  y: number;
 };
 
 export type LightFrame = {
@@ -83,6 +99,20 @@ const PROFILE: Record<
   drop: { share: 1, amp: 0.9, period: 2, base: 1, lasers: true, fog: 0.4, wall: 1 },
   outro: { share: 0.25, amp: 0.15, period: 32, base: 0.4, lasers: false, fog: 0.9, wall: 0 },
   applaus: { share: 1, amp: 0.2, period: 16, base: 0.8, lasers: false, fog: 0.5, wall: 0 },
+  aufbau: { share: 1, amp: 0.25, period: 8, base: 0.7, lasers: false, fog: 0.9, wall: 1 },
+};
+
+/** Hängehöhe je Szene (m unter der Traverse) und Wogen der Lampenreihe (Amplitude) */
+const RIG: Record<LightScene, { y: number; wave: number }> = {
+  intro: { y: -1.05, wave: 0.22 },
+  outro: { y: -1.05, wave: 0.22 },
+  bridge: { y: -0.9, wave: 0.28 },
+  strophe: { y: -0.55, wave: 0.12 },
+  refrain: { y: 0, wave: 0 },
+  instrumental: { y: -0.2, wave: 0.15 },
+  drop: { y: 0, wave: 0 },
+  applaus: { y: -0.4, wave: 0.08 },
+  aufbau: { y: -1.05, wave: 0 },
 };
 
 /**
@@ -101,7 +131,9 @@ export function lightsAt(song: SongStatic, c: Choreography, heads: number, input
   const blackout = climax?.phase === "blackout" ? Math.min(1, climax.beats) : 0;
   // Abgang (Winken, Verbeugung): Danke-Licht, warm über alles
   const applause = !inDrop && exitAt(c, t) !== null;
-  let scene: LightScene = inDrop ? "drop" : applause ? "applaus" : SCENE_OF[phrase?.section ?? "verse"];
+  // Aufbau: vier Takte vor einem großen Einsatz (Countdown) bzw. einem bekannten Drop
+  const build = inDrop || applause || blackout > 0 ? 0 : buildAt(c, t);
+  let scene: LightScene = inDrop ? "drop" : applause ? "applaus" : build > 0 ? "aufbau" : SCENE_OF[phrase?.section ?? "verse"];
   // Energie aus dem Plan (+ Mikro) kann Strophen anheben / Refrains dämpfen
   const energy = input.micActive ? input.energy : ((phrase?.energy ?? 1) + 0.5) / 4;
   if (scene === "refrain" && energy < 0.3) scene = "strophe";
@@ -118,6 +150,10 @@ export function lightsAt(song: SongStatic, c: Choreography, heads: number, input
   const barColor = colors[((bar % colors.length) + colors.length) % colors.length]!;
   const alt = colors[(((bar + 1) % colors.length) + colors.length) % colors.length]!;
 
+  // Aufbau: das Licht flackert immer schneller (Achtel, Sechzehntel, Zweiunddreißigstel) und wird heller
+  const sub = build < 0.5 ? 2 : build < 0.8 ? 4 : 8;
+  const flick = build > 0 ? Math.pow(1 - ((((beats * sub) % 1) + 1) % 1), 2) : 0;
+  const rig = RIG[scene];
   const active = Math.max(1, Math.round(heads * prof.share));
   const out: HeadState[] = Array.from({ length: heads }, (_, i) => {
     const center = i - (heads - 1) / 2;
@@ -138,7 +174,20 @@ export function lightsAt(song: SongStatic, c: Choreography, heads: number, input
             : alt;
     const intensity =
       (on ? Math.min(1, prof.base * (0.75 + 0.25 * pulse) * (0.7 + energy * 0.5)) * (input.headLevel ?? 1) : 0) * (1 - blackout);
-    return { pan, tilt, color, intensity };
+    // kinetische Hängung: Welle über die Reihe; im Aufbau ziehen sie gemeinsam hoch
+    const wave = Math.sin((beats / 8) * Math.PI * 2 + center * 0.8) * rig.wave;
+    const y = scene === "aufbau" ? -1.05 * (1 - build) + 0.12 * build : rig.y + wave;
+    if (scene === "aufbau") {
+      // alle Kegel schwenken zur Bühnenmitte und blitzen im immer schnelleren Raster
+      return {
+        pan: pan * (1 - build),
+        tilt: tilt + (0.5 - tilt) * build,
+        color,
+        intensity: Math.min(1, (0.3 + 0.7 * build) * (0.45 + 0.55 * flick)) * (input.headLevel ?? 1),
+        y,
+      };
+    }
+    return { pan, tilt, color, intensity, y };
   });
 
   // Strobe: nur bei Drops, ein Blitz pro Schlag, bei sehr schnellen Songs jeder zweite (Fotosensitivität)
@@ -177,10 +226,13 @@ export function lightsAt(song: SongStatic, c: Choreography, heads: number, input
     wall: {
       colorA: pal.dominant,
       colorB: barColor,
-      level: Math.min(1, energy * 0.8 + pulse * 0.3) * (1 - 0.9 * blackout),
+      level:
+        scene === "aufbau"
+          ? (0.25 + 0.75 * build) * (0.4 + 0.6 * flick)
+          : Math.min(1, energy * 0.8 + pulse * 0.3) * (1 - 0.9 * blackout),
       mode: prof.wall,
     },
-    fog: prof.fog,
+    fog: scene === "aufbau" ? 0.6 + 0.4 * build : prof.fog,
     blackout,
     countdown: climax?.countdown ?? null,
     signal: roomSignal(),
@@ -192,6 +244,9 @@ export function lightsAt(song: SongStatic, c: Choreography, heads: number, input
    */
   function roomSignal(): LightFrame["signal"] {
     if (scene === "applaus") return { base: APPLAUSE_BASE, accent: APPLAUSE_WARM, brightness: 0.85, pulse: 0, chase: -1 };
+    // Aufbau: Lampen im Raum werden heller und flackern im selben, immer schnelleren Raster
+    if (scene === "aufbau")
+      return { base: pal.dominant, accent: barColor, brightness: 0.3 + 0.6 * build, pulse: flick, chase: -1 };
     const crowd = phrase && !inDrop && !blackout ? crowdProfile(phrase, c.crowdStyle) : null;
     if (crowd && (crowd.lighter > 0.5 || crowd.phones > 0.7)) {
       // zwei langsame, gegeneinander laufende Schwingungen: wirkt wie viele kleine Lichter, nie im Takt

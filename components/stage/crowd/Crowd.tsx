@@ -17,12 +17,30 @@ import {
 import type { Choreography } from "@/lib/dance/plan";
 import { rng } from "@/lib/dance/rng";
 import { singAlongAt } from "@/lib/show/singalong";
-import { crowdAt, crowdSpots } from "@/lib/stage/crowd";
+import { crowdAt, crowdSpots, type CrowdFrame } from "@/lib/stage/crowd";
 import type { LightFrame } from "@/lib/stage/lights";
 import type { Theme } from "@/lib/stage/themes";
 import type { Frame } from "../types";
 import { BASE_Y, MAX, MOTION, personGeometry } from "./shared";
 import { FanSigns } from "./FanSigns";
+import { CrowdProps } from "./CrowdProps";
+
+/** Publikum ohne Wiedergabe: ruhig, Armbänder glimmen */
+const CROWD_IDLE: CrowdFrame = {
+  hands: 0,
+  jump: 0,
+  phones: 0,
+  bands: 0.1,
+  bandMode: 0,
+  sway: 0.3,
+  mosh: 0,
+  lighter: 0,
+  clap: 0,
+  wave: 0,
+  circle: 0,
+  balls: 0,
+  surf: 0,
+};
 
 /** so viele Fans halten höchstens ein Schild hoch */
 const SIGN_HOLDERS_MAX = 12;
@@ -40,7 +58,13 @@ export function Crowd({
   frameRef,
   lightsRef,
   signs = [],
+  runway = false,
+  balls = false,
 }: {
+  /** Laufsteg mit B-Bühne: dort steht niemand */
+  runway?: boolean;
+  /** Bühne mit Wasserbällen (Open Air, große Hallen) */
+  balls?: boolean;
   /** Texte der Fan-Schilder (leer: keine) */
   signs?: string[];
   count: number;
@@ -140,12 +164,14 @@ export function Crowd({
       uClap: { value: 0 },
       uWave: { value: 0 },
       uSing: { value: 0 },
+      uCircle: { value: 0 },
+      uRunway: { value: runway ? 1 : 0 },
       uBaseY: { value: BASE_Y },
       uCam: { value: new Vector3() },
       uFogColor: { value: new Color(dark) },
       uFogFar: { value: theme.fogFar },
     }),
-    [dark, theme.fogFar],
+    [dark, theme.fogFar, runway],
   );
   const peopleUniforms = useMemo(
     () => ({
@@ -165,6 +191,7 @@ export function Crowd({
       uBandMode: { value: 0 },
       uA: { value: new Color(accent) },
       uB: { value: new Color(accent) },
+      uC: { value: new Color(accent) },
       uPhoneColor: { value: new Color(theme.id === "jazz" || theme.id === "kathedrale" ? "#ffcf8a" : "#f2f6ff") },
       uLighter: { value: 0 },
       uPx: { value: 500 },
@@ -174,9 +201,7 @@ export function Crowd({
 
   useFrame(({ camera, gl }) => {
     const f = frameRef.current;
-    const c = f.playing
-      ? crowdAt(choreo, f.t, { dropMs: f.dropMs })
-      : { hands: 0, jump: 0, phones: 0, bands: 0.1, bandMode: 0, sway: 0.3, mosh: 0, lighter: 0, clap: 0, wave: 0 };
+    const c = f.playing ? crowdAt(choreo, f.t, { dropMs: f.dropMs }) : CROWD_IDLE;
     // gemeinsame Uniforms (beide Materialien teilen dieselben Objekte) über das Material setzen
     const u = people.current?.uniforms;
     if (!u) return;
@@ -189,6 +214,7 @@ export function Crowd({
     u.uMosh!.value = c.mosh;
     u.uClap!.value = c.clap;
     u.uWave!.value = c.wave;
+    u.uCircle!.value = c.circle;
     u.uSing!.value = f.playing ? singAlongAt(choreo.singAlong, f.t, choreo.beatMs) : 0;
     u.uBlind!.value = lightsRef.current?.blinders ?? 0;
     (u.uCam!.value as Vector3).copy(camera.position);
@@ -202,25 +228,28 @@ export function Crowd({
       if (lf) {
         (l.uA!.value as Color).set(lf.wall.colorB);
         (l.uB!.value as Color).set(lf.signal.base);
+        (l.uC!.value as Color).set(lf.wall.colorA);
       }
       const fov = "fov" in camera ? (camera.fov as number) : 36;
       l.uPx!.value = (size.height * gl.getPixelRatio()) / (2 * Math.tan((fov * Math.PI) / 360));
     }
     // für Tests und Debug: was das Publikum gerade tut
     const label =
-      c.mosh > 0.5
-        ? "moshpit"
-        : c.phones > 0.5
-          ? c.lighter > 0.5
-            ? "feuerzeuge"
-            : "handys"
-          : c.jump > 0.5
-            ? "springen"
-            : c.clap > 0.4
-              ? "klatschen"
-              : c.hands > 0.5
-                ? "haende"
-                : "ruhig";
+      c.circle > 0.5
+        ? "circlepit"
+        : c.mosh > 0.5
+          ? "moshpit"
+          : c.phones > 0.5
+            ? c.lighter > 0.5
+              ? "feuerzeuge"
+              : "handys"
+            : c.jump > 0.5
+              ? "springen"
+              : c.clap > 0.4
+                ? "klatschen"
+                : c.hands > 0.5
+                  ? "haende"
+                  : "ruhig";
     if (gl.domElement.dataset.crowd !== label) gl.domElement.dataset.crowd = label;
   });
 
@@ -296,6 +325,7 @@ export function Crowd({
           ]}
         />
       </mesh>
+      <CrowdProps choreo={choreo} frameRef={frameRef} balls={balls} color={dark} />
       {signs.length > 0 && <FanSigns texts={signs} accent={accent} holders={signHolders} uniforms={peopleUniforms} />}
       <points ref={lightPoints} geometry={points} frustumCulled={false}>
         <shaderMaterial
@@ -311,7 +341,7 @@ export function Crowd({
                 attribute vec3 aSpot; attribute vec4 aRand; attribute float aKind;
                 ${MOTION}
                 uniform float uBands, uBandMode, uPx, uFogFar, uLighter;
-                uniform vec3 uA, uB, uPhoneColor;
+                uniform vec3 uA, uB, uC, uPhoneColor;
                 varying vec3 vColor;
                 float h(float x) { return fract(sin(x) * 43758.5453); }
                 void main() {
@@ -331,8 +361,14 @@ export function Crowd({
                     float sparkle = step(0.62, h(floor(uBeats * 2.0) * 1.37 + aRand.x * 37.0));
                     float pulse = 0.3 + 0.7 * pow(1.0 - fract(uBeats), 2.0);
                     float wave = 0.15 + 0.85 * pow(0.5 + 0.5 * sin(aSpot.x * 0.9 - uBeats * PI * 0.5), 3.0);
-                    level = uBands * (uBandMode < 0.5 ? sparkle : uBandMode < 1.5 ? pulse : wave);
-                    col = aRand.w < 0.5 ? uA : uB; size = 0.06;
+                    // Ringe: laufen auf jedem Schlag von der Bühne nach hinten durch die Halle
+                    float rings = 0.12 + 0.88 * pow(0.5 + 0.5 * cos((length(aSpot.xy) * 0.55 - fract(uBeats)) * 2.0 * PI), 8.0);
+                    // Farbfelder: die Menge in drei Keile geteilt, die Farben wandern jeden Takt einen Keil weiter
+                    float slice = mod(floor((atan(aSpot.x, aSpot.y) / 2.0 + 0.5) * 3.0) + floor(uBeats / 4.0), 3.0);
+                    level = uBands * (uBandMode < 0.5 ? sparkle : uBandMode < 1.5 ? pulse : uBandMode < 2.5 ? wave
+                      : uBandMode < 3.5 ? 0.75 + 0.25 * pow(1.0 - fract(uBeats), 2.0) : rings);
+                    col = uBandMode > 3.5 ? uA : uBandMode > 2.5 ? (slice < 0.5 ? uA : slice < 1.5 ? uB : uC) : aRand.w < 0.5 ? uA : uB;
+                    size = 0.06;
                   }
                   float near = smoothstep(1.2, 2.1, distance(aSpot.xy, uCam.xz));
                   float fog = 1.0 - 0.7 * smoothstep(9.0, uFogFar, distance(uCam, w));

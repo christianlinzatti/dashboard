@@ -1,12 +1,13 @@
 import { BufferAttribute, BufferGeometry, CylinderGeometry, IcosahedronGeometry } from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
+import { B_STAGE_R, B_STAGE_Z, RUNWAY_HALF_W } from "@/lib/stage/staging";
 export const MAX = 520;
 /** Die Menge steht tiefer als die Bühne (Bühnenkante ≈ 1 m hoch): Köpfe knapp unter Podesthöhe, Hände darüber */
 export const BASE_Y = -1.1;
 
 /** Gemeinsame Bewegungslogik für Silhouetten und Lichter (gleiche Person → gleiche Armhaltung). */
 export const MOTION = /* glsl */ `
-  uniform float uBeats, uTime, uHands, uJump, uPhones, uSway, uBaseY, uMosh, uClap, uWave, uSing;
+  uniform float uBeats, uTime, uHands, uJump, uPhones, uSway, uBaseY, uMosh, uClap, uWave, uSing, uCircle, uRunway;
   uniform vec3 uCam;
   const float PI = 3.14159265;
   const float ARM = 0.58;
@@ -61,8 +62,36 @@ export const MOTION = /* glsl */ `
     float together = uBeats * PI * 0.5;
     return sin(mix(own, together, uSing)) * (0.07 + 0.08 * uSing) * uSway * max(y - 0.8, 0.0);
   }
+  /** Mitte des Circle-Pits (links vor der Bühne, neben dem Laufsteg) */
+  const vec2 PIT = vec2(-3.0, 8.4);
+  /**
+   * Platz einer Person: Laufsteg und B-Bühne bleiben frei (wer dort stünde, rückt zur Seite); im Circle-Pit rennen
+   * alle in gleichem Tempo um eine leere Mitte
+   */
+  vec2 place(vec2 s) {
+    if (uRunway > 0.5) {
+      vec2 d = s - vec2(0.0, ${B_STAGE_Z.toFixed(2)});
+      float r = length(d);
+      float keep = ${(B_STAGE_R + 0.35).toFixed(2)};
+      float halfW = ${(RUNWAY_HALF_W + 0.3).toFixed(2)};
+      if (r < keep) s = vec2(0.0, ${B_STAGE_Z.toFixed(2)}) + d / max(r, 0.001) * (keep + (keep - r) * 0.5);
+      else if (s.y < ${B_STAGE_Z.toFixed(2)} && abs(s.x) < halfW) s.x = (s.x < 0.0 ? -1.0 : 1.0) * (halfW + (halfW - abs(s.x)) * 0.5);
+    }
+    if (uCircle > 0.001) {
+      vec2 d = s - PIT;
+      float r = length(d);
+      float w = uCircle * smoothstep(2.9, 2.2, r);
+      if (w > 0.0) {
+        float rr = max(r, 1.2);
+        float a = atan(d.y, d.x) - uTime * 1.5 / rr;
+        s = mix(s, PIT + rr * vec2(cos(a), sin(a)), w);
+      }
+    }
+    return s;
+  }
   /** Personen-Koordinaten → Welt: zur Bühnenmitte gedreht, in den Graben gestellt, nahe an der Kamera eingezogen */
   vec3 toWorld(vec3 p, vec3 spot, vec4 r) {
+    spot = vec3(place(spot.xy), spot.z);
     vec2 f = normalize(-spot.xy);
     float near = smoothstep(1.2, 2.1, distance(spot.xy, uCam.xz));
     p.x += swayX(r, spot, p.y);

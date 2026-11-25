@@ -337,3 +337,30 @@ Alles zustandslos aus Songzeit, Choreografie und Abend-Gedächtnis (`lib/stage/s
   Feuerzeug-Meer flimmern unregelmäßig (`roomSignal` in `lib/stage/lights.ts`).
 - **Abend:** derselbe Künstler kommt auf dieselbe Bühne zurück (Tour-Look, `tourTheme`); nach dem letzten Song rollt
   einmal der Abspann (`lib/show/credits.ts`), danach der Rückblick.
+
+### Bühnenbau und große Auftritte (Stand 2026-11-25)
+
+`lib/stage/staging.ts` plant je Song, Bühne, Abendphase und Tageszeit (`planStaging`, in `Stage.tsx` an die
+Choreografie gehängt als `Choreography.staging`); alles Weitere liest daraus – zustandslos aus der Songzeit:
+
+- **Hubpodest** (Abendphase „auftakt“ hoch, „zugabe“ im letzten Takt hinab): der Lead startet 2,3 m unter der Bühne
+  (`heightAt` → `Frame.lifts` → Avatar), Plattform und Lichtsäule in `LiftShaft.tsx`.
+- **Spannungsaufbau** vier Takte vor jedem Countdown-Einsatz und vor bekannten Drops (`planBuilds`, `buildAt`):
+  Lichtszene „aufbau“ (Kegel schwenken zur Mitte, Flackern in Achteln → Sechzehnteln → Zweiunddreißigsteln, Lampen
+  ziehen hoch, Govee wird heller), Kamera „aufbau“ (langsame Fahrt auf den Sänger), Publikum hebt nach und nach die Hände.
+- **Bewegliche Lichttraversen:** `HeadState.y` je Szene (ruhig tief und wogend, Refrain/Drop oben); `MovingHeads`
+  führt die Höhe weich nach (hoch schnell, runter langsam) und zeigt die Seile.
+- **Laufsteg mit B-Bühne** (Club, Festival, Stadion, Lagerhalle): `Runway.tsx`; der Lead geht beim Einsatz des
+  letzten Refrains hinaus (zum Kameraflug), singt draußen (Kamera „bbuehne“ im Wechsel mit „nah“) und kommt zwei Takte
+  vor Refrainende zurück (Kamera „laufsteg“). Die Menge hält Steg und B-Bühne frei (`place()` in `crowd/shared.ts`).
+- **Drohnen-Show** auf Freiluftbühnen bei Dunkelheit im Outro (höchstens 16 Takte): Schwarm → Herz → Refrain-Wort
+  (`Drones.tsx`, ein Draw-Call), Kamera „himmel“ mit einem Blick zurück auf die Bühne.
+- **Publikum** (`lib/stage/crowd.ts`, `crowd/CrowdProps.tsx`, `lib/stage/crowd-props.ts`): Circle-Pit im
+  Rock-Instrumentalteil, Crowdsurfer im Rock-Refrain, Wasserbälle im Refrain fröhlicher Songs (Festival, Strand,
+  Stadion, Club); LED-Armbänder zusätzlich als Ringe von der Bühne (Refrain) und als wandernde Farbfelder (Mitsingen).
+- **Handkamera** (`Phrase.cut = "fan"`): in Strophen jede zweite Schnittfolge aus der ersten Reihe, mit Fan-Armen
+  und Handy im Vordergrund (`FanCamArms.tsx`).
+- **Luftschlangen** (`effects/Streamers.tsx`): vier Takte nach dem Einsatz des letzten Refrains, aus zwei Kanonen an
+  der Bühnenkante; auch auf der Fernbedienung auslösbar.
+
+Für Tests und Debug am Canvas: `data-scene`, `data-runway`, `data-drones`, `data-crowd`, `data-crowd-props`.

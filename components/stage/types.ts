@@ -17,6 +17,8 @@ export type Frame = {
   stageAngle: number;
   /** Blickrichtung je Tänzer (Rad; Auftritt: in Gehrichtung) */
   headings: Record<string, number>;
+  /** Höhe je Tänzer über dem Bühnenboden (Hubpodest: der Lead kommt von unten) */
+  lifts: Record<string, number>;
 };
 
 export const initialFrame: Frame = {
@@ -31,6 +33,7 @@ export const initialFrame: Frame = {
   micActive: false,
   stageAngle: 0,
   headings: {},
+  lifts: {},
 };
 
 export const TARGET_HEIGHT = 1.8;

@@ -4,6 +4,7 @@ import { easeInOut, lerp2, type Vec2 } from "./formations";
 import type { CameraPreset, Choreography, Phrase } from "./plan";
 import { danceTime, SLOWMO_BARS } from "@/lib/stage/climax";
 import { IDLE_CLIP } from "./clips";
+import { B_STAGE_Z, buildAt, droneShotAt, liftHeightAt, runwayAt, runwayPoint } from "@/lib/stage/staging";
 
 export type Layer = { clip: string; time: number; weight: number };
 
@@ -36,6 +37,8 @@ const OFFSTAGE_X = 6.5;
 export function entranceAt(c: Choreography, avatarId: string, t: number): number {
   const total = ENTRANCE_BARS * c.barMs;
   if (t >= total) return 1;
+  // Hubpodest: der Lead kommt von unten, nicht von der Seite
+  if (c.staging?.lift === "hoch" && avatarId === c.order[0]) return 1;
   const n = c.order.length;
   const rank = (c.order.indexOf(avatarId) + n - 1) % n; // Crew zuerst, Lead (Index 0) zuletzt
   const delay = rank * 2 * c.beatMs;
@@ -92,6 +95,14 @@ export function layersAt(c: Choreography, avatarId: string, t: number, live: Liv
     const walk = { clip: WALK_CLIP, time: t / 1000, weight: 1 };
     const wDance = Math.max(0, (arrive - 0.8) / 0.2);
     return wDance > 0 ? [{ ...walk, weight: 1 - wDance }, ...layers.map((l) => ({ ...l, weight: l.weight * wDance }))] : [walk];
+  }
+  // Laufsteg: der Lead geht hinaus bzw. zurück (am Ziel in den Tanz überblenden)
+  const run = avatarId === c.order[0] ? runwayAt(c.staging?.runway, t) : null;
+  if (run && run.phase !== "draussen") {
+    const ramp = run.phase === "hin" ? run.u : 1 - run.u; // Weg geschafft 0..1
+    const wDance = Math.max(0, (ramp - 0.85) / 0.15);
+    const walk = { clip: WALK_CLIP, time: t / 1000, weight: 1 - wDance };
+    return wDance > 0 ? [walk, ...layers.map((l) => ({ ...l, weight: l.weight * wDance }))] : [walk];
   }
   // Abgang: alle winken gemeinsam, dann Verbeugung (Grundhaltung; das Vorbeugen setzt der Avatar)
   const exit = exitAt(c, t);
@@ -171,11 +182,24 @@ export function positionsAt(
     }
 
   const fi = lastStartedIndex(focus.timeline, t);
-  if (fi < 0) return base;
+  if (fi < 0) return onRunway(c, t, base);
   const cur = applyFocus(base, c.order, focus.avatarOf(focus.timeline[fi]!.artistId));
   const before = applyFocus(base, c.order, focus.avatarOf(focus.timeline[fi - 1]?.artistId));
   const fw = easeInOut((t - focus.timeline[fi]!.startMs) / FOCUS_MS);
-  return Object.fromEntries(c.order.map((id) => [id, lerp2(before[id]!, cur[id]!, fw)]));
+  return onRunway(c, t, Object.fromEntries(c.order.map((id) => [id, lerp2(before[id]!, cur[id]!, fw)])));
+}
+
+/** Laufsteg: der Lead verlässt seinen Platz über die Bühnenmitte bis auf die B-Bühne */
+function onRunway(c: Choreography, t: number, pos: Record<string, Vec2>): Record<string, Vec2> {
+  const run = runwayAt(c.staging?.runway, t);
+  const lead = c.order[0];
+  if (!run || !lead || !pos[lead]) return pos;
+  return { ...pos, [lead]: runwayPoint(pos[lead]!, run.u) };
+}
+
+/** Höhe eines Tänzers über dem Bühnenboden (Hubpodest: der Lead startet bzw. endet unter der Bühne) */
+export function heightAt(c: Choreography, avatarId: string, t: number): number {
+  return avatarId === c.order[0] ? liftHeightAt(c, c.staging?.lift, t) : 0;
 }
 
 /** Gehen: fast gleichmäßig, am Ende abbremsen */
@@ -186,6 +210,9 @@ const easeOutWalk = (u: number) => (u < 0.8 ? u * 1.05 : 0.84 + 0.16 * Math.sin(
  * Publikum drehen. Sonst 0 (nach vorn).
  */
 export function headingAt(c: Choreography, avatarId: string, t: number, x: number): number {
+  // Laufsteg zurück: zur Bühne umdrehen, am Ziel wieder zum Publikum
+  const run = avatarId === c.order[0] ? runwayAt(c.staging?.runway, t) : null;
+  if (run?.phase === "zurueck") return Math.PI * Math.min((1 - run.u) / 0.12, run.u / 0.15, 1);
   const u = entranceAt(c, avatarId, t);
   if (u >= 1) return 0;
   const walkDir = x > 0.01 ? -Math.PI / 2 : Math.PI / 2; // von rechts nach links bzw. umgekehrt
@@ -227,7 +254,7 @@ const mix3 = (x: V3, y: V3, w: number): [number, number, number] => [
 const phraseProgress = (p: Phrase, t: number) => easeInOut((t - p.startMs) / Math.max(p.endMs - p.startMs, 1));
 
 /** Kamera einer Einstellung innerhalb ihrer Phrase; `focus` = Bodenposition des aktiven Sängers. */
-function presetAt(preset: CameraPreset, p: Phrase, t: number, focus: Vec2 | undefined): Cam {
+function presetAt(c: Choreography, preset: CameraPreset, p: Phrase, t: number, focus: Vec2 | undefined): Cam {
   switch (preset) {
     case "nah": {
       const [x, z] = focus ?? [0, 0];
@@ -237,6 +264,32 @@ function presetAt(preset: CameraPreset, p: Phrase, t: number, focus: Vec2 | unde
       // der Musiker steht hinten auf dem Podest: von schräg oben über die Köpfe der Tänzer, die davor stehen
       const [x, z] = focus ?? [0, -2.2];
       return { pos: [x * 0.8, 2.75, z + 3.4], target: [x, 1.45, z], fov: FOV };
+    }
+    case "laufsteg": {
+      // hinter der B-Bühne, Blick über den Steg auf den zurückgehenden Lead und die Bühne
+      const [x, z] = focus ?? [0, B_STAGE_Z];
+      return { pos: [1.3, 1.55, B_STAGE_Z + 2.6], target: [x * 0.5, 1.2, z - 1.2], fov: 34 };
+    }
+    case "bbuehne":
+      // von der Bühnenkante schräg über den Lead auf der B-Bühne hinweg: er vorn, dahinter das Meer aus Händen
+      return { pos: [1.3, 2.8, B_STAGE_Z - 2.7], target: [-0.2, 1.05, B_STAGE_Z + 2.2], fov: 40 };
+    case "fan": {
+      // erste Reihe, auf Augenhöhe der Menge (sie steht tiefer als die Bühne), neben dem Laufsteg
+      const [x, z] = focus ?? [0, 0];
+      return { pos: [1.35, 0.55, 5.7], target: [x, 1.45, z], fov: 32 };
+    }
+    case "himmel":
+      // flach über die Bühne in den Himmel: Traverse und Dach unten im Bild, darüber die Drohnen
+      return { pos: [0, 1.0, 9.5], target: [0, 9.2, -8], fov: 46 };
+    case "aufbau": {
+      // langsame Fahrt auf den Sänger zu, die über den Aufbau enger wird
+      const [x, z] = focus ?? [0, 0];
+      const w = easeInOut(buildAt(c, t));
+      return {
+        pos: [x * 0.5 + (x * 0.62 - x * 0.5) * w, 1.95 - 0.35 * w, z + 6.8 - 3.4 * w],
+        target: [x, 1.35 + 0.1 * w, z],
+        fov: 30 - 6 * w,
+      };
     }
     case "kreisfahrt": {
       const a = 2 * Math.PI * phraseProgress(p, t);
@@ -278,17 +331,18 @@ export function cameraAt(c: Choreography, t: number, focus?: Vec2): Cam {
   const prev = c.phrases[i - 1];
   const now = shotAt(c, t);
   // hohe Energie: harter Schnitt (wie ein Konzertmitschnitt), sonst weiche Fahrt in die neue Einstellung
-  const hard = p.energy >= 2;
+  const hard = p.energy >= 2 || HARD_SHOTS.includes(now);
   const bars = cutBarsFor(p);
   const cutStart = Math.max(p.startMs, p.startMs + Math.floor((t - p.startMs) / (bars * c.barMs)) * bars * c.barMs);
   const before = prev ? prev.camera : p.camera;
-  const a = hard ? presetAt(now, p, t, focus) : presetAt(before, prev ?? p, t, focus);
-  const b = presetAt(now, p, t, focus);
+  const a = hard ? presetAt(c, now, p, t, focus) : presetAt(c, before, prev ?? p, t, focus);
+  const b = presetAt(c, now, p, t, focus);
   const w = hard ? 1 : easeInOut((t - Math.max(p.startMs, cutStart)) / Math.min(c.barMs * 1.5, 3000));
   const sway = Math.sin(t / 4000) * (now === "nah" ? 0.08 : 0.25);
   const pos = mix3(a.pos, b.pos, w);
   // Handkamera: leichtes Wackeln bei hoher Energie (deterministisch aus der Songzeit)
-  const shake = p.energy >= 2 && now !== "vogel" ? 0.012 * (p.energy - 1) : 0;
+  // aus der ersten Reihe deutlich unruhiger (Handy über dem Kopf)
+  const shake = now === "fan" ? 0.035 : p.energy >= 2 && now !== "vogel" && now !== "himmel" ? 0.012 * (p.energy - 1) : 0;
   const n = (k: number) => Math.sin(t / 211 + k) * 0.6 + Math.sin(t / 97 + 2 * k) * 0.4;
   const cam: Cam = {
     pos: [pos[0] + sway + shake * n(1), pos[1] + shake * n(2), pos[2]],
@@ -330,13 +384,33 @@ export const cutBarsFor = (p: Pick<Phrase, "section" | "energy">) =>
 export function shotAt(c: Choreography, t: number): CameraPreset {
   const p = c.phrases[phraseIndexAt(c, t)];
   if (!p) return "totale";
+  // Lead draußen auf der B-Bühne: über ihn hinweg in die Menge, im Wechsel mit der Nahaufnahme
+  const run = runwayAt(c.staging?.runway, t);
+  if (run?.phase === "draussen")
+    return Math.floor((t - c.staging!.runway!.outEndMs) / (CUT_BARS * c.barMs)) % 2 === 0 ? "bbuehne" : "nah";
   // Mitsing-Moment: aus dem Publikum über die Köpfe – man sieht die Menge singen und den Sänger, der ihr das Mikro hinhält
   if (c.singAlong && t >= c.singAlong.startMs && t < c.singAlong.endMs) return "ueberkopf";
   // großer Einsatz (mit Countdown, nicht das Finale – das hat seinen Kameraflug): einen Takt lang nah auf den Sänger
   if (c.climaxes?.some((k) => k.countdown && !k.finale && t >= k.atMs && t < k.atMs + c.barMs)) return "nah";
+  const special = specialShotAt(c, t);
+  if (special) return special;
   if (!p.cut) return p.camera;
   return Math.floor((t - p.startMs) / (cutBarsFor(p) * c.barMs)) % 2 === 1 ? p.cut : p.camera;
 }
+
+/** Große Auftritte haben ihre eigene Einstellung: Drohnen-Show, Rückweg über den Laufsteg, Spannungsaufbau */
+function specialShotAt(c: Choreography, t: number): CameraPreset | null {
+  const st = c.staging;
+  if (!st) return null;
+  // Drohnen: Kamera in den Himmel (mit einem Blick zurück auf die Bühne dazwischen)
+  if (droneShotAt(st.drones, t)) return "himmel";
+  if (runwayAt(st.runway, t)?.phase === "zurueck") return "laufsteg";
+  if (buildAt(c, t) > 0) return "aufbau";
+  return null;
+}
+
+/** Einstellungen, in die hart geschnitten wird (keine Überblendung aus der vorigen Phrase) */
+const HARD_SHOTS: CameraPreset[] = ["laufsteg", "bbuehne", "himmel", "aufbau", "fan"];
 
 /** Start des Kameraflugs im Finale: hoch hinter dem Publikum, Blick über die Köpfe auf die Bühne */
 const FLIGHT_START: Cam = { pos: [0, 4.6, 16], target: [0, 1.2, 0], fov: 30 };

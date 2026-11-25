@@ -17,6 +17,7 @@ const EFFECT_LABEL: Record<EffectKind, string> = {
   ringe: "Lichtringe",
   glitzer: "Spiegelkugel",
   sternschnuppen: "Sternschnuppen",
+  luftschlangen: "Luftschlangen",
 };
 
 /** So oft liest die Fernbedienung den Stand; seltener hält sie den schnellen Befehlsabruf des Kiosks wach */

@@ -16,6 +16,7 @@ const VISIBILITY: Record<LightScene, number> = {
   refrain: 0.12,
   drop: 0.05,
   applaus: 0.6,
+  aufbau: 0.3,
 };
 
 /**

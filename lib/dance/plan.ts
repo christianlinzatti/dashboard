@@ -11,6 +11,7 @@ import { slots, type Formation, type Vec2 } from "./formations";
 import { planClimaxes, type Climax } from "@/lib/stage/climax";
 import { bandKind, type BandKind, type BandRole } from "@/lib/stage/band";
 import { rng } from "./rng";
+import type { Staging } from "@/lib/stage/staging";
 import { crowdProfile } from "@/lib/stage/crowd";
 import { planSingAlong, type SingAlong } from "@/lib/show/singalong";
 import { trustedDrops } from "@/lib/song-memory/memory";
@@ -34,7 +35,17 @@ export type CameraPreset =
   /** aus dem Publikum: über die Köpfe auf die Bühne */
   | "ueberkopf"
   /** Kamerakran: steigt über die Phrase vom Publikum hoch über die Bühne (im Outro: zieht sich zurück) */
-  | "kran";
+  | "kran"
+  /** Laufsteg: von der B-Bühne auf den Lead, der zur Hauptbühne zurückgeht (lib/stage/staging.ts) */
+  | "laufsteg"
+  /** B-Bühne: von der Bühnenkante über den Lead hinweg in die Menge */
+  | "bbuehne"
+  /** Handkamera aus der ersten Reihe: tief, leicht wackelig, zwischen erhobenen Armen */
+  | "fan"
+  /** Drohnen-Show: flach über der Bühne in den Nachthimmel */
+  | "himmel"
+  /** Spannungsaufbau vor dem Einsatz: langsame Fahrt auf den Sänger zu */
+  | "aufbau";
 
 /** Choreografie-Moment: synchron, Kanon (gleicher Tanz als Welle), Solo (Lead im Spot), frei */
 export type Moment = ShowMoment;
@@ -90,6 +101,8 @@ export type Choreography = {
   singAlong?: SingAlong | null;
   /** aus dem Song-Gedächtnis bekannte Drops (Songzeit) – wirken wie live gemessene, nur punktgenau */
   knownDrops?: number[];
+  /** Bühnenbau und Auftritte je Bühne und Abend (Laufsteg, Hubpodest, Aufbau, Drohnen) – lib/stage/staging.ts */
+  staging?: Staging;
 };
 
 export type CrowdStyle = "rock" | "ballade" | null;
@@ -330,6 +343,8 @@ export function planChoreography(
 
   const climaxes = planClimaxes(phrases, barMs);
   const kind = band;
+  // eigene Zufallsfolge: die Handkamera ändert nichts an den übrigen Entscheidungen
+  const rFan = rng(`${song.trackKey}:fan`);
   const crowdStyle: CrowdStyle = kind === "rock" ? "rock" : kind === "keys" || song.music.mood === "ruhig" ? "ballade" : null;
   return {
     trackKey: song.trackKey,
@@ -337,7 +352,7 @@ export function planChoreography(
     beatMs,
     barMs,
     timeScale,
-    phrases: phrases.map((p, i) => farewell(waveShots(p, crowdStyle), i === phrases.length - 1)),
+    phrases: phrases.map((p, i) => farewell(fanShots(waveShots(p, crowdStyle), barMs, rFan), i === phrases.length - 1)),
     order,
     climaxes,
     durationMs: song.track.durationMs,
@@ -351,6 +366,18 @@ export function planChoreography(
 function farewell(p: Phrase, last: boolean): Phrase {
   if (!last || p.section !== "outro" || p.turn) return p;
   return { ...p, camera: "kran", cut: undefined };
+}
+
+/** Handkamera: in Strophen (ohne Kamerafahrt, lang genug) jede zweite Schnittfolge aus der ersten Reihe */
+function fanShots(p: Phrase, barMs: number, r: { next(): number }): Phrase {
+  const fits =
+    p.section === "verse" &&
+    !p.cut &&
+    !p.turn &&
+    p.moment !== "solo" &&
+    !["kreisfahrt", "zoom", "kran", "solo"].includes(p.camera) &&
+    p.endMs - p.startMs >= 8 * barMs;
+  return fits && r.next() < 0.6 ? { ...p, cut: "fan" } : p;
 }
 
 /** La-Ola: im Wechsel mit der Bühnen-Einstellung eine weite Einstellung, damit man die Welle durch die Menge sieht */

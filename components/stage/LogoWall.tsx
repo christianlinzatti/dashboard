@@ -18,6 +18,7 @@ const VISIBILITY: Record<LightScene, number> = {
   drop: 0,
   // Applaus: das Logo leuchtet zum Dank
   applaus: 0.95,
+  aufbau: 0.3,
 };
 
 /** Band-Logo (transparentes PNG, TheAudioDB) vor der LED-Wand, in der Akzentfarbe, pulsiert im Takt. */

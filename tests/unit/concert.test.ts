@@ -21,7 +21,9 @@ describe("Publikums-Regie", () => {
     expect(crowdProfile({ section: "intro", energy: 0 })).toMatchObject({ phones: 0.8, jump: 0 });
     expect(crowdProfile({ section: "bridge", energy: 2 }).phones).toBeGreaterThan(0.8);
     const chorus = crowdProfile({ section: "chorus", energy: 3 });
-    expect(chorus).toMatchObject({ jump: 1, phones: 0, bands: 1, bandMode: 1 });
+    // Refrain: Armband-Ringe laufen von der Bühne durch die Halle; andere energiegeladene Teile pulsieren gemeinsam
+    expect(chorus).toMatchObject({ jump: 1, phones: 0, bands: 1, bandMode: 4 });
+    expect(crowdProfile({ section: "verse", energy: 3 }).bandMode).toBe(1);
     expect(chorus.hands).toBeGreaterThan(0.8);
     expect(crowdProfile({ section: "verse", energy: 2 }).bandMode).toBe(2);
     expect(crowdProfile({ section: "verse", energy: 1 }).jump).toBe(0);
@@ -42,8 +44,8 @@ describe("Publikums-Regie", () => {
     expect(crowdProfile({ section: "instrumental", energy: 1 }).wave).toBe(0);
     expect(crowdProfile({ section: "chorus", energy: 3 }).wave).toBe(0);
     expect(crowdProfile({ section: "verse", energy: 1, crowd: "welle" }).wave).toBe(1);
-    // Rock: im lauten Instrumentalteil lieber Moshpit
-    expect(crowdProfile({ section: "instrumental", energy: 3 }, "rock")).toMatchObject({ mosh: 1 });
+    // Rock: im lauten Instrumentalteil lieber ein Circle-Pit statt La-Ola
+    expect(crowdProfile({ section: "instrumental", energy: 3 }, "rock")).toMatchObject({ circle: 1, wave: 0 });
     const c = planChoreography(instrumental, 132);
     const wave = c.phrases.filter((p) => crowdAt(c, mid(p)).wave > 0.5);
     expect(wave.length).toBeGreaterThan(0);

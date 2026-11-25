@@ -392,7 +392,8 @@ function AvatarModel({ url, member, song, choreo, frameRef, band }: AvatarProps 
 
     const p = f.positions[member.avatarId];
     if (group.current && p) {
-      group.current.position.set(p[0], 0, p[1]);
+      // Hubpodest: der Lead fährt aus dem Boden hoch bzw. versinkt am Ende der Zugabe
+      group.current.position.set(p[0], f.lifts[member.avatarId] ?? 0, p[1]);
       // Drehbühne: Tänzer drehen sich mit; beim Auftritt schauen sie in Gehrichtung
       group.current.rotation.y = f.stageAngle + (f.headings[member.avatarId] ?? 0);
       if (sing > 0) holdOutMic(group.current, arms, sing);

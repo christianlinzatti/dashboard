@@ -10,6 +10,7 @@ import {
   fitAspect,
   focusTimeline,
   headingAt,
+  heightAt,
   phraseIndexAt,
   positionsAt,
   rotateOnStage,
@@ -21,6 +22,7 @@ import { settings } from "@/lib/settings";
 import type { SongStatic } from "@/lib/song-context/schema";
 import { songContext } from "@/lib/song-context/store";
 import { lightsAt, type LightFrame } from "@/lib/stage/lights";
+import { runwayAt } from "@/lib/stage/staging";
 import { lightBus } from "@/lib/stage/light-bus";
 import type { Band } from "@/lib/stage/band";
 import { SOLO_STEP, soloAt } from "@/lib/stage/musicians";
@@ -111,6 +113,7 @@ export function Director({
       micActive: mic,
       stageAngle,
       headings,
+      lifts: Object.fromEntries(choreo.order.map((id) => [id, heightAt(choreo, id, t)])),
     };
     if (back.current) back.current.intensity = 18 + frameRef.current.energy * 14 + pulse * 30;
 
@@ -164,6 +167,9 @@ export function Director({
     const label = `${shotAt(choreo, t)}${phrase?.turn ? "+drehbuehne" : ""}`;
     if (label !== shot.current) gl.domElement.dataset.camera = shot.current = label;
     if (phrase && gl.domElement.dataset.moment !== phrase.moment) gl.domElement.dataset.moment = phrase.moment;
+    if (gl.domElement.dataset.scene !== lf.scene) gl.domElement.dataset.scene = lf.scene;
+    const run = runwayAt(choreo.staging?.runway, t)?.phase ?? "";
+    if (gl.domElement.dataset.runway !== run) gl.domElement.dataset.runway = run;
 
     // Spotlight folgt dem aktiven Sänger (sonst dem Lead), beim Band-Solo dem Musiker (warmweiß, heller)
     const p = soloPos ?? (focus ? positions[focus] : undefined);

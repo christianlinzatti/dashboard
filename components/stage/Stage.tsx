@@ -3,7 +3,7 @@
 import { Canvas } from "@react-three/fiber";
 import { PerformanceMonitor } from "@react-three/drei";
 import { Bloom, EffectComposer } from "@react-three/postprocessing";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useSettings } from "@/lib/settings";
 import { useSongContext } from "@/lib/song-context/store";
 import type { LightFrame } from "@/lib/stage/lights";
@@ -39,12 +39,20 @@ import { Backdrop, StageOverlays } from "./StageOverlays";
 import { useStagePlan } from "./useStagePlan";
 import { ChorusSign } from "./ChorusSign";
 import { CanvasWall, type WallCanvas } from "./CanvasWall";
+import { planStaging, RUNWAY_THEMES } from "@/lib/stage/staging";
+import { Runway } from "./Runway";
+import { LiftShaft } from "./LiftShaft";
+import { Drones } from "./Drones";
+import { FanCamArms } from "./FanCamArms";
 
 /**
  * 3D-Bühne. Lädt nur die Avatare der aktuellen Besetzung.
  * Robust: ohne WebGL oder bei Fehlern in der Szene erscheint ein 2D-Hintergrund; nach einem
  * Verlust des Grafikkontexts (z. B. GPU-Reset auf dem Pi) wird die Szene neu aufgebaut.
  */
+
+/** Bühnen mit Wasserbällen im Refrain (Open Air und große Hallen) */
+const BALL_THEMES: readonly string[] = ["festival", "strand", "stadion", "club"];
 
 export function Stage({
   forceQuality,
@@ -95,7 +103,8 @@ function Scene({
   wallCanvas?: WallCanvas | null;
   onContextLost: () => void;
 }) {
-  const { raw, theme, song, choreo, phase, shown, band, signs, mixamoIds, cues, frozen, dark } = useStagePlan(forceTheme);
+  const plan = useStagePlan(forceTheme);
+  const { raw, theme, song, phase, band, signs, mixamoIds, cues, frozen, dark } = plan;
   // Wetter auf Freiluftbühnen (Regen, Schnee) – Demos rechnen mit festem Datum
   const weather =
     forceWeather === "aus"
@@ -104,6 +113,13 @@ function Scene({
   // Tageszeit der Freiluftbühnen: URL > echte Uhrzeit (minütlich); Demos/Screenshots: gestalteter Himmel
   const clockPhase = useDayPhase(!frozen && !forceDaylight);
   const daylight = forceDaylight ?? (frozen ? undefined : clockPhase);
+  // Bühnenbau und große Auftritte (Laufsteg, Hubpodest, Spannungsaufbau, Drohnen) – hängen an Bühne, Abend, Tageszeit
+  const staging = useMemo(
+    () => (plan.choreo && theme ? planStaging(plan.choreo, theme, phase, daylight) : undefined),
+    [plan.choreo, theme, phase, daylight],
+  );
+  const choreo = useMemo(() => (plan.choreo && staging ? { ...plan.choreo, staging } : plan.choreo), [plan.choreo, staging]);
+  const shown = useMemo(() => (plan.shown && staging ? { ...plan.shown, staging } : plan.shown), [plan.shown, staging]);
   const frame = useRef<Frame>(initialFrame);
   const lights = useRef<LightFrame | null>(null);
   const strobe = useRef<HTMLDivElement>(null);
@@ -124,6 +140,7 @@ function Scene({
 
   if (!song || !choreo || !theme) return null;
   const crowdCount = Math.round(preset.crowd * theme.crowd);
+  const runway = RUNWAY_THEMES.includes(theme.id);
   const logo = song.info?.artists[song.artists[0]?.spotifyId ?? ""]?.logo;
   // Canvas nur auf Bühnen mit LED-Wand; dann ohne Wandfoto und Logo
   const onWall = theme.wall === "led" && wallCanvas ? wallCanvas : null;
@@ -179,6 +196,18 @@ function Scene({
           daylight={daylight}
         />
         <TurntableMarks frameRef={frame} color={song.album.palette.accent} />
+        {runway && <Runway dark={dark} accent={song.album.palette.accent} frameRef={frame} lightsRef={lights} />}
+        {choreo.staging?.lift && <LiftShaft choreo={choreo} frameRef={frame} color={song.album.palette.accent} />}
+        {choreo.staging?.drones && (
+          <Drones
+            choreo={choreo}
+            frameRef={frame}
+            word={chorusKeyword(song.lyrics) ?? song.artists[0]?.name ?? "Live"}
+            colors={[song.album.palette.accent, song.album.palette.dominant]}
+            scale={preset.particles}
+          />
+        )}
+        {crowdCount > 0 && <FanCamArms choreo={choreo} frameRef={frame} dark={dark} accent={song.album.palette.accent} />}
         {crowdCount > 0 && (
           <Crowd
             key={`publikum-${theme.id}`}
@@ -190,6 +219,8 @@ function Scene({
             frameRef={frame}
             lightsRef={lights}
             signs={quality !== "niedrig" ? signs : undefined}
+            runway={runway}
+            balls={BALL_THEMES.includes(theme.id)}
           />
         )}
         {crowdCount > 0 && theme.id === "festival" && (

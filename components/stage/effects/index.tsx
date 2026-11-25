@@ -15,6 +15,7 @@ import { EMITTERS } from "./emitters";
 import { ParticleFx } from "./ParticleFx";
 import { BeatRings } from "./BeatRings";
 import { MirrorBall } from "./MirrorBall";
+import { Streamers } from "./Streamers";
 export function Effects({
   cues,
   choreo,
@@ -78,6 +79,9 @@ export function Effects({
         </>
       )}
       {has("ringe") && <BeatRings activeRef={active} frameRef={frameRef} beatMs={choreo.beatMs} color={palette.accent} />}
+      {has("luftschlangen") && (
+        <Streamers activeRef={active} lightsRef={lightsRef} palette={palette} accent={theme.colors.accent} scale={scale} />
+      )}
       {has("glitzer") && <MirrorBall activeRef={active} frameRef={frameRef} color={theme.fire[0]} />}
     </group>
   );

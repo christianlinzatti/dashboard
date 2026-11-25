@@ -20,6 +20,8 @@ export const LINGER_MS: Record<EffectKind, number> = {
   ringe: 1200,
   sternschnuppen: 1500,
   glitzer: 0,
+  // Luftschlangen fliegen hoch über die Menge und segeln langsam herab (STREAMER_LIFE in effects/Streamers.tsx)
+  luftschlangen: 12000,
 };
 
 /**
@@ -29,7 +31,7 @@ export const LINGER_MS: Record<EffectKind, number> = {
  * - Refrain-Beginn: Pyro-Fontänen / CO₂-Jets / Funkenregen (je nach Bühne)
  * - erster großer Einsatz (nach dem Countdown): kurzer Konfetti-Schuss
  * - vorletzter Refrain: Schaumkanonen über dem Publikum (Schaumparty), wenn die Bühne sie hat
- * - letzter Refrain: Konfetti-Kanonen und Feuerwerk
+ * - letzter Refrain: Konfetti-Kanonen und Feuerwerk, vier Takte später Luftschlangen über die Menge
  * - Abschnitte mit hoher Energie: Beat-Ringe auf dem Boden, Funken auf jedem zweiten Takt
  * - ruhige Abschnitte: Sternschnuppen bzw. Spiegelkugel-Glitzer
  */
@@ -68,6 +70,7 @@ export function planEffects(c: Choreography, theme: Theme, opts: { bigNight?: bo
     if (p === lastChorus) {
       add("konfetti", p.startMs, 8000, 1);
       add("feuerwerk", p.startMs + c.barMs, Math.min(len, 16 * c.barMs), 1);
+      if (len > 4 * c.barMs) add("luftschlangen", p.startMs + 4 * c.barMs, 600, 1);
     }
     if (p.energy >= 2) add("ringe", p.startMs, len, p.energy >= 3 ? 1 : 0.6);
     // Flammen auf jeden Taktanfang, solange die Energie am Anschlag ist

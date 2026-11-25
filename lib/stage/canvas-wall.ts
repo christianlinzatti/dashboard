@@ -14,6 +14,7 @@ export const CANVAS_VISIBILITY: Record<LightScene, number> = {
   refrain: 0.85,
   drop: 0.6,
   applaus: 0.9,
+  aufbau: 0.3,
 };
 
 type Crop = { repeat: [number, number]; offset: [number, number] };

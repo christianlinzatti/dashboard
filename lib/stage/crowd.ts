@@ -1,6 +1,7 @@
 import { exitAt, phraseIndexAt } from "@/lib/dance/evaluate";
 import type { Choreography, CrowdStyle, Phrase } from "@/lib/dance/plan";
 import { singAlongAt } from "@/lib/show/singalong";
+import { buildAt } from "./staging";
 
 /**
  * Publikums-Regie: was die Menge vor der Bühne gerade tut – zustandslos aus Songzeit und Choreografie.
@@ -9,6 +10,8 @@ import { singAlongAt } from "@/lib/show/singalong";
  * - Strophen: einzelne Hände, LED-Armbänder funkeln; mit mehr Energie klatschen viele über dem Kopf im Takt
  * - Refrain / hohe Energie: Hände oben, Springen im Takt, Armbänder pulsieren gemeinsam
  * - Instrumentalteile mit Energie: La-Ola-Welle läuft im Takt von links nach rechts durch die Menge
+ * - Spannungsaufbau vor einem großen Einsatz: nach und nach gehen alle Hände hoch, die Armbänder funkeln immer dichter
+ * - Rock: Moshpit und Crowdsurfer im Refrain, Circle-Pit im Instrumentalteil; fröhliche Songs: Wasserbälle im Refrain
  * - Drop: alles auf Anschlag
  * - Songende (Band winkt, verbeugt sich): Applaus und Jubel
  */
@@ -21,8 +24,11 @@ export type CrowdFrame = {
   phones: number;
   /** Helligkeit der LED-Armbänder 0..1 */
   bands: number;
-  /** Armband-Muster: 0 Funkeln, 1 gemeinsamer Puls, 2 Welle durch die Menge */
-  bandMode: 0 | 1 | 2;
+  /**
+   * Armband-Muster: 0 Funkeln, 1 gemeinsamer Puls, 2 Welle durch die Menge, 3 Farbfelder in den Songfarben (wandern
+   * jeden Takt weiter), 4 Ringe, die auf jedem Schlag von der Bühne durch die Halle laufen
+   */
+  bandMode: 0 | 1 | 2 | 3 | 4;
   /** Wiegen 0..1 */
   sway: number;
   /** Moshpit vor der Bühnenmitte: schubsen und springen 0..1 (Rock) */
@@ -33,6 +39,12 @@ export type CrowdFrame = {
   clap: number;
   /** La-Ola-Welle 0..1: wer gerade an der Reihe ist, springt mit gestreckten Armen auf */
   wave: number;
+  /** Circle-Pit 0..1: links vor der Bühne rennt ein Kreis der Menge im Kreis (Rock, Instrumentalteil) */
+  circle: number;
+  /** Wasserbälle 0..1: riesige Bälle hüpfen über die Köpfe (Refrain fröhlicher Songs) */
+  balls: number;
+  /** Crowdsurfer 0..1: einzelne werden über die Köpfe zur Bühne getragen (Rock-Refrain) */
+  surf: number;
 };
 
 export type CrowdInput = { dropMs?: number | null };
@@ -48,23 +60,114 @@ const QUIET: CrowdFrame = {
   lighter: 0,
   clap: 0,
   wave: 0,
+  circle: 0,
+  balls: 0,
+  surf: 0,
 };
 
 const DIRECTED: Record<NonNullable<Phrase["crowd"]>, CrowdFrame> = {
   handys: { ...QUIET, phones: 0.9 },
-  wiegen: { hands: 0.1, jump: 0, phones: 0.15, bands: 0.45, bandMode: 0, sway: 1, mosh: 0, lighter: 0, clap: 0, wave: 0 },
-  haende: { hands: 0.85, jump: 0.2, phones: 0, bands: 0.9, bandMode: 2, sway: 0.4, mosh: 0, lighter: 0, clap: 0, wave: 0 },
-  springen: { hands: 0.85, jump: 1, phones: 0, bands: 1, bandMode: 1, sway: 0.2, mosh: 0, lighter: 0, clap: 0, wave: 0 },
-  moshpit: { hands: 0.6, jump: 1, phones: 0, bands: 0.8, bandMode: 1, sway: 0, mosh: 1, lighter: 0, clap: 0, wave: 0 },
+  wiegen: {
+    hands: 0.1,
+    jump: 0,
+    phones: 0.15,
+    bands: 0.45,
+    bandMode: 0,
+    sway: 1,
+    mosh: 0,
+    lighter: 0,
+    clap: 0,
+    wave: 0,
+    circle: 0,
+    balls: 0,
+    surf: 0,
+  },
+  haende: {
+    hands: 0.85,
+    jump: 0.2,
+    phones: 0,
+    bands: 0.9,
+    bandMode: 2,
+    sway: 0.4,
+    mosh: 0,
+    lighter: 0,
+    clap: 0,
+    wave: 0,
+    circle: 0,
+    balls: 0,
+    surf: 0,
+  },
+  springen: {
+    hands: 0.85,
+    jump: 1,
+    phones: 0,
+    bands: 1,
+    bandMode: 1,
+    sway: 0.2,
+    mosh: 0,
+    lighter: 0,
+    clap: 0,
+    wave: 0,
+    circle: 0,
+    balls: 0,
+    surf: 0,
+  },
+  moshpit: {
+    hands: 0.6,
+    jump: 1,
+    phones: 0,
+    bands: 0.8,
+    bandMode: 1,
+    sway: 0,
+    mosh: 1,
+    lighter: 0,
+    clap: 0,
+    wave: 0,
+    circle: 0,
+    balls: 0,
+    surf: 0,
+  },
   feuerzeuge: { ...QUIET, phones: 0.85, lighter: 1 },
-  klatschen: { hands: 0.1, jump: 0, phones: 0, bands: 0.7, bandMode: 1, sway: 0.3, mosh: 0, lighter: 0, clap: 0.75, wave: 0 },
-  welle: { hands: 0.1, jump: 0, phones: 0, bands: 0.8, bandMode: 2, sway: 0.2, mosh: 0, lighter: 0, clap: 0, wave: 1 },
+  klatschen: {
+    hands: 0.1,
+    jump: 0,
+    phones: 0,
+    bands: 0.7,
+    bandMode: 1,
+    sway: 0.3,
+    mosh: 0,
+    lighter: 0,
+    clap: 0.75,
+    wave: 0,
+    circle: 0,
+    balls: 0,
+    surf: 0,
+  },
+  welle: {
+    hands: 0.1,
+    jump: 0,
+    phones: 0,
+    bands: 0.8,
+    bandMode: 2,
+    sway: 0.2,
+    mosh: 0,
+    lighter: 0,
+    clap: 0,
+    wave: 1,
+    circle: 0,
+    balls: 0,
+    surf: 0,
+  },
 };
 
 /** Stil des Songs (Rock → Moshpit im Refrain, Ballade → Feuerzeuge statt Handys) */
 function styled(f: CrowdFrame, p: Pick<Phrase, "section" | "energy">, style: CrowdStyle | undefined): CrowdFrame {
-  if (style === "rock" && (p.section === "chorus" || p.energy >= 3)) return { ...f, mosh: 1, jump: Math.max(f.jump, 0.9) };
+  if (style === "rock" && p.section === "instrumental" && p.energy >= 2) return { ...f, wave: 0, circle: 1, mosh: 0.4 };
+  if (style === "rock" && (p.section === "chorus" || p.energy >= 3))
+    return { ...f, mosh: 1, surf: p.section === "chorus" ? 1 : 0, jump: Math.max(f.jump, 0.9) };
   if (style === "ballade" && f.phones > 0.5) return { ...f, lighter: 1, clap: 0, wave: 0 };
+  // fröhlich (weder Rock noch Ballade): im Refrain fliegen Wasserbälle
+  if (!style && p.section === "chorus" && p.energy >= 2) return { ...f, balls: 1 };
   return f;
 }
 
@@ -85,30 +188,65 @@ function baseProfile(p: Pick<Phrase, "section" | "energy">): CrowdFrame {
       jump: p.energy >= 3 ? 1 : 0.6,
       phones: 0,
       bands: 1,
-      bandMode: 1,
+      // Refrain: Ringe laufen auf jedem Schlag von der Bühne durch die Halle
+      bandMode: p.section === "chorus" ? 4 : 1,
       sway: 0.2,
       mosh: 0,
       lighter: 0,
       clap: 0,
       wave: 0,
+      circle: 0,
+      balls: 0,
+      surf: 0,
     };
   if (p.energy === 2)
-    return { hands: 0.25, jump: 0.3, phones: 0.05, bands: 0.7, bandMode: 2, sway: 0.5, mosh: 0, lighter: 0, clap: 0.5, wave: 0 };
-  return { hands: 0.12, jump: 0, phones: 0.2, bands: 0.4, bandMode: 0, sway: 0.7, mosh: 0, lighter: 0, clap: 0, wave: 0 };
+    return {
+      hands: 0.25,
+      jump: 0.3,
+      phones: 0.05,
+      bands: 0.7,
+      bandMode: 2,
+      sway: 0.5,
+      mosh: 0,
+      lighter: 0,
+      clap: 0.5,
+      wave: 0,
+      circle: 0,
+      balls: 0,
+      surf: 0,
+    };
+  return {
+    hands: 0.12,
+    jump: 0,
+    phones: 0.2,
+    bands: 0.4,
+    bandMode: 0,
+    sway: 0.7,
+    mosh: 0,
+    lighter: 0,
+    clap: 0,
+    wave: 0,
+    circle: 0,
+    balls: 0,
+    surf: 0,
+  };
 }
 
-/** Mitsing-Moment: alle Hände hoch, die ganze Menge schwenkt gemeinsam die Arme, Armbänder als Welle */
+/** Mitsing-Moment: alle Hände hoch, die ganze Menge schwenkt gemeinsam die Arme, Armbänder in Farbfeldern */
 const SINGALONG: CrowdFrame = {
   hands: 0.95,
   jump: 0,
   phones: 0.25,
   bands: 1,
-  bandMode: 2,
+  bandMode: 3,
   sway: 1,
   mosh: 0,
   lighter: 0,
   clap: 0,
   wave: 0,
+  circle: 0,
+  balls: 0,
+  surf: 0,
 };
 
 /** Applaus am Songende (Band winkt und verbeugt sich): Jubel mit erhobenen Armen, Klatschen, ein paar Handys filmen */
@@ -123,9 +261,26 @@ export const APPLAUSE: CrowdFrame = {
   lighter: 0,
   clap: 0.6,
   wave: 0,
+  circle: 0,
+  balls: 0,
+  surf: 0,
 };
 
-const DROP: CrowdFrame = { hands: 1, jump: 1, phones: 0, bands: 1, bandMode: 1, sway: 0, mosh: 0, lighter: 0, clap: 0, wave: 0 };
+const DROP: CrowdFrame = {
+  hands: 1,
+  jump: 1,
+  phones: 0,
+  bands: 1,
+  bandMode: 1,
+  sway: 0,
+  mosh: 0,
+  lighter: 0,
+  clap: 0,
+  wave: 0,
+  circle: 0,
+  balls: 0,
+  surf: 0,
+};
 
 const mix = (a: CrowdFrame, b: CrowdFrame, w: number): CrowdFrame => ({
   hands: a.hands + (b.hands - a.hands) * w,
@@ -138,7 +293,27 @@ const mix = (a: CrowdFrame, b: CrowdFrame, w: number): CrowdFrame => ({
   lighter: a.lighter + (b.lighter - a.lighter) * w,
   clap: a.clap + (b.clap - a.clap) * w,
   wave: a.wave + (b.wave - a.wave) * w,
+  circle: a.circle + (b.circle - a.circle) * w,
+  balls: a.balls + (b.balls - a.balls) * w,
+  surf: a.surf + (b.surf - a.surf) * w,
 });
+
+/** Spannungsaufbau: die Hände gehen nach und nach hoch, viele klatschen, die Armbänder funkeln immer dichter */
+const BUILD: CrowdFrame = {
+  hands: 0.9,
+  jump: 0,
+  phones: 0,
+  bands: 1,
+  bandMode: 0,
+  sway: 0.1,
+  mosh: 0,
+  lighter: 0,
+  clap: 0.5,
+  wave: 0,
+  circle: 0,
+  balls: 0,
+  surf: 0,
+};
 
 /** Publikum zur Songzeit t: weicher Übergang über zwei Takte, Drops (Mikrofon) überlagern für zwei Takte. */
 export function crowdAt(c: Choreography, t: number, input: CrowdInput = {}): CrowdFrame {
@@ -151,6 +326,8 @@ export function crowdAt(c: Choreography, t: number, input: CrowdInput = {}): Cro
   let frame = prev ? mix(crowdProfile(prev, style), crowdProfile(p, style), w) : crowdProfile(p, style);
   const sing = singAlongAt(c.singAlong, t, c.beatMs);
   if (sing > 0) frame = mix(frame, SINGALONG, sing);
+  const build = buildAt(c, t);
+  if (build > 0) frame = mix(frame, BUILD, Math.min(1, build * 1.4));
   // Abgang: Applaus setzt mit dem Winken ein (über einen Schlag)
   const exit = exitAt(c, t);
   if (exit) {

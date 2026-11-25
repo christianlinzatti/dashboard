@@ -181,8 +181,13 @@ export function MovingHeads({
     () => Array.from({ length: count }, (_, i) => (i - (count - 1) / 2) * (9 / Math.max(count - 1, 1))),
     [count],
   );
-  // Gehäuse aller Lampen: Sockel (fest), Kopf und Linse (schwenken mit) – je ein Zeichenaufruf
+  // Gehäuse aller Lampen: Sockel, Kopf und Linse (schwenken mit), Seile der Hängung – je ein Zeichenaufruf
   const bases = useMemo(() => xs.map((x) => mat({ p: [x, 0, 0] })), [xs]);
+  const baseMesh = useRef<InstancedMesh>(null);
+  const cables = useRef<InstancedMesh>(null);
+  /** aktuelle Hängehöhe je Lampe (weich nachgeführt: hoch schnell, runter langsam) */
+  const ys = useRef<number[]>([]);
+  const stretch = useMemo(() => new Vector3(), []);
   const start = useMemo(() => xs.map(() => new Matrix4()), [xs]);
   const lensColors = useMemo(() => xs.map(() => new Color(0, 0, 0)), [xs]);
   const housings = useRef<InstancedMesh>(null);
@@ -195,10 +200,17 @@ export function MovingHeads({
     const hm = housings.current;
     const lm = lenses.current;
     if (!heads || !hm || !lm) return;
+    const bm = baseMesh.current;
+    const cm = cables.current;
     xs.forEach((x, i) => {
       const h = heads[i];
       if (!h) return;
-      yoke.position.set(x, 0, 0);
+      const prev = ys.current[i];
+      const y = (ys.current[i] = prev === undefined ? h.y : prev + (h.y - prev) * (h.y > prev ? 0.16 : 0.045));
+      bm?.setMatrixAt(i, m.makeTranslation(x, y, 0));
+      // Seil von der Traverse bis zum Sockel (oben: nicht sichtbar)
+      cm?.setMatrixAt(i, y < -0.02 ? m.makeTranslation(x, y / 2 + 0.09, 0).scale(stretch.set(1, -y, 1)) : m.makeScale(0, 0, 0));
+      yoke.position.set(x, y, 0);
       yoke.rotation.set(h.tilt, h.pan, 0, "YXZ");
       yoke.updateMatrix();
       hm.setMatrixAt(i, m.multiplyMatrices(yoke.matrix, HOUSING_OFFSET));
@@ -209,15 +221,24 @@ export function MovingHeads({
     });
     hm.instanceMatrix.needsUpdate = true;
     lm.instanceMatrix.needsUpdate = true;
+    for (const mesh of [bm, cm]) {
+      if (!mesh) continue;
+      mesh.instanceMatrix.needsUpdate = true;
+      mesh.computeBoundingSphere();
+    }
     if (lm.instanceColor) lm.instanceColor.needsUpdate = true;
     hm.computeBoundingSphere();
     lm.computeBoundingSphere();
   });
   return (
     <group position={[0, TRUSS_Y - 0.2, TRUSS_Z + 0.25]}>
-      <Instances matrices={bases}>
+      <Instances matrices={bases} meshRef={baseMesh}>
         <boxGeometry args={[0.32, 0.18, 0.32]} />
         <meshStandardMaterial color="#15151b" metalness={0.7} roughness={0.4} />
+      </Instances>
+      <Instances matrices={start} meshRef={cables}>
+        <cylinderGeometry args={[0.012, 0.012, 1, 4]} />
+        <meshStandardMaterial color="#2a2a30" metalness={0.8} roughness={0.4} />
       </Instances>
       <Instances matrices={start} meshRef={housings}>
         <cylinderGeometry args={[0.12, 0.16, 0.26, 16]} />
@@ -235,6 +256,7 @@ export function MovingHeads({
           real={i >= (count - realLights) / 2 && i < (count + realLights) / 2}
           dustOn={dust}
           lightsRef={lightsRef}
+          ysRef={ys}
         />
       ))}
     </group>
@@ -247,14 +269,18 @@ function Head({
   real,
   dustOn,
   lightsRef,
+  ysRef,
 }: {
   index: number;
   x: number;
   real: boolean;
   dustOn: boolean;
   lightsRef: React.RefObject<LightFrame | null>;
+  /** Hängehöhe je Lampe (MovingHeads) */
+  ysRef: React.RefObject<number[]>;
 }) {
   const yoke = useRef<Group>(null);
+  const hang = useRef<Group>(null);
   const beam = useRef<Mesh>(null);
   const light = useRef<SpotLight>(null);
   const target = useMemo(() => new Object3D(), []);
@@ -286,6 +312,7 @@ function Head({
   useFrame(({ camera }) => {
     const h = lightsRef.current?.heads[index];
     if (!h || !yoke.current) return;
+    if (hang.current) hang.current.position.y = ysRef.current[index] ?? h.y;
     yoke.current.rotation.set(h.tilt, h.pan, 0, "YXZ");
     const u = mat.current?.uniforms;
     if (u) {
@@ -311,7 +338,7 @@ function Head({
   });
 
   return (
-    <group position-x={x}>
+    <group position-x={x} ref={hang}>
       <mesh ref={pool} visible={false}>
         <planeGeometry args={[2, 2]} />
         <shaderMaterial
