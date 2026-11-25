@@ -38,6 +38,7 @@ import { FpsMeter, hasWebGL, MixamoClips, screenWidth, useDayPhase } from "./sce
 import { Backdrop, StageOverlays } from "./StageOverlays";
 import { useStagePlan } from "./useStagePlan";
 import { ChorusSign } from "./ChorusSign";
+import { CanvasWall, type WallCanvas } from "./CanvasWall";
 
 /**
  * 3D-Bühne. Lädt nur die Avatare der aktuellen Besetzung.
@@ -50,11 +51,14 @@ export function Stage({
   forceTheme,
   forceWeather,
   forceDaylight,
+  wallCanvas,
 }: {
   forceQuality?: Quality;
   forceTheme?: ThemeId;
   forceWeather?: "regen" | "schnee" | "aus";
   forceDaylight?: DayPhase;
+  /** Spotify Canvas auf der LED-Wand (statt Wandfoto und Logo) */
+  wallCanvas?: WallCanvas | null;
 }) {
   const song = useSongContext((s) => s.song);
   const [webgl] = useState(() => (typeof document === "undefined" ? true : hasWebGL()));
@@ -69,6 +73,7 @@ export function Stage({
         forceTheme={forceTheme}
         forceWeather={forceWeather}
         forceDaylight={forceDaylight}
+        wallCanvas={wallCanvas}
         onContextLost={() => setTimeout(() => setGeneration((g) => g + 1), 1500)}
       />
     </ErrorBoundary>
@@ -80,12 +85,14 @@ function Scene({
   forceTheme,
   forceWeather,
   forceDaylight,
+  wallCanvas,
   onContextLost,
 }: {
   forceQuality?: Quality;
   forceTheme?: ThemeId;
   forceWeather?: "regen" | "schnee" | "aus";
   forceDaylight?: DayPhase;
+  wallCanvas?: WallCanvas | null;
   onContextLost: () => void;
 }) {
   const { raw, theme, song, choreo, phase, shown, band, signs, mixamoIds, cues, frozen, dark } = useStagePlan(forceTheme);
@@ -118,6 +125,8 @@ function Scene({
   if (!song || !choreo || !theme) return null;
   const crowdCount = Math.round(preset.crowd * theme.crowd);
   const logo = song.info?.artists[song.artists[0]?.spotifyId ?? ""]?.logo;
+  // Canvas nur auf Bühnen mit LED-Wand; dann ohne Wandfoto und Logo
+  const onWall = theme.wall === "led" && wallCanvas ? wallCanvas : null;
 
   return (
     <div
@@ -132,6 +141,7 @@ function Scene({
       data-wall-logo={logo && theme.wall === "led" ? displayUrl(logo, 640) : undefined}
       data-wall={theme.wall === "led" ? (forcedWallPattern() ?? wallPattern(song)) : undefined}
       data-wall-word={theme.wall === "led" ? (chorusKeyword(song.lyrics) ?? undefined) : undefined}
+      data-wall-canvas={onWall ? onWall.kind : undefined}
     >
       <Canvas
         data-testid="stage"
@@ -223,7 +233,12 @@ function Scene({
         <Suspense fallback={null}>
           {theme.wall === "led" && (
             <WallFrame scale={wallScale(theme)}>
-              {photoUrl && (
+              {onWall && (
+                <ErrorBoundary key={onWall.url} fallback={null} label="Canvas">
+                  <CanvasWall canvas={onWall} lightsRef={lights} />
+                </ErrorBoundary>
+              )}
+              {photoUrl && !onWall && (
                 <ErrorBoundary key={photoUrl} fallback={null} label="Wandfoto">
                   <PhotoWall
                     key={photoUrl}
@@ -234,7 +249,7 @@ function Scene({
                   />
                 </ErrorBoundary>
               )}
-              {logo && (
+              {logo && !onWall && (
                 <ErrorBoundary key={logo} fallback={null} label="Logo">
                   <LogoWall url={displayUrl(logo, 640)} accent={song.album.palette.accent} lightsRef={lights} />
                 </ErrorBoundary>
@@ -272,7 +287,7 @@ function Scene({
       <StageOverlays
         refs={{ strobe, glare, blackout, countdown }}
         accent={song.album.palette.accent}
-        photoCredit={theme.wall === "led" && photoUrl ? photoCredit : null}
+        photoCredit={theme.wall === "led" && photoUrl && !onWall ? photoCredit : null}
         singAlong={choreo.singAlong}
       />
     </div>

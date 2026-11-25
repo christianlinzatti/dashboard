@@ -64,6 +64,8 @@ type Props = {
   avatarStyle?: AvatarStyle;
   /** Demo: Canvas-Vorschau (?canvas=<url>) ohne Spotify */
   canvasDemo?: string;
+  /** Demo: Canvas auf der LED-Wand statt Vollbild (?canvasort=buehne) */
+  canvasDemoOnStage?: boolean;
   t?: number;
   debug: boolean;
   loginError?: string;
@@ -89,6 +91,7 @@ export function Dashboard({
   avatars: castIds,
   avatarStyle,
   canvasDemo,
+  canvasDemoOnStage,
   t,
   debug,
   loginError,
@@ -105,11 +108,15 @@ export function Dashboard({
   const song = useSongContext((s) => s.song);
   const frozen = useSongContext((s) => s.frozen);
   // Spotify Canvas statt der 3D-Bühne (Geräte-Einstellung, nur bei echter Wiedergabe)
-  const canvasEnabled = useStore(settings, (st) => st.canvas);
-  const liveCanvas = useCanvas(canvasEnabled && demo === undefined);
-  const canvas = canvasDemo
+  // („vollbild“ ersetzt die Bühne, „buehne“ zeigt es auf der LED-Wand)
+  const canvasMode = useStore(settings, (st) => st.canvas);
+  const liveCanvas = useCanvas(canvasMode !== "aus" && demo === undefined);
+  const anyCanvas = canvasDemo
     ? ({ url: canvasDemo, kind: /\.(mp4|webm)$/i.test(canvasDemo) ? "video" : "image" } as const)
     : liveCanvas;
+  const onStage = canvasDemo ? !!canvasDemoOnStage : canvasMode === "buehne";
+  const canvas = onStage ? null : anyCanvas;
+  const wallCanvas = onStage ? anyCanvas : null;
   const unknownDemo = demo !== undefined && !fixtures[demo];
   // Ohne Demo: Live-Betrieb mit Spotify
   const status = useSpotifySync(demo === undefined);
@@ -225,7 +232,13 @@ export function Dashboard({
             <CanvasBackground canvas={canvas} />
           ) : (
             <div className="absolute inset-0">
-              <Stage forceQuality={quality} forceTheme={theme} forceWeather={weather} forceDaylight={daylight} />
+              <Stage
+                forceQuality={quality}
+                forceTheme={theme}
+                forceWeather={weather}
+                forceDaylight={daylight}
+                wallCanvas={wallCanvas}
+              />
             </div>
           )}
           {/* Verlauf für Lesbarkeit der Lyrics vor der 3D-Szene */}

@@ -277,7 +277,7 @@ describe("Geräte-Einstellungen", () => {
       lamps: true,
       secondLine: "auto",
       stage: "auto",
-      canvas: false,
+      canvas: "aus",
       crowdSound: false,
     });
     settings.getState().set({ secondLine: "uebersetzung", stage: "jazz", crowdSound: true });

@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { canvasMediaPath } from "@/lib/spotify/canvas-media";
 import { useSongContext } from "@/lib/song-context/store";
 
 export type Canvas = { url: string; kind: "video" | "image" | "gif" };
 
 /**
  * Spotify Canvas (Loop-Video/Bild) für den laufenden Track vom Server holen (nur wenn aktiviert und angemeldet).
+ * Die Adresse zeigt auf /api/canvas/video (eigene Domain), nicht direkt auf Spotify.
  * Liefert null, wenn es keins gibt, Spotify ablehnt oder im Demo-Modus. Pro Track einmal geladen; das Ergebnis ist
  * an die Track-ID gebunden, damit beim Songwechsel nicht kurz das alte Canvas zu sehen ist.
  */
@@ -21,7 +23,9 @@ export function useCanvas(enabled: boolean): Canvas | null {
     fetch(`/api/canvas?track=${spotifyId}`, { cache: "no-store" })
       .then((r) => (r.ok ? (r.json() as Promise<{ canvas: Canvas | null }>) : null))
       .then((d) => {
-        if (alive) setResult({ id: spotifyId, canvas: d?.canvas ?? null });
+        // Medium über die eigene Domain laden (Content-Security-Policy, WebGL-Textur auf der Bühnen-Leinwand)
+        const c = d?.canvas;
+        if (alive) setResult({ id: spotifyId, canvas: c ? { kind: c.kind, url: canvasMediaPath(spotifyId) } : null });
       })
       .catch(() => undefined);
     return () => {

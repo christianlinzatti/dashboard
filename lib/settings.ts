@@ -4,6 +4,15 @@ import { secondLineModes, type SecondLineMode } from "@/lib/lyrics/second-line";
 import { qualities, type Quality } from "@/lib/stage/quality";
 import { isThemeChoice, type ThemeChoice } from "@/lib/stage/themes";
 
+export const canvasModes = ["aus", "buehne", "vollbild"] as const;
+export type CanvasMode = (typeof canvasModes)[number];
+
+/** frühere Einstellung (an/aus) übernehmen: „an“ hieß Vollbild */
+export function canvasModeFrom(raw: unknown): CanvasMode {
+  if (raw === true) return "vollbild";
+  return canvasModes.includes(raw as CanvasMode) ? (raw as CanvasMode) : "aus";
+}
+
 /** Geräte-Einstellungen (pro Dashboard im Browser gespeichert). */
 export type Settings = {
   /** "auto" passt sich der gemessenen Bildrate an */
@@ -16,8 +25,11 @@ export type Settings = {
   secondLine: SecondLineMode;
   /** Bühne: "auto" wählt nach Genre (sonst wechselnd pro Song) */
   stage: ThemeChoice;
-  /** Spotify Canvas (Loop-Video des Künstlers) statt der 3D-Bühne zeigen, wenn vorhanden */
-  canvas: boolean;
+  /**
+   * Spotify Canvas (Loop-Video des Künstlers), wenn vorhanden: "vollbild" statt der 3D-Bühne,
+   * "buehne" auf der LED-Wand der Bühne (Club, Festival, Stadion), "aus" gar nicht
+   */
+  canvas: CanvasMode;
   /** Publikumsgeräusche (Applaus am Songende, Zugabe-Klatschen) aus dem Browser – leise, Standard aus */
   crowdSound: boolean;
 };
@@ -29,7 +41,7 @@ const defaults: Settings = {
   lamps: true,
   secondLine: "auto",
   stage: "auto",
-  canvas: false,
+  canvas: "aus",
   crowdSound: false,
 };
 
@@ -47,7 +59,7 @@ function load(): Settings {
         ? (raw.secondLine as SecondLineMode)
         : defaults.secondLine,
       stage: isThemeChoice(raw.stage) ? raw.stage : defaults.stage,
-      canvas: typeof raw.canvas === "boolean" ? raw.canvas : defaults.canvas,
+      canvas: canvasModeFrom(raw.canvas),
       crowdSound: typeof raw.crowdSound === "boolean" ? raw.crowdSound : defaults.crowdSound,
     };
   } catch {

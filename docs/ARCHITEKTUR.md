@@ -86,7 +86,7 @@ Geprüft: `/api/remote`, `/api/commands`, `/api/song-memory`, `/api/prefs` (Avat
 | Bridge | nur `127.0.0.1`, nur erlaubte Herkunft, Nachrichten ≤ 4 kB; Bildschirmbefehle stehen in der lokalen `config.json`, nicht in der Nachricht |
 | Abhängigkeiten | `npm audit --omit=dev`: 0 bekannte Schwachstellen |
 | Lyrics-Provider | Spotify Color-Lyrics mit Circuit-Breaker: bei Ablehnung/Drosselung 15 min Pause, Status unter `/debug` (`/api/lyrics-status`) |
-| Spotify Canvas | optionales Loop-Video statt der 3D-Bühne (Geräte-Einstellung „Canvas“); gleiches Web-Player-Token wie die Lyrics (`lib/spotify/web-token.ts`), eigener Protobuf-Abruf, selber Circuit-Breaker; `/api/canvas`, Vorschau `?canvas=<url>` |
+| Spotify Canvas | optionales Loop-Video, Geräte-Einstellung „Canvas“: *Leinwand* (auf der LED-Wand von Club, Festival, Stadion – hochkant mittig, abgedunkelt als Füllung dahinter, statt Wandfoto und Logo; `components/stage/CanvasWall.tsx`) oder *Vollbild* (statt der 3D-Bühne). Gleiches Web-Player-Token wie die Lyrics (`lib/spotify/web-token.ts`), eigener Protobuf-Abruf, selber Circuit-Breaker; `/api/canvas` nennt das Canvas, `/api/canvas/video` liefert die Datei über die eigene Domain (Content-Security-Policy, WebGL-Textur; nur angemeldet, nur die Datei, die Spotify für den Track nennt, nur von Spotifys Medien-Servern). Vorschau `?canvas=<url>`, auf der Wand mit `&canvasort=buehne` |
 
 Ergebnis: kein Handlungsbedarf.
 

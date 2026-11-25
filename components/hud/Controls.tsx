@@ -8,13 +8,14 @@ import { useEffect, useRef, useState } from "react";
 import { useSongContext } from "@/lib/song-context/store";
 import { POLL_NOW_EVENT } from "../spotify/useSpotifySync";
 import type { MicState } from "@/lib/song-context/schema";
-import { useSettings } from "@/lib/settings";
+import { canvasModes, useSettings, type CanvasMode } from "@/lib/settings";
 import { photoStore } from "@/lib/photo/store";
 import { hasSecondLine, secondLineLabel, secondLineModes } from "@/lib/lyrics/second-line";
 import { useBridgeState } from "../bridge/useBridge";
 import type { Quality } from "@/lib/stage/quality";
 import { THEMES, themeIds, type ThemeChoice } from "@/lib/stage/themes";
 
+const canvasLabel: Record<CanvasMode, string> = { aus: "aus", buehne: "Leinwand", vollbild: "Vollbild" };
 const STAGE_CYCLE: ThemeChoice[] = ["auto", ...themeIds];
 
 const QUALITY_CYCLE: Array<Quality | "auto"> = ["auto", "niedrig", "mittel", "hoch"];
@@ -180,11 +181,12 @@ export function Controls({ live, mic }: { live: boolean; mic?: { state: MicState
           <button
             className={btn}
             data-testid="canvas-toggle"
-            aria-pressed={canvas}
-            onClick={() => setSettings({ canvas: !canvas })}
-            title="Spotify Canvas (Loop-Video des Künstlers) statt der Bühne"
+            aria-pressed={canvas !== "aus"}
+            data-mode={canvas}
+            onClick={() => setSettings({ canvas: canvasModes[(canvasModes.indexOf(canvas) + 1) % canvasModes.length]! })}
+            title="Spotify Canvas (Loop-Video des Künstlers): auf der LED-Wand der Bühne oder als Vollbild statt der Bühne"
           >
-            Canvas {canvas ? "an" : "aus"}
+            Canvas: {canvasLabel[canvas]}
           </button>
         )}
         <button className={btn} data-testid="photo-button" onClick={() => photoStore.getState().request()}>

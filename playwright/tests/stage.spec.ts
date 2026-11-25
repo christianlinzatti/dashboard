@@ -208,6 +208,27 @@ test.describe("Bühne & Licht", () => {
     expect(errors).toEqual([]);
   });
 
+  test("Spotify Canvas auf der LED-Wand der Bühne statt Wandfoto und Logo", async ({ page }) => {
+    const errors = collectErrors(page);
+    await page.goto("/?demo=neonlicht&t=150000&canvas=/demo/canvas.svg&canvasort=buehne&buehne=club&qualitaet=mittel");
+    await ready(page);
+    await expect(page.locator("[data-testid=canvas-background]")).toHaveCount(0);
+    await expect(page.locator("[data-wall-canvas]")).toHaveAttribute("data-wall-canvas", "image");
+    await expect(page.getByTestId("wall-photo-credit")).toHaveCount(0);
+    await expect(page).toHaveScreenshot("canvas-leinwand.png");
+    // Bühnen ohne LED-Wand: kein Canvas, Bühne wie sonst
+    await page.goto("/?demo=neonlicht&t=46000&canvas=/demo/canvas.svg&canvasort=buehne&buehne=jazz&qualitaet=niedrig");
+    await ready(page);
+    await expect(page.locator("[data-theme]")).toHaveAttribute("data-theme", "jazz");
+    await expect(page.locator("[data-wall-canvas]")).toHaveCount(0);
+    expect(errors).toEqual([]);
+  });
+
+  test("Canvas-Datei nur mit Anmeldung und gültiger Track-ID", async ({ request }) => {
+    expect((await request.get("/api/canvas/video?track=4uLU6hMCjMI75M1A2tKUQC")).status()).toBe(401);
+    expect((await request.get("/api/canvas/video?track=../../etc")).status()).toBe(401);
+  });
+
   test("Avatar-Stil „nur Chibis“: alle Figuren auf der Bühne sind Chibis", async ({ page }) => {
     const errors = collectErrors(page);
     await page.goto("/?demo=neonlicht&t=24000&stil=chibi&buehne=festival&qualitaet=hoch");
