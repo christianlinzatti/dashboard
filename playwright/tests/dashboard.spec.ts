@@ -443,7 +443,9 @@ test("Startbildschirm: alle Fotos des Abends unter einem QR-Code", async ({ page
 });
 
 test("Startbildschirm: Erinnerung an ein Konzert im Umkreis", async ({ page }) => {
-  const day = (n: number) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10);
+  // Datum wie im Browser (Europe/Berlin, siehe playwright.config): in UTC wäre es zwischen 0 und 1 Uhr ein Tag früher
+  const day = (n: number) =>
+    new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Berlin" }).format(new Date(Date.now() + n * 86_400_000));
   const reminder = (n: number, city: string) => ({
     key: `Wanda|${day(n)}|${city.toLowerCase()}`,
     artistName: "Wanda",

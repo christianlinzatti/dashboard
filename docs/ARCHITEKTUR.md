@@ -369,6 +369,14 @@ Bühnen weitere Reihen, Mischpult- und Delay-Türme (`Hinterland.tsx`, ab „mit
 
 Für Tests und Debug am Canvas: `data-scene`, `data-runway`, `data-drones`, `data-crowd`, `data-crowd-props`.
 
+### Bühnennebel (Stand 2026-11-26)
+
+`lib/stage/smoke.ts` + `effects/Smoke.tsx`, ab „mittel“ (Pi 5): Bodennebel je Lichtszene (dicht in Intro, Bridge, Outro,
+Aufbau und Balladen, dünn im Refrain/Drop) und zwei Nebelmaschinen hinten links/rechts, die bei jedem Abschnittswechsel
+Schwaden über die Bühne blasen (ruhige Abschnitte dichter). Ein Zeichenaufruf, 36 Teilchen auf „mittel“ (60 auf „hoch“),
+Bewegung im Shader, Farbe aus dem Bühnenlicht; nah an der Kamera ausgeblendet (Füllrate), nicht auf den Live-Bildschirmen.
+Test/Debug: `data-smoke` („boden“, „stoss“).
+
 ### Abend steuern und Ansagen (Stand 2026-11-26)
 
 - **Zugabe auf Zuruf** („Alexa, Zugabe!“, Fernbedienung): Befehl `zugabe` markiert den zuletzt gespielten Song

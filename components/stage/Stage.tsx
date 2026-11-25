@@ -43,6 +43,8 @@ import { planStaging, RUNWAY_THEMES } from "@/lib/stage/staging";
 import type { EveningPhase } from "@/lib/show/evening";
 import { Runway } from "./Runway";
 import { Hinterland } from "./Hinterland";
+import { Smoke } from "./effects/Smoke";
+import { SMOKE_COUNTS } from "@/lib/stage/smoke";
 import { LiftShaft } from "./LiftShaft";
 import { Drones } from "./Drones";
 import { FanCamArms } from "./FanCamArms";
@@ -245,6 +247,9 @@ function Scene({
         {hasBlinders(theme) && <Blinders lightsRef={lights} />}
         {theme.lasers && <Lasers key={`l${preset.lasers}`} count={preset.lasers} lightsRef={lights} />}
         {preset.fog && <Fog lightsRef={lights} color={song.album.palette.accent} />}
+        {SMOKE_COUNTS[quality].ground + SMOKE_COUNTS[quality].burst > 0 && (
+          <Smoke choreo={choreo} frameRef={frame} lightsRef={lights} {...SMOKE_COUNTS[quality]} />
+        )}
         <Director
           song={song}
           choreo={choreo}

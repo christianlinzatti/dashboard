@@ -282,6 +282,18 @@ test.describe("Bühne & Licht", () => {
     await expect(canvas).not.toHaveAttribute("data-drones", /.+/);
   });
 
+  test("Bühnennebel ab „mittel“: Bodennebel in der Ballade, Nebelmaschinen beim Abschnittswechsel; auf „niedrig“ keiner", async ({
+    page,
+  }) => {
+    const canvas = page.locator("[data-testid=stage] canvas");
+    await page.goto("/?demo=abendrot&t=15000&qualitaet=mittel");
+    await ready(page);
+    await expect(canvas).toHaveAttribute("data-smoke", "boden,stoss");
+    await page.goto("/?demo=abendrot&t=15000&qualitaet=niedrig");
+    await ready(page);
+    await expect(canvas).not.toHaveAttribute("data-smoke", /.+/);
+  });
+
   test("Publikum: Wasserbälle im fröhlichen Refrain", async ({ page }) => {
     await page.goto("/?demo=neonlicht&t=48000&buehne=strand&qualitaet=mittel");
     await ready(page);
