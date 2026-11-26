@@ -4,7 +4,7 @@ on:
   schedule:
     # Läuft täglich um Mitternacht (UTC)
     - cron: "0 0 * * *"
-  workflow_dispatch: # Ermöglicht manuellen Start im GitHub-Tab "Actions"
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -12,9 +12,7 @@ permissions:
 jobs:
   extract-and-update:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    container:
-      image: mcr.microsoft.com/playwright:v1.63.0-noble
+    timeout-minutes: 5
 
     steps:
       - name: Repository auschecken
@@ -26,12 +24,8 @@ jobs:
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
-          cache: npm
 
-      - name: Dependencies installieren
-        run: npm ci --ignore-scripts
-
-      - name: Spotify TOTP-Parameter extrahieren
+      - name: Aktuelles Spotify TOTP-Secret abrufen
         id: extract
         run: |
           RESULT=$(node scripts/update-spotify-totp.mjs)
@@ -43,7 +37,6 @@ jobs:
             exit 1
           fi
 
-          # Maskiert das Secret in den öffentlichen GitHub-Action-Logs
           echo "::add-mask::$SECRET"
           echo "secret=$SECRET" >> "$GITHUB_OUTPUT"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
