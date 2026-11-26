@@ -1,16 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { setFollowing } from "@/lib/personal/follow";
 import { setLiked } from "@/lib/personal/like";
 import { useSongContext } from "@/lib/song-context/store";
 
 /**
- * ♥ Lieblingssong (antippen zum Entfernen) bzw. ♡ Merken (antippen zum Speichern), ♥ Last.fm, „37× gehört“.
- * Unbekannte Werte werden nicht angezeigt.
+ * ♥ Lieblingssong (antippen zum Entfernen) bzw. ♡ Merken (antippen zum Speichern), ★/☆ Künstlern folgen, ♥ Last.fm,
+ * „37× gehört“. Unbekannte Werte werden nicht angezeigt.
  */
 export function LikeBadges() {
   const user = useSongContext((s) => s.song?.user);
   const trackKey = useSongContext((s) => s.song?.trackKey);
+  const artists = useSongContext((s) => s.song?.artists);
   const [busy, setBusy] = useState(false);
   // Fehler gehört zum Song, bei dem er auftrat – beim nächsten Song verschwindet er von selbst
   const [failure, setFailure] = useState<{ key?: string; msg: string } | null>(null);
@@ -23,12 +25,17 @@ export function LikeBadges() {
   if (!user) return null;
 
   const chip = "rounded-full bg-white/10 px-[1.2vmin] py-[0.3vmin] text-[clamp(11px,1.8vmin,18px)] font-semibold backdrop-blur";
-  const toggle = async (saved: boolean) => {
+  const run = async (action: () => ReturnType<typeof setLiked>) => {
     if (busy) return;
     setBusy(true);
-    const r = await setLiked(saved);
+    const r = await action();
     setBusy(false);
     setFailure(r.ok ? null : { key: trackKey, msg: r.error });
+  };
+  const toggle = (saved: boolean) => run(() => setLiked(saved));
+  const follow = (artistId: string, on: boolean) => (e: React.MouseEvent) => {
+    e.stopPropagation();
+    void run(() => setFollowing(artistId, on));
   };
   // eigener Tipp-Bereich: kein Ein-/Ausblenden der Steuerleiste beim Liken
   const tap = (saved: boolean) => (e: React.MouseEvent) => {
@@ -64,6 +71,34 @@ export function LikeBadges() {
           ♡ Merken
         </button>
       )}
+      {(artists ?? [])
+        .filter((a) => /^[A-Za-z0-9]{10,40}$/.test(a.spotifyId))
+        .slice(0, 3)
+        .map((a) => {
+          const following = user.artists[a.spotifyId]?.following === true;
+          // bei mehreren Künstlern mit Namen, sonst reicht „Folgen“
+          const who = (artists?.length ?? 0) > 1 ? ` ${a.name}` : "";
+          return (
+            <button
+              key={a.spotifyId}
+              type="button"
+              className={`${chip} min-h-[32px] ${following ? "" : "text-white/80"}`}
+              title={following ? `Du folgst ${a.name} – antippen zum Entfolgen` : `${a.name} auf Spotify folgen`}
+              aria-pressed={following}
+              disabled={busy}
+              onClick={follow(a.spotifyId, !following)}
+              data-testid="follow-button"
+            >
+              {following ? (
+                <>
+                  <span style={{ color: "#ffd23f" }}>★</span> Folgst du{who}
+                </>
+              ) : (
+                <>☆ Folgen{who}</>
+              )}
+            </button>
+          );
+        })}
       {user.lovedOnLastfm && (
         <span className={chip} title="Auf Last.fm geliebt" data-testid="badge-loved">
           <span style={{ color: "#d51007" }}>♥</span> Last.fm

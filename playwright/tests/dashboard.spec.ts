@@ -504,9 +504,15 @@ test("Abspann nach dem letzten Song: rollt einmal, Antippen überspringt, danach
   await expect(page.getByTestId("credits")).toHaveCount(0);
 });
 
-test("Mauszeiger: auf dem Kiosk ausgeblendet, auf /debug und den Einstellungen sichtbar", async ({ page }) => {
+test("Mauszeiger: auf dem Kiosk nur bei Bewegung, auf /debug und den Einstellungen immer sichtbar", async ({ page }) => {
   await page.goto("/?demo=neonlicht&t=46000");
-  await expect(page.getByTestId("dashboard")).toHaveCSS("cursor", "none");
+  const dash = page.getByTestId("dashboard");
+  await expect(dash).toHaveCSS("cursor", "none");
+  // Maus bewegt: Zeiger da (zum Liken, Folgen, Bedienen) – nach 3 s Ruhe wieder weg
+  await page.mouse.move(300, 300);
+  await page.mouse.move(320, 310);
+  await expect(dash).toHaveCSS("cursor", "auto");
+  await expect(dash).toHaveCSS("cursor", "none", { timeout: 6000 });
   await page.goto("/debug");
   await expect(page.getByTestId("debug-viewer")).toHaveCSS("cursor", "auto");
   await page.goto("/einstellungen");

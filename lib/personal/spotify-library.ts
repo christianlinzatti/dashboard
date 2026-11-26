@@ -68,3 +68,24 @@ export async function saveTrack(call: CallInit, trackId: string, saved: boolean)
   }
   return scope ? "scope" : false;
 }
+
+/**
+ * Künstler folgen bzw. entfolgen. Neuer Bibliotheks-Endpunkt (PUT/DELETE /me/library?uris=spotify:artist:…), Rückfall
+ * auf /me/following?type=artist. Liefert true bei Erfolg, „scope“ wenn die Berechtigung fehlt (neu anmelden).
+ */
+export async function followArtist(call: CallInit, artistId: string, follow: boolean): Promise<true | "scope" | false> {
+  if (!/^[A-Za-z0-9]{10,}$/.test(artistId)) return false;
+  const method = follow ? "PUT" : "DELETE";
+  const paths = [
+    `/me/library?uris=${encodeURIComponent(`spotify:artist:${artistId}`)}`,
+    `/me/following?type=artist&ids=${encodeURIComponent(artistId)}`,
+  ];
+  let scope = false;
+  for (const p of paths) {
+    const res = await call(p, { method }).catch(() => null);
+    if (!res) continue;
+    if (res.ok) return true;
+    if (res.status === 403 || res.status === 401) scope = true;
+  }
+  return scope ? "scope" : false;
+}

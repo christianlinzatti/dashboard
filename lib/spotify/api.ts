@@ -21,6 +21,7 @@ export const SCOPES = [
   "user-library-read",
   "user-library-modify",
   "user-follow-read",
+  "user-follow-modify",
   "user-modify-playback-state",
 ].join(" ");
 

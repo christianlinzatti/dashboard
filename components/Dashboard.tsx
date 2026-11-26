@@ -41,6 +41,7 @@ import { useTempoLoader } from "./audio/useTempoLoader";
 import { useShowLoader } from "./show/useShowLoader";
 import { useArtistAvatars } from "./avatars/useArtistAvatars";
 import { useCanvas } from "./canvas/useCanvas";
+import { useIdleCursor } from "./hud/useIdleCursor";
 import { CanvasBackground } from "./canvas/CanvasBackground";
 import { useSettingsSync } from "./settings/useSettingsSync";
 import { useSongMemory } from "./memory/useSongMemory";
@@ -112,6 +113,8 @@ export function Dashboard({
 }: Props) {
   const song = useSongContext((s) => s.song);
   const frozen = useSongContext((s) => s.frozen);
+  // Mauszeiger: bei Bewegung sichtbar, nach kurzer Ruhe wieder weg
+  const main = useIdleCursor<HTMLElement>();
   // Spotify Canvas statt der 3D-Bühne (Geräte-Einstellung, nur bei echter Wiedergabe)
   // („vollbild“ ersetzt die Bühne, „buehne“ zeigt es auf der LED-Wand)
   const canvasMode = useStore(settings, (st) => st.canvas);
@@ -234,7 +237,8 @@ export function Dashboard({
 
   return (
     <main
-      // Kiosk: Mauszeiger nur hier ausblenden (Debug-, Einstellungs- und Fotoseiten behalten ihn)
+      ref={main}
+      // Kiosk: Mauszeiger nur bei Bewegung zeigen, nach 3 s Ruhe ausblenden (die übrigen Seiten behalten ihn immer)
       className="relative h-dvh w-dvw cursor-none overflow-hidden bg-[var(--c-dark)]"
       style={vars}
       data-testid="dashboard"

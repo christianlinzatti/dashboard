@@ -120,4 +120,49 @@ test.describe("Persönliches", () => {
     expect((await request.post("/api/like", { data: { trackId: "4uLU6hMCjMI75M1A2tKUQC", saved: true } })).status()).toBe(401);
     expect((await request.get("/api/personal?trackId=a&title=b&ids=c&names=d")).status()).toBe(401);
   });
+
+  test("Live: Künstler folgen und entfolgen; Fehler wird gemeldet und zurückgenommen", async ({ page }) => {
+    const track = {
+      id: "4uLU6hMCjMI75M1A2tKUQD",
+      type: "track",
+      name: "Folgelied",
+      duration_ms: 200_000,
+      explicit: false,
+      artists: [{ id: "0OdUWJ0sBjDrqHygGUXeCF", name: "Band" }],
+      album: { name: "A", images: [{ url: "/demo/pulsar.svg", width: 300, height: 300 }] },
+    };
+    await page.route("**/api/now-playing", (r) =>
+      r.fulfill({ json: { state: "playing", progressMs: 30_000, fetchedAt: 0, track, user: "T" } }),
+    );
+    await page.route("**/api/lyrics?*", (r) =>
+      r.fulfill({ json: { lyrics: null, instrumental: true, cached: false, attempts: [] } }),
+    );
+    await page.route("**/api/info?*", (r) => r.fulfill({ json: { complete: true, info: { artists: {}, photos: [] } } }));
+    await page.route("**/api/personal?*", (r) =>
+      r.fulfill({ json: { user: { trackSaved: true, artists: { "0OdUWJ0sBjDrqHygGUXeCF": { following: false } } } } }),
+    );
+    const calls: unknown[] = [];
+    let fail = false;
+    await page.route("**/api/follow", async (r) => {
+      calls.push(r.request().postDataJSON());
+      if (fail)
+        return r.fulfill({ status: 403, json: { error: "Bitte einmal neu anmelden, um Künstlern zu folgen.", reauth: true } });
+      return r.fulfill({ json: { ok: true } });
+    });
+    await page.goto("/");
+    const button = page.getByTestId("follow-button");
+    await expect(button).toHaveText("☆ Folgen");
+    // Burn-in-Drift bewegt die Kopfzeile ständig minimal → Playwrights Stillstand-Prüfung überspringen
+    await button.click({ force: true });
+    await expect(button).toContainText("Folgst du");
+    await expect(page.getByTestId("badge-following")).toBeVisible();
+    fail = true;
+    await button.click({ force: true });
+    await expect(page.getByTestId("like-error")).toContainText("neu anmelden");
+    await expect(button).toContainText("Folgst du"); // zurückgenommen
+    expect(calls).toEqual([
+      { artistId: "0OdUWJ0sBjDrqHygGUXeCF", follow: true },
+      { artistId: "0OdUWJ0sBjDrqHygGUXeCF", follow: false },
+    ]);
+  });
 });
