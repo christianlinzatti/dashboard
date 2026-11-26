@@ -279,6 +279,7 @@ describe("Geräte-Einstellungen", () => {
       stage: "auto",
       canvas: "aus",
       crowdSound: false,
+      ai: true,
       // Strobo ist eine geteilte Einstellung (Konto): Zeitpunkt der Änderung wird mitgespeichert
       changedAt: expect.any(Number),
     });
