@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   AFTER_QUALITY_DOWN,
+  ceilingAfterDecline,
+  GRACE_MS,
   fpsBounds,
   loadLevel,
   maxDpr,
@@ -75,5 +77,17 @@ describe("Sparstufen und Grenzen", () => {
     expect(onIncline(1, true, "mittel", true, "hoch").quality).toBe("hinauf");
     expect(onIncline(1, true, "mittel", true, "mittel").quality).toBeNull();
     expect(onIncline(1, true, "niedrig", true, "mittel").quality).toBe("hinauf");
+  });
+});
+
+describe("Sperre nur nach eigenem Anheben", () => {
+  it("zäher Start sperrt nichts; selbst angehoben und zu langsam: gesperrt", () => {
+    expect(ceilingAfterDecline("mittel", null, "hoch")).toBe("hoch");
+    expect(ceilingAfterDecline("hoch", "hoch", "hoch")).toBe("mittel");
+    expect(ceilingAfterDecline("mittel", "mittel", "hoch")).toBe("niedrig");
+    expect(ceilingAfterDecline("mittel", "hoch", "mittel")).toBe("mittel");
+  });
+  it("Schonfrist nach Laden und Songwechsel", () => {
+    expect(GRACE_MS).toBeGreaterThanOrEqual(5000);
   });
 });

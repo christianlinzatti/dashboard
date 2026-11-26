@@ -10,7 +10,9 @@ import type { LightFrame } from "@/lib/stage/lights";
 import { PRESETS, stepQuality, type Quality } from "@/lib/stage/quality";
 import {
   adaptive,
+  ceilingAfterDecline,
   fpsBounds,
+  GRACE_MS,
   loadLevel,
   onDecline,
   onIncline,
@@ -65,6 +67,16 @@ import { FanCamArms } from "./FanCamArms";
  * Robust: ohne WebGL oder bei Fehlern in der Szene erscheint ein 2D-Hintergrund; nach einem
  * Verlust des Grafikkontexts (z. B. GPU-Reset auf dem Pi) wird die Szene neu aufgebaut.
  */
+
+/** wird `ms` nach dem letzten Wechsel von `key` wahr */
+function useSettled(key: string, ms: number) {
+  const [settledKey, setSettledKey] = useState<string | null>(null);
+  useEffect(() => {
+    const id = setTimeout(() => setSettledKey(key), ms);
+    return () => clearTimeout(id);
+  }, [key, ms]);
+  return settledKey === key;
+}
 
 /** Bühnen mit Wasserbällen im Refrain (Open Air und große Hallen) */
 const BALL_THEMES: readonly string[] = ["festival", "strand", "stadion", "club"];
@@ -165,6 +177,8 @@ function Scene({
   const dpr = adapt && typeof window !== "undefined" ? stageDpr(preset.dpr, window.devicePixelRatio, factor) : preset.dpr;
   // wie sehr gespart werden muss (Spiegelung, Live-Bildschirme, Lichtkegel, Rauch)
   const load = loadLevel(factor, adapt);
+  // Schonfrist nach Laden und Songwechsel: Bildrate erst danach bewerten
+  const settled = useSettled(song?.trackKey ?? "", GRACE_MS);
   // Kantenglättung des Browsers: mit Bloom zeichnet die Bühne in einen Zwischenpuffer – dort greift sie nicht, kostet
   // aber Speicher und Bandbreite. Beim Anlegen des Grafikkontexts festgelegt (später nicht mehr änderbar).
   const [antialias] = useState(() => !preset.bloom);
@@ -204,6 +218,9 @@ function Scene({
         onCreated={({ gl, camera }) => {
           // Hauptkamera sieht auch die Feinheiten, die die Live-Bildschirme auslassen
           camera.layers.enable(NOT_ON_SCREENS);
+          // Shader-Fehlerprüfung zwingt den Browser, jeden neuen Shader sofort und blockierend zu übersetzen (der Hänger
+          // beim Songwechsel) – nur beim Entwickeln und in Demos/Tests, nicht am Kiosk
+          gl.debug.checkShaderErrors = process.env.NODE_ENV !== "production" || location.search.includes("demo=");
           gl.domElement.addEventListener("webglcontextlost", (e) => {
             e.preventDefault();
             onContextLost();
@@ -213,8 +230,10 @@ function Scene({
         <color attach="background" args={[dark]} />
         <fog attach="fog" args={[dark, FOG_NEAR, theme.fogFar]} />
         <SceneLights lightsRef={lights} ground={dark} />
-        {adapt && (
+        {adapt && settled && (
           <PerformanceMonitor
+            // je Song frisch messen (nach der Schonfrist)
+            key={song.trackKey}
             factor={adaptive.getState().factor}
             step={RESOLUTION_STEP}
             bounds={fpsBounds}
@@ -222,16 +241,23 @@ function Scene({
               const next = onDecline(api.factor, auto, quality);
               if (next.quality) {
                 api.factor = next.factor;
-                const lower = stepQuality(quality, -1);
-                // diese Stufe war zu langsam: in dieser Sitzung nicht wieder hinauf
-                adaptive.setState({ quality: lower, ceiling: lower });
+                const { climbed, ceiling } = adaptive.getState();
+                adaptive.setState({
+                  quality: stepQuality(quality, -1),
+                  // selbst angehoben und zu langsam: in dieser Sitzung nicht wieder hinauf
+                  ceiling: ceilingAfterDecline(quality, climbed, ceiling),
+                  climbed: null,
+                });
               }
               adaptive.setState({ factor: api.factor });
             }}
             onIncline={(api) => {
               const { factor: was, ceiling } = adaptive.getState();
               const next = onIncline(api.factor, auto, quality, was >= 1, ceiling);
-              if (next.quality) adaptive.setState({ quality: stepQuality(quality, 1) });
+              if (next.quality) {
+                const higher = stepQuality(quality, 1);
+                adaptive.setState({ quality: higher, climbed: higher });
+              }
               adaptive.setState({ factor: api.factor });
             }}
             flipflops={20}

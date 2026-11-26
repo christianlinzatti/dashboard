@@ -90,8 +90,26 @@ export function loadLevel(factor: number, adapt: boolean): Load {
  * Stand der Anpassung – über Songwechsel hinweg (die Szene wird je Song neu aufgebaut; ohne das lernte ein schwacher
  * Rechner bei jedem Song von vorn und ruckelte bis dahin).
  */
-export const adaptive = createStore<{ quality: Quality; factor: number; ceiling: Quality }>()(() => ({
-  quality: "mittel",
-  factor: 1,
-  ceiling: "hoch",
-}));
+export const adaptive = createStore<{
+  quality: Quality;
+  factor: number;
+  ceiling: Quality;
+  /** zuletzt durch Anheben erreichte Stufe (nur sie wird gesperrt, wenn sie sich als zu langsam erweist) */
+  climbed: Quality | null;
+}>()(() => ({ quality: "mittel", factor: 1, ceiling: "hoch", climbed: null }));
+
+/**
+ * Schonfrist nach dem Laden und jedem Songwechsel: solange wird die Bildrate nicht bewertet. Neue Figuren, Texturen und
+ * Shader bremsen kurz – zählte das, senkte die Anpassung die Auflösung (jede Änderung baut die Puffer neu: noch ein
+ * Hänger) und sperrte womöglich eine Stufe, die eigentlich flüssig läuft.
+ */
+export const GRACE_MS = 8000;
+
+/**
+ * Neue Obergrenze nach dem Herunterschalten: gesperrt wird nur eine Stufe, die die Automatik selbst angehoben hatte und
+ * die sich dann als zu langsam erwies (gegen Pendeln). Ein zäher Start sperrt nichts.
+ */
+export function ceilingAfterDecline(from: Quality, climbed: Quality | null, ceiling: Quality): Quality {
+  if (from !== climbed) return ceiling;
+  return from === "hoch" ? "mittel" : from === "mittel" ? "niedrig" : "niedrig";
+}
