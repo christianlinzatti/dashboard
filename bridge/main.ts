@@ -69,7 +69,7 @@ const watchdog = wd
   : undefined;
 if (watchdog) setInterval(() => watchdog.check(), 5000);
 
-// Konzerttermine (oeticket, eventim.de): ehrlich als Bridge erkennbar, Anfragen einzeln mit zufälliger Pause
+// Konzerttermine (oeticket, eventim.de): erlaubter Browser-User-Agent, Anfragen einzeln mit zufälliger Pause
 const c = cfg.concerts ?? CONCERT_DEFAULTS;
 const concerts = c.enabled
   ? createConcertFetcher({

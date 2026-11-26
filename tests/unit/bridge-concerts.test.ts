@@ -97,8 +97,9 @@ describe("Konzertabfrage der Bridge", () => {
       gapMs: 1000,
     });
     expect(() => parseConfig({ ...base, concerts: { gapMs: 10 } })).toThrow();
-    expect(BRIDGE_USER_AGENT).toMatch(/^SonicStage-PiBridge\//); // ehrlich, kein Browser
-    expect(BRIDGE_USER_AGENT).not.toMatch(/Mozilla|Chrome|Safari/);
+    expect(BRIDGE_USER_AGENT).toBe(
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/158.0.0.0 Safari/537.36",
+    );
   });
 });
 
