@@ -7,6 +7,7 @@ import { rng } from "@/lib/dance/rng";
 import type { LightFrame } from "@/lib/stage/lights";
 import type { Weather as WeatherKind } from "@/lib/stage/weather";
 import type { Frame } from "./types";
+import { useShaderArgs } from "./shader-args";
 
 /** Wetterzone: über Bühne und Publikum (x, z), Fallhöhe */
 const AREA = { x: [-12, 12], z: [-3, 15], top: 9, bottom: -0.3 } as const;
@@ -139,27 +140,14 @@ export function Weather({
     u.uPx!.value = (size.height * gl.getPixelRatio()) / (2 * Math.tan((fov * Math.PI) / 360));
   });
   const shader = kind === "regen" ? rainShader : snowShader;
+  const args = useShaderArgs({ ...shader, uniforms });
   return kind === "regen" ? (
     <lineSegments geometry={geometry} frustumCulled={false}>
-      <shaderMaterial
-        ref={mat}
-        args={[{ ...shader, uniforms }]}
-        transparent
-        depthWrite={false}
-        blending={AdditiveBlending}
-        toneMapped={false}
-      />
+      <shaderMaterial ref={mat} args={args} transparent depthWrite={false} blending={AdditiveBlending} toneMapped={false} />
     </lineSegments>
   ) : (
     <points geometry={geometry} frustumCulled={false}>
-      <shaderMaterial
-        ref={mat}
-        args={[{ ...shader, uniforms }]}
-        transparent
-        depthWrite={false}
-        blending={NormalBlending}
-        toneMapped={false}
-      />
+      <shaderMaterial ref={mat} args={args} transparent depthWrite={false} blending={NormalBlending} toneMapped={false} />
     </points>
   );
 }

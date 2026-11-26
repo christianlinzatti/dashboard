@@ -6,6 +6,7 @@ import { Color, type InstancedMesh, type Matrix4, type ShaderMaterial } from "th
 import { rng } from "@/lib/dance/rng";
 import { SKY_BY_PHASE, type DayPhase, type SkyLook } from "@/lib/stage/daylight";
 import { Instances, mat, plainVertex, songSeconds, type VenueProps, type Xf } from "./shared";
+import { useShaderArgs } from "../shader-args";
 
 /** Meer bis zum Horizont mit Sonnenglitzern, tiefstehende Sonne, Palmen und Lichterketten. */
 /** Sonne/Mond je Tageszeit: Höhe über dem Horizont, Größe, Farbe, Lichthof; dazu Farben fürs Meer */
@@ -30,6 +31,22 @@ export function Beach({ accent, lightsRef, daylight }: VenueProps & { daylight?:
   useFrame(() => {
     if (sea.current) sea.current.uniforms.uTime!.value = songSeconds();
   });
+  const shaderArgs1 = useShaderArgs({
+    uniforms,
+    vertexShader: plainVertex,
+    fragmentShader: /* glsl */ `
+                uniform float uTime; uniform vec3 uSun, uDeep; varying vec3 vWorld;
+                void main() {
+                  float far = clamp((-vWorld.z - 6.0) / 46.0, 0.0, 1.0);
+                  float w = sin(vWorld.z * 2.3 + uTime * 1.4) * sin(vWorld.x * 0.7 + uTime * 0.6 + vWorld.z * 0.4);
+                  // Glitzerstreifen in Richtung Sonne, zum Horizont hin schmaler
+                  float lane = exp(-pow(vWorld.x / (2.0 + 9.0 * (1.0 - far)), 2.0));
+                  float glint = lane * smoothstep(0.55, 0.95, w * 0.5 + 0.5);
+                  vec3 c = mix(uDeep * 1.4, uSun * 0.55, far * far) + uSun * glint * 0.9;
+                  gl_FragColor = vec4(c, 1.0);
+                }
+              `,
+  });
   return (
     <group>
       {/* Sonne (je Tageszeit hoch, tief, untergegangen) oder Mond */}
@@ -51,28 +68,7 @@ export function Beach({ accent, lightsRef, daylight }: VenueProps & { daylight?:
       {/* Meer: Wellen und ein Glitzerstreifen unter der Sonne */}
       <mesh rotation-x={-Math.PI / 2} position={[0, -0.2, -32]}>
         <planeGeometry args={[140, 52]} />
-        <shaderMaterial
-          ref={sea}
-          fog={false}
-          args={[
-            {
-              uniforms,
-              vertexShader: plainVertex,
-              fragmentShader: /* glsl */ `
-                uniform float uTime; uniform vec3 uSun, uDeep; varying vec3 vWorld;
-                void main() {
-                  float far = clamp((-vWorld.z - 6.0) / 46.0, 0.0, 1.0);
-                  float w = sin(vWorld.z * 2.3 + uTime * 1.4) * sin(vWorld.x * 0.7 + uTime * 0.6 + vWorld.z * 0.4);
-                  // Glitzerstreifen in Richtung Sonne, zum Horizont hin schmaler
-                  float lane = exp(-pow(vWorld.x / (2.0 + 9.0 * (1.0 - far)), 2.0));
-                  float glint = lane * smoothstep(0.55, 0.95, w * 0.5 + 0.5);
-                  vec3 c = mix(uDeep * 1.4, uSun * 0.55, far * far) + uSun * glint * 0.9;
-                  gl_FragColor = vec4(c, 1.0);
-                }
-              `,
-            },
-          ]}
-        />
+        <shaderMaterial ref={sea} fog={false} args={shaderArgs1} />
       </mesh>
       {/* Wellen am Ufer (hellere Linie) */}
       <mesh rotation-x={-Math.PI / 2} position={[0, -0.19, -6.4]}>

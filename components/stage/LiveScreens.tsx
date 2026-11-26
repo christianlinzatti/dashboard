@@ -19,6 +19,7 @@ import { songContext } from "@/lib/song-context/store";
 import type { LightFrame } from "@/lib/stage/lights";
 import { TRUSS_Z } from "./layout";
 import type { Frame } from "./types";
+import { useShaderArgs } from "./shader-args";
 
 /** Zwei Bildschirme links und rechts auf der LED-Wand (in Wand-Koordinaten, skaliert mit der Wand) */
 const SCREENS: Array<[number, number]> = [
@@ -114,6 +115,7 @@ export function LiveScreens({
     if (gl.domElement.dataset.screen !== shot.name) gl.domElement.dataset.screen = shot.name;
   });
 
+  const screenArgs = useShaderArgs({ ...screenShader, uniforms });
   return (
     <group ref={group}>
       {SCREENS.map(([x, y]) => (
@@ -125,7 +127,7 @@ export function LiveScreens({
           </mesh>
           <mesh>
             <planeGeometry args={[SCREEN_W, SCREEN_W / SCREEN_ASPECT]} />
-            <shaderMaterial ref={x < 0 ? mat : undefined} args={[{ ...screenShader, uniforms }]} toneMapped={false} />
+            <shaderMaterial ref={x < 0 ? mat : undefined} args={screenArgs} toneMapped={false} />
           </mesh>
         </group>
       ))}

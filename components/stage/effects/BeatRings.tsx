@@ -5,6 +5,7 @@ import { useMemo, useRef } from "react";
 import { AdditiveBlending, Color, type Mesh, type ShaderMaterial } from "three";
 import { type ActiveCue } from "@/lib/stage/effects";
 import type { Frame } from "../types";
+import { useShaderArgs } from "../shader-args";
 
 export function BeatRings({
   activeRef,
@@ -37,16 +38,10 @@ export function BeatRings({
     u.uPhase!.value = ((beats % 1) + 1) % 1;
     u.uLevel!.value = cue.intensity * Math.max(0, fade) * (0.7 + 0.3 * f.energy);
   });
-  return (
-    <mesh ref={mesh} rotation-x={-Math.PI / 2} position-y={0.012} visible={false}>
-      <circleGeometry args={[4.25, 64]} />
-      <shaderMaterial
-        ref={mat}
-        args={[
-          {
-            uniforms,
-            vertexShader: /* glsl */ `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
-            fragmentShader: /* glsl */ `
+  const shaderArgs1 = useShaderArgs({
+    uniforms,
+    vertexShader: /* glsl */ `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
+    fragmentShader: /* glsl */ `
               uniform float uPhase, uLevel; uniform vec3 uColor; varying vec2 vUv;
               void main() {
                 float d = length(vUv - 0.5) * 2.0;
@@ -60,8 +55,13 @@ export function BeatRings({
                 gl_FragColor = vec4(uColor * a * uLevel * 0.9, 1.0);
               }
             `,
-          },
-        ]}
+  });
+  return (
+    <mesh ref={mesh} rotation-x={-Math.PI / 2} position-y={0.012} visible={false}>
+      <circleGeometry args={[4.25, 64]} />
+      <shaderMaterial
+        ref={mat}
+        args={shaderArgs1}
         transparent
         depthWrite={false}
         blending={AdditiveBlending}

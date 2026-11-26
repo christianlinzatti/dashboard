@@ -15,6 +15,7 @@ import { rng } from "@/lib/dance/rng";
 import type { ActiveCue } from "@/lib/stage/effects";
 import type { LightFrame } from "@/lib/stage/lights";
 import type { Palette } from "@/lib/song-context/schema";
+import { useShaderArgs } from "../shader-args";
 
 /** Lebensdauer einer Luftschlange in s (Flug, Herabsegeln, Liegen); passt zu LINGER_MS in lib/stage/effects.ts */
 export const STREAMER_LIFE = 12.6;
@@ -80,15 +81,9 @@ export function Streamers({
     u.uLight!.value = 1 - 0.8 * (lightsRef?.current?.blackout ?? 0);
   });
 
-  return (
-    <mesh ref={mesh} geometry={geometry} frustumCulled={false} visible={false}>
-      <shaderMaterial
-        side={DoubleSide}
-        toneMapped={false}
-        args={[
-          {
-            uniforms,
-            vertexShader: /* glsl */ `
+  const shaderArgs1 = useShaderArgs({
+    uniforms,
+    vertexShader: /* glsl */ `
               attribute vec4 aRand;
               uniform float uAge, uLife;
               uniform vec3 uP0, uP1, uP2, uP3;
@@ -132,14 +127,15 @@ export function Streamers({
                 gl_Position *= alive;
               }
             `,
-            fragmentShader: /* glsl */ `
+    fragmentShader: /* glsl */ `
               uniform float uLight;
               varying vec3 vCol; varying float vShade;
               void main() { gl_FragColor = vec4(vCol * vShade * 0.9 * uLight, 1.0); }
             `,
-          },
-        ]}
-      />
+  });
+  return (
+    <mesh ref={mesh} geometry={geometry} frustumCulled={false} visible={false}>
+      <shaderMaterial side={DoubleSide} toneMapped={false} args={shaderArgs1} />
     </mesh>
   );
 }

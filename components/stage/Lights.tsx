@@ -26,6 +26,7 @@ import type { LightFrame } from "@/lib/stage/lights";
 import { songContext } from "@/lib/song-context/store";
 import { Instances, mat } from "./instances";
 import { NOT_ON_SCREENS, TRUSS_Y, TRUSS_Z } from "./layout";
+import { useShaderArgs } from "./shader-args";
 
 const BEAM_LENGTH = 7;
 const BEAM_TOP = 0.06;
@@ -351,12 +352,15 @@ function Head({
     }
   });
 
+  const shaderArgs1 = useShaderArgs({ ...poolShader, uniforms });
+  const shaderArgs2 = useShaderArgs({ ...dustShader, uniforms });
+  const shaderArgs3 = useShaderArgs({ ...beamShader, uniforms });
   return (
     <group position-x={x} ref={hang}>
       <mesh ref={pool} visible={false}>
         <planeGeometry args={[2, 2]} />
         <shaderMaterial
-          args={[{ ...poolShader, uniforms }]}
+          args={shaderArgs1}
           transparent
           depthWrite={false}
           blending={AdditiveBlending}
@@ -369,20 +373,14 @@ function Head({
       <group ref={yoke}>
         {/* Staub: zu fein für die Live-Bildschirme – dort nicht mitgefilmt */}
         <points ref={dustRef} geometry={dust} frustumCulled={false}>
-          <shaderMaterial
-            args={[{ ...dustShader, uniforms }]}
-            transparent
-            depthWrite={false}
-            blending={AdditiveBlending}
-            toneMapped={false}
-          />
+          <shaderMaterial args={shaderArgs2} transparent depthWrite={false} blending={AdditiveBlending} toneMapped={false} />
         </points>
         <mesh ref={beam} position-y={-0.3 - BEAM_LENGTH / 2}>
           {/* Spitze oben (uv.y = 1 an der Basis des Zylinders → hell an der Lampe) */}
           <cylinderGeometry args={[BEAM_TOP, BEAM_BOTTOM, BEAM_LENGTH, 24, 1, true]} />
           <shaderMaterial
             ref={mat}
-            args={[{ ...beamShader, uniforms }]}
+            args={shaderArgs3}
             transparent
             depthWrite={false}
             blending={AdditiveBlending}
@@ -490,6 +488,7 @@ export function Blinders({ lightsRef }: { lightsRef: React.RefObject<LightFrame 
     }
     if (front.current) front.current.intensity = b * 40;
   });
+  const shaderArgs4 = useShaderArgs({ ...flareShader, uniforms });
   return (
     <group position={[0, TRUSS_Y + 0.24, TRUSS_Z + 0.3]}>
       {/* Gehäuse und Glühlampen aller Blinder: je ein Zeichenaufruf */}
@@ -505,13 +504,7 @@ export function Blinders({ lightsRef }: { lightsRef: React.RefObject<LightFrame 
         <group key={x} position-x={x}>
           <mesh ref={(m) => void (flares.current[i] = m)} position-z={0.12} visible={false}>
             <planeGeometry args={[2.4, 2.4]} />
-            <shaderMaterial
-              args={[{ ...flareShader, uniforms }]}
-              transparent
-              depthWrite={false}
-              blending={AdditiveBlending}
-              toneMapped={false}
-            />
+            <shaderMaterial args={shaderArgs4} transparent depthWrite={false} blending={AdditiveBlending} toneMapped={false} />
           </mesh>
         </group>
       ))}

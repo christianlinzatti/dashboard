@@ -16,6 +16,7 @@ import { chorusKeyword, forcedWallPattern, keywordAmount, wallPattern, wallPatte
 import { Instances, mat } from "./instances";
 import { NOT_ON_SCREENS, TRUSS_Y, TRUSS_Z } from "./layout";
 import { OUTDOOR_SKIES, SKY_BY_PHASE, type DayPhase } from "@/lib/stage/daylight";
+import { useShaderArgs } from "./shader-args";
 
 export { TRUSS_Y, TRUSS_Z };
 
@@ -356,10 +357,11 @@ function LedWall({ lightsRef }: { lightsRef: React.RefObject<LightFrame | null> 
     // ohne Mikro: ruhige, deterministische Balken aus der Songzeit
     else m.uniforms.uBands!.value = [0, 1, 2, 3, 4, 5].map((i) => 0.35 + 0.25 * Math.sin(t * (1.3 + i * 0.4) + i));
   });
+  const shaderArgs1 = useShaderArgs({ ...wallShader, uniforms });
   return (
     <mesh position={[0, 2.3, TRUSS_Z - 0.5]}>
       <planeGeometry args={[10, 4.4]} />
-      <shaderMaterial ref={mat} args={[{ ...wallShader, uniforms }]} toneMapped={false} />
+      <shaderMaterial ref={mat} args={shaderArgs1} toneMapped={false} />
     </mesh>
   );
 }

@@ -1,11 +1,12 @@
 "use client";
 
 import { useFrame } from "@react-three/fiber";
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 import { AdditiveBlending, Color, DoubleSide, type Group, type ShaderMaterial } from "three";
 import type { Choreography } from "@/lib/dance/plan";
 import { liftGlowAt, LIFT_DEPTH } from "@/lib/stage/staging";
 import type { Frame } from "./types";
+import { useShaderArgs } from "./shader-args";
 
 /**
  * Hubpodest: runde Plattform unter den Füßen des Leads, die mit ihm aus dem Boden fährt, dazu eine Lichtsäule von
@@ -35,6 +36,18 @@ export function LiftShaft({
     if (plate.current) plate.current.position.y = Math.min(f.lifts[lead!] ?? 0, 0) - 0.03;
     if (beam.current) beam.current.uniforms.uLevel!.value = glow * (0.75 + 0.25 * Math.sin(f.t / 90));
   });
+  const beamUniforms = useMemo(() => ({ uLevel: { value: 0 }, uColor: { value: new Color(color) } }), [color]);
+  const beamArgs = useShaderArgs({
+    uniforms: beamUniforms,
+    vertexShader: /* glsl */ `
+                varying float vY;
+                void main() { vY = uv.y; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }
+              `,
+    fragmentShader: /* glsl */ `
+                uniform float uLevel; uniform vec3 uColor; varying float vY;
+                void main() { gl_FragColor = vec4(mix(vec3(1.0), uColor, 0.45) * uLevel * 0.55 * pow(1.0 - vY, 1.6), 1.0); }
+              `,
+  });
   if (!lift) return null;
   return (
     <group ref={group} visible={false}>
@@ -58,19 +71,7 @@ export function LiftShaft({
           side={DoubleSide}
           blending={AdditiveBlending}
           toneMapped={false}
-          args={[
-            {
-              uniforms: { uLevel: { value: 0 }, uColor: { value: new Color(color) } },
-              vertexShader: /* glsl */ `
-                varying float vY;
-                void main() { vY = uv.y; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }
-              `,
-              fragmentShader: /* glsl */ `
-                uniform float uLevel; uniform vec3 uColor; varying float vY;
-                void main() { gl_FragColor = vec4(mix(vec3(1.0), uColor, 0.45) * uLevel * 0.55 * pow(1.0 - vY, 1.6), 1.0); }
-              `,
-            },
-          ]}
+          args={beamArgs}
         />
       </mesh>
     </group>

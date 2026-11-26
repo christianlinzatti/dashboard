@@ -6,6 +6,7 @@ import { AdditiveBlending, Color, DoubleSide, type InstancedMesh, Matrix4, type 
 import { rng } from "@/lib/dance/rng";
 import { TRUSS_Z } from "../layout";
 import { concreteTexture, Instances, mat, plainVertex, songSeconds, type VenueProps } from "./shared";
+import { useShaderArgs } from "../shader-args";
 
 /** Rosettenfenster aus Buntglas: Speichen, Ringe und Bleiruten; leuchtet von hinten und pulsiert sacht. */
 const roseShader = /* glsl */ `
@@ -109,6 +110,8 @@ export function Cathedral({ lightsRef, accent }: VenueProps) {
     m.instanceMatrix.needsUpdate = true;
   });
 
+  const shaderArgs1 = useShaderArgs({ uniforms, vertexShader: plainVertex, fragmentShader: roseShader });
+  const shaderArgs2 = useShaderArgs({ uniforms, vertexShader: plainVertex, fragmentShader: archShader });
   return (
     <group>
       {/* Rückwand aus Stein mit Rosette, Orgelpfeifen davor */}
@@ -118,11 +121,7 @@ export function Cathedral({ lightsRef, accent }: VenueProps) {
       </mesh>
       <mesh position={[0, 4.15, TRUSS_Z - 0.75]}>
         <planeGeometry args={[3.4, 3.4]} />
-        <shaderMaterial
-          ref={rose}
-          args={[{ uniforms, vertexShader: plainVertex, fragmentShader: roseShader }]}
-          toneMapped={false}
-        />
+        <shaderMaterial ref={rose} args={shaderArgs1} toneMapped={false} />
       </mesh>
       <Instances matrices={pipes}>
         <cylinderGeometry args={[0.075, 0.075, 1, 10]} />
@@ -132,7 +131,7 @@ export function Cathedral({ lightsRef, accent }: VenueProps) {
       {[-6, 6].map((x) => (
         <mesh key={x} position={[x, 3.6, TRUSS_Z - 0.76]}>
           <planeGeometry args={[1.1, 3.4]} />
-          <shaderMaterial args={[{ uniforms, vertexShader: plainVertex, fragmentShader: archShader }]} toneMapped={false} />
+          <shaderMaterial args={shaderArgs2} toneMapped={false} />
         </mesh>
       ))}
       {/* Säulen links und rechts, nach vorn ins Kirchenschiff */}

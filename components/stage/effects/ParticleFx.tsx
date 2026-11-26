@@ -17,6 +17,7 @@ import type { Palette } from "@/lib/song-context/schema";
 import { type ActiveCue } from "@/lib/stage/effects";
 import type { Theme } from "@/lib/stage/themes";
 import { EMITTERS } from "./emitters";
+import { useShaderArgs } from "../shader-args";
 const vertexShader = /* glsl */ `
   attribute vec4 aRand;
   uniform float uAge, uDur, uSpawn, uLife, uSpeed, uSpread, uGravity, uDrag, uSize, uGrow, uPx, uMode, uIntensity, uSeed;
@@ -182,10 +183,11 @@ export function ParticleFx({
     m.uniforms.uSeed!.value = (cue.seed % 997) / 997;
   });
 
+  const shaderArgs1 = useShaderArgs({ vertexShader, fragmentShader, uniforms });
   return (
     <points ref={pts} geometry={geometry} frustumCulled={false} visible={false}>
       <shaderMaterial
-        args={[{ vertexShader, fragmentShader, uniforms }]}
+        args={shaderArgs1}
         transparent
         depthWrite={false}
         blending={e.additive ? AdditiveBlending : NormalBlending}

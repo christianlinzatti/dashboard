@@ -16,6 +16,7 @@ import {
 import { rng } from "@/lib/dance/rng";
 import { TRUSS_Y, TRUSS_Z } from "../layout";
 import { Instances, mat, songSeconds, type VenueProps, type Xf } from "./shared";
+import { useShaderArgs } from "../shader-args";
 
 /** Tribünen ringsum (Stufen), darauf ein Lichtermeer aus Handys; vier Flutlichtmasten. */
 export function Stadium({ accent, lightsRef }: VenueProps) {
@@ -70,6 +71,27 @@ export function Stadium({ accent, lightsRef }: VenueProps) {
     u.uLevel!.value = 0.5 + 0.5 * (1 - (lightsRef.current?.blackout ?? 0));
   });
 
+  const shaderArgs1 = useShaderArgs({
+    uniforms: seaUniforms,
+    vertexShader: /* glsl */ `
+                attribute float aTw; uniform float uTime; varying float vB; varying float vC;
+                void main() {
+                  vB = 0.45 + 0.55 * pow(0.5 + 0.5 * sin(uTime * (0.8 + aTw * 2.0) + aTw * 60.0), 3.0);
+                  vC = step(0.75, aTw);
+                  vec4 mv = modelViewMatrix * vec4(position, 1.0);
+                  gl_Position = projectionMatrix * mv;
+                  gl_PointSize = 160.0 / max(-mv.z, 1.0);
+                }
+              `,
+    fragmentShader: /* glsl */ `
+                uniform vec3 uColor; uniform float uLevel; varying float vB; varying float vC;
+                void main() {
+                  float d = length(gl_PointCoord - 0.5);
+                  vec3 c = mix(vec3(0.9, 0.95, 1.0), uColor, vC);
+                  gl_FragColor = vec4(c * vB * uLevel * 1.4 * smoothstep(0.5, 0.05, d), 1.0);
+                }
+              `,
+  });
   return (
     <group>
       <Instances matrices={tiers}>
@@ -83,29 +105,7 @@ export function Stadium({ accent, lightsRef }: VenueProps) {
           depthWrite={false}
           blending={AdditiveBlending}
           toneMapped={false}
-          args={[
-            {
-              uniforms: seaUniforms,
-              vertexShader: /* glsl */ `
-                attribute float aTw; uniform float uTime; varying float vB; varying float vC;
-                void main() {
-                  vB = 0.45 + 0.55 * pow(0.5 + 0.5 * sin(uTime * (0.8 + aTw * 2.0) + aTw * 60.0), 3.0);
-                  vC = step(0.75, aTw);
-                  vec4 mv = modelViewMatrix * vec4(position, 1.0);
-                  gl_Position = projectionMatrix * mv;
-                  gl_PointSize = 160.0 / max(-mv.z, 1.0);
-                }
-              `,
-              fragmentShader: /* glsl */ `
-                uniform vec3 uColor; uniform float uLevel; varying float vB; varying float vC;
-                void main() {
-                  float d = length(gl_PointCoord - 0.5);
-                  vec3 c = mix(vec3(0.9, 0.95, 1.0), uColor, vC);
-                  gl_FragColor = vec4(c * vB * uLevel * 1.4 * smoothstep(0.5, 0.05, d), 1.0);
-                }
-              `,
-            },
-          ]}
+          args={shaderArgs1}
         />
       </points>
       <FloodLights />

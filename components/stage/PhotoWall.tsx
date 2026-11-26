@@ -6,6 +6,7 @@ import { useMemo, useRef } from "react";
 import { Color, SRGBColorSpace, type ShaderMaterial } from "three";
 import type { LightFrame, LightScene } from "@/lib/stage/lights";
 import { TRUSS_Z } from "./layout";
+import { useShaderArgs } from "./shader-args";
 
 const VISIBILITY: Record<LightScene, number> = {
   intro: 0.65,
@@ -52,7 +53,6 @@ export function PhotoWall({
   const aspect = img?.width && img?.height ? img.width / img.height : 16 / 10;
   const wall = 10 / 4.4;
   const repeat: [number, number] = aspect > wall ? [wall / aspect, 1] : [1, aspect / wall];
-  const offset: [number, number] = [(1 - repeat[0]) / 2, (1 - repeat[1]) / 2];
 
   useFrame(() => {
     const f = lightsRef.current;
@@ -62,22 +62,18 @@ export function PhotoWall({
     u.uOpacity!.value += (target - (u.uOpacity!.value as number)) * 0.08;
   });
 
-  return (
-    <mesh position={[0, 2.3, TRUSS_Z - 0.48]}>
-      <planeGeometry args={[10, 4.4]} />
-      <shaderMaterial
-        ref={mat}
-        transparent
-        depthWrite={false}
-        toneMapped={false}
-        args={[
-          {
-            uniforms: { ...uniforms, uRepeat: { value: repeat }, uOffset: { value: offset } },
-            vertexShader: /* glsl */ `
+  const [rx, ry] = repeat;
+  const photoUniforms = useMemo(
+    () => ({ ...uniforms, uRepeat: { value: [rx, ry] }, uOffset: { value: [(1 - rx) / 2, (1 - ry) / 2] } }),
+    [uniforms, rx, ry],
+  );
+  const shaderArgs1 = useShaderArgs({
+    uniforms: photoUniforms,
+    vertexShader: /* glsl */ `
               varying vec2 vUv;
               void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }
             `,
-            fragmentShader: /* glsl */ `
+    fragmentShader: /* glsl */ `
               uniform sampler2D uTex; uniform vec3 uDark; uniform vec3 uLight; uniform float uOpacity;
               uniform vec2 uRepeat; uniform vec2 uOffset;
               varying vec2 vUv;
@@ -89,9 +85,11 @@ export function PhotoWall({
                 gl_FragColor = vec4(mix(uDark, uLight, l) * 0.9, uOpacity * edge);
               }
             `,
-          },
-        ]}
-      />
+  });
+  return (
+    <mesh position={[0, 2.3, TRUSS_Z - 0.48]}>
+      <planeGeometry args={[10, 4.4]} />
+      <shaderMaterial ref={mat} transparent depthWrite={false} toneMapped={false} args={shaderArgs1} />
     </mesh>
   );
 }

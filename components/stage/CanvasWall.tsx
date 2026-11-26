@@ -2,7 +2,7 @@
 
 import { useFrame } from "@react-three/fiber";
 import { useTexture } from "@react-three/drei";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { SRGBColorSpace, VideoTexture, type ShaderMaterial, type Texture } from "three";
 import type { LightFrame } from "@/lib/stage/lights";
 import { canvasLayout, CANVAS_VISIBILITY, WALL_H, WALL_W } from "@/lib/stage/canvas-wall";
@@ -80,7 +80,7 @@ const FRAGMENT = /* glsl */ `
 `;
 
 function Panels({ tex, aspect, lightsRef }: { tex: Texture; aspect: number; lightsRef: React.RefObject<LightFrame | null> }) {
-  const layout = canvasLayout(aspect);
+  const layout = useMemo(() => canvasLayout(aspect), [aspect]);
   const main = useRef<ShaderMaterial>(null);
   const fill = useRef<ShaderMaterial>(null);
   const opacity = useRef(-1);
@@ -95,14 +95,23 @@ function Panels({ tex, aspect, lightsRef }: { tex: Texture; aspect: number; ligh
     if (fill.current) fill.current.uniforms.uOpacity!.value = opacity.current;
   });
 
-  const uniforms = (repeat: [number, number], offset: [number, number], dim: number, soft: number) => ({
-    uTex: { value: tex },
-    uOpacity: { value: 0 },
-    uDim: { value: dim },
-    uSoft: { value: soft },
-    uRepeat: { value: repeat },
-    uOffset: { value: offset },
-  });
+  // je Textur und Seitenverhältnis einmal: neue Objekte in `args` hießen bei jedem Rendern ein neues Material
+  // (neue Shader, Deckkraft wieder 0)
+  const [fillArgs, mainArgs] = useMemo(() => {
+    const uniforms = (repeat: [number, number], offset: [number, number], dim: number, soft: number) => ({
+      uTex: { value: tex },
+      uOpacity: { value: 0 },
+      uDim: { value: dim },
+      uSoft: { value: soft },
+      uRepeat: { value: repeat },
+      uOffset: { value: offset },
+    });
+    const args = (u: ReturnType<typeof uniforms>) => [{ uniforms: u, vertexShader: VERTEX, fragmentShader: FRAGMENT }] as const;
+    return [
+      layout.fill ? args(uniforms(layout.fill.repeat, layout.fill.offset, 0.28, 0.12)) : undefined,
+      args(uniforms(layout.main.repeat, layout.main.offset, 0.92, layout.fill ? 0.03 : 0.1)),
+    ];
+  }, [tex, layout]);
 
   return (
     <group position={[0, 2.3, TRUSS_Z - 0.47]}>
@@ -115,13 +124,7 @@ function Panels({ tex, aspect, lightsRef }: { tex: Texture; aspect: number; ligh
             transparent
             depthWrite={false}
             toneMapped={false}
-            args={[
-              {
-                uniforms: uniforms(layout.fill.repeat, layout.fill.offset, 0.28, 0.12),
-                vertexShader: VERTEX,
-                fragmentShader: FRAGMENT,
-              },
-            ]}
+            args={fillArgs}
           />
         </mesh>
       )}
@@ -133,13 +136,7 @@ function Panels({ tex, aspect, lightsRef }: { tex: Texture; aspect: number; ligh
           transparent
           depthWrite={false}
           toneMapped={false}
-          args={[
-            {
-              uniforms: uniforms(layout.main.repeat, layout.main.offset, 0.92, layout.fill ? 0.03 : 0.1),
-              vertexShader: VERTEX,
-              fragmentShader: FRAGMENT,
-            },
-          ]}
+          args={mainArgs}
         />
       </mesh>
     </group>

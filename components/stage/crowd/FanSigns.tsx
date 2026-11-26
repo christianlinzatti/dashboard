@@ -13,6 +13,7 @@ import {
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { SIGN_TILES } from "@/lib/stage/fan-signs";
 import { MOTION } from "./shared";
+import { useShaderArgs } from "../shader-args";
 
 /** Kacheln der Schilder-Textur: 2 Spalten × 4 Zeilen */
 const COLS = 2;
@@ -117,15 +118,9 @@ export function FanSigns({
     },
     [geometry, atlas],
   );
-  if (!atlas || !holders.count) return null;
-  return (
-    <mesh geometry={geometry} frustumCulled={false}>
-      <shaderMaterial
-        side={2}
-        args={[
-          {
-            uniforms: signUniforms,
-            vertexShader: /* glsl */ `
+  const shaderArgs1 = useShaderArgs({
+    uniforms: signUniforms,
+    vertexShader: /* glsl */ `
               attribute vec3 aSpot; attribute vec4 aRand; attribute float aPart; attribute float aTile;
               ${MOTION}
               uniform float uEnergy;
@@ -145,7 +140,7 @@ export function FanSigns({
                 gl_Position = projectionMatrix * viewMatrix * vec4(vW, 1.0);
               }
             `,
-            fragmentShader: /* glsl */ `
+    fragmentShader: /* glsl */ `
               uniform sampler2D uAtlas; uniform vec3 uFogColor, uCam; uniform float uFogFar, uEnergy;
               varying vec2 vUv; varying float vPart; varying float vTile; varying vec3 vW;
               void main() {
@@ -163,9 +158,11 @@ export function FanSigns({
                 gl_FragColor = vec4(mix(color, uFogColor, fog * 0.8), 1.0);
               }
             `,
-          },
-        ]}
-      />
+  });
+  if (!atlas || !holders.count) return null;
+  return (
+    <mesh geometry={geometry} frustumCulled={false}>
+      <shaderMaterial side={2} args={shaderArgs1} />
     </mesh>
   );
 }

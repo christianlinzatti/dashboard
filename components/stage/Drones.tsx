@@ -7,6 +7,7 @@ import { rng } from "@/lib/dance/rng";
 import type { Choreography } from "@/lib/dance/plan";
 import { DRONE_CENTER, DRONE_SIZE, dronesAt, heartPoint } from "@/lib/stage/staging";
 import type { Frame } from "./types";
+import { useShaderArgs } from "./shader-args";
 
 const COUNT = 220;
 const STAGES = { schwarm: 0, herz: 1, wort: 2, aus: 0 } as const;
@@ -111,18 +112,9 @@ export function Drones({
     if (gl.domElement.dataset.drones !== d.formation) gl.domElement.dataset.drones = d.formation;
   });
 
-  return (
-    <points geometry={geometry} frustumCulled={false}>
-      <shaderMaterial
-        ref={mat}
-        transparent
-        depthWrite={false}
-        blending={AdditiveBlending}
-        toneMapped={false}
-        args={[
-          {
-            uniforms,
-            vertexShader: /* glsl */ `
+  const shaderArgs1 = useShaderArgs({
+    uniforms,
+    vertexShader: /* glsl */ `
               attribute vec3 aSwarm, aHeart, aWord; attribute float aSeed;
               uniform float uStage, uW, uLevel, uTime, uPx;
               uniform vec3 uA, uB;
@@ -143,15 +135,23 @@ export function Drones({
                 gl_PointSize = step(0.01, uLevel) * 0.32 * uPx / max(-mv.z, 0.1);
               }
             `,
-            fragmentShader: /* glsl */ `
+    fragmentShader: /* glsl */ `
               varying vec3 vColor;
               void main() {
                 float d = length(gl_PointCoord - 0.5);
                 gl_FragColor = vec4(vColor * smoothstep(0.5, 0.0, d) * 1.4, 1.0);
               }
             `,
-          },
-        ]}
+  });
+  return (
+    <points geometry={geometry} frustumCulled={false}>
+      <shaderMaterial
+        ref={mat}
+        transparent
+        depthWrite={false}
+        blending={AdditiveBlending}
+        toneMapped={false}
+        args={shaderArgs1}
       />
     </points>
   );

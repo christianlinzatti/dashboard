@@ -75,6 +75,8 @@ export function CrowdFlags({
       m.uniforms.uLight!.value = light;
     });
   });
+  // stabil je Fahne: neue Objekte in `args` hießen bei jedem Rendern neue Materialien (und neue Shader)
+  const flagArgs = useMemo(() => uniforms.map((u) => [{ ...flagShader, uniforms: u }] as const), [uniforms]);
   return (
     <group>
       {/* alle Fahnenmasten: ein Zeichenaufruf */}
@@ -86,11 +88,7 @@ export function CrowdFlags({
         <group key={i} position={[x, 0, z]} rotation-y={(i % 2 ? 1 : -1) * 0.5}>
           <mesh position={[0.45, 2.1, 0]}>
             <planeGeometry args={[0.9, 0.56, 16, 4]} />
-            <shaderMaterial
-              ref={(m) => void (mats.current[i] = m)}
-              args={[{ ...flagShader, uniforms: uniforms[i] }]}
-              side={DoubleSide}
-            />
+            <shaderMaterial ref={(m) => void (mats.current[i] = m)} args={flagArgs[i]} side={DoubleSide} />
           </mesh>
         </group>
       ))}

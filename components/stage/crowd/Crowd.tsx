@@ -24,6 +24,7 @@ import type { Frame } from "../types";
 import { BASE_Y, MAX, MOTION, personGeometry } from "./shared";
 import { FanSigns } from "./FanSigns";
 import { CrowdProps } from "./CrowdProps";
+import { useShaderArgs } from "../shader-args";
 
 /** Publikum ohne Wiedergabe: ruhig, Armbänder glimmen */
 const CROWD_IDLE: CrowdFrame = {
@@ -253,20 +254,9 @@ export function Crowd({
     if (gl.domElement.dataset.crowd !== label) gl.domElement.dataset.crowd = label;
   });
 
-  return (
-    <group>
-      {/* Graben: dunkelt den Boden unter der Menge ab (sie steht tiefer als die Bühne) */}
-      <mesh rotation-x={-Math.PI / 2} position-y={-0.252}>
-        <ringGeometry args={[4.75, 16, 48, 1, (Math.PI * 5) / 6 - 0.2, (Math.PI * 4) / 3 + 0.4]} />
-        <meshBasicMaterial color={dark} transparent opacity={0.86} depthWrite={false} />
-      </mesh>
-      <mesh ref={bodyMesh} geometry={bodies} frustumCulled={false}>
-        <shaderMaterial
-          ref={people}
-          args={[
-            {
-              uniforms: peopleUniforms,
-              vertexShader: /* glsl */ `
+  const shaderArgs1 = useShaderArgs({
+    uniforms: peopleUniforms,
+    vertexShader: /* glsl */ `
                 attribute vec3 aSpot; attribute vec4 aRand; attribute float aPart;
                 ${MOTION}
                 varying vec3 vN; varying vec3 vW; varying vec3 vAlbedo;
@@ -302,7 +292,7 @@ export function Crowd({
                   gl_Position = projectionMatrix * viewMatrix * vec4(vW, 1.0);
                 }
               `,
-              fragmentShader: /* glsl */ `
+    fragmentShader: /* glsl */ `
                 uniform vec3 uColor, uGlow, uFogColor, uCam; uniform float uEnergy, uFogFar, uBlind;
                 varying vec3 vN; varying vec3 vW; varying vec3 vAlbedo;
                 void main() {
@@ -322,23 +312,10 @@ export function Crowd({
                   gl_FragColor = vec4(mix(col, uFogColor, fog), 1.0);
                 }
               `,
-            },
-          ]}
-        />
-      </mesh>
-      <CrowdProps choreo={choreo} frameRef={frameRef} balls={balls} color={accent} />
-      {signs.length > 0 && <FanSigns texts={signs} accent={accent} holders={signHolders} uniforms={peopleUniforms} />}
-      <points ref={lightPoints} geometry={points} frustumCulled={false}>
-        <shaderMaterial
-          ref={lights}
-          transparent
-          depthWrite={false}
-          blending={AdditiveBlending}
-          toneMapped={false}
-          args={[
-            {
-              uniforms: lightUniforms,
-              vertexShader: /* glsl */ `
+  });
+  const shaderArgs2 = useShaderArgs({
+    uniforms: lightUniforms,
+    vertexShader: /* glsl */ `
                 attribute vec3 aSpot; attribute vec4 aRand; attribute float aKind;
                 ${MOTION}
                 uniform float uBands, uBandMode, uPx, uFogFar, uLighter;
@@ -380,15 +357,34 @@ export function Crowd({
                   gl_PointSize = step(0.02, level) * size * uPx / max(-mv.z, 0.1);
                 }
               `,
-              fragmentShader: /* glsl */ `
+    fragmentShader: /* glsl */ `
                 varying vec3 vColor;
                 void main() {
                   float d = length(gl_PointCoord - 0.5);
                   gl_FragColor = vec4(vColor * smoothstep(0.5, 0.05, d), 1.0);
                 }
               `,
-            },
-          ]}
+  });
+  return (
+    <group>
+      {/* Graben: dunkelt den Boden unter der Menge ab (sie steht tiefer als die Bühne) */}
+      <mesh rotation-x={-Math.PI / 2} position-y={-0.252}>
+        <ringGeometry args={[4.75, 16, 48, 1, (Math.PI * 5) / 6 - 0.2, (Math.PI * 4) / 3 + 0.4]} />
+        <meshBasicMaterial color={dark} transparent opacity={0.86} depthWrite={false} />
+      </mesh>
+      <mesh ref={bodyMesh} geometry={bodies} frustumCulled={false}>
+        <shaderMaterial ref={people} args={shaderArgs1} />
+      </mesh>
+      <CrowdProps choreo={choreo} frameRef={frameRef} balls={balls} color={accent} />
+      {signs.length > 0 && <FanSigns texts={signs} accent={accent} holders={signHolders} uniforms={peopleUniforms} />}
+      <points ref={lightPoints} geometry={points} frustumCulled={false}>
+        <shaderMaterial
+          ref={lights}
+          transparent
+          depthWrite={false}
+          blending={AdditiveBlending}
+          toneMapped={false}
+          args={shaderArgs2}
         />
       </points>
     </group>

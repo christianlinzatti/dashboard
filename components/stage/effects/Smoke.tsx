@@ -17,6 +17,7 @@ import type { LightFrame } from "@/lib/stage/lights";
 import { activeBursts, BURST_MS, groundFogLevel, planSmoke, PUFF_LIFE_MS, SMOKE_MACHINES } from "@/lib/stage/smoke";
 import type { Frame } from "../types";
 import { NOT_ON_SCREENS } from "../layout";
+import { useShaderArgs } from "../shader-args";
 
 /** Weiche, unregelmäßige Nebelwolke (einmal gezeichnet, für alle Teilchen) */
 function puffTexture() {
@@ -130,23 +131,9 @@ export function Smoke({
     if (gl.domElement.dataset.smoke !== label) gl.domElement.dataset.smoke = label;
   });
 
-  return (
-    <mesh
-      geometry={geometry}
-      frustumCulled={false}
-      // feiner Dunst: auf den kleinen Live-Bildschirmen nicht mitgefilmt
-      ref={(m) => m?.layers.set(NOT_ON_SCREENS)}
-    >
-      <shaderMaterial
-        ref={mat}
-        transparent
-        depthWrite={false}
-        blending={AdditiveBlending}
-        toneMapped={false}
-        args={[
-          {
-            uniforms,
-            vertexShader: /* glsl */ `
+  const shaderArgs1 = useShaderArgs({
+    uniforms,
+    vertexShader: /* glsl */ `
               attribute vec4 aSeed; attribute float aKind;
               uniform float uTime, uGround, uAgeA, uStrA, uAgeB, uStrB;
               varying vec2 vUv; varying float vAlpha; varying float vMix;
@@ -192,7 +179,7 @@ export function Smoke({
                 gl_Position = alpha > 0.001 ? projectionMatrix * mv : vec4(2.0, 2.0, 2.0, 1.0);
               }
             `,
-            fragmentShader: /* glsl */ `
+    fragmentShader: /* glsl */ `
               uniform sampler2D uTex; uniform vec3 uColA, uColB; uniform float uLight;
               varying vec2 vUv; varying float vAlpha; varying float vMix;
               void main() {
@@ -202,8 +189,21 @@ export function Smoke({
                 gl_FragColor = vec4(col * m * vAlpha * 4.0, 1.0);
               }
             `,
-          },
-        ]}
+  });
+  return (
+    <mesh
+      geometry={geometry}
+      frustumCulled={false}
+      // feiner Dunst: auf den kleinen Live-Bildschirmen nicht mitgefilmt
+      ref={(m) => m?.layers.set(NOT_ON_SCREENS)}
+    >
+      <shaderMaterial
+        ref={mat}
+        transparent
+        depthWrite={false}
+        blending={AdditiveBlending}
+        toneMapped={false}
+        args={shaderArgs1}
       />
     </mesh>
   );

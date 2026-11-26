@@ -26,6 +26,7 @@ import type { LightFrame } from "@/lib/stage/lights";
 import type { Theme } from "@/lib/stage/themes";
 import { Instances, mat } from "./instances";
 import { TRUSS_Y, TRUSS_Z } from "./layout";
+import { useShaderArgs } from "./shader-args";
 
 /**
  * Schaum und Konfetti als echte 3D-Körper statt Bildpunkten: instanzierte Kugeln bzw. Papierschnipsel, im Vertex-Shader
@@ -322,12 +323,10 @@ export function Foam3D({
         0.55,
       );
   });
+  const shaderArgs1 = useShaderArgs({ vertexShader: foamVertex, fragmentShader: foamFragment, uniforms, fog: true });
   return (
     <mesh ref={mesh} geometry={geometry} frustumCulled={false} visible={false}>
-      <shaderMaterial
-        args={[{ vertexShader: foamVertex, fragmentShader: foamFragment, uniforms, fog: true }]}
-        toneMapped={false}
-      />
+      <shaderMaterial args={shaderArgs1} toneMapped={false} />
     </mesh>
   );
 }
@@ -387,13 +386,10 @@ export function Confetti3D({
         0.35,
       );
   });
+  const shaderArgs2 = useShaderArgs({ vertexShader: confettiVertex, fragmentShader: confettiFragment, uniforms, fog: true });
   return (
     <mesh ref={mesh} geometry={geometry} frustumCulled={false} visible={false}>
-      <shaderMaterial
-        args={[{ vertexShader: confettiVertex, fragmentShader: confettiFragment, uniforms, fog: true }]}
-        side={DoubleSide}
-        toneMapped={false}
-      />
+      <shaderMaterial args={shaderArgs2} side={DoubleSide} toneMapped={false} />
     </mesh>
   );
 }

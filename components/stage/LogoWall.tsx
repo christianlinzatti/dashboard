@@ -6,6 +6,7 @@ import { useMemo, useRef } from "react";
 import { Color, SRGBColorSpace, type ShaderMaterial } from "three";
 import type { LightFrame, LightScene } from "@/lib/stage/lights";
 import { TRUSS_Z } from "./layout";
+import { useShaderArgs } from "./shader-args";
 
 /** Wann das Logo zu sehen ist: ruhige Teile ja, Strophe/Refrain nicht (Lyrics haben Vorrang). */
 const VISIBILITY: Record<LightScene, number> = {
@@ -52,22 +53,13 @@ export function LogoWall({
     u.uOpacity!.value += (target - (u.uOpacity!.value as number)) * 0.06;
   });
 
-  return (
-    <mesh position={[0, 2.45, TRUSS_Z - 0.4]}>
-      <planeGeometry args={[w, h]} />
-      <shaderMaterial
-        ref={mat}
-        transparent
-        depthWrite={false}
-        toneMapped={false}
-        args={[
-          {
-            uniforms,
-            vertexShader: /* glsl */ `
+  const shaderArgs1 = useShaderArgs({
+    uniforms,
+    vertexShader: /* glsl */ `
               varying vec2 vUv;
               void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }
             `,
-            fragmentShader: /* glsl */ `
+    fragmentShader: /* glsl */ `
               uniform sampler2D uTex; uniform vec3 uColor; uniform float uOpacity;
               varying vec2 vUv;
               void main() {
@@ -77,9 +69,11 @@ export function LogoWall({
                 gl_FragColor = vec4(uColor * (0.8 + 0.6 * l), c.a * uOpacity);
               }
             `,
-          },
-        ]}
-      />
+  });
+  return (
+    <mesh position={[0, 2.45, TRUSS_Z - 0.4]}>
+      <planeGeometry args={[w, h]} />
+      <shaderMaterial ref={mat} transparent depthWrite={false} toneMapped={false} args={shaderArgs1} />
     </mesh>
   );
 }

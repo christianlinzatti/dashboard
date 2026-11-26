@@ -21,6 +21,7 @@ import {
 import { rng } from "@/lib/dance/rng";
 import { songContext } from "@/lib/song-context/store";
 import type { Theme } from "@/lib/stage/themes";
+import { useShaderArgs } from "./shader-args";
 
 /**
  * `<threeLine>` (THREE.Line; `<line>` wäre das SVG-Element) ausdrücklich registrieren: React Three Fiber findet den
@@ -55,18 +56,10 @@ export function SkyDome({
     }),
     [top, horizon, nebula, nebulaColor],
   );
-  return (
-    <mesh>
-      <sphereGeometry args={[60, 32, 16]} />
-      <shaderMaterial
-        side={BackSide}
-        depthWrite={false}
-        fog={false}
-        args={[
-          {
-            uniforms,
-            vertexShader: plainVertex,
-            fragmentShader: /* glsl */ `
+  const shaderArgs1 = useShaderArgs({
+    uniforms,
+    vertexShader: plainVertex,
+    fragmentShader: /* glsl */ `
               uniform vec3 uTop, uHorizon, uNebulaColor; uniform float uNebula; varying vec3 vPos;
               float n(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
               float noise(vec2 p) { vec2 i = floor(p); vec2 f = fract(p); f = f * f * (3.0 - 2.0 * f);
@@ -82,9 +75,11 @@ export function SkyDome({
                 gl_FragColor = vec4(col, 1.0);
               }
             `,
-          },
-        ]}
-      />
+  });
+  return (
+    <mesh>
+      <sphereGeometry args={[60, 32, 16]} />
+      <shaderMaterial side={BackSide} depthWrite={false} fog={false} args={shaderArgs1} />
     </mesh>
   );
 }
@@ -112,18 +107,10 @@ export function Stars({ count, size = 0.18 }: { count: number; size?: number }) 
   useFrame(() => {
     if (mat.current) mat.current.uniforms.uTime!.value = songContext.getState().positionMs / 1000;
   });
-  return (
-    <points geometry={geometry} frustumCulled={false}>
-      <shaderMaterial
-        ref={mat}
-        transparent
-        depthWrite={false}
-        fog={false}
-        blending={AdditiveBlending}
-        args={[
-          {
-            uniforms: { uTime: { value: 0 }, uSize: { value: size } },
-            vertexShader: /* glsl */ `
+  const starUniforms = useMemo(() => ({ uTime: { value: 0 }, uSize: { value: size } }), [size]);
+  const shaderArgs2 = useShaderArgs({
+    uniforms: starUniforms,
+    vertexShader: /* glsl */ `
               attribute float aTw; uniform float uTime, uSize; varying float vB;
               void main() {
                 vB = 0.55 + 0.45 * sin(uTime * (0.8 + aTw * 2.0) + aTw * 40.0);
@@ -132,13 +119,14 @@ export function Stars({ count, size = 0.18 }: { count: number; size?: number }) 
                 gl_PointSize = (1.0 + aTw * 2.2) * uSize * 10.0;
               }
             `,
-            fragmentShader: /* glsl */ `
+    fragmentShader: /* glsl */ `
               varying float vB;
               void main() { float d = length(gl_PointCoord - 0.5); gl_FragColor = vec4(vec3(1.0) * smoothstep(0.5, 0.0, d) * vB, 1.0); }
             `,
-          },
-        ]}
-      />
+  });
+  return (
+    <points geometry={geometry} frustumCulled={false}>
+      <shaderMaterial ref={mat} transparent depthWrite={false} fog={false} blending={AdditiveBlending} args={shaderArgs2} />
     </points>
   );
 }
@@ -173,20 +161,10 @@ export function RetroSun({ top, bottom, edge }: { top: string; bottom: string; e
     [mountains],
   );
   useEffect(() => () => ridge.dispose(), [ridge]);
-  return (
-    <group position={[0, 0, -20]}>
-      <mesh position={[0, 3.2, -0.2]}>
-        <circleGeometry args={[6.5, 64]} />
-        <shaderMaterial
-          ref={mat}
-          fog={false}
-          transparent
-          toneMapped={false}
-          args={[
-            {
-              uniforms,
-              vertexShader: plainVertex,
-              fragmentShader: /* glsl */ `
+  const shaderArgs3 = useShaderArgs({
+    uniforms,
+    vertexShader: plainVertex,
+    fragmentShader: /* glsl */ `
                 uniform vec3 uTop, uBottom; uniform float uTime; varying vec2 vUv;
                 void main() {
                   float y = vUv.y;
@@ -197,9 +175,12 @@ export function RetroSun({ top, bottom, edge }: { top: string; bottom: string; e
                   gl_FragColor = vec4(col * 1.25, 1.0 - gap);
                 }
               `,
-            },
-          ]}
-        />
+  });
+  return (
+    <group position={[0, 0, -20]}>
+      <mesh position={[0, 3.2, -0.2]}>
+        <circleGeometry args={[6.5, 64]} />
+        <shaderMaterial ref={mat} fog={false} transparent toneMapped={false} args={shaderArgs3} />
       </mesh>
       <mesh position={[0, -0.6, 0.5]}>
         <shapeGeometry args={[mountains]} />
@@ -219,18 +200,10 @@ export function NeonGrid({ color, beatMs }: { color: string; beatMs: number }) {
   useFrame(() => {
     if (mat.current) mat.current.uniforms.uShift!.value = songContext.getState().positionMs / beatMs;
   });
-  return (
-    <mesh rotation-x={-Math.PI / 2} position-y={-0.26}>
-      <planeGeometry args={[80, 80]} />
-      <shaderMaterial
-        ref={mat}
-        fog={false}
-        toneMapped={false}
-        args={[
-          {
-            uniforms,
-            vertexShader: plainVertex,
-            fragmentShader: /* glsl */ `
+  const shaderArgs4 = useShaderArgs({
+    uniforms,
+    vertexShader: plainVertex,
+    fragmentShader: /* glsl */ `
               uniform vec3 uColor; uniform float uShift; varying vec3 vPos;
               void main() {
                 vec2 p = vPos.xy;
@@ -241,9 +214,11 @@ export function NeonGrid({ color, beatMs }: { color: string; beatMs: number }) {
                 gl_FragColor = vec4(uColor * line * fade + vec3(0.04, 0.0, 0.07), 1.0);
               }
             `,
-          },
-        ]}
-      />
+  });
+  return (
+    <mesh rotation-x={-Math.PI / 2} position-y={-0.26}>
+      <planeGeometry args={[80, 80]} />
+      <shaderMaterial ref={mat} fog={false} toneMapped={false} args={shaderArgs4} />
     </mesh>
   );
 }
@@ -255,16 +230,10 @@ export function Curtain({ color, z }: { color: string; z: number }) {
   useFrame(() => {
     if (mat.current) mat.current.uniforms.uTime!.value = songContext.getState().positionMs / 1000;
   });
-  return (
-    <mesh position={[0, 3.2, z]}>
-      <planeGeometry args={[16, 7.4]} />
-      <shaderMaterial
-        ref={mat}
-        args={[
-          {
-            uniforms,
-            vertexShader: plainVertex,
-            fragmentShader: /* glsl */ `
+  const shaderArgs5 = useShaderArgs({
+    uniforms,
+    vertexShader: plainVertex,
+    fragmentShader: /* glsl */ `
               uniform vec3 uColor; uniform float uTime; varying vec2 vUv;
               void main() {
                 float x = vUv.x * 46.0 + sin(vUv.y * 3.0 + uTime * 0.4) * 0.6;
@@ -273,9 +242,11 @@ export function Curtain({ color, z }: { color: string; z: number }) {
                 gl_FragColor = vec4(uColor * fold * light * 0.75, 1.0);
               }
             `,
-          },
-        ]}
-      />
+  });
+  return (
+    <mesh position={[0, 3.2, z]}>
+      <planeGeometry args={[16, 7.4]} />
+      <shaderMaterial ref={mat} args={shaderArgs5} />
     </mesh>
   );
 }
@@ -287,21 +258,13 @@ export function Planet({ color, ring }: { color: string; ring: string }) {
     if (group.current) group.current.rotation.y = songContext.getState().positionMs / 60_000;
   });
   const uniforms = useMemo(() => ({ uColor: { value: new Color(color) } }), [color]);
-  return (
-    <group position={[5.5, 3.4, -20]}>
-      <group ref={group}>
-        <mesh>
-          <sphereGeometry args={[3.2, 48, 32]} />
-          <shaderMaterial
-            fog={false}
-            args={[
-              {
-                uniforms,
-                vertexShader: /* glsl */ `
+  const shaderArgs6 = useShaderArgs({
+    uniforms,
+    vertexShader: /* glsl */ `
                   varying vec3 vN; varying vec3 vP;
                   void main() { vN = normalize(normalMatrix * normal); vP = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }
                 `,
-                fragmentShader: /* glsl */ `
+    fragmentShader: /* glsl */ `
                   uniform vec3 uColor; varying vec3 vN; varying vec3 vP;
                   void main() {
                     float lit = clamp(dot(vN, normalize(vec3(-0.7, 0.4, 0.6))), 0.0, 1.0);
@@ -310,9 +273,13 @@ export function Planet({ color, ring }: { color: string; ring: string }) {
                     gl_FragColor = vec4(uColor * bands * (0.08 + 0.92 * lit) + uColor * rim * 0.6, 1.0);
                   }
                 `,
-              },
-            ]}
-          />
+  });
+  return (
+    <group position={[5.5, 3.4, -20]}>
+      <group ref={group}>
+        <mesh>
+          <sphereGeometry args={[3.2, 48, 32]} />
+          <shaderMaterial fog={false} args={shaderArgs6} />
         </mesh>
       </group>
       <mesh rotation={[-1.2, 0.25, 0]}>
