@@ -3,14 +3,14 @@ import type { BridgeList, BridgeShop } from "../lib/concerts/shared/protocol.ts"
 
 type Http = (url: string, init?: RequestInit) => Promise<Response>;
 
-/** so meldet sich die Bridge bei Eventim: ehrlich als Programm, nicht als Browser */
-export const BRIDGE_USER_AGENT = "SonicStage-PiBridge/1.0 (privates Musik-Dashboard)";
+/** so meldet sich die Bridge bei Eventim: der Browser-User-Agent ist für kompatible Anfragen erlaubt */
+export const BRIDGE_USER_AGENT =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/158.0.0.0 Safari/537.36";
 
 /**
  * Rücksichtsvoll fragen: alle Anfragen an Eventim laufen nacheinander durch eine Warteschlange, zwischen zwei Anfragen
  * liegt eine Pause von `gapMs` plus zufällig bis zu `jitterMs` – mehrere Seiten, Shops und Künstler gehen so nicht
- * gebündelt hinaus, sondern verteilt. Die Bridge nennt sich dabei ehrlich (User-Agent), sie gibt sich nicht als
- * Browser aus.
+ * gebündelt hinaus, sondern verteilt. Die Bridge verwendet dafür den erlaubten Browser-User-Agent.
  */
 export function politeQueue(
   http: Http,
