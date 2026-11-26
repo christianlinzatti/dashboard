@@ -8,12 +8,13 @@ import { exec } from "node:child_process";
 import dgram from "node:dgram";
 import { existsSync } from "node:fs";
 import path from "node:path";
-import { loadConfig, resolveLamps } from "./config.ts";
+import { CONCERT_DEFAULTS, loadConfig, resolveLamps } from "./config.ts";
 import { LampController } from "./controller.ts";
 import { discover } from "./discovery.ts";
 import { createBridgeServer } from "./server.ts";
 import { createWatchdog } from "./watchdog.ts";
 import { createDisplay } from "./display.ts";
+import { BRIDGE_USER_AGENT, createConcertFetcher, politeQueue } from "./concerts.ts";
 
 const configPath = process.argv[2] ?? path.join(import.meta.dirname, "config.json");
 if (!existsSync(configPath)) {
@@ -68,8 +69,33 @@ const watchdog = wd
   : undefined;
 if (watchdog) setInterval(() => watchdog.check(), 5000);
 
-const server = await createBridgeServer({ port: cfg.port, allowedOrigins: cfg.allowedOrigins, controller, watchdog, display });
+// Konzerttermine (oeticket, eventim.de): ehrlich als Bridge erkennbar, Anfragen einzeln mit zufälliger Pause
+const c = cfg.concerts ?? CONCERT_DEFAULTS;
+const concerts = c.enabled
+  ? createConcertFetcher({
+      shops: c.shops,
+      maxPages: c.maxPages,
+      http: politeQueue(
+        (url, init) =>
+          fetch(url, {
+            ...init,
+            headers: { ...(init?.headers as Record<string, string>), "User-Agent": BRIDGE_USER_AGENT },
+          }),
+        { gapMs: c.gapMs, jitterMs: c.jitterMs },
+      ),
+    })
+  : undefined;
+
+const server = await createBridgeServer({
+  port: cfg.port,
+  allowedOrigins: cfg.allowedOrigins,
+  controller,
+  watchdog,
+  display,
+  concerts,
+});
 console.log(`Bridge läuft auf ws://127.0.0.1:${server.port} (Status: http://127.0.0.1:${server.port}/status)`);
+if (concerts) console.log(`Konzerttermine über die Bridge: ${concerts.shops.join(", ")}`);
 console.log(`Erlaubtes Dashboard: ${cfg.allowedOrigins.join(", ")} – beenden mit Strg+C`);
 
 const stop = async () => {

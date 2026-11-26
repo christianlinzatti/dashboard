@@ -2,6 +2,24 @@ import { readFile } from "node:fs/promises";
 import { z } from "zod";
 import type { DiscoveredDevice } from "./govee.ts";
 import type { Lamp } from "./controller.ts";
+import { BRIDGE_SHOPS } from "../lib/concerts/shared/protocol.ts";
+
+/**
+ * Konzerttermine von oeticket.com und eventim.de über den Heimanschluss abfragen (der Server wird dort gesperrt).
+ * Anfragen gehen nacheinander hinaus, mit `gapMs` plus zufällig bis zu `jitterMs` Pause dazwischen.
+ */
+const concertsSchema = z.object({
+  enabled: z.boolean().default(true),
+  shops: z
+    .array(z.enum(BRIDGE_SHOPS))
+    .min(1)
+    .default([...BRIDGE_SHOPS]),
+  gapMs: z.number().int().min(500).max(60_000).default(1000),
+  jitterMs: z.number().int().min(0).max(60_000).default(1500),
+  maxPages: z.number().int().min(1).max(8).default(8),
+});
+/** ohne Eintrag „concerts“ in der config.json: an, beide Shops */
+export const CONCERT_DEFAULTS = concertsSchema.parse({});
 
 const configSchema = z.object({
   /** Herkunft(en) des Dashboards, z. B. ["https://dein-projekt.vercel.app"] */
@@ -35,6 +53,7 @@ const configSchema = z.object({
    * „wlr-randr --output HDMI-A-1 --off“ / „… --on“ (Raspberry Pi OS mit Wayland)
    */
   display: z.object({ off: z.string().min(1), on: z.string().min(1) }).optional(),
+  concerts: concertsSchema.optional(),
 });
 export type BridgeConfig = z.infer<typeof configSchema>;
 export type LampConfig = BridgeConfig["lamps"][number];

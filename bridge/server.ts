@@ -4,6 +4,8 @@ import { z } from "zod";
 import type { LampController } from "./controller.ts";
 import type { Watchdog } from "./watchdog.ts";
 import type { Display } from "./display.ts";
+import type { ConcertFetcher } from "./concerts.ts";
+import { concertsRequest, type ConcertsResponse } from "../lib/concerts/shared/protocol.ts";
 
 /** Nachricht vom Dashboard: aktuelles Lichtsignal (ca. 20×/s, nur bei Änderung). */
 export const lightMessage = z.object({
@@ -40,16 +42,22 @@ export type BridgeOptions = {
   watchdog?: Watchdog;
   /** optional: Bildschirm per Systembefehl ein-/ausschalten */
   display?: Display;
+  /** optional: Konzerttermine (oeticket, eventim.de) vom Heimanschluss aus abfragen */
+  concerts?: ConcertFetcher;
 };
+
+/** so viele Konzert-Abfragen gleichzeitig (über alle Verbindungen); weitere bekommen eine Absage */
+const MAX_CONCERT_REQUESTS = 3;
 
 /**
  * WebSocket-Server der Pi-Bridge: nur auf 127.0.0.1, nur für erlaubte Dashboard-Herkünfte.
  * GET /status liefert Lampen und Zustand (für Diagnose und das Dashboard).
  */
 export function createBridgeServer(opts: BridgeOptions) {
-  const { host = "127.0.0.1", port = 8787, allowedOrigins, controller, watchdog, display } = opts;
+  const { host = "127.0.0.1", port = 8787, allowedOrigins, controller, watchdog, display, concerts } = opts;
   const allowed = (origin: string | undefined) => !!origin && allowedOrigins.includes(origin);
   let clients = 0;
+  let concertRequests = 0;
 
   const server = http.createServer((req, res) => {
     const origin = req.headers.origin;
@@ -66,6 +74,7 @@ export function createBridgeServer(opts: BridgeOptions) {
           ...controller.status(),
           ...(watchdog ? { watchdog: watchdog.status() } : {}),
           ...(display ? { display: display.status() } : {}),
+          ...(concerts ? { concerts: concerts.status() } : {}),
         }),
       );
       return;
@@ -98,7 +107,20 @@ export function createBridgeServer(opts: BridgeOptions) {
         return;
       }
       const d = displayMessage.safeParse(parsed);
-      if (d.success) display?.set(d.data.on);
+      if (d.success) return display?.set(d.data.on);
+      const c = concertsRequest.safeParse(parsed);
+      if (c.success) {
+        const reply = (results: ConcertsResponse["results"], off?: true) => {
+          if (ws.readyState === ws.OPEN) ws.send(JSON.stringify({ type: "concerts", id: c.data.id, results, off }));
+        };
+        if (!concerts) return reply([], true);
+        if (concertRequests >= MAX_CONCERT_REQUESTS) return reply([]);
+        concertRequests++;
+        void concerts
+          .lookup(c.data.artists, c.data.fresh)
+          .then(reply, () => reply([]))
+          .finally(() => concertRequests--);
+      }
     });
   });
 

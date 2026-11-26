@@ -1,11 +1,13 @@
 # Pi-Bridge
 
 Kleiner Dienst auf dem Raspberry Pi oder einem Windows-, Linux- oder Mac-Rechner. Er verbindet das Dashboard im Browser mit Geräten im Heimnetz.
-Aktuell steuert er die **Govee-Lampen über die LAN-API**, im Takt des LightDirectors.
+Er steuert die **Govee-Lampen über die LAN-API** im Takt des LightDirectors und fragt die **Konzerttermine von
+oeticket und eventim.de** über den Heimanschluss ab (den Server sperrt Eventim).
 
 ```
 Dashboard (Chromium, Vercel-Seite) ──WebSocket ws://127.0.0.1:8787──► Pi-Bridge ──UDP 4003──► Govee-Lampen
-                                                                       └─ UDP-Multicast-Suche (4001/4002)
+                                                                       ├─ UDP-Multicast-Suche (4001/4002)
+                                                                       └─ HTTPS ──► public-api.eventim.com
 ```
 
 ## Einrichtung
@@ -122,6 +124,32 @@ Sicherheitsnetz: Geschaltet wird höchstens alle 10 s. Beim Start der Bridge und
 Bildschirm an. Meldet sich das Dashboard bei dunklem Bildschirm zwei Minuten lang nicht, geht er ebenfalls wieder an.
 `http://127.0.0.1:8787/status` zeigt den Zustand (`display.on`, letzter Grund). Mit einem echten Monitor ist das
 noch nicht getestet. Bitte einmal von Hand prüfen, ob die Befehle auf deinem Gerät wirken.
+
+## Konzerttermine (oeticket, eventim.de)
+
+Eventim sperrt Rechenzentrums-Adressen wie die von Vercel (403, Bot-Schutz). Die Bridge fragt deshalb vom
+Heimanschluss aus. Der Kiosk zeigt zuerst die übrigen Quellen (Ticketmaster usw.), holt dann über die Bridge die Termine
+von oeticket und eventim.de und lässt sie vom Server zusammenführen (`POST /api/concerts`). Ohne Bridge, zum Beispiel am
+Laptop, fragt der Server wie bisher selbst.
+
+Das ist ohne Eintrag eingeschaltet. Anpassen oder abschalten in `config.json`:
+
+```json
+"concerts": { "enabled": true, "shops": ["oeticket", "eventim"], "gapMs": 1000, "jitterMs": 1500, "maxPages": 8 }
+```
+
+- **Rücksichtsvoll:** Alle Anfragen an Eventim laufen nacheinander durch eine Warteschlange. Zwischen zwei Anfragen
+  liegen `gapMs` plus zufällig bis zu `jitterMs` Millisekunden, standardmäßig 1 bis 2,5 s. Seiten, Shops und Künstler gehen so
+  nicht gebündelt hinaus. Beim ersten Mal dauert es deshalb: ein Künstler mit 8 Ergebnisseiten in beiden Shops braucht
+  gut 20 s. Die Konzertkarte kommt erst am Songende, das reicht meist.
+- **Ehrlich:** Die Bridge meldet sich als `SonicStage-PiBridge/1.0`, sie gibt sich nicht als Browser aus. Sperrt
+  Eventim auch den Heimanschluss, steht das als Fehler in `/debug` („eventim 403 – Zugriff gesperrt“). Umgehen lässt
+  sich das nicht.
+- **Cache:** Ergebnisse merkt sich die Bridge 12 h, Fehler 30 min, gleichzeitige Anfragen für denselben Künstler laufen
+  nur einmal. Höchstens 3 Abfragen gleichzeitig. `/status` zeigt `concerts.cached` und `concerts.running`.
+- **Prüfen:** In `/debug` unter „Konzerttermine“ steht hinter Quellen von der Bridge „(Pi)“.
+- Der Server nimmt von der Bridge nur geprüfte Daten an: oeticket und eventim, höchstens 300 Termine je Liste. Ticket-Links
+  müssen per https auf oeticket.com oder eventim.de zeigen.
 
 ## Hinweise
 

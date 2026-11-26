@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 import { z } from "zod";
 import { classifyRaw } from "@/lib/concerts/debug";
 import { concertsFor, missingConcertSources } from "@/lib/concerts/service";
+import { bridgeList, type BridgeList } from "@/lib/concerts/shared/protocol";
 import { effectiveArea, prefsStore } from "@/lib/server/prefs-store";
 import { readSession } from "@/lib/server/session";
 import { json } from "@/lib/server/spotify-route";
@@ -26,29 +27,43 @@ export async function GET(req: NextRequest) {
   if (!session) return json({ error: "Nicht angemeldet." }, 401);
   const q = query.safeParse(Object.fromEntries(req.nextUrl.searchParams));
   if (!q.success) return json({ error: "Ungültige Anfrage." }, 400);
+  return check(req, session.uid, q.data);
+}
+
+/** Wie GET, dazu die Ergebnisse der Pi-Bridge (oeticket, eventim.de vom Heimanschluss) */
+const body = query.extend({ fresh: z.boolean().optional(), bridge: z.array(bridgeList).max(20) });
+export async function POST(req: NextRequest) {
+  const session = await readSession();
+  if (!session) return json({ error: "Nicht angemeldet." }, 401);
+  const b = body.safeParse(await req.json().catch(() => null));
+  if (!b.success) return json({ error: "Ungültige Anfrage." }, 400);
+  return check(req, session.uid, { names: b.data.names, fresh: b.data.fresh ? "1" : "0" }, b.data.bridge);
+}
+
+async function check(req: NextRequest, uid: string, q: { names: string; fresh?: "0" | "1" }, bridge?: BridgeList[]) {
   const names = [
     ...new Set(
-      q.data.names
+      q.names
         .split(",")
         .map((n) => n.trim())
         .filter(Boolean),
     ),
   ].slice(0, 5);
   if (!names.length) return json({ error: "Ungültige Anfrage." }, 400);
-  let fresh = q.data.fresh === "1";
+  let fresh = q.fresh === "1";
   if (fresh) {
     const now = Date.now();
-    if (now - (lastFresh.get(session.uid) ?? 0) < FRESH_EVERY_MS)
+    if (now - (lastFresh.get(uid) ?? 0) < FRESH_EVERY_MS)
       fresh = false; // zu schnell: aus dem Cache
-    else lastFresh.set(session.uid, now);
+    else lastFresh.set(uid, now);
   }
-  const area = effectiveArea(await prefsStore().get(session.uid));
+  const area = effectiveArea(await prefsStore().get(uid));
   const today = new Date().toISOString().slice(0, 10);
   const result = await concertsFor(
     names.map((name) => ({ id: name, name })),
     req.signal,
     area,
-    { raw: true, fresh },
+    { raw: true, fresh, ...(bridge ? { bridge } : {}) },
   );
   const raw = names.map((artist) => ({
     artist,

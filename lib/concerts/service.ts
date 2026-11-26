@@ -7,7 +7,8 @@ import { createPoliteFetch } from "@/lib/info/http";
 import { home } from "./geo";
 import { fillCoordinates } from "./geocode";
 import { mergeEvents } from "./merge";
-import { bandsintown, eventimSearch, lastSetlist, oeticket, ticketmaster, type LastSetlist } from "./providers";
+import { bandsintown, EVENTIM_SHOPS, eventimSearch, lastSetlist, oeticket, ticketmaster, type LastSetlist } from "./providers";
+import { bridgeEvents, type BridgeList, type BridgeShop } from "./shared/protocol";
 import type { ConcertProvider, RawEvent } from "./types";
 
 /** Aktive Konzert-Provider (nur die mit Zugangsdaten). */
@@ -45,6 +46,8 @@ export type SourceReport = {
   events: number;
   /** aus dem Cache statt frisch abgefragt */
   cached: boolean;
+  /** von der Pi-Bridge abgefragt (Heimanschluss) statt vom Server */
+  via?: "pi";
   ms?: number;
   error?: string;
 };
@@ -71,6 +74,15 @@ export function errorText(e: unknown): string {
   return /\b403\b/.test(text) ? `${text} – Zugriff gesperrt (Bot-Schutz der Quelle)` : text;
 }
 
+export type ConcertOptions = {
+  fresh?: boolean;
+  raw?: boolean;
+  /** diese Quellen fragt der Server nicht selbst (die Pi-Bridge übernimmt sie) */
+  skip?: readonly BridgeShop[];
+  /** Ergebnisse der Pi-Bridge (oeticket, eventim.de vom Heimanschluss) */
+  bridge?: readonly BridgeList[];
+};
+
 export function createConcertService(deps: {
   providers: ConcertProvider[];
   cache: Cache;
@@ -84,16 +96,20 @@ export function createConcertService(deps: {
     artists: Array<{ id: string; name: string }>,
     signal?: AbortSignal,
     area: ConcertArea = home(),
-    opts: { fresh?: boolean; raw?: boolean } = {},
+    opts: ConcertOptions = {},
   ): Promise<ConcertResult> {
     const today = deps.today?.() ?? new Date().toISOString().slice(0, 10);
     const all: Concert[] = [];
     const setlists: Record<string, LastSetlist> = {};
     const sources: SourceReport[] = [];
     const raw: NonNullable<ConcertResult["raw"]> = [];
+    // was die Bridge liefert (oder liefern soll), fragt der Server nicht selbst – von hier aus sperrt Eventim ohnehin
+    const skip = new Set<string>([...(opts.skip ?? []), ...(opts.bridge ?? []).map((l) => l.provider)]);
+    const providers = deps.providers.filter((p) => !skip.has(p.id));
+    const skipped = deps.providers.filter((p) => skip.has(p.id)).map((p) => p.id);
     for (const a of artists.slice(0, 5)) {
-      // v2: Eventim mit allen Seiten (v1 sah nur Seite 1) und gemerkten Fehlern
-      const key = `concerts:v2:${normalizeLine(a.name)}`;
+      // v2: Eventim mit allen Seiten (v1 sah nur Seite 1) und gemerkten Fehlern; ohne die Quellen der Bridge eigener Eintrag
+      const key = `concerts:v2:${normalizeLine(a.name)}${skipped.length ? `:ohne-${[...skipped].sort().join(",")}` : ""}`;
       let cached = opts.fresh ? null : await deps.cache.get<CachedLists>(key);
       const fromCache = !!cached;
       if (!cached) {
@@ -101,7 +117,7 @@ export function createConcertService(deps: {
         const timeout = AbortSignal.timeout(8000);
         const sig = signal ? AbortSignal.any([signal, timeout]) : timeout;
         const results = await Promise.allSettled(
-          deps.providers.map(async (p) => {
+          providers.map(async (p) => {
             const t0 = Date.now();
             try {
               return { events: await p.events(a.name, sig), ms: Date.now() - t0 };
@@ -111,7 +127,7 @@ export function createConcertService(deps: {
           }),
         );
         cached = { lists: [], failed: [] };
-        deps.providers.forEach((p, i) => {
+        providers.forEach((p, i) => {
           const r = results[i]!;
           if (r.status === "fulfilled")
             cached!.lists.push({
@@ -137,6 +153,18 @@ export function createConcertService(deps: {
       for (const f of cached.failed)
         sources.push({ artist: a.name, provider: f.id, state: "fehler", events: 0, cached: fromCache, ms: f.ms, error: f.error });
       let lists = cached.lists;
+      // Listen der Pi-Bridge (eigener Cache auf der Bridge; hier nicht gespeichert, sie kommen vom Browser)
+      for (const l of opts.bridge ?? []) {
+        if (normalizeLine(l.artist) !== normalizeLine(a.name)) continue;
+        const base = { artist: a.name, provider: l.provider, cached: l.cached, ms: l.ms, via: "pi" as const };
+        if (l.state === "ok") {
+          sources.push({ ...base, state: "ok", events: l.events.length });
+          lists = [
+            ...lists,
+            { provider: { id: l.provider, ticketPriority: EVENTIM_SHOPS[l.provider].ticketPriority }, events: bridgeEvents(l) },
+          ];
+        } else sources.push({ ...base, state: "fehler", events: 0, error: l.error ?? "Fehler" });
+      }
       if (deps.geoHttp) {
         const geoHttp = deps.geoHttp;
         lists = await Promise.all(
@@ -167,7 +195,7 @@ export function createConcertService(deps: {
     return {
       concerts: all,
       setlists,
-      providers: deps.providers.map((p) => p.id),
+      providers: [...providers.map((p) => p.id), ...new Set((opts.bridge ?? []).map((l) => `${l.provider} (Pi)`))],
       area: { name: area.name, radiusKm: area.radiusKm },
       sources,
       ...(opts.raw ? { raw } : {}),
@@ -180,7 +208,7 @@ export function concertsFor(
   artists: Array<{ id: string; name: string }>,
   signal?: AbortSignal,
   area?: ConcertArea,
-  opts?: { fresh?: boolean; raw?: boolean },
+  opts?: ConcertOptions,
 ) {
   shared ??= createConcertService({
     providers: concertProviders(),

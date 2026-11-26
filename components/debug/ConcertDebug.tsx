@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { BRIDGE_URL } from "@/components/bridge/useBridge";
+import { askBridgeConcerts } from "@/lib/bridge/concerts";
 import type { RawOutcome, RawRow } from "@/lib/concerts/debug";
 import { formatConcertDate } from "@/lib/concerts/display";
 import type { SourceReport } from "@/lib/concerts/service";
@@ -38,7 +40,7 @@ export function ConcertDebug({ initialArtists }: { initialArtists: string[] }) {
   const [names, setNames] = useState(initialArtists.join(", "));
   const [touched, setTouched] = useState(false);
   const [data, setData] = useState<Answer | null>(null);
-  const [state, setState] = useState<"bereit" | "laden" | "fehler">("bereit");
+  const [state, setState] = useState<"bereit" | "pi" | "laden" | "fehler">("bereit");
   const [error, setError] = useState("");
 
   // Künstler des neuen Songs übernehmen, solange niemand von Hand etwas eingetragen hat
@@ -52,10 +54,25 @@ export function ConcertDebug({ initialArtists }: { initialArtists: string[] }) {
   const load = useCallback(
     async (fresh: boolean) => {
       if (!names.trim()) return;
-      setState("laden");
       try {
+        // oeticket/eventim.de über die Pi-Bridge (Heimanschluss), wenn sie läuft – sonst fragt der Server selbst
+        setState("pi");
+        const artists = names
+          .split(",")
+          .map((n) => n.trim())
+          .filter(Boolean)
+          .slice(0, 5);
+        const bridge = artists.length ? await askBridgeConcerts(BRIDGE_URL, artists, { fresh }) : null;
+        setState("laden");
         const q = new URLSearchParams({ names, ...(fresh ? { fresh: "1" } : {}) });
-        const r = await fetch(`/api/concerts/debug?${q}`, { cache: "no-store" });
+        const r = bridge?.length
+          ? await fetch("/api/concerts/debug", {
+              method: "POST",
+              cache: "no-store",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ names, fresh, bridge }),
+            })
+          : await fetch(`/api/concerts/debug?${q}`, { cache: "no-store" });
         if (!r.ok) {
           setError(r.status === 401 ? "Nicht angemeldet" : `Server antwortet mit ${r.status}`);
           return setState("fehler");
@@ -92,13 +109,18 @@ export function ConcertDebug({ initialArtists }: { initialArtists: string[] }) {
           aria-label="Künstler"
           data-testid="concert-debug-names"
         />
-        <button type="submit" className={button} disabled={state === "laden"} data-testid="concert-debug-load">
+        <button type="submit" className={button} disabled={state === "laden" || state === "pi"} data-testid="concert-debug-load">
           Prüfen
         </button>
-        <button type="button" className={button} disabled={state === "laden"} onClick={() => void load(true)}>
+        <button type="button" className={button} disabled={state === "laden" || state === "pi"} onClick={() => void load(true)}>
           Ohne Cache
         </button>
       </form>
+      {state === "pi" && (
+        <p className="mt-2 text-sm text-white/60">
+          Frage oeticket/eventim.de über die Pi-Bridge (Anfragen einzeln mit Pausen, beim ersten Mal bis zu 2 Minuten) …
+        </p>
+      )}
       {state === "laden" && <p className="mt-2 text-sm text-white/60">Frage die Quellen …</p>}
       {state === "fehler" && <p className="mt-2 text-sm text-red-300">{error}</p>}
 
@@ -134,7 +156,10 @@ export function ConcertDebug({ initialArtists }: { initialArtists: string[] }) {
               <tbody key={`${s.artist}-${s.provider}`} className="border-t border-white/10 font-mono" data-state={s.state}>
                 <tr>
                   <td className="py-1 pr-2 font-sans">{s.artist}</td>
-                  <td className="pr-2">{s.provider}</td>
+                  <td className="pr-2">
+                    {s.provider}
+                    {s.via === "pi" && <span className="ml-1 font-sans text-sky-300/80">(Pi)</span>}
+                  </td>
                   <td className={`whitespace-nowrap pr-2 ${s.state === "ok" ? "text-emerald-300" : "text-red-300"}`}>
                     {s.state}
                     {s.cached && <span className="ml-1 font-sans text-white/50">(Cache)</span>}
@@ -154,7 +179,8 @@ export function ConcertDebug({ initialArtists }: { initialArtists: string[] }) {
           </table>
           <p className="text-xs text-white/40">
             „(Cache)“: Antwort von früher – vollständige Ergebnisse gelten 12 h, mit fehlender Quelle 30 min. „Ohne Cache“ fragt
-            alle Quellen neu (höchstens alle 15 s).
+            alle Quellen neu (höchstens alle 15 s). „(Pi)“: über die Pi-Bridge vom Heimanschluss abgefragt – Eventim sperrt den
+            Server.
           </p>
 
           <div>

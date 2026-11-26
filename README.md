@@ -68,7 +68,8 @@ Stufe 5b – Konzerte: In den letzten 15 Sekunden eines Songs zeigt eine **Konze
 Termine der Artists. Termine im Umkreis von Wien (`CONCERT_RADIUS_KM`, Standard 200 km) stehen zuerst. Die Karte
 zeigt Countdown („in 21 Tagen“), **ausverkauft** und einen **QR-Code zum Ticket**. Dazu kommt „Zuletzt live …
 – dieser Song war dabei“ aus setlist.fm. Quellen sind **oeticket** und **Eventim Deutschland** (inoffizielle Eventim-Suche, ohne Key; `OETICKET=0`
-bzw. `EVENTIM_DE=0` schaltet ab), Ticketmaster (`TICKETMASTER_API_KEY`) und Bandsintown (`BANDSINTOWN_APP_ID`; App-IDs gibt es nur noch für Künstler und Partner – ohne ID bleibt die Quelle aus). Ticket-Links kommen
+bzw. `EVENTIM_DE=0` schaltet ab; Eventim sperrt den Server, darum fragt auf dem Kiosk die **Pi-Bridge** vom Heimanschluss aus,
+einzeln und mit zufälliger Pause zwischen den Anfragen, siehe [bridge/README.md](bridge/README.md)), Ticketmaster (`TICKETMASTER_API_KEY`) und Bandsintown (`BANDSINTOWN_APP_ID`; App-IDs gibt es nur noch für Künstler und Partner – ohne ID bleibt die Quelle aus). Ticket-Links kommen
 bevorzugt von oeticket. Gezählt wird ein Termin nur, wenn der Künstler wirklich auftritt; Tribute-Shows und
 unscharfe Suchtreffer fallen weg. Doppelte Termine werden zusammengeführt, die Daten 12 Stunden gecacht. setlist.fm braucht
 `SETLISTFM_API_KEY`. Ohne Schlüssel bleibt die Karte einfach weg. Orte ohne Koordinaten werden über

@@ -310,6 +310,17 @@ eventim.de vor Ticketmaster); abgesagt bei einer Quelle = weg; je Künstler höc
 Koordinaten über Nominatim (1 Anfrage/s, Cache 1 Jahr). Cache: vollständig 12 Stunden, eine Quelle ausgefallen
 30 Minuten (der Fehler wird mitgespeichert und bleibt so in `/debug` sichtbar).
 
+**oeticket/eventim.de über die Pi-Bridge:** Eventim sperrt den Server (403). Ist die Bridge verbunden, lädt der Kiosk in
+zwei Schritten (`lib/concerts/load.ts`): erst `GET /api/concerts?…&ohne=oeticket,eventim` (übrige Quellen, eigener
+Cache-Eintrag `concerts:v2:<name>:ohne-…`), dann fragt er die Bridge per WebSocket (`{type:"concerts"}`, Format in
+`lib/concerts/shared/protocol.ts`) und schickt deren Listen mit `POST /api/concerts` zum Zusammenführen. Die Bridge
+(`bridge/concerts.ts`) nutzt dieselbe Eventim-Suche (`lib/concerts/shared/eventim.ts`, ohne `@/`-Pfade, damit Node sie
+ohne Bundler lädt), stellt alle Anfragen nacheinander mit 1 s plus zufällig bis 1,5 s Pause, nennt sich ehrlich
+(`SonicStage-PiBridge/1.0`) und cacht selbst (12 h / 30 min). Der Server prüft die Listen (nur die zwei Shops, Datum,
+Längen, höchstens 300 Termine, Ticket-Links nur https zu oeticket.com/eventim.de) und speichert sie nicht in seinem
+Cache. Antwortet die Bridge nicht (alte Version oder abgeschaltet), fragt der Server wie bisher selbst. `/debug`
+markiert Bridge-Quellen mit „(Pi)“.
+
 **Im Browser gemerkt** (localStorage, überlebt Neustarts des Kiosks): Rückblick des Abends (`ss_abend`), Konzert-
 Erinnerungen im Umkreis von gefolgten/gemochten Künstlern (`ss_konzert_erinnerung`, bis zum Termin, Startbildschirm
 zeigt die nächsten 120 Tage), Erinnerungsfotos des Abends (`ss_fotos_abend`, für die Galerie; Fotos und Galerien
