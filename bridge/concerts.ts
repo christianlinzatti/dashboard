@@ -4,7 +4,8 @@ import type { BridgeList, BridgeShop } from "../lib/concerts/shared/protocol.ts"
 type Http = (url: string, init?: RequestInit) => Promise<Response>;
 
 /** so meldet sich die Bridge bei Eventim: ehrlich als Programm, nicht als Browser */
-export const BRIDGE_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/158.0.0.0 Safari/537.36";
+export const BRIDGE_USER_AGENT =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/158.0.0.0 Safari/537.36";
 
 /**
  * Rücksichtsvoll fragen: alle Anfragen an Eventim laufen nacheinander durch eine Warteschlange, zwischen zwei Anfragen
