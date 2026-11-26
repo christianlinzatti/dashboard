@@ -16,6 +16,7 @@ import {
   type Group,
   type Material,
   type MeshStandardMaterial,
+  type SkinnedMesh,
 } from "three";
 import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js";
 import { avatarById } from "@/lib/avatars/catalog";
@@ -277,8 +278,11 @@ function AvatarModel({ url, member, song, choreo, frameRef, band }: AvatarProps 
     () => () => {
       extras.geometries.forEach((g) => g.dispose());
       extras.materials.forEach((m) => m.dispose());
+      // geklontes Skelett: seine Knochen-Textur gehört nur dieser Figur (die Bühne behält ihren Grafikkontext über den
+      // ganzen Abend – sonst blieb je Figur und Song eine liegen)
+      root.traverse((o) => (o as Partial<SkinnedMesh>).skeleton?.dispose());
     },
-    [extras],
+    [extras, root],
   );
   // Lippensynchron: Mundbewegung dieses Avatars aus den Lyrics (Feature-Songs: der jeweilige Sänger)
   const lipTrack = useMemo(() => {

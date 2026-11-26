@@ -92,8 +92,9 @@ export function Stage({
 
   if (!webgl) return <Backdrop song={song} />;
   return (
-    // Neuer Song oder neuer Grafikkontext → Fehlerzustand zurücksetzen
-    <ErrorBoundary key={`${song?.trackKey}:${generation}`} fallback={<Backdrop song={song} />} label="3D-Bühne">
+    // Die Szene (und ihr Grafikkontext) bleibt über Songwechsel bestehen – neu aufgebaut wird nur nach einem Verlust des
+    // Grafikkontexts. Ein Fehler in der Szene gilt bis zum nächsten Song (dann neuer Versuch).
+    <ErrorBoundary key={generation} resetKey={song?.trackKey} fallback={<Backdrop song={song} />} label="3D-Bühne">
       <Scene
         forceQuality={forceQuality}
         forceTheme={forceTheme}
@@ -368,7 +369,8 @@ function Scene({
             <Band band={band} song={song} choreo={choreo} frameRef={frame} accent={song.album.palette.accent} />
           )}
           <MixamoClips ids={mixamoIds} />
-          <ReadySignal />
+          {/* je Song neu: fertig erst, wenn die Figuren des neuen Songs geladen sind */}
+          <ReadySignal key={song.trackKey} />
           <RenderStats />
           {/* alle Shader vorab übersetzen – auch die der noch unsichtbaren Effekte (sonst ruckelt es beim ersten Einsatz) */}
           {!frozen && (

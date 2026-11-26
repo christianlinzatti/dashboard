@@ -404,3 +404,24 @@ Strobo, Lampen, zweite Zeile, Bühne, Canvas und Publikumsgeräusche gelten auf 
 datiert (`changedAt`), es gewinnt der jüngere Stand; Zeitstempel aus der Zukunft begrenzt der Server auf „jetzt“.
 `useSettingsSync` holt den Stand beim Start, alle zwei Minuten und beim Sichtbarwerden und lädt eigene Änderungen
 nach 1,5 s hoch. Demos gleichen nicht ab.
+
+### Bildrate auf schwacher Grafik (Stand 2026-11-26)
+
+Gemessen wurde, wo die Arbeit pro Bild liegt: JavaScript braucht unter 16 ms, gebremst wird von der Pixelmenge (Bloom,
+Nebel, Lichtkegel, Spiegelung auf hochauflösenden Notebook-Bildschirmen) und von Shadern, die mitten in der Show neu
+übersetzt werden.
+
+- **Anpassbare Auflösung** (`lib/stage/resolution.ts`): reicht die Bildrate nicht, erst weniger Pixel (bis 60 %), dann –
+  bei „auto“ – eine Qualitätsstufe herunter; eine zu langsame Stufe bleibt für die Sitzung gesperrt. Auf 60 Hz liegt die
+  Grenze nach oben bei 57 fps (sonst würde „hoch“ nie gewählt). Stand über Songwechsel erhalten (`adaptive`-Store).
+- **Sparstufen** (`loadLevel`): Auflösung gesenkt → Spiegelung 256 statt 512, Live-Bildschirme seltener; am Anschlag
+  Lichtkegel einseitig und ohne Rauschen, kein Staub, halber Rauch. Stehende Szenen und Tests sparen nie (Screenshots).
+- **Kantenglättung** des Browsers nur ohne Bloom (mit Bloom zeichnet die Bühne in einen Zwischenpuffer – dort griff sie nicht).
+- **Shader vorab** (`ShaderWarmup`): 1,2 s nach dem Laden alles übersetzen, auch Unsichtbares, passend zum Zielpuffer.
+- **Stabile Materialien** (`useShaderArgs`): R3F baut ein Material neu, wenn sich ein Element von `args` ändert (`!==`) –
+  Objekt-Literale im JSX taten das bei jedem Rendern. Ein Test verhindert sie (`tests/unit/shader-args.test.ts`).
+  Gemessen: neu übersetzte Shader nach dem Laden 42 → 2 (Club, mittel, 45 s).
+- **Eine Szene für den ganzen Abend:** Canvas und Grafikkontext bleiben über Songwechsel bestehen (neu nur nach
+  Kontextverlust; ein Fehler gilt bis zum nächsten Song, `ErrorBoundary resetKey`). Deshalb gibt jede Komponente frei,
+  was sie anlegt: Wandfotos/Logos (`useReleaseTexture`, auch aus dem Lade-Cache), Knochen-Texturen geklonter Skelette,
+  Nebel-Textur. Gemessen über 8 Songwechsel: Texturen konstant (35–38), ein Renderer, keine Fehler.

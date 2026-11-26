@@ -7,6 +7,7 @@ import { SRGBColorSpace, VideoTexture, type ShaderMaterial, type Texture } from 
 import type { LightFrame } from "@/lib/stage/lights";
 import { canvasLayout, CANVAS_VISIBILITY, WALL_H, WALL_W } from "@/lib/stage/canvas-wall";
 import { TRUSS_Z } from "./layout";
+import { useReleaseTexture } from "./release-texture";
 
 export type WallCanvas = { url: string; kind: "video" | "image" | "gif" };
 
@@ -28,6 +29,7 @@ function ImageWall({ url, lightsRef }: { url: string; lightsRef: React.RefObject
   const tex = useTexture(url, (t) => {
     t.colorSpace = SRGBColorSpace;
   });
+  useReleaseTexture(tex, url);
   const img = tex.image as { width?: number; height?: number } | undefined;
   return <Panels tex={tex} aspect={img?.width && img.height ? img.width / img.height : 9 / 16} lightsRef={lightsRef} />;
 }

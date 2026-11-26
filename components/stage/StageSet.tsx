@@ -386,6 +386,7 @@ export function Fog({ lightsRef, color }: { lightsRef: React.RefObject<LightFram
     }
     return new CanvasTexture(c);
   }, []);
+  useEffect(() => () => tex.dispose(), [tex]);
   const layers = useRef<Array<Mesh | null>>([]);
   useFrame(() => {
     const f = lightsRef.current;

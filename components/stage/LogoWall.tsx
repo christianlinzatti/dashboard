@@ -7,6 +7,7 @@ import { Color, SRGBColorSpace, type ShaderMaterial } from "three";
 import type { LightFrame, LightScene } from "@/lib/stage/lights";
 import { TRUSS_Z } from "./layout";
 import { useShaderArgs } from "./shader-args";
+import { useReleaseTexture } from "./release-texture";
 
 /** Wann das Logo zu sehen ist: ruhige Teile ja, Strophe/Refrain nicht (Lyrics haben Vorrang). */
 const VISIBILITY: Record<LightScene, number> = {
@@ -35,6 +36,7 @@ export function LogoWall({
   const tex = useTexture(url, (t) => {
     t.colorSpace = SRGBColorSpace;
   });
+  useReleaseTexture(tex, url);
   const mat = useRef<ShaderMaterial>(null);
   const uniforms = useMemo(
     () => ({ uTex: { value: tex }, uColor: { value: new Color(accent) }, uOpacity: { value: 0 } }),
