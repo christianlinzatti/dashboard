@@ -3,8 +3,7 @@ import { chromium } from "playwright";
 async function main() {
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({
-    userAgent:
-      "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+    userAgent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
   });
 
   await context.addInitScript(() => {
@@ -19,10 +18,9 @@ async function main() {
 
   const page = await context.newPage();
 
-  const tokenRequestPromise = page.waitForRequest(
-    (req) => req.url().includes("/api/token") && req.url().includes("totpVer="),
-    { timeout: 20_000 },
-  );
+  const tokenRequestPromise = page.waitForRequest((req) => req.url().includes("/api/token") && req.url().includes("totpVer="), {
+    timeout: 20_000,
+  });
 
   await page.goto("https://open.spotify.com/", { waitUntil: "domcontentloaded" });
 
