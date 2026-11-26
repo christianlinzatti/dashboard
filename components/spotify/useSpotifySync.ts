@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { songContext } from "@/lib/song-context/store";
 import { extractPalette } from "@/lib/palette/extract";
 import { applyNowPlaying } from "@/lib/spotify/sync";
+import { ensureArtistMeta, knownArtistMeta } from "@/lib/spotify/artist-meta-client";
 import { pollDelay } from "@/lib/spotify/clock";
 import type { NowPlaying } from "@/lib/spotify/types";
 
@@ -57,12 +58,16 @@ export function useSpotifySync(enabled: boolean): SpotifyStatus {
         }
 
         const np = body as NowPlaying & { user?: string };
-        const { newTrack } = applyNowPlaying(songContext, np, t1 - t0, t1);
+        const known = "track" in np ? knownArtistMeta(np.track.artists.map((a) => a.id ?? "")) : {};
+        const { newTrack } = applyNowPlaying(songContext, np, t1 - t0, t1, Date.now(), known);
         if (np.state === "idle") setStatus({ kind: "idle", user: np.user });
         else if (np.state === "unsupported") setStatus({ kind: "unsupported", type: np.type });
         else setStatus({ kind: "active", user: np.user });
 
-        if (newTrack) void loadPalette();
+        if (newTrack) {
+          void loadPalette();
+          void loadArtistMeta();
+        }
 
         const s = songContext.getState();
         const remaining = s.song ? s.song.track.durationMs - s.positionMs : Infinity;
@@ -77,6 +82,26 @@ export function useSpotifySync(enabled: boolean): SpotifyStatus {
           schedule(0);
         }
       }
+    }
+
+    /**
+     * Genres und Bilder der Künstler nachtragen (beim ersten Mal vom Server; danach im Browser gemerkt). Die Figuren
+     * bleiben, wie sie sind – nach Genre gewählt wird erst beim nächsten Mal, mitten im Song wird nicht umbesetzt.
+     */
+    async function loadArtistMeta() {
+      const song = songContext.getState().song;
+      if (!song) return;
+      const meta = await ensureArtistMeta(song.artists);
+      const now = songContext.getState().song;
+      if (!now || now.trackKey !== song.trackKey) return;
+      if (!now.artists.some((a) => meta[a.spotifyId] && (!a.genres.length || !a.images.length))) return;
+      songContext.getState().mergeSong({
+        artists: now.artists.map((a) => {
+          const m = meta[a.spotifyId];
+          if (!m) return a;
+          return { ...a, genres: a.genres.length ? a.genres : m.genres, images: a.images.length ? a.images : m.images };
+        }),
+      });
     }
 
     async function loadPalette() {

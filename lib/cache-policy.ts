@@ -26,6 +26,10 @@ export const CACHE_TTL = {
   tempoMissing: 30 * DAY,
   /** Genres/Stimmung (TheAudioDB, Last.fm) und KI-Regieanweisung je Song */
   showTags: 30 * DAY,
+  /** Genres und Bilder eines Künstlers (Spotify, sonst Last.fm/TheAudioDB) – ändern sich selten */
+  artistMeta: 7 * DAY,
+  /** nichts gefunden: früher neu versuchen */
+  artistMetaMissing: DAY,
   showTagsPartial: 3600,
   showBrief: 30 * DAY,
   /** KI hat abgelehnt oder Unbrauchbares geliefert: nicht bei jedem Abspielen neu fragen */

@@ -20,6 +20,8 @@ export function applyNowPlaying(
   rttMs: number,
   now: number,
   today: number = Date.now(),
+  /** schon bekannte Genres/Bilder der Künstler (Figurenwahl nach Genre) */
+  artistMeta: Record<string, { genres: string[]; images: Array<{ url: string; width?: number; height?: number }> }> = {},
 ): { newTrack: boolean } {
   const s = store.getState();
   if (np.state === "idle" || np.state === "unsupported") {
@@ -35,7 +37,9 @@ export function applyNowPlaying(
   if (s.song?.trackKey !== trackKeyOf(np.track)) {
     // Tagesform: derselbe Song bekommt jeden Tag eine etwas andere Show. `now` ist die Messuhr (performance.now(),
     // zählt ab Seitenstart) – fürs Datum zählt die echte Uhr, sonst stünde hier immer 1970-01-01.
-    s.setSong({ ...songFromTrack(np.track), variant: localDay(today) });
+    const genres = Object.fromEntries(Object.entries(artistMeta).map(([id, m]) => [id, m.genres]));
+    const images = Object.fromEntries(Object.entries(artistMeta).map(([id, m]) => [id, m.images]));
+    s.setSong({ ...songFromTrack(np.track, { genres, images }), variant: localDay(today) });
     s.setPlayback({ isPlaying, positionMs: measured, updatedAt: now, ...device });
     return { newTrack: true };
   }

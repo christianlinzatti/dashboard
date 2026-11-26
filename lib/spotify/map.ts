@@ -31,7 +31,14 @@ function today() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-export function songFromTrack(track: SpotifyTrack, opts: { genres?: Record<string, string[]>; today?: string } = {}): SongStatic {
+export function songFromTrack(
+  track: SpotifyTrack,
+  opts: {
+    genres?: Record<string, string[]>;
+    images?: Record<string, Array<{ url: string; width?: number; height?: number }>>;
+    today?: string;
+  } = {},
+): SongStatic {
   const trackKey = trackKeyOf(track);
   const taken = new Set<string>();
   const artists = track.artists.map((a, i) => {
@@ -44,7 +51,7 @@ export function songFromTrack(track: SpotifyTrack, opts: { genres?: Record<strin
       name: a.name,
       role: i === 0 ? ("main" as const) : ("feature" as const),
       genres,
-      images: [],
+      images: opts.images?.[id] ?? [],
       avatarId,
       color: artistColors[i % artistColors.length]!,
     };

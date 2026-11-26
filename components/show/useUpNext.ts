@@ -9,6 +9,7 @@ import { songFromTrack } from "@/lib/spotify/map";
 import { spotifyTrackSchema } from "@/lib/spotify/types";
 import { shouldFetchUpNext, upNextStore, type UpNext } from "@/lib/show/up-next";
 import { lyricsUrl } from "@/components/lyrics/useLyricsLoader";
+import { ensureArtistMeta } from "@/lib/spotify/artist-meta-client";
 
 const summary = (s: SongStatic): UpNext => ({
   trackKey: s.trackKey,
@@ -72,6 +73,8 @@ export function useUpNext(opts: { live: boolean; demo?: string }) {
           const next = songFromTrack(parsed.data);
           upNextStore.getState().set(current, summary(next));
           void preload(next);
+          // Genres der Künstler schon jetzt holen: beim Songstart werden die Figuren dann gleich nach Genre gewählt
+          void ensureArtistMeta(next.artists);
         })
         .catch(() => undefined);
     };
