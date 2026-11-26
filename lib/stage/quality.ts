@@ -44,7 +44,7 @@ export const PRESETS: Record<Quality, QualityPreset> = {
     dpr: [1, 1.25],
     particles: 0.65,
     crowd: 300,
-    liveScreens: { width: 384, every: 2 },
+    liveScreens: { width: 384, every: 3 },
   },
   hoch: {
     heads: 6,
@@ -56,7 +56,7 @@ export const PRESETS: Record<Quality, QualityPreset> = {
     dpr: [1, 1.5],
     particles: 1,
     crowd: 520,
-    liveScreens: { width: 512, every: 1 },
+    liveScreens: { width: 512, every: 2 },
   },
 };
 

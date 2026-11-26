@@ -8,7 +8,16 @@ import { useSettings } from "@/lib/settings";
 import { useSongContext } from "@/lib/song-context/store";
 import type { LightFrame } from "@/lib/stage/lights";
 import { PRESETS, stepQuality, type Quality } from "@/lib/stage/quality";
-import { adaptive, onDecline, onIncline, RESOLUTION_STEP, resolutionPercent, stageDpr } from "@/lib/stage/resolution";
+import {
+  adaptive,
+  fpsBounds,
+  loadLevel,
+  onDecline,
+  onIncline,
+  RESOLUTION_STEP,
+  resolutionPercent,
+  stageDpr,
+} from "@/lib/stage/resolution";
 import { useStore } from "zustand";
 import { SceneLights } from "./SceneLights";
 import { Band } from "./Band";
@@ -153,6 +162,11 @@ function Scene({
   const adapt = !frozen && !forceQuality;
   const auto = adapt && chosen === "auto";
   const dpr = adapt && typeof window !== "undefined" ? stageDpr(preset.dpr, window.devicePixelRatio, factor) : preset.dpr;
+  // wie sehr gespart werden muss (Spiegelung, Live-Bildschirme, Lichtkegel, Rauch)
+  const load = loadLevel(factor, adapt);
+  // Kantenglättung des Browsers: mit Bloom zeichnet die Bühne in einen Zwischenpuffer – dort greift sie nicht, kostet
+  // aber Speicher und Bandbreite. Beim Anlegen des Grafikkontexts festgelegt (später nicht mehr änderbar).
+  const [antialias] = useState(() => !preset.bloom);
 
   useEffect(() => () => document.body.removeAttribute("data-stage-ready"), []);
 
@@ -168,6 +182,7 @@ function Scene({
       className="absolute inset-0"
       data-quality={quality}
       data-resolution={adapt ? resolutionPercent(factor) : 100}
+      data-load={load}
       data-theme={theme.id}
       data-outfits={song.cast.map((c) => c.outfit ?? "original").join(",")}
       data-cast={song.cast.map((c) => c.avatarId).join(",")}
@@ -184,7 +199,7 @@ function Scene({
         dpr={dpr}
         frameloop={frozen ? "demand" : "always"}
         camera={{ position: [0, 2.2, 10.2], fov: 24 }}
-        gl={{ antialias: true, powerPreference: "high-performance" }}
+        gl={{ antialias, powerPreference: "high-performance" }}
         onCreated={({ gl, camera }) => {
           // Hauptkamera sieht auch die Feinheiten, die die Live-Bildschirme auslassen
           camera.layers.enable(NOT_ON_SCREENS);
@@ -201,17 +216,20 @@ function Scene({
           <PerformanceMonitor
             factor={adaptive.getState().factor}
             step={RESOLUTION_STEP}
+            bounds={fpsBounds}
             onDecline={(api) => {
               const next = onDecline(api.factor, auto, quality);
               if (next.quality) {
                 api.factor = next.factor;
-                adaptive.setState({ quality: stepQuality(quality, -1) });
+                const lower = stepQuality(quality, -1);
+                // diese Stufe war zu langsam: in dieser Sitzung nicht wieder hinauf
+                adaptive.setState({ quality: lower, ceiling: lower });
               }
               adaptive.setState({ factor: api.factor });
             }}
             onIncline={(api) => {
-              const wasFull = adaptive.getState().factor >= 1;
-              const next = onIncline(api.factor, auto, quality, wasFull);
+              const { factor: was, ceiling } = adaptive.getState();
+              const next = onIncline(api.factor, auto, quality, was >= 1, ceiling);
               if (next.quality) adaptive.setState({ quality: stepQuality(quality, 1) });
               adaptive.setState({ factor: api.factor });
             }}
@@ -221,6 +239,7 @@ function Scene({
         {!frozen && <FpsMeter quality={quality} resolution={adapt ? resolutionPercent(factor) : 100} />}
         <StageSet
           preset={preset}
+          reflectorResolution={load > 0 ? 256 : 512}
           dark={dark}
           accent={song.album.palette.accent}
           theme={theme}
@@ -264,14 +283,22 @@ function Scene({
           key={`h${preset.heads}${preset.realLights}`}
           count={preset.heads}
           realLights={preset.realLights}
-          dust={preset.fog}
+          dust={preset.fog && load < 2}
+          lean={load === 2}
           lightsRef={lights}
         />
         {hasBlinders(theme) && <Blinders lightsRef={lights} />}
         {theme.lasers && <Lasers key={`l${preset.lasers}`} count={preset.lasers} lightsRef={lights} />}
         {preset.fog && <Fog lightsRef={lights} color={song.album.palette.accent} />}
         {SMOKE_COUNTS[quality].ground + SMOKE_COUNTS[quality].burst > 0 && (
-          <Smoke choreo={choreo} frameRef={frame} lightsRef={lights} {...SMOKE_COUNTS[quality]} />
+          <Smoke
+            choreo={choreo}
+            frameRef={frame}
+            lightsRef={lights}
+            // am Anschlag: halber Rauch (die großen, halbdurchsichtigen Flächen kosten auf schwacher Grafik am meisten)
+            ground={load === 2 ? Math.round(SMOKE_COUNTS[quality].ground / 2) : SMOKE_COUNTS[quality].ground}
+            burst={load === 2 ? Math.round(SMOKE_COUNTS[quality].burst / 2) : SMOKE_COUNTS[quality].burst}
+          />
         )}
         <Director
           song={song}
@@ -329,7 +356,7 @@ function Scene({
                   lightsRef={lights}
                   accent={song.album.palette.accent}
                   width={preset.liveScreens.width}
-                  every={preset.liveScreens.every}
+                  every={preset.liveScreens.every * (load + 1)}
                 />
               )}
             </WallFrame>

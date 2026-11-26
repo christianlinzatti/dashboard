@@ -28,8 +28,11 @@ export function StageSet({
   beatMs,
   lightsRef,
   daylight,
+  reflectorResolution = 512,
 }: {
   preset: QualityPreset;
+  /** Auflösung der Bodenspiegelung (kleiner, wenn die Grafik knapp ist) */
+  reflectorResolution?: number;
   dark: string;
   accent: string;
   theme: Theme;
@@ -51,7 +54,7 @@ export function StageSet({
           {theme.floor === "spiegel" && preset.reflector ? (
             <MeshReflectorMaterial
               color={dark}
-              resolution={512}
+              resolution={reflectorResolution}
               mixBlur={1}
               mixStrength={2.5}
               blur={[300, 80]}

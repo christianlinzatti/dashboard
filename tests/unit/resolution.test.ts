@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   AFTER_QUALITY_DOWN,
+  fpsBounds,
+  loadLevel,
   maxDpr,
   MIN_RESOLUTION,
   onDecline,
@@ -51,5 +53,27 @@ describe("Anpassbare Auflösung", () => {
     expect(onIncline(1, true, "mittel", true).quality).toBe("hinauf");
     expect(onIncline(1, false, "mittel", true).quality).toBeNull();
     expect(onIncline(1, true, "hoch", true).quality).toBeNull();
+  });
+});
+
+describe("Sparstufen und Grenzen", () => {
+  it("Sparstufe aus dem Regelfaktor; ohne Anpassung nie", () => {
+    expect(loadLevel(1, true)).toBe(0);
+    expect(loadLevel(0.8, true)).toBe(1);
+    expect(loadLevel(0.6, true)).toBe(1);
+    expect(loadLevel(0.4, true)).toBe(2);
+    expect(loadLevel(0, false)).toBe(0);
+  });
+
+  it("60 Hz: „hoch“ wird erreichbar (Grenze knapp unter 60), 120 Hz wie bisher", () => {
+    expect(fpsBounds(60)).toEqual([40, 57]);
+    expect(fpsBounds(50)).toEqual([40, 50]);
+    expect(fpsBounds(144)).toEqual([60, 100]);
+  });
+
+  it("eine zu langsame Stufe bleibt gesperrt (kein Pendeln)", () => {
+    expect(onIncline(1, true, "mittel", true, "hoch").quality).toBe("hinauf");
+    expect(onIncline(1, true, "mittel", true, "mittel").quality).toBeNull();
+    expect(onIncline(1, true, "niedrig", true, "mittel").quality).toBe("hinauf");
   });
 });

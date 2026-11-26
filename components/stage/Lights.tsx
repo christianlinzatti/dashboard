@@ -9,6 +9,7 @@ import {
   BufferGeometry,
   Color,
   DoubleSide,
+  FrontSide,
   type InstancedMesh,
   Matrix4,
   Object3D,
@@ -61,17 +62,22 @@ const beamShader = {
     }
   `,
   fragmentShader: /* glsl */ `
-    uniform vec3 uColor; uniform float uIntensity, uTime, uHaze;
+    uniform vec3 uColor; uniform float uIntensity, uTime, uHaze, uLean;
     varying float vLen; varying vec3 vNormalV; varying vec3 vView; varying vec3 vWorld;
     ${NOISE}
     void main() {
       float edge = pow(abs(dot(vNormalV, vView)), 1.6);
       float fall = pow(vLen, 1.8);
-      vec3 q = vWorld * 0.9 + vec3(uTime * 0.12, uTime * 0.05, -uTime * 0.08);
-      float haze = noise3(q) * 0.65 + noise3(q * 2.3 + 7.1) * 0.35;
-      float density = mix(1.0, 0.35 + 1.1 * haze, uHaze);
+      float density = 1.0;
+      // sparsam (schwache Grafik): ohne das Rauschen – das sind 16 Zufallswerte je Pixel
+      if (uLean < 0.5) {
+        vec3 q = vWorld * 0.9 + vec3(uTime * 0.12, uTime * 0.05, -uTime * 0.08);
+        float haze = noise3(q) * 0.65 + noise3(q * 2.3 + 7.1) * 0.35;
+        density = mix(1.0, 0.35 + 1.1 * haze, uHaze);
+      }
       float core = 1.0 + 1.4 * pow(vLen, 8.0);
-      gl_FragColor = vec4(uColor * edge * fall * density * core * uIntensity * 0.55, 1.0);
+      // einseitig gezeichnet fehlt die Rückwand des Kegels: etwas heller, damit er gleich hell wirkt
+      gl_FragColor = vec4(uColor * edge * fall * density * core * uIntensity * 0.55 * (1.0 + 0.7 * uLean), 1.0);
     }
   `,
 };
@@ -169,12 +175,15 @@ export function MovingHeads({
   count,
   realLights,
   dust = true,
+  lean = false,
   lightsRef,
 }: {
   count: number;
   realLights: number;
   /** Staub in den Kegeln (ab mittlerer Qualität) */
   dust?: boolean;
+  /** sparsam: Kegel einseitig und ohne Rauschen (schwache Grafik) */
+  lean?: boolean;
   lightsRef: React.RefObject<LightFrame | null>;
 }) {
   const xs = useMemo(
@@ -255,6 +264,7 @@ export function MovingHeads({
           x={x}
           real={i >= (count - realLights) / 2 && i < (count + realLights) / 2}
           dustOn={dust}
+          lean={lean}
           lightsRef={lightsRef}
           ysRef={ys}
         />
@@ -268,6 +278,7 @@ function Head({
   x,
   real,
   dustOn,
+  lean,
   lightsRef,
   ysRef,
 }: {
@@ -275,6 +286,7 @@ function Head({
   x: number;
   real: boolean;
   dustOn: boolean;
+  lean: boolean;
   lightsRef: React.RefObject<LightFrame | null>;
   /** Hängehöhe je Lampe (MovingHeads) */
   ysRef: React.RefObject<number[]>;
@@ -294,6 +306,7 @@ function Head({
       uHaze: { value: 1 },
       uPx: { value: 500 },
       uFade: { value: 1 },
+      uLean: { value: 0 },
     }),
     [],
   );
@@ -316,6 +329,7 @@ function Head({
     yoke.current.rotation.set(h.tilt, h.pan, 0, "YXZ");
     const u = mat.current?.uniforms;
     if (u) {
+      u.uLean!.value = lean ? 1 : 0;
       (u.uColor!.value as Color).set(h.color);
       u.uIntensity!.value = h.intensity;
       u.uTime!.value = songContext.getState().positionMs / 1000;
@@ -372,7 +386,7 @@ function Head({
             transparent
             depthWrite={false}
             blending={AdditiveBlending}
-            side={DoubleSide}
+            side={lean ? FrontSide : DoubleSide}
             toneMapped={false}
           />
         </mesh>

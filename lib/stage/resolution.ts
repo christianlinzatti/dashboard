@@ -45,14 +45,53 @@ export function onDecline(factor: number, auto: boolean, quality: Quality): Perf
   return { factor, quality: null };
 }
 
-/** Bildrate reicht gut: erst volle Auflösung, dann (automatisch) eine Stufe hinauf */
-export function onIncline(factor: number, auto: boolean, quality: Quality, wasFull: boolean): PerfStep {
-  if (auto && wasFull && quality !== "hoch") return { factor, quality: "hinauf" };
+/**
+ * Bildrate reicht gut: erst volle Auflösung, dann (automatisch) eine Stufe hinauf – aber nie über `ceiling`: eine Stufe,
+ * die schon einmal zu langsam war, bleibt für diese Sitzung gesperrt (sonst pendelt es: jeder Wechsel baut Lichter,
+ * Laser und Puffer neu und übersetzt Shader).
+ */
+export function onIncline(
+  factor: number,
+  auto: boolean,
+  quality: Quality,
+  wasFull: boolean,
+  ceiling: Quality = "hoch",
+): PerfStep {
+  if (auto && wasFull && rank(quality) < rank(ceiling)) return { factor, quality: "hinauf" };
   return { factor, quality: null };
+}
+
+const rank = (q: Quality) => (q === "niedrig" ? 0 : q === "mittel" ? 1 : 2);
+
+/**
+ * Grenzen der Bildrate für den Monitor: darunter wird gesenkt, darüber angehoben. Auf 60-Hz-Bildschirmen misst man nie
+ * mehr als 60 fps – die Standardgrenze (60) würde praktisch nie erreicht, „hoch“ also nie gewählt. Deshalb knapp
+ * darunter.
+ */
+export function fpsBounds(refreshrate: number): [number, number] {
+  if (refreshrate > 100) return [60, 100];
+  return [40, Math.max(50, Math.min(57, refreshrate - 3))];
+}
+
+/**
+ * Wie sehr die Bühne sparen muss (aus dem Regelfaktor): 0 = gar nicht, 1 = Auflösung schon gesenkt (Spiegelung
+ * kleiner, Live-Bildschirme seltener), 2 = am Anschlag (Lichtkegel einseitig und ohne Rauschen, kein Staub, halber
+ * Rauch). Ohne Anpassung (Tests, stehende Szene) immer 0 – das Bild bleibt reproduzierbar.
+ */
+export type Load = 0 | 1 | 2;
+export const LEAN_BELOW = 0.45;
+export function loadLevel(factor: number, adapt: boolean): Load {
+  if (!adapt) return 0;
+  if (factor < LEAN_BELOW) return 2;
+  return factor < 0.9 ? 1 : 0;
 }
 
 /**
  * Stand der Anpassung – über Songwechsel hinweg (die Szene wird je Song neu aufgebaut; ohne das lernte ein schwacher
  * Rechner bei jedem Song von vorn und ruckelte bis dahin).
  */
-export const adaptive = createStore<{ quality: Quality; factor: number }>()(() => ({ quality: "mittel", factor: 1 }));
+export const adaptive = createStore<{ quality: Quality; factor: number; ceiling: Quality }>()(() => ({
+  quality: "mittel",
+  factor: 1,
+  ceiling: "hoch",
+}));
