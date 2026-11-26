@@ -1,65 +1,31 @@
-import { chromium } from "@playwright/test";
+// scripts/update-spotify-totp.mjs
+const SECRETS_URL =
+  process.env.SPOTIFY_SECRETS_URL ??
+  "https://raw.githubusercontent.com/Thereallo1026/spotify-secrets/main/secrets/secretDict.json";
 
 async function main() {
-  const browser = await chromium.launch({ headless: true });
-  try {
-    const context = await browser.newContext({
-      userAgent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
-    });
-
-    let capturedSecret = null;
-
-    // 1. Key-Log aus Page UND Web Workern über console-Events abfangen
-    const handleConsole = (msg) => {
-      const text = msg.text();
-      if (text.startsWith("__TOTP_KEY__:")) {
-        capturedSecret = text.slice("__TOTP_KEY__:".length);
-      }
-    };
-
-    // 2. Init-Script läuft sowohl im Main-Thread als auch in Web Workern (globalThis)
-    await context.addInitScript(() => {
-      if (!globalThis.crypto?.subtle?.importKey) return;
-      const origImportKey = globalThis.crypto.subtle.importKey.bind(globalThis.crypto.subtle);
-      globalThis.crypto.subtle.importKey = async (format, keyData, algorithm, extractable, keyUsages) => {
-        if (format === "raw" && (algorithm === "HMAC" || algorithm?.name === "HMAC")) {
-          const decoded = new TextDecoder().decode(new Uint8Array(keyData));
-          if (/^\d+$/.test(decoded)) {
-            console.log("__TOTP_KEY__:" + decoded);
-          }
-        }
-        return origImportKey(format, keyData, algorithm, extractable, keyUsages);
-      };
-    });
-
-    const page = await context.newPage();
-    page.on("console", handleConsole);
-    page.on("worker", (worker) => worker.on("console", handleConsole));
-
-    const tokenRequestPromise = page.waitForRequest(
-      (req) => (req.url().includes("/api/token") || req.url().includes("/get_access_token")) && req.url().includes("totpVer="),
-      { timeout: 30_000 },
-    );
-
-    await page.goto("https://open.spotify.com/", { waitUntil: "domcontentloaded" });
-
-    const req = await tokenRequestPromise;
-    const url = new URL(req.url());
-    const version = url.searchParams.get("totpVer");
-
-    // Kurz warten, falls das console-Event aus dem Worker minimal verzögert ankommt
-    if (!capturedSecret) {
-      await page.waitForTimeout(300);
-    }
-
-    if (!capturedSecret || !version) {
-      throw new Error(`Extraktion unvollständig (version=${version ?? "null"}, secretFound=${Boolean(capturedSecret)})`);
-    }
-
-    process.stdout.write(JSON.stringify({ secret: capturedSecret, version }));
-  } finally {
-    await browser.close();
+  const res = await fetch(SECRETS_URL);
+  if (!res.ok) {
+    throw new Error(`Konnte Community-Secrets nicht laden: HTTP ${res.status}`);
   }
+
+  const dict = await res.json();
+  const versions = Object.keys(dict)
+    .map(Number)
+    .filter((n) => Number.isFinite(n))
+    .sort((a, b) => b - a);
+
+  const latestVersion = versions[0];
+  if (!latestVersion || !Array.isArray(dict[String(latestVersion)])) {
+    throw new Error("Kein gültiges Secret-Array im JSON gefunden.");
+  }
+
+  process.stdout.write(
+    JSON.stringify({
+      secret: JSON.stringify(dict[String(latestVersion)]),
+      version: String(latestVersion),
+    }),
+  );
 }
 
 main().catch((err) => {
