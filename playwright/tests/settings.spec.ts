@@ -170,3 +170,17 @@ test("Song-Gedächtnis nur mit Anmeldung", async ({ request }) => {
   expect((await request.get("/api/song-memory?track=x")).status()).toBe(401);
   expect((await request.post("/api/song-memory", { data: { trackKey: "x", drops: [1000] } })).status()).toBe(401);
 });
+
+test("Einstellungen: Spotify Canvas wählen (ab Werk aus)", async ({ page }) => {
+  await page.route("**/api/prefs", (r) =>
+    r.request().method() === "GET"
+      ? r.fulfill({ json: { area: { name: "Wien", lat: 48.2, lon: 16.37, radiusKm: 200, custom: false } } })
+      : r.fulfill({ json: {} }),
+  );
+  await page.goto("/einstellungen");
+  const section = page.getByTestId("canvas-settings");
+  await expect(section.getByTestId("canvas-aus")).toHaveAttribute("aria-pressed", "true");
+  await section.getByTestId("canvas-buehne").click();
+  await expect(section.getByTestId("canvas-buehne")).toHaveAttribute("aria-pressed", "true");
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("ss_settings") ?? "{}").canvas)).toBe("buehne");
+});

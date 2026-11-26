@@ -17,7 +17,9 @@ export async function GET(req: Request) {
   try {
     const canvas = await canvasFor(parsed.data, AbortSignal.timeout(8000));
     return json({ canvas });
-  } catch {
-    return json({ canvas: null });
+  } catch (e) {
+    // für /debug: abgelehnt oder Zeitüberschreitung ist etwas anderes als „dieser Song hat keins“
+    const msg = e instanceof Error ? (e.name === "TimeoutError" ? "Zeitüberschreitung" : e.message) : String(e);
+    return json({ canvas: null, error: msg.replace(/(token|cookie|sp_dc)=[^&\s]+/gi, "$1=…").slice(0, 160) });
   }
 }

@@ -51,3 +51,24 @@ describe("Kurzdiagnose", () => {
     });
   });
 });
+
+describe("Kurzdiagnose: Spotify Canvas", () => {
+  it("nennt den Grund, warum keine zu sehen ist", async () => {
+    const { canvasFinding, diagnose } = await import("@/lib/debug/diagnose");
+    expect(canvasFinding({ mode: "aus" })).toMatchObject({ level: "info", value: expect.stringContaining("/einstellungen") });
+    expect(canvasFinding({ mode: "buehne", state: "keins" }).value).toContain("keine Canvas");
+    expect(canvasFinding({ mode: "buehne", state: "fehler", error: "Spotify 401" })).toMatchObject({
+      level: "warnung",
+      value: expect.stringContaining("Spotify 401"),
+    });
+    expect(canvasFinding({ mode: "buehne", state: "da", kind: "video", theme: "jazz", ledWall: false })).toMatchObject({
+      level: "warnung",
+      value: expect.stringContaining("keine LED-Wand"),
+    });
+    expect(canvasFinding({ mode: "buehne", state: "da", kind: "video", theme: "club", ledWall: true }).level).toBe("ok");
+    expect(canvasFinding({ mode: "vollbild", state: "da", kind: "video" }).value).toContain("Vollbild");
+    // in der Gesamtdiagnose
+    const all = diagnose({ song: { track: { title: "T" } }, canvas: { mode: "aus" } });
+    expect(all.some((f) => f.label === "Canvas")).toBe(true);
+  });
+});

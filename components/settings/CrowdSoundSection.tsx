@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { playApplause } from "@/lib/live/crowd-sound";
 import { settings, useSettings } from "@/lib/settings";
 
-/** Publikumsgeräusche: Applaus am Songende und Zugabe-Klatschen aus dem Browser (gilt für dieses Gerät) */
+/** Publikumsgeräusche: Applaus am Songende und Zugabe-Klatschen aus dem Browser (im Konto gespeichert) */
 export function CrowdSoundSection() {
   // Geräte-Einstellungen erst laden – sonst würde „An“ die übrigen (Qualität, Strobo …) mit Standardwerten überschreiben
   useEffect(() => settings.getState().hydrate(), []);
@@ -42,7 +42,7 @@ export function CrowdSoundSection() {
           ▶ Probehören
         </button>
       </div>
-      <p className="text-sm text-white/50">Gilt für dieses Gerät.</p>
+      <p className="text-sm text-white/50">Gilt auf allen Geräten (im Konto gespeichert).</p>
     </section>
   );
 }

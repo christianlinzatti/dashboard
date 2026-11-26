@@ -6,6 +6,10 @@ import type { LogEntry } from "@/lib/live/log-schema";
 import { perf } from "@/lib/stage/perf";
 import { songContext } from "@/lib/song-context/store";
 import { offsetStore } from "@/lib/lyrics/offset-store";
+import { canvasStatus } from "@/lib/canvas-status";
+import { settings } from "@/lib/settings";
+import { stageInfo } from "@/lib/stage/stage-info";
+import { THEMES } from "@/lib/stage/themes";
 import { sendDebugContext } from "@/lib/live/debug-upload";
 import { browserEnv, diagnose, type Finding } from "@/lib/debug/diagnose";
 import type { AiTraceInfo } from "@/lib/show/trace";
@@ -29,8 +33,20 @@ function contextObject(full: boolean, ki?: AiTraceInfo | null) {
     live,
     env: browserEnv(),
     offset: { manual, device, song: songShift, measured },
+    canvas: canvasInfo(),
     song: shown,
     ...(full && ki ? { ki } : {}),
+  };
+}
+
+/** Spotify Canvas: Einstellung, Ergebnis der Abfrage und ob die Bühne eine LED-Wand hat */
+function canvasInfo() {
+  const theme = stageInfo.getState().current?.id;
+  return {
+    mode: settings.getState().canvas,
+    ...canvasStatus.getState(),
+    theme,
+    ledWall: theme ? THEMES[theme].wall === "led" : undefined,
   };
 }
 

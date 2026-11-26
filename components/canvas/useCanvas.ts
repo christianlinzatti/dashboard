@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { canvasStatus } from "@/lib/canvas-status";
 import { canvasMediaPath } from "@/lib/spotify/canvas-media";
 import { useSongContext } from "@/lib/song-context/store";
 
@@ -18,16 +19,27 @@ export function useCanvas(enabled: boolean): Canvas | null {
 
   useEffect(() => {
     // echte Spotify-Track-IDs sind 22 Zeichen; Demos/lokale Dateien haben keine
-    if (!enabled || !spotifyId || !/^[A-Za-z0-9]{22}$/.test(spotifyId)) return;
+    if (!enabled || !spotifyId || !/^[A-Za-z0-9]{22}$/.test(spotifyId)) {
+      canvasStatus.setState({ state: "aus" }, true);
+      return;
+    }
     let alive = true;
+    canvasStatus.setState({ state: "laedt" }, true);
     fetch(`/api/canvas?track=${spotifyId}`, { cache: "no-store" })
-      .then((r) => (r.ok ? (r.json() as Promise<{ canvas: Canvas | null }>) : null))
+      .then(async (r) =>
+        r.ok ? ((await r.json()) as { canvas: Canvas | null; error?: string }) : { canvas: null, error: `Server ${r.status}` },
+      )
       .then((d) => {
+        if (!alive) return;
         // Medium über die eigene Domain laden (Content-Security-Policy, WebGL-Textur auf der Bühnen-Leinwand)
-        const c = d?.canvas;
-        if (alive) setResult({ id: spotifyId, canvas: c ? { kind: c.kind, url: canvasMediaPath(spotifyId) } : null });
+        const c = d.canvas;
+        setResult({ id: spotifyId, canvas: c ? { kind: c.kind, url: canvasMediaPath(spotifyId) } : null });
+        canvasStatus.setState(
+          c ? { state: "da", kind: c.kind } : d.error ? { state: "fehler", error: d.error } : { state: "keins" },
+          true,
+        );
       })
-      .catch(() => undefined);
+      .catch(() => alive && canvasStatus.setState({ state: "fehler", error: "keine Verbindung zum Server" }, true));
     return () => {
       alive = false;
     };

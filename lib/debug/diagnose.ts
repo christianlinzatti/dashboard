@@ -26,7 +26,27 @@ type Ctx = {
   live?: { micState?: string };
   env?: { secureContext?: boolean; micApi?: boolean; origin?: string };
   offset?: { manual?: number; device?: number; song?: number; measured?: { n?: number; spreadMs?: number } | null };
+  canvas?: { mode?: string; state?: string; kind?: string; error?: string; theme?: string; ledWall?: boolean };
 };
+
+const ENABLE_CANVAS = "in /einstellungen „Spotify Canvas“ wählen (oder Steuerleiste: „Canvas: aus“ antippen)";
+
+/** Warum (k)eine Spotify Canvas zu sehen ist */
+export function canvasFinding(c: NonNullable<Ctx["canvas"]>): Finding {
+  const label = "Canvas";
+  if (!c.mode || c.mode === "aus") return { label, value: `aus – ${ENABLE_CANVAS}`, level: "info" };
+  if (c.state === "laedt") return { label, value: "wird geladen …", level: "info" };
+  if (c.state === "fehler")
+    return { label, value: `Spotify liefert keine: ${c.error ?? "Fehler"} (siehe „Spotify-Zugriff“)`, level: "warnung" };
+  if (c.state !== "da") return { label, value: "dieser Song hat bei Spotify keine Canvas", level: "info" };
+  if (c.mode === "vollbild") return { label, value: `läuft als Vollbild (${c.kind ?? "Video"})`, level: "ok" };
+  if (c.ledWall) return { label, value: `läuft auf der LED-Wand (Bühne „${c.theme ?? "?"}“)`, level: "ok" };
+  return {
+    label,
+    value: `vorhanden, aber Bühne „${c.theme ?? "?"}“ hat keine LED-Wand – nur Club, Festival und Stadion zeigen sie (oder „Vollbild“ wählen)`,
+    level: "warnung",
+  };
+}
 
 const sec = (ms: number) => `${ms >= 0 ? "+" : "−"}${(Math.abs(ms) / 1000).toFixed(1).replace(".", ",")} s`;
 
@@ -57,6 +77,7 @@ export function diagnose(ctx: Ctx): Finding[] {
   const out: Finding[] = [];
   const song = ctx.song;
   if (!song) return [{ label: "Song", value: "kein Song – Spotify spielt nichts oder ist nicht angemeldet", level: "warnung" }];
+  if (ctx.canvas) out.push(canvasFinding(ctx.canvas));
   out.push({
     label: "Song",
     value: `${song.track?.title ?? "?"} – ${(song.artists ?? []).map((a) => a.name).join(", ")} · ${ctx.playback?.isPlaying ? "spielt" : "pausiert"}`,
