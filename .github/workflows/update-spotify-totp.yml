@@ -21,8 +21,8 @@ jobs:
 
       - name: Playwright & Chromium installieren
         run: |
-          npm install --no-save playwright
-          npx playwright install --with-deps chromium
+          npm ci --ignore-scripts
+          npx playwright install --with-deps chromium chromium-headless-shell
 
       - name: Spotify TOTP-Parameter extrahieren
         id: extract
