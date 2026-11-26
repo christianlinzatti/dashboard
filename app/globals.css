@@ -22,7 +22,6 @@ body {
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
   user-select: none;
-  cursor: none;
 }
 
 /* Karaoke-Füllung: --p (0..1) wird pro Frame direkt gesetzt, ohne React-Rerender */

@@ -77,7 +77,11 @@ export function DebugViewer() {
   const button = "rounded-md bg-white/15 px-3 py-1.5 text-sm font-semibold text-white hover:bg-white/25 active:bg-white/35";
 
   return (
-    <main className="fixed inset-0 overflow-auto bg-[#05030a] text-white" data-testid="debug-viewer" data-state={state.kind}>
+    <main
+      className="fixed inset-0 overflow-auto bg-[#05030a] text-white select-text"
+      data-testid="debug-viewer"
+      data-state={state.kind}
+    >
       <div className="mx-auto max-w-5xl p-4">
         <h1 className="text-xl font-bold">Song-Kontext vom Dashboard</h1>
         <p className="mt-1 text-sm text-white/60">

@@ -228,7 +228,8 @@ export function Dashboard({
 
   return (
     <main
-      className="relative h-dvh w-dvw overflow-hidden bg-[var(--c-dark)]"
+      // Kiosk: Mauszeiger nur hier ausblenden (Debug-, Einstellungs- und Fotoseiten behalten ihn)
+      className="relative h-dvh w-dvw cursor-none overflow-hidden bg-[var(--c-dark)]"
       style={vars}
       data-testid="dashboard"
       data-frozen={frozen}

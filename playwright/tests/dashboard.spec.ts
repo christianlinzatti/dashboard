@@ -503,3 +503,12 @@ test("Abspann nach dem letzten Song: rollt einmal, Antippen überspringt, danach
   await expect(page.getByTestId("evening-recap")).toBeVisible();
   await expect(page.getByTestId("credits")).toHaveCount(0);
 });
+
+test("Mauszeiger: auf dem Kiosk ausgeblendet, auf /debug und den Einstellungen sichtbar", async ({ page }) => {
+  await page.goto("/?demo=neonlicht&t=46000");
+  await expect(page.getByTestId("dashboard")).toHaveCSS("cursor", "none");
+  await page.goto("/debug");
+  await expect(page.getByTestId("debug-viewer")).toHaveCSS("cursor", "auto");
+  await page.goto("/einstellungen");
+  await expect(page.getByTestId("scroll-page")).toHaveCSS("cursor", "auto");
+});
