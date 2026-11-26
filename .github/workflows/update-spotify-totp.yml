@@ -1,0 +1,49 @@
+name: Update Spotify TOTP
+
+on:
+  schedule:
+    # Läuft täglich um Mitternacht
+    - cron: "0 0 * * *"
+  workflow_dispatch: # Ermöglicht manuellen Start im GitHub-Tab "Actions"
+
+jobs:
+  extract-and-update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: Node.js einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Playwright & Chromium installieren
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+
+      - name: Spotify TOTP-Parameter extrahieren
+        id: extract
+        run: |
+          RESULT=$(node scripts/update-spotify-totp.mjs)
+          SECRET=$(echo "$RESULT" | jq -r '.secret')
+          VERSION=$(echo "$RESULT" | jq -r '.version')
+
+          if [ -z "$SECRET" ] || [ "$SECRET" = "null" ] || [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
+            echo "Extraktion fehlgeschlagen"
+            exit 1
+          fi
+
+          # Maskiert das Secret in den öffentlichen GitHub-Action-Logs
+          echo "::add-mask::$SECRET"
+          echo "secret=$SECRET" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: GitHub Repository Secrets aktualisieren
+        env:
+          GH_TOKEN: ${{ secrets.REPO_ADMIN_TOKEN }}
+        run: |
+          gh secret set SPOTIFY_TOTP_SECRET --body "${{ steps.extract.outputs.secret }}"
+          gh secret set SPOTIFY_TOTP_VERSION --body "${{ steps.extract.outputs.version }}"
