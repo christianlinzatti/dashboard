@@ -6,23 +6,30 @@ on:
     - cron: "0 0 * * *"
   workflow_dispatch: # Ermöglicht manuellen Start im GitHub-Tab "Actions"
 
+permissions:
+  contents: read
+
 jobs:
   extract-and-update:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble
 
     steps:
       - name: Repository auschecken
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Node.js einrichten
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: "22"
+          node-version-file: .nvmrc
+          cache: npm
 
-      - name: Playwright & Chromium installieren
-        run: |
-          npm install --no-save playwright
-          npx playwright install --with-deps chromium
+      - name: Dependencies installieren
+        run: npm ci --ignore-scripts
 
       - name: Spotify TOTP-Parameter extrahieren
         id: extract
