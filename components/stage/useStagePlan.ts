@@ -28,10 +28,14 @@ export function useStagePlan(forceTheme?: ThemeId, forceEvening?: EveningPhase) 
   const recentKey = useRecentClipsKey(raw?.trackKey);
   const tour = useTourTheme(raw?.artists[0]?.spotifyId, raw?.trackKey);
   const theme: Theme | null = raw ? THEMES[forceTheme ?? themeFor(raw, themeChoice, prevTheme, tour)] : null;
-  const song = useMemo(
-    () => (raw && theme?.tint ? { ...raw, album: { ...raw.album, palette: themedPalette(raw.album.palette, theme) } } : raw),
-    [raw, theme],
+  // Palette nur neu berechnen, wenn sich Cover-Palette oder Bühne ändern – nicht bei jeder Ergänzung des Songs (Infos,
+  // Konzerte …): Effekte und Publikum bauen ihre Materialien an der Palette, ein neues Objekt hieße neue Shader
+  const basePalette = raw?.album.palette;
+  const tinted = useMemo(
+    () => (basePalette && theme?.tint ? themedPalette(basePalette, theme) : undefined),
+    [basePalette, theme],
   );
+  const song = useMemo(() => (raw && tinted ? { ...raw, album: { ...raw.album, palette: tinted } } : raw), [raw, tinted]);
   const bpm = useSongContext((s) => Math.round(s.live.bpm));
   const frozen = useSongContext((s) => s.frozen);
   const dark = song?.album.palette.dark ?? "#0b0712";

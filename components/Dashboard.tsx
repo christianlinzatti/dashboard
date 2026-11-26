@@ -166,14 +166,20 @@ export function Dashboard({
       if (fps !== null && songContext.getState().playback.isPlaying) seen.push(fps);
     });
     const sample = setInterval(() => {
-      const { quality } = perf.getState();
+      const { quality, resolution } = perf.getState();
       if (seen.length && quality) {
         const avg = Math.round(seen.reduce((s, x) => s + x, 0) / seen.length);
         const theme = stageInfo.getState().current?.id ?? "?";
         report(
           "info",
           "leistung",
-          perfMessage({ fps: avg, minFps: Math.min(...seen), quality, theme }, `${window.innerWidth}×${window.innerHeight}`),
+          perfMessage(
+            { fps: avg, minFps: Math.min(...seen), quality, theme },
+            // Fenstergröße, Pixeldichte des Geräts und – falls gesenkt – die Auflösung der Bühne
+            `${window.innerWidth}×${window.innerHeight} @${Math.round(window.devicePixelRatio * 100) / 100}x${
+              (resolution ?? 100) < 100 ? `, Auflösung ${resolution} %` : ""
+            }`,
+          ),
         );
       }
       seen = [];

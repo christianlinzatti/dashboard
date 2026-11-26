@@ -8,6 +8,8 @@ import { useSettings } from "@/lib/settings";
 import { useSongContext } from "@/lib/song-context/store";
 import type { LightFrame } from "@/lib/stage/lights";
 import { PRESETS, stepQuality, type Quality } from "@/lib/stage/quality";
+import { adaptive, onDecline, onIncline, RESOLUTION_STEP, resolutionPercent, stageDpr } from "@/lib/stage/resolution";
+import { useStore } from "zustand";
 import { SceneLights } from "./SceneLights";
 import { Band } from "./Band";
 import { hasBlinders, type ThemeId } from "@/lib/stage/themes";
@@ -34,7 +36,7 @@ import { Crowd, CrowdFlags } from "./crowd";
 import { Effects } from "./effects";
 import { initialFrame, type Frame } from "./types";
 import { RenderStats } from "./RenderStats";
-import { FpsMeter, hasWebGL, MixamoClips, screenWidth, useDayPhase } from "./scene-parts";
+import { FpsMeter, hasWebGL, MixamoClips, screenWidth, ShaderWarmup, useDayPhase } from "./scene-parts";
 import { Backdrop, StageOverlays } from "./StageOverlays";
 import { useStagePlan } from "./useStagePlan";
 import { ChorusSign } from "./ChorusSign";
@@ -142,9 +144,15 @@ function Scene({
   const photoUrl = useSongContext((s) => (s.song ? (wallPhotoAt(s.song, s.positionMs)?.url ?? null) : null));
   const photoCredit = useSongContext((s) => (s.song ? wallPhotoCredit(s.song, s.positionMs) : null));
   const chosen = useSettings((s) => s.quality);
-  const [autoQuality, setAutoQuality] = useState<Quality>("mittel");
+  // Anpassung an die Bildrate (bleibt über Songwechsel erhalten): erst Auflösung, dann – bei „auto“ – die Qualität
+  const autoQuality = useStore(adaptive, (s) => s.quality);
+  const factor = useStore(adaptive, (s) => s.factor);
   const quality: Quality = forceQuality ?? (frozen ? "mittel" : chosen === "auto" ? autoQuality : chosen);
   const preset = PRESETS[quality];
+  // feste Vorgabe per URL (Tests, Demos) oder stehende Szene: volle Auflösung, keine Anpassung (reproduzierbar)
+  const adapt = !frozen && !forceQuality;
+  const auto = adapt && chosen === "auto";
+  const dpr = adapt && typeof window !== "undefined" ? stageDpr(preset.dpr, window.devicePixelRatio, factor) : preset.dpr;
 
   useEffect(() => () => document.body.removeAttribute("data-stage-ready"), []);
 
@@ -159,6 +167,7 @@ function Scene({
     <div
       className="absolute inset-0"
       data-quality={quality}
+      data-resolution={adapt ? resolutionPercent(factor) : 100}
       data-theme={theme.id}
       data-outfits={song.cast.map((c) => c.outfit ?? "original").join(",")}
       data-cast={song.cast.map((c) => c.avatarId).join(",")}
@@ -172,7 +181,7 @@ function Scene({
     >
       <Canvas
         data-testid="stage"
-        dpr={preset.dpr}
+        dpr={dpr}
         frameloop={frozen ? "demand" : "always"}
         camera={{ position: [0, 2.2, 10.2], fov: 24 }}
         gl={{ antialias: true, powerPreference: "high-performance" }}
@@ -188,14 +197,28 @@ function Scene({
         <color attach="background" args={[dark]} />
         <fog attach="fog" args={[dark, FOG_NEAR, theme.fogFar]} />
         <SceneLights lightsRef={lights} ground={dark} />
-        {!frozen && chosen === "auto" && !forceQuality && (
+        {adapt && (
           <PerformanceMonitor
-            onDecline={() => setAutoQuality((q) => stepQuality(q, -1))}
-            onIncline={() => setAutoQuality((q) => stepQuality(q, 1))}
-            flipflops={3}
+            factor={adaptive.getState().factor}
+            step={RESOLUTION_STEP}
+            onDecline={(api) => {
+              const next = onDecline(api.factor, auto, quality);
+              if (next.quality) {
+                api.factor = next.factor;
+                adaptive.setState({ quality: stepQuality(quality, -1) });
+              }
+              adaptive.setState({ factor: api.factor });
+            }}
+            onIncline={(api) => {
+              const wasFull = adaptive.getState().factor >= 1;
+              const next = onIncline(api.factor, auto, quality, wasFull);
+              if (next.quality) adaptive.setState({ quality: stepQuality(quality, 1) });
+              adaptive.setState({ factor: api.factor });
+            }}
+            flipflops={20}
           />
         )}
-        {!frozen && <FpsMeter quality={quality} />}
+        {!frozen && <FpsMeter quality={quality} resolution={adapt ? resolutionPercent(factor) : 100} />}
         <StageSet
           preset={preset}
           dark={dark}
@@ -320,6 +343,15 @@ function Scene({
           <MixamoClips ids={mixamoIds} />
           <ReadySignal />
           <RenderStats />
+          {/* alle Shader vorab übersetzen – auch die der noch unsichtbaren Effekte (sonst ruckelt es beim ersten Einsatz) */}
+          {!frozen && (
+            <ShaderWarmup
+              token={`${song.trackKey}|${theme.id}|${quality}|${weather ?? ""}`}
+              // ohne Bloom aufs Bild; mit Bloom (und für die Live-Bildschirme) in einen Zwischenpuffer
+              screen={!preset.bloom}
+              buffer={preset.bloom || !!preset.liveScreens}
+            />
+          )}
         </Suspense>
         {/* Erinnerungsfoto: liest das fertige Bild (nach Bloom) */}
         <PhotoCapture bloom={preset.bloom} />

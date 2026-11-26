@@ -58,6 +58,7 @@ export function DebugPanel() {
   const pre = useRef<HTMLPreElement>(null);
   const fps = useStore(perf, (s) => s.fps);
   const quality = useStore(perf, (s) => s.quality);
+  const resolution = useStore(perf, (s) => s.resolution);
   const [log, setLog] = useState<LogEntry[] | null>(null);
   const ki = useAiTrace();
   const kiRef = useRef(ki);
@@ -206,6 +207,7 @@ export function DebugPanel() {
       <p className="mb-2 font-sans text-sm text-white" data-testid="debug-fps">
         Bildrate: {fps === null ? "–" : `${fps} fps`}
         {quality ? ` · Qualität ${quality}` : ""}
+        {resolution !== undefined && resolution < 100 ? ` · Auflösung ${resolution} %` : ""}
       </p>
       {log && (
         <section className="mb-2" data-testid="debug-log">

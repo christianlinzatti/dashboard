@@ -2,7 +2,12 @@ import { createStore } from "zustand/vanilla";
 import type { Quality } from "./quality";
 
 /** Gemessene Bildrate der 3D-Szene (für Debug-Panel und Leistungsproben). */
-export const perf = createStore<{ fps: number | null; quality: Quality | null }>()(() => ({ fps: null, quality: null }));
+export const perf = createStore<{
+  fps: number | null;
+  quality: Quality | null;
+  /** Anteil der vollen Auflösung in Prozent (sinkt, wenn die Bildrate nicht reicht) */
+  resolution?: number;
+}>()(() => ({ fps: null, quality: null }));
 
 /**
  * Bildrate aus Frame-Zeiten (Sekunden) – Mittel über das Fenster, robust gegen einzelne Ausreißer.
