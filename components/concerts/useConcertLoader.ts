@@ -38,7 +38,8 @@ export function useConcertLoader(enabled: boolean) {
             // Pi-Bridge verbunden (Kiosk): oeticket/eventim.de fragt sie vom Heimanschluss aus
             viaBridge: useBridgeState.getState().state === "verbunden",
             signal: ctrl.signal,
-            fetch,
+            // nicht `fetch` direkt: als Methode von `deps` aufgerufen wirft der Browser „Illegal invocation“
+            fetch: (url, init) => fetch(url, init),
             askBridge: (names, signal) => askBridgeConcerts(BRIDGE_URL, names, { signal }),
             show,
             warn: (m) => report("warnung", "konzerte", m),
