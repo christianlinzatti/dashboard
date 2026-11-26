@@ -7,6 +7,7 @@ import type { ArtistAvatars as AvatarMap, AvatarStyle } from "@/lib/avatars/over
 import { ArtistAvatars, type ArtistAvatarPatch } from "./ArtistAvatars";
 import { AvatarStyleSection } from "./AvatarStyleSection";
 import { QuietHoursSection } from "./QuietHoursSection";
+import { AiSection } from "./AiSection";
 import { CanvasSection } from "./CanvasSection";
 import { CrowdSoundSection } from "./CrowdSoundSection";
 import { useSettingsSync } from "./useSettingsSync";
@@ -209,6 +210,7 @@ export function SettingsPage() {
         {area && <ArtistAvatars map={artistAvatars} busy={state === "speichert"} save={(p, done) => void save(p, done)} />}
 
         <CanvasSection />
+        <AiSection />
         <CrowdSoundSection />
       </main>
     </ScrollPage>

@@ -3,11 +3,12 @@
 import { useEffect } from "react";
 import { applyGermanTranslation } from "@/lib/lyrics/apply-translation";
 import { needsGermanTranslation } from "@/lib/lyrics/second-line";
+import { settings } from "@/lib/settings";
 import { songContext } from "@/lib/song-context/store";
 
 /**
- * Deutsche Übersetzung per KI für Songs, die nicht deutsch sind (nur live): sobald die Lyrics da sind, einmal je Song
- * fragen – der Server übersetzt beim ersten Mal und hat es danach im Cache.
+ * Deutsche Übersetzung per KI für Songs, die nicht deutsch sind (nur live, nur wenn „KI verwenden“ an ist): sobald die
+ * Lyrics da sind, einmal je Song fragen – der Server übersetzt beim ersten Mal und hat es danach im Cache.
  */
 export function useLyricsTranslation(enabled: boolean) {
   useEffect(() => {
@@ -20,6 +21,8 @@ export function useLyricsTranslation(enabled: boolean) {
         const song = songContext.getState().song;
         if (!song?.lyrics || song.status.lyrics?.state !== "ok" || askedFor === song.trackKey) return;
         if (!needsGermanTranslation(song.lyrics)) return;
+        // KI in den Einstellungen ausgeschaltet: keine Übersetzung anfragen
+        if (!settings.getState().ai) return;
         askedFor = song.trackKey;
         ctrl?.abort();
         ctrl = new AbortController();

@@ -13,7 +13,16 @@ import { createOpenAiShowDirector, DEFAULT_OPENAI_SHOW_MODEL } from "./director-
 import { collectTags, type MusicTags } from "./tags";
 import { aiTraceSchema, type AiTrace, type AiTraceInfo } from "./trace";
 
-export type ShowQuery = { trackKey: string; title: string; artists: string[]; album?: string; year?: number; durationMs: number };
+export type ShowQuery = {
+  trackKey: string;
+  title: string;
+  artists: string[];
+  album?: string;
+  year?: number;
+  durationMs: number;
+  /** false: KI in den Einstellungen ausgeschaltet – nur Genres/Stimmung, keine KI-Anfrage (auch nicht aus dem Cache) */
+  ai?: boolean;
+};
 export type ShowResponse = MusicTags & {
   brief: ShowBrief | null;
   /** woher die Regie kommt: KI-Modell oder nur die eingebauten Regeln */
@@ -23,7 +32,7 @@ export type ShowResponse = MusicTags & {
     /** Brief kam aus dem Server-Cache (die KI wurde für diesen Song schon früher gefragt) */
     cached?: boolean;
     /** warum es keinen Brief gibt */
-    reason?: DirectorResult["reason"];
+    reason?: DirectorResult["reason"] | "aus";
   };
 };
 
@@ -71,6 +80,7 @@ export function createShowService(deps: Deps) {
       await deps.cache.set(tagsKey, tags, fresh.complete ? CACHE_TTL.showTags : CACHE_TTL.showTagsPartial);
     }
     const source = { tags: tags.genres.length ? ("quellen" as const) : ("keine" as const), brief: null as string | null };
+    if (q.ai === false) return { ...tags, brief: null, source: { ...source, reason: "aus" } };
     if (!deps.direct) return { ...tags, brief: null, source };
 
     // 2. KI-Regie (einmal je Song und Modell)

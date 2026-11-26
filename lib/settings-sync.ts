@@ -6,7 +6,7 @@ import { themeIds } from "@/lib/stage/themes";
  * Geräte-Einstellungen im Konto: Was man am Pi, Handy oder Laptop einstellt, gilt überall – bis auf die Qualitätsstufe,
  * die zur Hardware gehört (der Pi braucht „niedrig“, der Laptop kann „hoch“). Es gilt die zuletzt gemachte Änderung.
  */
-export const SHARED_SETTINGS = ["strobe", "lamps", "secondLine", "stage", "canvas", "crowdSound"] as const;
+export const SHARED_SETTINGS = ["strobe", "lamps", "secondLine", "stage", "canvas", "crowdSound", "ai"] as const;
 
 export const sharedSettingsSchema = z.object({
   strobe: z.boolean(),
@@ -15,6 +15,8 @@ export const sharedSettingsSchema = z.object({
   stage: z.enum(["auto", ...themeIds]),
   canvas: z.enum(["aus", "buehne", "vollbild"]),
   crowdSound: z.boolean(),
+  // später dazugekommen: ältere Stände im Konto haben es nicht – dann wie bisher an
+  ai: z.boolean().default(true),
 });
 export type SharedSettings = z.infer<typeof sharedSettingsSchema>;
 

@@ -184,3 +184,47 @@ test("Einstellungen: Spotify Canvas wählen (ab Werk aus)", async ({ page }) => 
   await expect(section.getByTestId("canvas-buehne")).toHaveAttribute("aria-pressed", "true");
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("ss_settings") ?? "{}").canvas)).toBe("buehne");
 });
+
+test("Einstellungen: KI verwenden an/aus (ab Werk an)", async ({ page }) => {
+  await page.route("**/api/prefs", (r) =>
+    r.request().method() === "GET"
+      ? r.fulfill({ json: { area: { name: "Wien", lat: 48.2, lon: 16.37, radiusKm: 200, custom: false } } })
+      : r.fulfill({ json: {} }),
+  );
+  await page.goto("/einstellungen");
+  const section = page.getByTestId("ai-settings");
+  await expect(section.getByTestId("ai-on")).toHaveAttribute("aria-pressed", "true");
+  await section.getByTestId("ai-off").click();
+  await expect(section.getByTestId("ai-off")).toHaveAttribute("aria-pressed", "true");
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("ss_settings") ?? "{}").ai)).toBe(false);
+});
+
+test("KI aus: der Kiosk fragt die Regie ohne KI (ki=0) und keine Übersetzung an", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("ss_settings", JSON.stringify({ quality: "niedrig", ai: false })));
+  const track = {
+    id: "4uLU6hMCjMI75M1A2tKUQE",
+    type: "track",
+    name: "Regellied",
+    duration_ms: 200_000,
+    explicit: false,
+    artists: [{ id: "0OdUWJ0sBjDrqHygGUXeCF", name: "Band" }],
+    album: { name: "A", images: [{ url: "/demo/pulsar.svg", width: 300, height: 300 }] },
+  };
+  await page.route("**/api/now-playing", (r) =>
+    r.fulfill({ json: { state: "playing", progressMs: 1000, fetchedAt: 0, track, user: "T" } }),
+  );
+  await page.route("**/api/lyrics?*", (r) =>
+    r.fulfill({ json: { lyrics: null, instrumental: true, cached: false, attempts: [] } }),
+  );
+  let translate = 0;
+  await page.route("**/api/lyrics/translate?*", (r) => (translate++, r.fulfill({ json: { status: "ok", byText: {} } })));
+  const shows: string[] = [];
+  await page.route("**/api/show?*", (r) => {
+    shows.push(new URL(r.request().url()).searchParams.get("ki") ?? "");
+    return r.fulfill({ json: { genres: [], brief: null, source: { tags: "keine", brief: null, reason: "aus" } } });
+  });
+  await page.goto("/");
+  await expect.poll(() => shows.length).toBeGreaterThan(0);
+  expect(shows.every((k) => k === "0")).toBe(true);
+  expect(translate).toBe(0);
+});

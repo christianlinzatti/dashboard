@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import type { ShowBrief, Mood } from "@/lib/show/brief";
 import type { SongStatic } from "@/lib/song-context/schema";
+import { settings } from "@/lib/settings";
 import { songContext } from "@/lib/song-context/store";
 
 const SEP = "\u001f";
@@ -22,6 +23,7 @@ const REASONS: Record<string, string> = {
   abgelehnt: "KI hat abgelehnt",
   ungültig: "KI-Antwort unbrauchbar",
   konfiguration: "KI falsch eingerichtet (Schlüssel/Modell prüfen)",
+  aus: "KI in den Einstellungen ausgeschaltet – Regeln",
   vorübergehend: "KI gerade nicht erreichbar",
 };
 
@@ -35,7 +37,7 @@ function showDetail(r: ShowPayload, late: boolean): string | undefined {
   return parts.length ? parts.join(" · ") : undefined;
 }
 
-export function showUrl(song: SongStatic) {
+export function showUrl(song: SongStatic, ai = true) {
   const year = Number(song.track.releaseDate?.slice(0, 4));
   const p = new URLSearchParams({
     track: song.trackKey,
@@ -43,6 +45,7 @@ export function showUrl(song: SongStatic) {
     artists: song.artists.map((a) => a.name).join(SEP),
     album: song.album.name,
     durationMs: String(Math.round(song.track.durationMs)),
+    ...(ai ? {} : { ki: "0" }),
     ...(Number.isInteger(year) && year >= 1800 ? { year: String(year) } : {}),
   });
   return `/api/show?${p}`;
@@ -88,7 +91,7 @@ export function useShowLoader(enabled: boolean) {
       ctrl = new AbortController();
       songContext.getState().mergeSong({ status: { ...song.status, show: { state: "loading" } } });
       try {
-        const res = await fetch(showUrl(song), { signal: ctrl.signal });
+        const res = await fetch(showUrl(song, settings.getState().ai), { signal: ctrl.signal });
         if (!res.ok) throw new Error(String(res.status));
         const payload = (await res.json()) as ShowPayload;
         const s = songContext.getState();

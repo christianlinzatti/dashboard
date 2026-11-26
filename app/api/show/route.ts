@@ -20,6 +20,8 @@ const query = z.object({
     .int()
     .min(1000)
     .max(4 * 3600_000),
+  /** 0 = KI in den Einstellungen ausgeschaltet */
+  ki: z.enum(["0", "1"]).optional(),
 });
 
 /** Regie für den aktuellen Song: Genres/Stimmung aus offenen Quellen und – wenn eingerichtet – der KI-Brief (nur angemeldet). */
@@ -27,6 +29,6 @@ export async function GET(req: NextRequest) {
   if (!(await readSession())) return json({ error: "Nicht angemeldet." }, 401);
   const q = query.safeParse(Object.fromEntries(req.nextUrl.searchParams));
   if (!q.success) return json({ error: "Ungültige Anfrage." }, 400);
-  const { track, artists, ...rest } = q.data;
-  return json(await showFor({ trackKey: track, artists: artists.split(SEP).filter(Boolean), ...rest }));
+  const { track, artists, ki, ...rest } = q.data;
+  return json(await showFor({ trackKey: track, artists: artists.split(SEP).filter(Boolean), ...rest, ai: ki !== "0" }));
 }

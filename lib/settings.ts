@@ -33,6 +33,8 @@ export type Settings = {
   canvas: CanvasMode;
   /** Publikumsgeräusche (Applaus am Songende, Zugabe-Klatschen) aus dem Browser – leise, Standard aus */
   crowdSound: boolean;
+  /** KI verwenden (Show-Regie, Übersetzung der Lyrics); aus = nur Regeln, keine KI-Anfragen */
+  ai: boolean;
 };
 
 const KEY = "ss_settings";
@@ -44,6 +46,7 @@ const defaults: Settings = {
   stage: "auto",
   canvas: "aus",
   crowdSound: false,
+  ai: true,
 };
 
 function load(): Settings {
@@ -62,6 +65,7 @@ function load(): Settings {
       stage: isThemeChoice(raw.stage) ? raw.stage : defaults.stage,
       canvas: canvasModeFrom(raw.canvas),
       crowdSound: typeof raw.crowdSound === "boolean" ? raw.crowdSound : defaults.crowdSound,
+      ai: typeof raw.ai === "boolean" ? raw.ai : defaults.ai,
     };
   } catch {
     return defaults;
@@ -89,8 +93,8 @@ function loadChangedAt(): number {
 export const settings = createStore<Store>()((set, get) => {
   const persist = () => {
     try {
-      const { quality, strobe, lamps, secondLine, stage, canvas, crowdSound, changedAt } = get();
-      localStorage.setItem(KEY, JSON.stringify({ quality, strobe, lamps, secondLine, stage, canvas, crowdSound, changedAt }));
+      const { quality, strobe, lamps, secondLine, stage, canvas, crowdSound, ai, changedAt } = get();
+      localStorage.setItem(KEY, JSON.stringify({ quality, strobe, lamps, secondLine, stage, canvas, crowdSound, ai, changedAt }));
     } catch {
       /* privater Modus */
     }

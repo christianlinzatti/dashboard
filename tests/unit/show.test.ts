@@ -304,6 +304,18 @@ describe("Show-Dienst", () => {
     expect(direct).toHaveBeenCalledTimes(1);
   });
 
+  it("KI in den Einstellungen aus: keine KI-Anfrage, auch kein Brief aus dem Cache – nur Genres/Stimmung", async () => {
+    const cache = memoryCache();
+    const direct = vi.fn<(facts: SongFacts) => Promise<{ brief: ShowBrief }>>(async () => ({ brief }));
+    const show = createShowService({ cache, http: http(), audioDbKey: "123", direct });
+    await show(q); // mit KI: Brief liegt jetzt im Cache
+    const off = await show({ ...q, ai: false });
+    expect(direct).toHaveBeenCalledTimes(1);
+    expect(off.brief).toBeNull();
+    expect(off.source).toMatchObject({ brief: null, reason: "aus" });
+    expect(off.genres).toEqual(["dance pop"]);
+  });
+
   it("Ablehnung wird gemerkt, Störung nicht; ohne Quellen-Genres liefert die Regie sie", async () => {
     const refused = vi.fn(async () => ({ brief: null, reason: "abgelehnt" as const }));
     const a = createShowService({ cache: memoryCache(), http: http(), audioDbKey: "123", direct: refused });

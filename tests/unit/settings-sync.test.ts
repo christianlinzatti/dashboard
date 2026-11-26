@@ -8,6 +8,7 @@ const base: SharedSettings = {
   stage: "auto",
   canvas: "aus",
   crowdSound: false,
+  ai: true,
 };
 
 describe("Geräte-Einstellungen im Konto", () => {
@@ -33,5 +34,15 @@ describe("Geräte-Einstellungen im Konto", () => {
     expect(deviceSettingsSchema.safeParse({ settings: base, at: 1 }).success).toBe(true);
     expect(deviceSettingsSchema.safeParse({ settings: { ...base, stage: "mond" }, at: 1 }).success).toBe(false);
     expect(deviceSettingsSchema.safeParse({ settings: base, at: -1 }).success).toBe(false);
+  });
+});
+
+describe("KI verwenden (später dazugekommen)", () => {
+  it("ältere Stände im Konto ohne „ai“ gelten als an; aus wird übernommen", () => {
+    const old: Partial<SharedSettings> = { ...base };
+    delete old.ai;
+    expect(deviceSettingsSchema.parse({ settings: old, at: 1 }).settings.ai).toBe(true);
+    expect(deviceSettingsSchema.parse({ settings: { ...base, ai: false }, at: 1 }).settings.ai).toBe(false);
+    expect(sharedDiffers(base, { ...base, ai: false })).toBe(true);
   });
 });
