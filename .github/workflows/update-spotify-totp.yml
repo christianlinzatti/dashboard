@@ -1,0 +1,95 @@
+name: Update Spotify TOTP
+
+on:
+  schedule:
+    # Läuft täglich um Mitternacht (UTC)
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  extract-and-update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Node.js einrichten
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+
+      - name: Aktuelles Spotify TOTP-Secret abrufen
+        id: extract
+        run: |
+          RESULT=$(node scripts/update-spotify-totp.mjs)
+          SECRET=$(echo "$RESULT" | jq -r '.secret')
+          VERSION=$(echo "$RESULT" | jq -r '.version')
+
+          if [ -z "$SECRET" ] || [ "$SECRET" = "null" ] || [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
+            echo "Extraktion fehlgeschlagen"
+            exit 1
+          fi
+
+          echo "::add-mask::$SECRET"
+          echo "secret=$SECRET" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Nur bei Änderung aktualisieren (Diff-Check)
+        id: diff
+        run: |
+          if [ "${{ steps.extract.outputs.secret }}" = "${{ secrets.SPOTIFY_TOTP_SECRET }}" ] && \
+             [ "${{ steps.extract.outputs.version }}" = "${{ secrets.SPOTIFY_TOTP_VERSION }}" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Keine Änderung am Secret – überspringe Updates."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: GitHub Repository Secrets aktualisieren
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.REPO_ADMIN_TOKEN }}
+        run: |
+          gh secret set SPOTIFY_TOTP_SECRET --body "${{ steps.extract.outputs.secret }}"
+          gh secret set SPOTIFY_TOTP_VERSION --body "${{ steps.extract.outputs.version }}"
+
+      - name: Vercel Environment-Variablen aktualisieren & Redeploy auslösen
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_TEAM_ID: ${{ secrets.VERCEL_TEAM_ID }}
+        run: |
+          TEAM_QUERY=""
+          if [ -n "$VERCEL_TEAM_ID" ]; then
+            TEAM_QUERY="&teamId=$VERCEL_TEAM_ID"
+          fi
+
+          for KEY in SPOTIFY_TOTP_SECRET SPOTIFY_TOTP_VERSION; do
+            if [ "$KEY" = "SPOTIFY_TOTP_SECRET" ]; then
+              VAL="${{ steps.extract.outputs.secret }}"
+            else
+              VAL="${{ steps.extract.outputs.version }}"
+            fi
+
+            curl -fsS -X POST "https://api.vercel.com/v10/projects/${VERCEL_PROJECT_ID}/env?upsert=true${TEAM_QUERY}" \
+              -H "Authorization: Bearer ${VERCEL_TOKEN}" \
+              -H "Content-Type: application/json" \
+              -d "{
+                \"key\": \"${KEY}\",
+                \"value\": \"${VAL}\",
+                \"type\": \"encrypted\",
+                \"target\": [\"production\", \"preview\"]
+              }" > /dev/null
+          done
+
+          if [ -n "${{ secrets.VERCEL_DEPLOY_HOOK }}" ]; then
+            curl -fsS -X POST "${{ secrets.VERCEL_DEPLOY_HOOK }}" > /dev/null
+          fi
