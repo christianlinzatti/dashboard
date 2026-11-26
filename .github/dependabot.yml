@@ -14,6 +14,15 @@ updates:
     ignore:
       # Version muss zum Container-Image in e2e.yml passen – gemeinsam von Hand aktualisieren
       - dependency-name: "@playwright/test"
+      # Typen müssen zur Laufzeit passen: Node 22 (.nvmrc, CI, Raspberry Pi) – mit der Laufzeit gemeinsam anheben
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+      # TypeScript 7: typescript-eslint unterstützt bisher nur < 6.1 – erst anheben, wenn es TS 7 kann
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      # ESLint 10: eslint-plugin-react (über eslint-config-next) unterstützt bisher nur bis ESLint 9
+      - dependency-name: "eslint"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: /
     schedule:
